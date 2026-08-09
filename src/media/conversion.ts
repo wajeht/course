@@ -184,7 +184,10 @@ export function createConversionManager(options: {
 
   async function queueLesson(lesson: LessonRow, force: boolean): Promise<ConversionRecord> {
     const existing = await options.repository.getConversion(lesson.id);
-    if (!force && existing) return existing;
+    if (!force && existing) {
+      if (existing.status !== "ready" || (await hasConversionPlaylist(existing))) return existing;
+      options.logger.warn("Rebuilding missing conversion cache", { lessonId: lesson.id });
+    }
     await options.repository.queueConversion(lesson.id);
     enqueueLesson(lesson.id);
     return (await options.repository.getConversion(lesson.id))!;
@@ -201,4 +204,14 @@ export function createConversionManager(options: {
       }
     },
   };
+}
+
+async function hasConversionPlaylist(record: ConversionRecord): Promise<boolean> {
+  if (!record.playlistPath) return false;
+  try {
+    await fs.access(record.playlistPath);
+    return true;
+  } catch {
+    return false;
+  }
 }
