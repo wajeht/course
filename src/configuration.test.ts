@@ -10,6 +10,8 @@ describe("createConfiguration", () => {
 
     expect(configuration.media.dataDirectory).toBe(path.resolve("data"));
     expect(configuration.media.videosDirectory).toBe("/Volumes/plex/videos");
+    expect(configuration.app.port).toBe(80);
+    expect(configuration.app.vuePort).toBe(3000);
   });
 
   it("uses the same defaults for a direct production start", () => {
@@ -22,11 +24,15 @@ describe("createConfiguration", () => {
   it("honors explicit container paths", () => {
     const configuration = createConfiguration({
       APP_ENV: "production",
+      APP_PORT: "3000",
+      APP_VUE_PORT: "5173",
       DATA_DIR: "/data",
       VIDEOS_DIR: "/videos",
     });
 
     expect(configuration.media.dataDirectory).toBe("/data");
     expect(configuration.media.videosDirectory).toBe("/videos");
+    expect(configuration.app.port).toBe(3000);
+    expect(configuration.app.vuePort).toBe(5173);
   });
 });
