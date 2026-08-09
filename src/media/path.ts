@@ -10,6 +10,6 @@ export function resolveContainedPath(root: string, relativePath: string): string
   return resolved;
 }
 
-export function toPosixPath(value: string): string {
+export function posixPath(value: string): string {
   return value.split(path.sep).join("/");
 }

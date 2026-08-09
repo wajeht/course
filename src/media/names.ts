@@ -1,9 +1,13 @@
 import path from "node:path";
 
-export const naturalCompare = new Intl.Collator(undefined, {
+const naturalCollator = new Intl.Collator(undefined, {
   numeric: true,
   sensitivity: "base",
-}).compare;
+});
+
+export function naturalOrder(left: string, right: string): number {
+  return naturalCollator.compare(left, right);
+}
 
 export function displayName(filename: string): string {
   const extension = path.extname(filename);

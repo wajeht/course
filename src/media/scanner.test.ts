@@ -68,7 +68,7 @@ describe("media scanner", () => {
       probe: fakeProbe,
     });
 
-    const status = await scanner.scan();
+    const status = await scanner.scanCatalog();
     const courses = await database
       .connection("courses")
       .select("title", "description", "cover_path");

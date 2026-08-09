@@ -5,7 +5,7 @@ import type BetterSqlite3 from "better-sqlite3";
 import type { Knex } from "knex";
 
 import type { Configuration } from "../configuration.js";
-import { MigrationSource } from "./migration-source.js";
+import { createMigrationSource } from "./migration-source.js";
 
 export function createKnexConfig(configuration: Configuration): Knex.Config {
   const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -40,7 +40,7 @@ export function createKnexConfig(configuration: Configuration): Knex.Config {
       },
     },
     migrations: {
-      migrationSource: new MigrationSource(migrationsDirectory),
+      migrationSource: createMigrationSource(migrationsDirectory),
       tableName: "knex_migrations",
     },
   };

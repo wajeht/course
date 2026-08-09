@@ -7,19 +7,19 @@ export interface Logger {
   error(message: string, fields?: LogFields): void;
 }
 
-function serializeError(value: unknown): unknown {
+function errorValue(value: unknown): unknown {
   if (!(value instanceof Error)) return value;
   return {
     name: value.name,
     message: value.message,
     stack: value.stack,
-    cause: serializeError(value.cause),
+    cause: errorValue(value.cause),
   };
 }
 
-function write(level: string, message: string, fields: LogFields = {}): void {
+function writeLog(level: string, message: string, fields: LogFields = {}): void {
   const normalizedFields = Object.fromEntries(
-    Object.entries(fields).map(([key, value]) => [key, serializeError(value)]),
+    Object.entries(fields).map(([key, value]) => [key, errorValue(value)]),
   );
   const line = JSON.stringify({
     timestamp: new Date().toISOString(),
@@ -35,9 +35,9 @@ function write(level: string, message: string, fields: LogFields = {}): void {
 
 export function createLogger(): Logger {
   return {
-    debug: (message, fields) => write("debug", message, fields),
-    info: (message, fields) => write("info", message, fields),
-    warn: (message, fields) => write("warn", message, fields),
-    error: (message, fields) => write("error", message, fields),
+    debug: (message, fields) => writeLog("debug", message, fields),
+    info: (message, fields) => writeLog("info", message, fields),
+    warn: (message, fields) => writeLog("warn", message, fields),
+    error: (message, fields) => writeLog("error", message, fields),
   };
 }

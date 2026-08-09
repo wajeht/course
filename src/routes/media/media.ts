@@ -28,7 +28,7 @@ const videoContentTypes: Record<string, string> = {
   ".mpg": "video/mpeg",
 };
 
-function bodyFromFile(filename: string, range?: { start: number; end: number }): ReadableStream {
+function createFileBody(filename: string, range?: { start: number; end: number }): ReadableStream {
   return Readable.toWeb(createReadStream(filename, range)) as ReadableStream;
 }
 
@@ -36,7 +36,7 @@ export function createMediaRouter(context: AppContext) {
   const app = new Hono();
 
   app.get("/media/:lessonId", zValidator("param", lessonParametersSchema), async (c) => {
-    const lesson = await context.catalog.lessonRecord(c.req.valid("param").lessonId);
+    const lesson = await context.catalog.findLessonRecord(c.req.valid("param").lessonId);
     if (!lesson) return c.json({ message: "Lesson not found" }, 404);
     const filename = resolveContainedPath(context.configuration.media.videosDirectory, lesson.path);
     const statistics = await fs.stat(filename);
@@ -50,11 +50,11 @@ export function createMediaRouter(context: AppContext) {
       const range = parseByteRange(c.req.header("range"), statistics.size);
       if (!range) {
         c.header("Content-Length", String(statistics.size));
-        return c.body(bodyFromFile(filename));
+        return c.body(createFileBody(filename));
       }
       c.header("Content-Range", `bytes ${range.start}-${range.end}/${statistics.size}`);
       c.header("Content-Length", String(range.end - range.start + 1));
-      return c.body(bodyFromFile(filename, range), 206);
+      return c.body(createFileBody(filename, range), 206);
     } catch (error) {
       if (!(error instanceof RangeError)) throw error;
       c.header("Content-Range", `bytes */${statistics.size}`);
@@ -80,7 +80,7 @@ export function createMediaRouter(context: AppContext) {
       c.header("Content-Type", contentType);
       c.header("Content-Length", String(statistics.size));
       c.header("Cache-Control", "public, max-age=300");
-      return c.body(bodyFromFile(filename));
+      return c.body(createFileBody(filename));
     },
   );
 
@@ -101,7 +101,7 @@ export function createMediaRouter(context: AppContext) {
         filename.endsWith(".m3u8") ? "private, no-cache" : "private, max-age=31536000, immutable",
       );
       c.header("Content-Length", String(statistics.size));
-      return c.body(bodyFromFile(file));
+      return c.body(createFileBody(file));
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") return c.body(null, 404);
       throw error;

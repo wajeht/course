@@ -1,4 +1,4 @@
-export function formatDuration(seconds: number): string {
+export function durationText(seconds: number): string {
   if (!Number.isFinite(seconds)) return "0m";
   const rounded = Math.max(0, Math.round(seconds));
   const hours = Math.floor(rounded / 3600);

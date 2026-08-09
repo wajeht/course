@@ -15,7 +15,7 @@ export function createProgressRouter(context: AppContext) {
       zValidator("param", progressParametersSchema),
       zValidator("json", updateProgressSchema),
       async (c) => {
-        const saved = await context.progress.update(
+        const saved = await context.progress.updateProgress(
           c.req.valid("param").lessonId,
           c.req.valid("json").positionSeconds,
         );
@@ -26,7 +26,7 @@ export function createProgressRouter(context: AppContext) {
       "/lessons/:lessonId/complete",
       zValidator("param", progressParametersSchema),
       async (c) => {
-        const saved = await context.progress.complete(c.req.valid("param").lessonId);
+        const saved = await context.progress.completeLesson(c.req.valid("param").lessonId);
         return saved ? c.json({ completed: true }) : c.json({ message: "Lesson not found" }, 404);
       },
     )

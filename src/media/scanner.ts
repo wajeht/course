@@ -8,8 +8,8 @@ import type { Logger } from "../utils/logger.js";
 import type { CatalogRepository } from "./catalog.repository.js";
 import { readCourseMetadata } from "./course-metadata.js";
 import { generateCover } from "./cover.js";
-import { displayName, naturalCompare } from "./names.js";
-import { toPosixPath } from "./path.js";
+import { displayName, naturalOrder } from "./names.js";
+import { posixPath } from "./path.js";
 import { probeVideo, videoExtensions, type VideoProbe } from "./probe.js";
 import type {
   CatalogSnapshot,
@@ -23,8 +23,8 @@ import type {
 const coverExtensions = new Set([".jpg", ".jpeg", ".png", ".webp"]);
 
 export interface Scanner {
-  scan(): Promise<ScanStatus>;
-  getStatus(): Promise<ScanStatus>;
+  scanCatalog(): Promise<ScanStatus>;
+  getScanStatus(): Promise<ScanStatus>;
   startSchedule(): () => void;
 }
 
@@ -61,8 +61,8 @@ export function createScanner({
     await repository.updateScanStatus(scanning);
 
     try {
-      const snapshot = await buildSnapshot(configuration, scanning.warnings, probe);
-      await repository.synchronize(snapshot);
+      const snapshot = await scanCatalog(configuration, scanning.warnings, probe);
+      await repository.synchronizeCatalog(snapshot);
       const complete: ScanStatus = {
         ...scanning,
         status: "complete",
@@ -91,16 +91,19 @@ export function createScanner({
   }
 
   const scanner: Scanner = {
-    scan() {
+    scanCatalog() {
       if (activeScan) return activeScan;
       activeScan = scanOnce().finally(() => {
         activeScan = null;
       });
       return activeScan;
     },
-    getStatus: () => repository.getScanStatus(),
+    getScanStatus: () => repository.getScanStatus(),
     startSchedule() {
-      const timer = setInterval(() => void scanner.scan(), configuration.media.scanIntervalMs);
+      const timer = setInterval(
+        () => void scanner.scanCatalog(),
+        configuration.media.scanIntervalMs,
+      );
       timer.unref();
       return () => clearInterval(timer);
     },
@@ -108,7 +111,7 @@ export function createScanner({
   return scanner;
 }
 
-async function buildSnapshot(
+async function scanCatalog(
   configuration: Configuration,
   warnings: ScanWarning[],
   probe: (filename: string, ffprobePath: string) => Promise<VideoProbe>,
@@ -116,19 +119,19 @@ async function buildSnapshot(
   const root = configuration.media.videosDirectory;
   const courseEntries = (await fs.readdir(root, { withFileTypes: true }))
     .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
-    .sort((left, right) => naturalCompare(left.name, right.name));
+    .sort((left, right) => naturalOrder(left.name, right.name));
   const courses: CourseRecord[] = [];
   const sections: SectionRecord[] = [];
   const lessons: LessonRecord[] = [];
 
   for (const [courseIndex, courseEntry] of courseEntries.entries()) {
     const courseDirectory = path.join(root, courseEntry.name);
-    const courseRelativePath = toPosixPath(path.relative(root, courseDirectory));
+    const courseRelativePath = posixPath(path.relative(root, courseDirectory));
     const courseId = identifier(courseRelativePath);
     const { metadata, warning } = await readCourseMetadata(courseDirectory);
     if (warning) warnings.push({ path: `${courseRelativePath}/course.json`, message: warning });
     const entries = (await fs.readdir(courseDirectory, { withFileTypes: true })).sort(
-      (left, right) => naturalCompare(left.name, right.name),
+      (left, right) => naturalOrder(left.name, right.name),
     );
     const localCover = await findCover(courseDirectory, entries, metadata?.cover, warnings);
     const course: CourseRecord = {
@@ -136,7 +139,7 @@ async function buildSnapshot(
       path: courseRelativePath,
       title: metadata?.title ?? courseEntry.name,
       description: metadata?.description ?? "",
-      coverPath: localCover ? toPosixPath(path.relative(root, localCover)) : null,
+      coverPath: localCover ? posixPath(path.relative(root, localCover)) : null,
       coverOrigin: localCover ? "videos" : null,
       sortOrder: courseIndex,
     };
@@ -163,7 +166,7 @@ async function buildSnapshot(
     );
     for (const [sectionIndex, sectionEntry] of sectionEntries.entries()) {
       const sectionDirectory = path.join(courseDirectory, sectionEntry.name);
-      const sectionRelativePath = toPosixPath(path.relative(root, sectionDirectory));
+      const sectionRelativePath = posixPath(path.relative(root, sectionDirectory));
       const sectionId = identifier(sectionRelativePath);
       sections.push({
         id: sectionId,
@@ -176,7 +179,7 @@ async function buildSnapshot(
         .filter(
           (entry) => entry.isFile() && videoExtensions.has(path.extname(entry.name).toLowerCase()),
         )
-        .sort((left, right) => naturalCompare(left.name, right.name));
+        .sort((left, right) => naturalOrder(left.name, right.name));
       await appendLessons({
         files: sectionFiles,
         directory: sectionDirectory,
@@ -230,7 +233,7 @@ interface AppendLessonsOptions {
 async function appendLessons(options: AppendLessonsOptions): Promise<void> {
   for (const [index, file] of options.files.entries()) {
     const absolutePath = path.join(options.directory, file.name);
-    const relativePath = toPosixPath(path.relative(options.root, absolutePath));
+    const relativePath = posixPath(path.relative(options.root, absolutePath));
     try {
       const [metadata, video] = await Promise.all([
         fs.stat(absolutePath),

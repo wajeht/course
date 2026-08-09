@@ -10,10 +10,10 @@ export interface ServerInfo {
 }
 
 export async function startServer(context: AppContext): Promise<ServerInfo> {
-  const scan = await context.scanner.scan();
+  const scan = await context.scanner.scanCatalog();
   if (scan.status === "failed")
     context.logger.warn("Starting with the previous catalog", { error: scan.error });
-  await context.conversions.recover();
+  await context.conversions.recoverConversions();
   const stopSchedule = context.scanner.startSchedule();
   const app = createApp(context);
   const server = serve({
@@ -36,7 +36,7 @@ export async function stopServer(info: ServerInfo): Promise<void> {
   await info.context.database.close();
 }
 
-async function main(): Promise<void> {
+async function runApplication(): Promise<void> {
   process.title = "course";
   const context = await createContext();
   const info = await startServer(context);
@@ -71,5 +71,5 @@ async function main(): Promise<void> {
 }
 
 if (process.env.NODE_ENV !== "testing") {
-  void main();
+  void runApplication();
 }

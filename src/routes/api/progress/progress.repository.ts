@@ -2,7 +2,7 @@ import type { Knex } from "knex";
 
 export interface ProgressRepository {
   savePosition(lessonId: string, positionSeconds: number): Promise<void>;
-  complete(lessonId: string, positionSeconds: number): Promise<void>;
+  completeLesson(lessonId: string, positionSeconds: number): Promise<void>;
   resetLesson(lessonId: string): Promise<void>;
   resetCourse(courseId: string): Promise<void>;
 }
@@ -27,7 +27,7 @@ export function createProgressRepository(database: Knex): ProgressRepository {
         });
     },
 
-    async complete(lessonId, positionSeconds) {
+    async completeLesson(lessonId, positionSeconds) {
       const now = new Date().toISOString();
       await database("progress")
         .insert({

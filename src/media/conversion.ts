@@ -15,10 +15,10 @@ export type ConversionExecutor = (
 ) => Promise<string>;
 
 export interface ConversionManager {
-  request(lesson: LessonRow): Promise<ConversionRecord>;
-  retry(lesson: LessonRow): Promise<ConversionRecord>;
-  get(lessonId: string): Promise<ConversionRecord | null>;
-  recover(): Promise<void>;
+  requestConversion(lesson: LessonRow): Promise<ConversionRecord>;
+  retryConversion(lesson: LessonRow): Promise<ConversionRecord>;
+  getConversion(lessonId: string): Promise<ConversionRecord | null>;
+  recoverConversions(): Promise<void>;
 }
 
 export function createFfmpegConversionExecutor(configuration: Configuration): ConversionExecutor {
@@ -141,7 +141,7 @@ export function createConversionManager(options: {
   const scheduled = new Set<string>();
   let processing = false;
 
-  function enqueue(lessonId: string): void {
+  function enqueueLesson(lessonId: string): void {
     if (scheduled.has(lessonId)) return;
     scheduled.add(lessonId);
     queue.push(lessonId);
@@ -160,7 +160,7 @@ export function createConversionManager(options: {
           scheduled.delete(lessonId);
           continue;
         }
-        await options.repository.converting(
+        await options.repository.markConverting(
           lessonId,
           path.join(options.configuration.media.hlsDirectory, lessonId, "index.m3u8"),
         );
@@ -168,10 +168,10 @@ export function createConversionManager(options: {
           const playlist = await executor(lesson, (progress) =>
             options.repository.updateProgress(lessonId, progress),
           );
-          await options.repository.ready(lessonId, playlist);
+          await options.repository.markReady(lessonId, playlist);
         } catch (error) {
           const message = error instanceof Error ? error.message : "Conversion failed";
-          await options.repository.fail(lessonId, message);
+          await options.repository.markFailed(lessonId, message);
           options.logger.error("Video conversion failed", { lessonId, error });
         } finally {
           scheduled.delete(lessonId);
@@ -183,21 +183,21 @@ export function createConversionManager(options: {
   }
 
   async function queueLesson(lesson: LessonRow, force: boolean): Promise<ConversionRecord> {
-    const existing = await options.repository.get(lesson.id);
+    const existing = await options.repository.getConversion(lesson.id);
     if (!force && existing) return existing;
-    await options.repository.queue(lesson.id);
-    enqueue(lesson.id);
-    return (await options.repository.get(lesson.id))!;
+    await options.repository.queueConversion(lesson.id);
+    enqueueLesson(lesson.id);
+    return (await options.repository.getConversion(lesson.id))!;
   }
 
   return {
-    request: (lesson) => queueLesson(lesson, false),
-    retry: (lesson) => queueLesson(lesson, true),
-    get: (lessonId) => options.repository.get(lessonId),
-    async recover() {
-      for (const lessonId of await options.repository.pendingLessonIds()) {
-        await options.repository.queue(lessonId);
-        enqueue(lessonId);
+    requestConversion: (lesson) => queueLesson(lesson, false),
+    retryConversion: (lesson) => queueLesson(lesson, true),
+    getConversion: (lessonId) => options.repository.getConversion(lessonId),
+    async recoverConversions() {
+      for (const lessonId of await options.repository.listPendingLessonIds()) {
+        await options.repository.queueConversion(lessonId);
+        enqueueLesson(lessonId);
       }
     },
   };
