@@ -50,8 +50,11 @@ describe("media scanner", () => {
     });
     const database = await createDatabase(configuration, createLogger());
     databases.push(database);
+    let failExistingLesson = false;
     const fakeProbe = async (filename: string): Promise<VideoProbe> => {
-      if (filename.includes("Broken")) throw new Error("File is still copying");
+      if (filename.includes("Broken") || (failExistingLesson && filename.includes("Start"))) {
+        throw new Error("File is still copying");
+      }
       return {
         durationSeconds: 60,
         sizeBytes: 100,
@@ -95,5 +98,25 @@ describe("media scanner", () => {
     ]);
     expect(sections).toEqual([{ title: "Escapes" }]);
     expect(lessons).toEqual([{ title: "Start" }, { title: "Finish" }, { title: "Bridge" }]);
+
+    const existingLesson = await database.connection("lessons").where({ title: "Start" }).first();
+    await database.connection("progress").insert({
+      lesson_id: existingLesson.id,
+      position_seconds: 30,
+      completed: false,
+      updated_at: new Date().toISOString(),
+    });
+    failExistingLesson = true;
+
+    await scanner.scanCatalog();
+
+    expect(
+      await database.connection("lessons").where({ id: existingLesson.id }).first(),
+    ).toBeTruthy();
+    expect(
+      await database.connection("progress").where({ lesson_id: existingLesson.id }).first(),
+    ).toMatchObject({
+      position_seconds: 30,
+    });
   });
 });

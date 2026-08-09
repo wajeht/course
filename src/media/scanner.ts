@@ -123,6 +123,7 @@ async function scanCatalog(
   const courses: CourseRecord[] = [];
   const sections: SectionRecord[] = [];
   const lessons: LessonRecord[] = [];
+  const skippedLessonIds: string[] = [];
 
   for (const [courseIndex, courseEntry] of courseEntries.entries()) {
     const courseDirectory = path.join(root, courseEntry.name);
@@ -156,6 +157,7 @@ async function scanCatalog(
       courseId,
       sectionId: null,
       lessons,
+      skippedLessonIds,
       warnings,
       probe,
       ffprobePath: configuration.media.ffprobePath,
@@ -187,6 +189,7 @@ async function scanCatalog(
         courseId,
         sectionId,
         lessons,
+        skippedLessonIds,
         warnings,
         probe,
         ffprobePath: configuration.media.ffprobePath,
@@ -215,7 +218,7 @@ async function scanCatalog(
     }
   }
 
-  return { courses, sections, lessons };
+  return { courses, sections, lessons, skippedLessonIds };
 }
 
 interface AppendLessonsOptions {
@@ -225,6 +228,7 @@ interface AppendLessonsOptions {
   courseId: string;
   sectionId: string | null;
   lessons: LessonRecord[];
+  skippedLessonIds: string[];
   warnings: ScanWarning[];
   probe: (filename: string, ffprobePath: string) => Promise<VideoProbe>;
   ffprobePath: string;
@@ -255,6 +259,7 @@ async function appendLessons(options: AppendLessonsOptions): Promise<void> {
         modifiedAt: metadata.mtime.toISOString(),
       });
     } catch (error) {
+      options.skippedLessonIds.push(identifier(relativePath));
       options.warnings.push({
         path: relativePath,
         message: error instanceof Error ? error.message : "Could not inspect video",
