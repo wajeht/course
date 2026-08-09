@@ -19,6 +19,7 @@ let hls: import("hls.js").default | null = null;
 let pollTimer: ReturnType<typeof setTimeout> | undefined;
 let lastSavedAt = 0;
 let resumeApplied = false;
+let playerRequestId = 0;
 
 const allLessons = computed(
   () => course.value?.sections.flatMap((section) => section.lessons) ?? [],
@@ -39,8 +40,9 @@ function destroyPlayback(): void {
   }
 }
 
-async function attachSource(url: string, kind: "direct" | "hls"): Promise<void> {
+async function attachSource(url: string, kind: "direct" | "hls", requestId: number): Promise<void> {
   await nextTick();
+  if (requestId !== playerRequestId) return;
   const element = video.value;
   if (!element) return;
   hls?.destroy();
@@ -53,6 +55,7 @@ async function attachSource(url: string, kind: "direct" | "hls"): Promise<void> 
     return;
   }
   const { default: Hls } = await import("hls.js/light");
+  if (requestId !== playerRequestId) return;
   if (!Hls.isSupported()) {
     error.value = "This browser cannot play the converted video.";
     return;
@@ -65,24 +68,32 @@ async function attachSource(url: string, kind: "direct" | "hls"): Promise<void> 
   hls.attachMedia(element);
 }
 
-async function handlePlayback(result: PlaybackResult): Promise<void> {
+async function handlePlayback(
+  result: PlaybackResult,
+  lessonId: string,
+  requestId: number,
+): Promise<void> {
+  if (requestId !== playerRequestId) return;
   playback.value = result;
-  if (result.kind === "direct") return attachSource(result.url, "direct");
-  if (result.kind === "hls") return attachSource(result.url, "hls");
+  if (result.kind === "direct") return attachSource(result.url, "direct", requestId);
+  if (result.kind === "hls") return attachSource(result.url, "hls", requestId);
   if (result.kind === "error") {
     error.value = result.message;
     return;
   }
   pollTimer = setTimeout(async () => {
     try {
-      await handlePlayback(await api.getConversionStatus(String(route.params.lessonId)));
+      const conversion = await api.getConversionStatus(lessonId);
+      await handlePlayback(conversion, lessonId, requestId);
     } catch (caught) {
+      if (requestId !== playerRequestId) return;
       error.value = caught instanceof Error ? caught.message : "Could not check conversion";
     }
   }, 2_000);
 }
 
 async function loadPlayer(): Promise<void> {
+  const requestId = ++playerRequestId;
   destroyPlayback();
   loading.value = true;
   error.value = "";
@@ -91,13 +102,16 @@ async function loadPlayer(): Promise<void> {
   try {
     const lessonId = String(route.params.lessonId);
     const detail = await api.getLesson(lessonId);
+    if (requestId !== playerRequestId) return;
     lesson.value = detail.lesson;
     course.value = detail.course;
-    await handlePlayback(await api.preparePlayback(lessonId));
+    const preparedPlayback = await api.preparePlayback(lessonId);
+    await handlePlayback(preparedPlayback, lessonId, requestId);
   } catch (caught) {
+    if (requestId !== playerRequestId) return;
     error.value = caught instanceof Error ? caught.message : "Could not load this lesson";
   } finally {
-    loading.value = false;
+    if (requestId === playerRequestId) loading.value = false;
   }
 }
 
@@ -146,7 +160,9 @@ async function markComplete(): Promise<void> {
 async function retryConversion(): Promise<void> {
   if (!lesson.value) return;
   error.value = "";
-  await handlePlayback(await api.retryConversion(lesson.value.id));
+  const lessonId = lesson.value.id;
+  const requestId = playerRequestId;
+  await handlePlayback(await api.retryConversion(lessonId), lessonId, requestId);
 }
 
 async function resetProgress(): Promise<void> {
@@ -176,6 +192,7 @@ window.addEventListener("pagehide", saveOnExit);
 document.addEventListener("visibilitychange", handleVisibility);
 
 onBeforeUnmount(() => {
+  playerRequestId++;
   void saveProgress(true);
   destroyPlayback();
   window.removeEventListener("pagehide", saveOnExit);
