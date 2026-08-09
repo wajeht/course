@@ -151,10 +151,14 @@ function saveOnExit(): void {
 
 async function markComplete(): Promise<void> {
   if (!lesson.value) return;
-  ended.value = true;
-  await api.completeLesson(lesson.value.id);
-  lesson.value.completed = true;
-  lesson.value.progressPercent = 100;
+  try {
+    await api.completeLesson(lesson.value.id);
+    ended.value = true;
+    lesson.value.completed = true;
+    lesson.value.progressPercent = 100;
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : "Could not complete this lesson";
+  }
 }
 
 async function retryConversion(): Promise<void> {
