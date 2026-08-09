@@ -4,6 +4,8 @@ import tailwindcss from "@tailwindcss/vite";
 import vue from "@vitejs/plugin-vue";
 import { defineConfig } from "vitest/config";
 
+const projectRoot = fileURLToPath(new URL(".", import.meta.url));
+
 export default defineConfig({
   root: "src/vue",
   plugins: [vue(), tailwindcss()],
@@ -29,6 +31,7 @@ export default defineConfig({
     sourcemap: true,
   },
   test: {
+    root: projectRoot,
     environment: "node",
     include: ["src/**/*.test.ts", "tests/**/*.test.ts"],
     coverage: {
