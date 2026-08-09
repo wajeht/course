@@ -1,0 +1,54 @@
+# Development Guide
+
+## Prerequisites
+
+- Node.js 24+
+- npm 11+
+- FFmpeg and FFprobe
+- Intel Quick Sync device access for video conversion
+
+## Local Development
+
+```bash
+git clone https://github.com/wajeht/course.git
+cd course
+cp .env.example .env
+npm ci
+npm run db:migrate
+npm run dev
+```
+
+Open <http://localhost>. Hono listens on port 80 and proxies the development
+Vue client running internally on port 3000.
+
+Without `.env`, local commands use `/Volumes/plex/videos` and store the SQLite
+database and conversion cache in `./data`. Change those paths in `.env` on
+another machine. The video directory itself is never changed.
+
+## Available Commands
+
+```bash
+npm run dev           # Start the API and Vue development servers
+npm run dev:server    # Start only the API server
+npm run dev:client    # Start only the Vue development server
+npm run db:migrate    # Apply SQLite migrations
+npm run check         # Run types, lint, formatting, tests, and builds
+npm run test          # Run tests once
+npm run test:watch    # Run tests in watch mode
+npm run build         # Build the server and client
+npm start             # Start the production build
+```
+
+## Container
+
+```bash
+docker compose up --build
+```
+
+The example mounts `/home/jaw/plex/videos` read-only and persists the catalog,
+progress, generated covers, and HLS cache under `/home/jaw/data/course`.
+`/dev/dri` is required for Quick Sync. Course deliberately does not fall back
+to CPU transcoding when hardware conversion is unavailable.
+
+OAuth is expected to run at the reverse proxy. Course itself exposes no public
+authentication layer. Its health endpoint is `/healthz`.
