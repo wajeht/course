@@ -52,6 +52,17 @@ export function createCatalogRepository(database: Knex): CatalogRepository {
         }
 
         for (const lesson of snapshot.lessons) {
+          const existingLesson = await transaction("lessons")
+            .where({ id: lesson.id })
+            .select("modified_at", "size_bytes")
+            .first();
+          if (
+            existingLesson &&
+            (existingLesson.modified_at !== lesson.modifiedAt ||
+              Number(existingLesson.size_bytes) !== lesson.sizeBytes)
+          ) {
+            await transaction("conversion_jobs").where({ lesson_id: lesson.id }).delete();
+          }
           await transaction("lessons")
             .insert({
               id: lesson.id,
