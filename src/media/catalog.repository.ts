@@ -3,14 +3,14 @@ import type { Knex } from "knex";
 import type { CatalogSnapshot, ScanStatus } from "./types.js";
 
 export interface CatalogRepository {
-  synchronize(snapshot: CatalogSnapshot): Promise<void>;
+  synchronizeCatalog(snapshot: CatalogSnapshot): Promise<void>;
   updateScanStatus(status: ScanStatus): Promise<void>;
   getScanStatus(): Promise<ScanStatus>;
 }
 
 export function createCatalogRepository(database: Knex): CatalogRepository {
   return {
-    async synchronize(snapshot) {
+    async synchronizeCatalog(snapshot) {
       const now = new Date().toISOString();
       await database.transaction(async (transaction) => {
         for (const course of snapshot.courses) {

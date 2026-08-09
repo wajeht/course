@@ -11,7 +11,7 @@ import type { PlaybackResult } from "../../routes/api/playback/playback.service"
 
 const client = hc<AppType>("/");
 
-export type CatalogDto = Awaited<ReturnType<CatalogService["catalog"]>>;
+export type CatalogDto = Awaited<ReturnType<CatalogService["getCatalog"]>>;
 export type { CourseDetailDto, LessonDto, PlaybackResult, ScanStatus };
 
 export class ApiError extends Error {
@@ -37,23 +37,23 @@ async function expectJson<T>(response: Response): Promise<T> {
 }
 
 export const api = {
-  async catalog(query?: string): Promise<CatalogDto> {
+  async getCatalog(query?: string): Promise<CatalogDto> {
     const response = await client.api.catalog.$get({ query: { query } });
     return expectJson<CatalogDto>(response);
   },
-  async course(courseId: string): Promise<CourseDetailDto> {
+  async getCourse(courseId: string): Promise<CourseDetailDto> {
     const response = await client.api.catalog.courses[":courseId"].$get({ param: { courseId } });
     return expectJson<CourseDetailDto>(response);
   },
-  async lesson(lessonId: string): Promise<{ lesson: LessonDto; course: CourseDetailDto }> {
+  async getLesson(lessonId: string): Promise<{ lesson: LessonDto; course: CourseDetailDto }> {
     const response = await client.api.catalog.lessons[":lessonId"].$get({ param: { lessonId } });
     return expectJson(response);
   },
-  async playback(lessonId: string): Promise<PlaybackResult> {
+  async preparePlayback(lessonId: string): Promise<PlaybackResult> {
     const response = await client.api.playback[":lessonId"].$get({ param: { lessonId } });
     return expectJson<PlaybackResult>(response);
   },
-  async conversion(lessonId: string): Promise<PlaybackResult> {
+  async getConversionStatus(lessonId: string): Promise<PlaybackResult> {
     const response = await client.api.playback[":lessonId"].conversion.$get({
       param: { lessonId },
     });
@@ -88,10 +88,10 @@ export const api = {
     });
     await expectJson(response);
   },
-  async scanStatus(): Promise<ScanStatus> {
+  async getScanStatus(): Promise<ScanStatus> {
     return expectJson<ScanStatus>(await client.api.scan.$get());
   },
-  async rescan(): Promise<ScanStatus> {
+  async rescanCatalog(): Promise<ScanStatus> {
     return expectJson<ScanStatus>(await client.api.scan.$post());
   },
 };

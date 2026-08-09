@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { displayName, naturalCompare } from "./names.js";
+import { displayName, naturalOrder } from "./names.js";
 
 describe("media names", () => {
   it("natural-sorts numbered filenames", () => {
-    expect(["10 - Last.mp4", "2 - Middle.mp4", "01 - First.mp4"].sort(naturalCompare)).toEqual([
+    expect(["10 - Last.mp4", "2 - Middle.mp4", "01 - First.mp4"].sort(naturalOrder)).toEqual([
       "01 - First.mp4",
       "2 - Middle.mp4",
       "10 - Last.mp4",

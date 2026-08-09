@@ -33,7 +33,7 @@ export interface LessonRow {
 
 export interface CatalogRepository {
   listCourses(query?: string): Promise<CourseRow[]>;
-  continueWatching(): Promise<LessonRow[]>;
+  listContinueWatching(): Promise<LessonRow[]>;
   findCourse(courseId: string): Promise<CourseRow | undefined>;
   listCourseLessons(courseId: string): Promise<LessonRow[]>;
   findLesson(lessonId: string): Promise<LessonRow | undefined>;
@@ -60,7 +60,7 @@ const lessonSelect = [
 ];
 
 export function createCatalogApiRepository(database: Knex): CatalogRepository {
-  function lessonsQuery() {
+  function createLessonsQuery() {
     return database<LessonRow>("lessons")
       .join("courses", "courses.id", "lessons.course_id")
       .leftJoin("sections", "sections.id", "lessons.section_id")
@@ -68,7 +68,7 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
       .select(lessonSelect);
   }
 
-  function courseQuery() {
+  function createCourseQuery() {
     return database<CourseRow>("courses")
       .leftJoin("lessons", "lessons.course_id", "courses.id")
       .leftJoin("progress", "progress.lesson_id", "lessons.id")
@@ -89,10 +89,10 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
 
   return {
     async listCourses(query) {
-      const builder = courseQuery().orderBy("courses.sort_order");
+      const queryBuilder = createCourseQuery().orderBy("courses.sort_order");
       if (query) {
         const search = `%${query}%`;
-        builder.where((where) => {
+        queryBuilder.where((where) => {
           where
             .whereLike("courses.title", search)
             .orWhereLike("courses.description", search)
@@ -104,11 +104,11 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
             );
         });
       }
-      return builder;
+      return queryBuilder;
     },
 
-    continueWatching() {
-      return lessonsQuery()
+    listContinueWatching() {
+      return createLessonsQuery()
         .where("progress.position_seconds", ">", 0)
         .where("progress.completed", false)
         .orderBy("progress.updated_at", "desc")
@@ -116,11 +116,11 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
     },
 
     findCourse(courseId) {
-      return courseQuery().where("courses.id", courseId).first();
+      return createCourseQuery().where("courses.id", courseId).first();
     },
 
     listCourseLessons(courseId) {
-      return lessonsQuery()
+      return createLessonsQuery()
         .where("lessons.course_id", courseId)
         .orderByRaw("lessons.section_id IS NOT NULL")
         .orderBy("sections.sort_order")
@@ -128,7 +128,7 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
     },
 
     findLesson(lessonId) {
-      return lessonsQuery().where("lessons.id", lessonId).first();
+      return createLessonsQuery().where("lessons.id", lessonId).first();
     },
   };
 }

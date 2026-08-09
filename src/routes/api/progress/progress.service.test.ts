@@ -46,12 +46,12 @@ describe("progress service", () => {
       createCatalogApiRepository(database.connection),
     );
 
-    expect(await service.update("b".repeat(24), 150)).toBe(true);
+    expect(await service.updateProgress("b".repeat(24), 150)).toBe(true);
     expect(await database.connection("progress").first()).toMatchObject({
       position_seconds: 100,
       completed: 0,
     });
-    expect(await service.complete("b".repeat(24))).toBe(true);
+    expect(await service.completeLesson("b".repeat(24))).toBe(true);
     expect(await database.connection("progress").first()).toMatchObject({
       position_seconds: 100,
       completed: 1,
@@ -63,10 +63,10 @@ describe("progress service", () => {
       createProgressRepository(database.connection),
       createCatalogApiRepository(database.connection),
     );
-    await service.update("b".repeat(24), 25);
+    await service.updateProgress("b".repeat(24), 25);
     await service.resetLesson("b".repeat(24));
     expect(await database.connection("progress")).toHaveLength(0);
-    await service.update("b".repeat(24), 30);
+    await service.updateProgress("b".repeat(24), 30);
     await service.resetCourse("a".repeat(24));
     expect(await database.connection("progress")).toHaveLength(0);
   });

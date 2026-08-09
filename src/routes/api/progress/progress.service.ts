@@ -2,8 +2,8 @@ import type { CatalogRepository } from "../catalog/catalog.repository.js";
 import type { ProgressRepository } from "./progress.repository.js";
 
 export interface ProgressService {
-  update(lessonId: string, positionSeconds: number): Promise<boolean>;
-  complete(lessonId: string): Promise<boolean>;
+  updateProgress(lessonId: string, positionSeconds: number): Promise<boolean>;
+  completeLesson(lessonId: string): Promise<boolean>;
   resetLesson(lessonId: string): Promise<void>;
   resetCourse(courseId: string): Promise<void>;
 }
@@ -13,7 +13,7 @@ export function createProgressService(
   catalog: CatalogRepository,
 ): ProgressService {
   return {
-    async update(lessonId, positionSeconds) {
+    async updateProgress(lessonId, positionSeconds) {
       const lesson = await catalog.findLesson(lessonId);
       if (!lesson) return false;
       await repository.savePosition(
@@ -22,10 +22,10 @@ export function createProgressService(
       );
       return true;
     },
-    async complete(lessonId) {
+    async completeLesson(lessonId) {
       const lesson = await catalog.findLesson(lessonId);
       if (!lesson) return false;
-      await repository.complete(lessonId, Number(lesson.duration_seconds));
+      await repository.completeLesson(lessonId, Number(lesson.duration_seconds));
       return true;
     },
     resetLesson: (lessonId) => repository.resetLesson(lessonId),

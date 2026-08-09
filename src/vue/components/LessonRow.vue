@@ -2,7 +2,7 @@
 import { RouterLink } from "vue-router";
 
 import type { LessonDto } from "../api/client";
-import { formatDuration } from "../utils/format";
+import { durationText } from "../utils/format";
 
 withDefaults(defineProps<{ lesson: LessonDto; index: number; active?: boolean }>(), {
   active: false,
@@ -17,7 +17,7 @@ withDefaults(defineProps<{ lesson: LessonDto; index: number; active?: boolean }>
   >
     <span class="lesson-row__number">{{ String(index + 1).padStart(2, "0") }}</span>
     <span class="lesson-row__title">{{ lesson.title }}</span>
-    <span class="lesson-row__duration">{{ formatDuration(lesson.durationSeconds) }}</span>
+    <span class="lesson-row__duration">{{ durationText(lesson.durationSeconds) }}</span>
     <span class="lesson-row__state" :class="{ 'lesson-row__state--complete': lesson.completed }">
       <svg v-if="lesson.completed" viewBox="0 0 24 24" aria-label="Completed">
         <path d="m5 12 4 4L19 6" />

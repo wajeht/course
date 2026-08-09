@@ -11,13 +11,13 @@ export interface ConversionRecord {
 }
 
 export interface ConversionRepository {
-  get(lessonId: string): Promise<ConversionRecord | null>;
-  queue(lessonId: string): Promise<void>;
-  converting(lessonId: string, playlistPath: string): Promise<void>;
+  getConversion(lessonId: string): Promise<ConversionRecord | null>;
+  queueConversion(lessonId: string): Promise<void>;
+  markConverting(lessonId: string, playlistPath: string): Promise<void>;
   updateProgress(lessonId: string, progress: number): Promise<void>;
-  ready(lessonId: string, playlistPath: string): Promise<void>;
-  fail(lessonId: string, error: string): Promise<void>;
-  pendingLessonIds(): Promise<string[]>;
+  markReady(lessonId: string, playlistPath: string): Promise<void>;
+  markFailed(lessonId: string, error: string): Promise<void>;
+  listPendingLessonIds(): Promise<string[]>;
 }
 
 export function createConversionRepository(database: Knex): ConversionRepository {
@@ -28,7 +28,7 @@ export function createConversionRepository(database: Knex): ConversionRepository
   }
 
   return {
-    async get(lessonId) {
+    async getConversion(lessonId) {
       const row = await database("conversion_jobs").where({ lesson_id: lessonId }).first();
       if (!row) return null;
       return {
@@ -39,7 +39,7 @@ export function createConversionRepository(database: Knex): ConversionRepository
         error: row.error as string | null,
       };
     },
-    async queue(lessonId) {
+    async queueConversion(lessonId) {
       const now = new Date().toISOString();
       await database("conversion_jobs")
         .insert({
@@ -60,18 +60,18 @@ export function createConversionRepository(database: Knex): ConversionRepository
           updated_at: now,
         });
     },
-    converting: (lessonId, playlistPath) =>
+    markConverting: (lessonId, playlistPath) =>
       update(lessonId, { status: "converting", playlist_path: playlistPath, error: null }),
     updateProgress: (lessonId, progress) => update(lessonId, { progress }),
-    ready: (lessonId, playlistPath) =>
+    markReady: (lessonId, playlistPath) =>
       update(lessonId, {
         status: "ready",
         progress: 100,
         playlist_path: playlistPath,
         error: null,
       }),
-    fail: (lessonId, error) => update(lessonId, { status: "failed", error }),
-    async pendingLessonIds() {
+    markFailed: (lessonId, error) => update(lessonId, { status: "failed", error }),
+    async listPendingLessonIds() {
       const rows = await database("conversion_jobs")
         .whereIn("status", ["queued", "converting"])
         .select("lesson_id");

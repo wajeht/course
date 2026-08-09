@@ -2,7 +2,7 @@
 import { RouterLink } from "vue-router";
 
 import type { CatalogDto } from "../api/client";
-import { formatDuration } from "../utils/format";
+import { durationText } from "../utils/format";
 import ProgressBar from "./ProgressBar.vue";
 
 defineProps<{ course: CatalogDto["courses"][number] }>();
@@ -22,7 +22,7 @@ defineProps<{ course: CatalogDto["courses"][number] }>();
     </div>
     <div class="course-card__body">
       <h3>{{ course.title }}</h3>
-      <p>{{ formatDuration(course.durationSeconds) }}</p>
+      <p>{{ durationText(course.durationSeconds) }}</p>
       <div class="course-card__progress">
         <ProgressBar :value="course.progressPercent" compact />
         <span>{{ course.progressPercent }}%</span>

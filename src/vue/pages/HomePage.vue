@@ -22,7 +22,7 @@ async function loadCatalog(): Promise<void> {
   loading.value = true;
   error.value = "";
   try {
-    catalog.value = await api.catalog(query.value || undefined);
+    catalog.value = await api.getCatalog(query.value || undefined);
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : "Could not load your library";
   } finally {
@@ -30,11 +30,11 @@ async function loadCatalog(): Promise<void> {
   }
 }
 
-async function rescan(): Promise<void> {
+async function rescanCatalog(): Promise<void> {
   scanning.value = true;
   error.value = "";
   try {
-    scanStatus.value = await api.rescan();
+    scanStatus.value = await api.rescanCatalog();
     await loadCatalog();
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : "Could not rescan the library";
@@ -51,7 +51,7 @@ watch(query, () => {
 onMounted(async () => {
   await Promise.all([
     loadCatalog(),
-    api.scanStatus().then((status) => {
+    api.getScanStatus().then((status) => {
       scanStatus.value = status;
     }),
   ]);
@@ -73,7 +73,7 @@ onMounted(async () => {
           <span class="sr-only">Search courses and lessons</span>
           <input v-model="query" type="search" placeholder="Search courses and lessons" />
         </label>
-        <button class="button button--quiet" :disabled="scanning" @click="rescan">
+        <button class="button button--quiet" :disabled="scanning" @click="rescanCatalog">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M20 7v5h-5M4 17v-5h5m10.1-3A8 8 0 0 0 5.5 6M4.9 15A8 8 0 0 0 18.5 18" />
           </svg>

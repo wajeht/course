@@ -5,7 +5,7 @@ import { RouterLink, useRoute } from "vue-router";
 import { api, type CourseDetailDto } from "../api/client";
 import LessonRow from "../components/LessonRow.vue";
 import ProgressBar from "../components/ProgressBar.vue";
-import { formatDuration } from "../utils/format";
+import { durationText } from "../utils/format";
 
 const route = useRoute();
 const course = ref<CourseDetailDto | null>(null);
@@ -20,11 +20,11 @@ const nextLesson = computed(
   () => allLessons.value.find((lesson) => !lesson.completed) ?? allLessons.value.at(0),
 );
 
-async function load(): Promise<void> {
+async function loadCourse(): Promise<void> {
   loading.value = true;
   error.value = "";
   try {
-    course.value = await api.course(String(route.params.courseId));
+    course.value = await api.getCourse(String(route.params.courseId));
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : "Could not load this course";
   } finally {
@@ -37,7 +37,7 @@ async function resetProgress(): Promise<void> {
   resetting.value = true;
   try {
     await api.resetCourse(course.value.id);
-    await load();
+    await loadCourse();
   } finally {
     resetting.value = false;
   }
@@ -45,7 +45,7 @@ async function resetProgress(): Promise<void> {
 
 watch(
   () => route.params.courseId,
-  () => void load(),
+  () => void loadCourse(),
   { immediate: true },
 );
 </script>
@@ -60,7 +60,7 @@ watch(
       <div class="course-hero__details">
         <RouterLink to="/" class="back-link">← Library</RouterLink>
         <p class="eyebrow">
-          {{ course.lessonCount }} lessons · {{ formatDuration(course.durationSeconds) }}
+          {{ course.lessonCount }} lessons · {{ durationText(course.durationSeconds) }}
         </p>
         <h1>{{ course.title }}</h1>
         <p class="course-description">

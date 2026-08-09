@@ -5,9 +5,9 @@ import type { ConversionManager } from "../../../media/conversion.js";
 import type { ConversionRecord } from "../../../media/conversion.repository.js";
 
 export interface PlaybackService {
-  playback(lessonId: string): Promise<PlaybackResult | null>;
-  retry(lessonId: string): Promise<PlaybackResult | null>;
-  conversion(lessonId: string): Promise<PlaybackResult | null>;
+  preparePlayback(lessonId: string): Promise<PlaybackResult | null>;
+  retryConversion(lessonId: string): Promise<PlaybackResult | null>;
+  getConversionStatus(lessonId: string): Promise<PlaybackResult | null>;
 }
 
 export type PlaybackResult =
@@ -16,7 +16,7 @@ export type PlaybackResult =
   | { kind: "converting"; status: "queued" | "converting"; progress: number }
   | { kind: "error"; message: string };
 
-async function mapConversion(record: ConversionRecord): Promise<PlaybackResult> {
+async function resolveConversionPlayback(record: ConversionRecord): Promise<PlaybackResult> {
   if (record.status === "failed")
     return { kind: "error", message: record.error ?? "Conversion failed" };
   if (record.playlistPath) {
@@ -44,19 +44,19 @@ export function createPlaybackService(
   conversions: ConversionManager,
 ): PlaybackService {
   return {
-    async playback(lessonId) {
-      const lesson = await catalog.lessonRecord(lessonId);
+    async preparePlayback(lessonId) {
+      const lesson = await catalog.findLessonRecord(lessonId);
       if (!lesson) return null;
       if (lesson.browser_compatible !== 0) return { kind: "direct", url: `/media/${lessonId}` };
-      return mapConversion(await conversions.request(lesson));
+      return resolveConversionPlayback(await conversions.requestConversion(lesson));
     },
-    async retry(lessonId) {
-      const lesson = await catalog.lessonRecord(lessonId);
-      return lesson ? mapConversion(await conversions.retry(lesson)) : null;
+    async retryConversion(lessonId) {
+      const lesson = await catalog.findLessonRecord(lessonId);
+      return lesson ? resolveConversionPlayback(await conversions.retryConversion(lesson)) : null;
     },
-    async conversion(lessonId) {
-      const record = await conversions.get(lessonId);
-      return record ? mapConversion(record) : null;
+    async getConversionStatus(lessonId) {
+      const record = await conversions.getConversion(lessonId);
+      return record ? resolveConversionPlayback(record) : null;
     },
   };
 }

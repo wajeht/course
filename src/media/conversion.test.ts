@@ -21,7 +21,7 @@ afterEach(async () => {
   );
 });
 
-async function fixture(executor: ConversionExecutor) {
+async function createFixture(executor: ConversionExecutor) {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "course-conversion-"));
   temporaryDirectories.push(directory);
   const configuration = createConfiguration({
@@ -82,7 +82,7 @@ describe("conversion manager", () => {
     let active = 0;
     let maximumActive = 0;
     let calls = 0;
-    const { database, catalog, manager } = await fixture(async (lesson) => {
+    const { database, catalog, manager } = await createFixture(async (lesson) => {
       calls++;
       active++;
       maximumActive = Math.max(maximumActive, active);
@@ -93,7 +93,11 @@ describe("conversion manager", () => {
     const first = (await catalog.findLesson("b".repeat(24)))!;
     const second = (await catalog.findLesson("c".repeat(24)))!;
 
-    await Promise.all([manager.request(first), manager.request(first), manager.request(second)]);
+    await Promise.all([
+      manager.requestConversion(first),
+      manager.requestConversion(first),
+      manager.requestConversion(second),
+    ]);
     await waitForStatus(database, first.id, "ready");
     await waitForStatus(database, second.id, "ready");
 
@@ -102,13 +106,13 @@ describe("conversion manager", () => {
   });
 
   it("records failures for an explicit retry", async () => {
-    const { database, catalog, manager } = await fixture(async () => {
+    const { database, catalog, manager } = await createFixture(async () => {
       throw new Error("Quick Sync unavailable");
     });
     const lesson = (await catalog.findLesson("b".repeat(24)))!;
-    await manager.request(lesson);
+    await manager.requestConversion(lesson);
     await waitForStatus(database, lesson.id, "failed");
-    expect(await manager.get(lesson.id)).toMatchObject({
+    expect(await manager.getConversion(lesson.id)).toMatchObject({
       status: "failed",
       error: "Quick Sync unavailable",
     });

@@ -14,7 +14,7 @@ afterEach(async () => {
   );
 });
 
-async function temporaryDirectory(): Promise<string> {
+async function createTemporaryDirectory(): Promise<string> {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "course-metadata-"));
   temporaryDirectories.push(directory);
   return directory;
@@ -22,7 +22,7 @@ async function temporaryDirectory(): Promise<string> {
 
 describe("course metadata", () => {
   it("accepts versioned metadata", async () => {
-    const directory = await temporaryDirectory();
+    const directory = await createTemporaryDirectory();
     await fs.writeFile(
       path.join(directory, "course.json"),
       JSON.stringify({
@@ -45,7 +45,7 @@ describe("course metadata", () => {
   });
 
   it("warns and falls back for invalid JSON", async () => {
-    const directory = await temporaryDirectory();
+    const directory = await createTemporaryDirectory();
     await fs.writeFile(path.join(directory, "course.json"), "not-json");
 
     const result = await readCourseMetadata(directory);

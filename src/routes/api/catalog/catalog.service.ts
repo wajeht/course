@@ -33,17 +33,17 @@ export interface CourseDetailDto extends CourseDto {
 }
 
 export interface CatalogService {
-  catalog(query?: string): Promise<{ courses: CourseDto[]; continueWatching: LessonDto[] }>;
-  course(courseId: string): Promise<CourseDetailDto | null>;
-  lesson(lessonId: string): Promise<{ lesson: LessonDto; course: CourseDetailDto } | null>;
-  lessonRecord(lessonId: string): Promise<LessonRow | undefined>;
+  getCatalog(query?: string): Promise<{ courses: CourseDto[]; continueWatching: LessonDto[] }>;
+  getCourse(courseId: string): Promise<CourseDetailDto | null>;
+  getLesson(lessonId: string): Promise<{ lesson: LessonDto; course: CourseDetailDto } | null>;
+  findLessonRecord(lessonId: string): Promise<LessonRow | undefined>;
 }
 
 function progressPercent(completed: number, total: number): number {
   return total === 0 ? 0 : Math.round((completed / total) * 100);
 }
 
-function mapCourse(row: CourseRow): CourseDto {
+function courseDto(row: CourseRow): CourseDto {
   const lessonCount = Number(row.lesson_count);
   const completedCount = Number(row.completed_count);
   return {
@@ -58,7 +58,7 @@ function mapCourse(row: CourseRow): CourseDto {
   };
 }
 
-function mapLesson(row: LessonRow): LessonDto {
+function lessonDto(row: LessonRow): LessonDto {
   const position = row.completed ? Number(row.duration_seconds) : Number(row.position_seconds ?? 0);
   return {
     id: row.id,
@@ -75,7 +75,7 @@ function mapLesson(row: LessonRow): LessonDto {
 }
 
 export function createCatalogService(repository: CatalogRepository): CatalogService {
-  async function course(courseId: string): Promise<CourseDetailDto | null> {
+  async function getCourse(courseId: string): Promise<CourseDetailDto | null> {
     const [courseRow, lessonRows] = await Promise.all([
       repository.findCourse(courseId),
       repository.listCourseLessons(courseId),
@@ -90,31 +90,31 @@ export function createCatalogService(repository: CatalogRepository): CatalogServ
         title: row.section_title ?? "Course lessons",
         lessons: [],
       };
-      section.lessons.push(mapLesson(row));
+      section.lessons.push(lessonDto(row));
       sectionMap.set(key, section);
     }
-    return { ...mapCourse(courseRow), sections: [...sectionMap.values()] };
+    return { ...courseDto(courseRow), sections: [...sectionMap.values()] };
   }
 
   return {
-    async catalog(query) {
+    async getCatalog(query) {
       const [courses, continuing] = await Promise.all([
         repository.listCourses(query),
-        repository.continueWatching(),
+        repository.listContinueWatching(),
       ]);
       return {
-        courses: courses.map(mapCourse),
-        continueWatching: continuing.map(mapLesson),
+        courses: courses.map(courseDto),
+        continueWatching: continuing.map(lessonDto),
       };
     },
-    course,
-    async lesson(lessonId) {
+    getCourse,
+    async getLesson(lessonId) {
       const row = await repository.findLesson(lessonId);
       if (!row) return null;
-      const courseDetail = await course(row.course_id);
+      const courseDetail = await getCourse(row.course_id);
       if (!courseDetail) return null;
-      return { lesson: mapLesson(row), course: courseDetail };
+      return { lesson: lessonDto(row), course: courseDetail };
     },
-    lessonRecord: (lessonId) => repository.findLesson(lessonId),
+    findLessonRecord: (lessonId) => repository.findLesson(lessonId),
   };
 }

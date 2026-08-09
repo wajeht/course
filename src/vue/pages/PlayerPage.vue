@@ -75,14 +75,14 @@ async function handlePlayback(result: PlaybackResult): Promise<void> {
   }
   pollTimer = setTimeout(async () => {
     try {
-      await handlePlayback(await api.conversion(String(route.params.lessonId)));
+      await handlePlayback(await api.getConversionStatus(String(route.params.lessonId)));
     } catch (caught) {
       error.value = caught instanceof Error ? caught.message : "Could not check conversion";
     }
   }, 2_000);
 }
 
-async function load(): Promise<void> {
+async function loadPlayer(): Promise<void> {
   destroyPlayback();
   loading.value = true;
   error.value = "";
@@ -90,10 +90,10 @@ async function load(): Promise<void> {
   sidebarOpen.value = false;
   try {
     const lessonId = String(route.params.lessonId);
-    const detail = await api.lesson(lessonId);
+    const detail = await api.getLesson(lessonId);
     lesson.value = detail.lesson;
     course.value = detail.course;
-    await handlePlayback(await api.playback(lessonId));
+    await handlePlayback(await api.preparePlayback(lessonId));
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : "Could not load this lesson";
   } finally {
@@ -169,7 +169,7 @@ function handleVisibility(): void {
 
 watch(
   () => route.params.lessonId,
-  () => void load(),
+  () => void loadPlayer(),
   { immediate: true },
 );
 window.addEventListener("pagehide", saveOnExit);
