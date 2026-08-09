@@ -19,7 +19,7 @@ FROM node:24-bookworm-slim AS runtime
 
 ENV APP_ENV=production \
   APP_HOST=0.0.0.0 \
-  APP_PORT=3000 \
+  APP_PORT=80 \
   VIDEOS_DIR=/videos \
   DATA_DIR=/data \
   QSV_DEVICE=/dev/dri/renderD128
@@ -40,10 +40,10 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/public ./public
 
 VOLUME ["/data", "/videos"]
-EXPOSE 3000
+EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD ["node", "-e", "fetch('http://127.0.0.1:3000/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+  CMD ["node", "-e", "fetch('http://127.0.0.1:80/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["npm", "start"]
