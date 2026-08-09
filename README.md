@@ -46,8 +46,9 @@ npm run dev
 ```
 
 The Vue client runs at `http://localhost:5173`; Hono runs at
-`http://localhost:3000`. Set `VIDEOS_DIR` and `DATA_DIR` in `.env` to writable
-local test paths. The video directory itself is never changed.
+`http://localhost:3000`. Without `.env`, development uses
+`/Volumes/plex/videos` and stores its database/cache in `./data`. Change those
+paths in `.env` on another machine. The video directory itself is never changed.
 
 Useful commands:
 
