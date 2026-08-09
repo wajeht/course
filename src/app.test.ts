@@ -19,7 +19,7 @@ afterEach(async () => {
 });
 
 describe("application", () => {
-  it("serves health and byte ranges", async () => {
+  it("serves health, byte ranges, and production routes", async () => {
     const directory = await fs.mkdtemp(path.join(os.tmpdir(), "course-app-"));
     temporaryDirectories.push(directory);
     const videos = path.join(directory, "videos");
@@ -34,6 +34,11 @@ describe("application", () => {
       }),
     );
     contexts.push(context);
+    const clientDirectory = path.join(directory, "client");
+    await fs.mkdir(clientDirectory);
+    await fs.writeFile(path.join(clientDirectory, "index.html"), "SPA");
+    context.configuration.app.env = "production";
+    context.configuration.app.clientDirectory = clientDirectory;
     const now = new Date().toISOString();
     await context.database.connection("courses").insert({
       id: "a".repeat(24),
@@ -67,5 +72,13 @@ describe("application", () => {
     expect(response.status).toBe(206);
     expect(response.headers.get("content-range")).toBe("bytes 2-5/10");
     expect(await response.text()).toBe("2345");
+
+    const apiNotFound = await app.request("/api/does-not-exist");
+    expect(apiNotFound.status).toBe(404);
+    expect(await apiNotFound.json()).toEqual({ message: "Resource not found" });
+
+    const browserRoute = await app.request(`/courses/${"a".repeat(24)}`);
+    expect(browserRoute.status).toBe(200);
+    expect(await browserRoute.text()).toBe("SPA");
   });
 });

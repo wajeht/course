@@ -13,6 +13,14 @@ import { createApiRouter } from "./routes/api/api.js";
 import { createMediaRouter } from "./routes/media/media.js";
 import { createMiddleware } from "./routes/middleware.js";
 
+const servicePrefixes = ["/api", "/media", "/covers", "/hls", "/healthz"];
+
+function isServicePath(requestPath: string): boolean {
+  return servicePrefixes.some(
+    (prefix) => requestPath === prefix || requestPath.startsWith(`${prefix}/`),
+  );
+}
+
 export function createApp(context: AppContext) {
   const app = new Hono();
   const middleware = createMiddleware(context.logger, context.configuration.app.env);
@@ -53,12 +61,13 @@ export function createApp(context: AppContext) {
     });
     routedApp.use("/assets/*", serveStatic({ root: clientDirectory }));
     routedApp.get("*", async (c, next) => {
-      if (path.extname(c.req.path)) return next();
+      if (isServicePath(c.req.path) || path.extname(c.req.path)) return next();
       c.header("Cache-Control", "no-cache");
       return serveStatic({ path: path.join(clientDirectory, "index.html") })(c, next);
     });
   } else if (context.configuration.app.env === "development") {
-    routedApp.all("*", (c) => {
+    routedApp.all("*", (c, next) => {
+      if (isServicePath(c.req.path)) return next();
       const target = new URL(c.req.url);
       target.protocol = "http:";
       target.hostname = "127.0.0.1";
