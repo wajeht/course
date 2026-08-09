@@ -1,13 +1,13 @@
 import { hc } from "hono/client";
 
-import type { AppType } from "../../app";
-import type { ScanStatus } from "../../media/types";
+import type { AppType } from "../app";
+import type { ScanStatus } from "../media/types";
 import type {
   CatalogService,
   CourseDetailDto,
   LessonDto,
-} from "../../routes/api/catalog/catalog.service";
-import type { PlaybackResult } from "../../routes/api/playback/playback.service";
+} from "../routes/api/catalog/catalog.service";
+import type { PlaybackResult } from "../routes/api/playback/playback.service";
 
 const client = hc<AppType>("/");
 

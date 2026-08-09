@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 
-import { api, type CatalogDto, type ScanStatus } from "../api/client";
+import { api, type CatalogDto, type ScanStatus } from "../client";
 import CourseCard from "../components/CourseCard.vue";
 import ProgressBar from "../components/ProgressBar.vue";
 
