@@ -1,10 +1,23 @@
 # Course
 
+[![Node.js CI](https://github.com/wajeht/course/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/wajeht/course/actions/workflows/ci.yml)
+
 A private, self-hosted video course library. It scans a read-only video folder,
 streams browser-compatible files directly, converts other files to cached HLS
 with Intel Quick Sync, and keeps one profile's viewing progress in SQLite.
 
-## Library layout
+## How It Works
+
+```text
+📁 Read-only video library → 🔍 Startup and scheduled scans → 🗄️ SQLite catalog
+                                      ↓
+👤 Browser → Hono API → Browser-compatible video → Direct byte-range streaming
+                         Incompatible video       → Quick Sync → Cached HLS
+                                      ↓
+                         Playback progress shared across devices
+```
+
+## Library Layout
 
 ```text
 /videos/
@@ -34,7 +47,7 @@ Course metadata is optional:
 The cover must be a local JPG, PNG, or WebP. When it is omitted, Course creates
 a cover from the first valid video.
 
-## Local development
+## Local Development
 
 Requirements: Node.js 24+, FFmpeg/FFprobe, and npm 11+.
 
@@ -46,9 +59,10 @@ npm run dev
 ```
 
 Hono runs at `http://localhost` and proxies the development Vue client running
-internally on port 3000, so there is one browser URL. Without `.env`, local commands use
-`/Volumes/plex/videos` and store the database/cache in `./data`. Change those
-paths in `.env` on another machine. The video directory itself is never changed.
+internally on port 3000, so there is one browser URL. Without `.env`, local
+commands use `/Volumes/plex/videos` and store the database/cache in `./data`.
+Change those paths in `.env` on another machine. The video directory itself is
+never changed.
 
 Useful commands:
 
@@ -71,3 +85,7 @@ to CPU transcoding when hardware conversion is unavailable.
 
 OAuth is expected to run at the reverse proxy. Course itself exposes no public
 authentication layer. Its health endpoint is `/healthz`.
+
+## Docs
+
+- See [IMPLEMENTATION PLAN](./docs/plan.md) for the original architecture and delivery plan.
