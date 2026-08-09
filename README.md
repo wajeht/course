@@ -1,2 +1,3 @@
 ## course
-a video course platform 
+
+a video course platform

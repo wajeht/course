@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "paths": {
+      "@/*": ["./src/vue/*"]
+    },
+    "types": ["vite/client"]
+  },
+  "include": ["src/vue/**/*.ts", "src/vue/**/*.vue", "src/vue/**/*.d.ts", "src/app.ts"]
+}
