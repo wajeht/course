@@ -6,8 +6,8 @@ const environmentSchema = z.object({
   APP_ENV: z.enum(["development", "testing", "production"]).default("development"),
   APP_HOST: z.string().default("0.0.0.0"),
   APP_PORT: z.coerce.number().int().positive().default(3000),
-  VIDEOS_DIR: z.string().optional(),
-  DATA_DIR: z.string().optional(),
+  VIDEOS_DIR: z.string().default("/Volumes/plex/videos"),
+  DATA_DIR: z.string().default("data"),
   SCAN_INTERVAL_MS: z.coerce.number().int().min(10_000).default(300_000),
   FFMPEG_PATH: z.string().default("ffmpeg"),
   FFPROBE_PATH: z.string().default("ffprobe"),
@@ -40,11 +40,8 @@ export interface Configuration {
 
 export function createConfiguration(environment: NodeJS.ProcessEnv = process.env): Configuration {
   const parsed = environmentSchema.parse(environment);
-  const production = parsed.APP_ENV === "production";
-  const dataDirectory = path.resolve(parsed.DATA_DIR ?? (production ? "/data" : "data"));
-  const videosDirectory = path.resolve(
-    parsed.VIDEOS_DIR ?? (production ? "/videos" : "/Volumes/plex/videos"),
-  );
+  const dataDirectory = path.resolve(parsed.DATA_DIR);
+  const videosDirectory = path.resolve(parsed.VIDEOS_DIR);
 
   return {
     app: {
