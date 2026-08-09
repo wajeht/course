@@ -9,7 +9,7 @@ import type {
 } from "../routes/api/catalog/catalog.service";
 import type { PlaybackResult } from "../routes/api/playback/playback.service";
 
-const client = hc<AppType>("/");
+const apiClient = hc<AppType>("/");
 
 export type CatalogDto = Awaited<ReturnType<CatalogService["getCatalog"]>>;
 export type { CourseDetailDto, LessonDto, PlaybackResult, ScanStatus };
@@ -38,60 +38,60 @@ async function expectJson<T>(response: Response): Promise<T> {
 
 export const api = {
   async getCatalog(query?: string): Promise<CatalogDto> {
-    const response = await client.api.catalog.$get({ query: { query } });
+    const response = await apiClient.api.catalog.$get({ query: { query } });
     return expectJson<CatalogDto>(response);
   },
   async getCourse(courseId: string): Promise<CourseDetailDto> {
-    const response = await client.api.catalog.courses[":courseId"].$get({ param: { courseId } });
+    const response = await apiClient.api.catalog.courses[":courseId"].$get({ param: { courseId } });
     return expectJson<CourseDetailDto>(response);
   },
   async getLesson(lessonId: string): Promise<{ lesson: LessonDto; course: CourseDetailDto }> {
-    const response = await client.api.catalog.lessons[":lessonId"].$get({ param: { lessonId } });
+    const response = await apiClient.api.catalog.lessons[":lessonId"].$get({ param: { lessonId } });
     return expectJson(response);
   },
   async preparePlayback(lessonId: string): Promise<PlaybackResult> {
-    const response = await client.api.playback[":lessonId"].$get({ param: { lessonId } });
+    const response = await apiClient.api.playback[":lessonId"].$get({ param: { lessonId } });
     return expectJson<PlaybackResult>(response);
   },
   async getConversionStatus(lessonId: string): Promise<PlaybackResult> {
-    const response = await client.api.playback[":lessonId"].conversion.$get({
+    const response = await apiClient.api.playback[":lessonId"].conversion.$get({
       param: { lessonId },
     });
     return expectJson<PlaybackResult>(response);
   },
   async retryConversion(lessonId: string): Promise<PlaybackResult> {
-    const response = await client.api.playback[":lessonId"].retry.$post({ param: { lessonId } });
+    const response = await apiClient.api.playback[":lessonId"].retry.$post({ param: { lessonId } });
     return expectJson<PlaybackResult>(response);
   },
   async saveProgress(lessonId: string, positionSeconds: number): Promise<void> {
-    const response = await client.api.progress.lessons[":lessonId"].$put({
+    const response = await apiClient.api.progress.lessons[":lessonId"].$put({
       param: { lessonId },
       json: { positionSeconds },
     });
     await expectJson(response);
   },
   async completeLesson(lessonId: string): Promise<void> {
-    const response = await client.api.progress.lessons[":lessonId"].complete.$post({
+    const response = await apiClient.api.progress.lessons[":lessonId"].complete.$post({
       param: { lessonId },
     });
     await expectJson(response);
   },
   async resetLesson(lessonId: string): Promise<void> {
-    const response = await client.api.progress.lessons[":lessonId"].$delete({
+    const response = await apiClient.api.progress.lessons[":lessonId"].$delete({
       param: { lessonId },
     });
     await expectJson(response);
   },
   async resetCourse(courseId: string): Promise<void> {
-    const response = await client.api.progress.courses[":courseId"].$delete({
+    const response = await apiClient.api.progress.courses[":courseId"].$delete({
       param: { courseId },
     });
     await expectJson(response);
   },
   async getScanStatus(): Promise<ScanStatus> {
-    return expectJson<ScanStatus>(await client.api.scan.$get());
+    return expectJson<ScanStatus>(await apiClient.api.scan.$get());
   },
   async rescanCatalog(): Promise<ScanStatus> {
-    return expectJson<ScanStatus>(await client.api.scan.$post());
+    return expectJson<ScanStatus>(await apiClient.api.scan.$post());
   },
 };

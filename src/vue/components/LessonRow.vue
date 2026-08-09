@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from "vue-router";
 
-import type { LessonDto } from "../client";
+import type { LessonDto } from "../api";
 import { durationText } from "../utils/format";
 
 withDefaults(defineProps<{ lesson: LessonDto; index: number; active?: boolean }>(), {
