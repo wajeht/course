@@ -73,16 +73,9 @@ Linux, use the included device override:
 make up-qsv
 ```
 
-## Production Container
+## Deployment
 
-```bash
-docker compose up --build
-```
-
-The example mounts `/home/jaw/plex/videos` read-only and persists the catalog,
-progress, generated covers, and HLS cache under `/home/jaw/data/course`.
-`/dev/dri` is required for Quick Sync. Course deliberately does not fall back
-to CPU transcoding when hardware conversion is unavailable.
-
-OAuth is expected to run at the reverse proxy. Course itself exposes no public
-authentication layer. Its health endpoint is `/healthz`.
+Pushes to `main` publish the production `Dockerfile` image to
+`ghcr.io/wajeht/course`. Production deployment configuration lives in the Home
+Ops repository, including video and data mounts, `/dev/dri` access, reverse
+proxy OAuth, and image updates. Course exposes `/healthz` for its health check.
