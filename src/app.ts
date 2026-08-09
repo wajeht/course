@@ -62,6 +62,9 @@ export function createApp(context: AppContext) {
     routedApp.use("/assets/*", serveStatic({ root: clientDirectory }));
     routedApp.use("*", (c, next) => {
       if (isServicePath(c.req.path)) return next();
+      if (c.req.path === "/" || c.req.path === "/index.html") {
+        c.header("Cache-Control", "no-cache");
+      }
       return serveStatic({ root: clientDirectory })(c, next);
     });
     routedApp.get("*", async (c, next) => {

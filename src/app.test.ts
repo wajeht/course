@@ -87,8 +87,16 @@ describe("application", () => {
     expect(favicon.status).toBe(200);
     expect(favicon.headers.get("content-type")).toContain("image/svg+xml");
 
+    for (const route of ["/", "/index.html"]) {
+      const index = await app.request(route);
+      expect(index.status).toBe(200);
+      expect(index.headers.get("cache-control")).toBe("no-cache");
+      expect(await index.text()).toBe("SPA");
+    }
+
     const browserRoute = await app.request(`/courses/${"a".repeat(24)}`);
     expect(browserRoute.status).toBe(200);
+    expect(browserRoute.headers.get("cache-control")).toBe("no-cache");
     expect(await browserRoute.text()).toBe("SPA");
   });
 });
