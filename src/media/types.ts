@@ -1,0 +1,54 @@
+export interface CourseRecord {
+  id: string;
+  path: string;
+  title: string;
+  description: string;
+  coverPath: string | null;
+  coverOrigin: "videos" | "data" | null;
+  sortOrder: number;
+}
+
+export interface SectionRecord {
+  id: string;
+  courseId: string;
+  path: string;
+  title: string;
+  sortOrder: number;
+}
+
+export interface LessonRecord {
+  id: string;
+  courseId: string;
+  sectionId: string | null;
+  path: string;
+  title: string;
+  sortOrder: number;
+  durationSeconds: number;
+  sizeBytes: number;
+  container: string;
+  videoCodec: string;
+  audioCodec: string | null;
+  browserCompatible: boolean;
+  modifiedAt: string;
+}
+
+export interface CatalogSnapshot {
+  courses: CourseRecord[];
+  sections: SectionRecord[];
+  lessons: LessonRecord[];
+}
+
+export interface ScanWarning {
+  path: string;
+  message: string;
+}
+
+export interface ScanStatus {
+  status: "idle" | "scanning" | "complete" | "failed";
+  startedAt: string | null;
+  completedAt: string | null;
+  courseCount: number;
+  lessonCount: number;
+  warnings: ScanWarning[];
+  error: string | null;
+}
