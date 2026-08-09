@@ -33,8 +33,9 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: "../../dist/client",
-    emptyOutDir: true,
+    outDir: "../../public",
+    copyPublicDir: false,
+    emptyOutDir: false,
     sourcemap: true,
   },
   test: {

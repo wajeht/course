@@ -34,8 +34,8 @@ Build a responsive, light Udemy-style web app for one user. It scans `/videos`, 
 - Organize each server feature under `src/routes/api/<feature>/` with `<feature>.ts`, `<feature>.service.ts`, `<feature>.repository.ts`, `<feature>.schema.ts`, and colocated tests. Route modules handle HTTP, services handle behavior, and repositories contain Knex queries.
 - Keep shared Hono middleware in `src/routes/middleware.ts`, including request IDs, structured request logging, secure headers, errors, not-found responses, and cache policy. OAuth remains handled by Traefik.
 - Follow Calendar's client separation under `src/vue/`: use `App.vue` and `main.ts` for startup, `pages/` for routed views, `layouts/` for shared shells, `components/` for reusable UI, `router/` for Vue Router, `api/` for the typed Hono client, and `assets/tailwind.css` for Tailwind input.
-- Configure Vite with `src/vue` as its root and output production files to `dist/client`. During development, run Vite and Hono together and proxy `/api`, `/media`, `/hls`, and `/healthz` to Hono.
-- In production, Hono serves `dist/client`: `index.html` uses `no-cache`, hashed assets use a one-year immutable cache, and non-API browser routes fall back to `index.html` for Vue Router.
+- Configure Vite with `src/vue` as its root and output production files to `public`. During development, run Vite and Hono together and proxy `/api`, `/media`, `/hls`, and `/healthz` to Hono.
+- In production, Hono serves `public`: `index.html` uses `no-cache`, hashed assets use a one-year immutable cache, and non-API browser routes fall back to `index.html` for Vue Router.
 - Keep scanning and Quick Sync conversion outside route handlers in dedicated `src/media/` services so HTTP routes only start jobs and report status.
 - Follow Bang's database layout with `src/db/db.ts`, `src/db/knexfile.ts`, `src/db/migration-source.ts`, and timestamped TypeScript files in `src/db/migrations/`.
 - Configure Knex with `client: "better-sqlite3"`, foreign keys, WAL mode, `synchronous=NORMAL`, a busy timeout, and a single connection (`min: 0`, `max: 1`). Use modest cache settings appropriate for this app rather than Bang's larger values.
