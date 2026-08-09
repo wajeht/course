@@ -31,7 +31,7 @@ export function createMiddleware(
       await next();
     },
     notFound: (c) =>
-      c.req.path.startsWith("/api/")
+      c.req.path === "/api" || c.req.path.startsWith("/api/")
         ? c.json({ message: "Resource not found" }, 404)
         : c.text("Not found", 404),
     onError: (error, c) => {
