@@ -37,6 +37,8 @@ describe("application", () => {
     const clientDirectory = path.join(directory, "client");
     await fs.mkdir(clientDirectory);
     await fs.writeFile(path.join(clientDirectory, "index.html"), "SPA");
+    await fs.writeFile(path.join(clientDirectory, "robots.txt"), "User-agent: *\nDisallow: /\n");
+    await fs.writeFile(path.join(clientDirectory, "favicon.svg"), "<svg></svg>");
     context.configuration.app.env = "production";
     context.configuration.app.clientDirectory = clientDirectory;
     const now = new Date().toISOString();
@@ -76,6 +78,14 @@ describe("application", () => {
     const apiNotFound = await app.request("/api/does-not-exist");
     expect(apiNotFound.status).toBe(404);
     expect(await apiNotFound.json()).toEqual({ message: "Resource not found" });
+
+    const robots = await app.request("/robots.txt");
+    expect(robots.status).toBe(200);
+    expect(await robots.text()).toBe("User-agent: *\nDisallow: /\n");
+
+    const favicon = await app.request("/favicon.svg");
+    expect(favicon.status).toBe(200);
+    expect(favicon.headers.get("content-type")).toContain("image/svg+xml");
 
     const browserRoute = await app.request(`/courses/${"a".repeat(24)}`);
     expect(browserRoute.status).toBe(200);

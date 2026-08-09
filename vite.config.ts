@@ -10,6 +10,7 @@ const projectRoot = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
   root: "src/vue",
+  publicDir: fileURLToPath(new URL("./public", import.meta.url)),
   plugins: [vue(), tailwindcss()],
   resolve: {
     alias: {
