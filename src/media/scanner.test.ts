@@ -22,6 +22,57 @@ afterEach(async () => {
 });
 
 describe("media scanner", () => {
+  it("ignores system metadata and empty directories", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
+    temporaryDirectories.push(root);
+    await fs.mkdir(path.join(root, "@eaDir", "metadata"), { recursive: true });
+    await fs.writeFile(path.join(root, "@eaDir", "metadata", "thumbnail.mp4"), "video");
+    await fs.mkdir(path.join(root, "#recycle", "Deleted Course"), { recursive: true });
+    await fs.writeFile(path.join(root, "#recycle", "Deleted Course", "lesson.mp4"), "video");
+    await fs.mkdir(path.join(root, "Empty Course"));
+
+    const courseDirectory = path.join(root, "Real Course");
+    const sectionDirectory = path.join(courseDirectory, "Volume 1");
+    await fs.mkdir(path.join(courseDirectory, "@eaDir"), { recursive: true });
+    await fs.mkdir(path.join(courseDirectory, "#recycle"), { recursive: true });
+    await fs.mkdir(path.join(courseDirectory, "Empty Section"), { recursive: true });
+    await fs.mkdir(sectionDirectory, { recursive: true });
+    await fs.writeFile(path.join(courseDirectory, "@eaDir", "thumbnail.mp4"), "video");
+    await fs.writeFile(path.join(courseDirectory, "#recycle", "deleted.mp4"), "video");
+    await fs.writeFile(path.join(sectionDirectory, "01 - Lesson.mp4"), "video");
+
+    const configuration = createConfiguration({
+      APP_ENV: "testing",
+      VIDEOS_DIR: root,
+      DATA_DIR: path.join(root, "data"),
+    });
+    const database = await createDatabase(configuration, createLogger());
+    databases.push(database);
+    const scanner = createScanner({
+      configuration,
+      repository: createCatalogRepository(database.connection),
+      logger: createLogger(),
+      probe: async (): Promise<VideoProbe> => ({
+        durationSeconds: 60,
+        sizeBytes: 100,
+        container: "mp4",
+        videoCodec: "h264",
+        audioCodec: "aac",
+        browserCompatible: true,
+      }),
+    });
+
+    const status = await scanner.scanCatalog();
+    const courses = await database.connection("courses").select("title");
+    const sections = await database.connection("sections").select("title");
+    const lessons = await database.connection("lessons").select("title");
+
+    expect(status).toMatchObject({ status: "complete", courseCount: 1, lessonCount: 1 });
+    expect(courses).toEqual([{ title: "Real Course" }]);
+    expect(sections).toEqual([{ title: "Volume 1" }]);
+    expect(lessons).toEqual([{ title: "Lesson" }]);
+  });
+
   it("indexes course metadata, sections, natural order, and warnings", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
     temporaryDirectories.push(root);

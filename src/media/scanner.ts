@@ -21,6 +21,15 @@ import type {
 } from "./types.js";
 
 const coverExtensions = new Set([".jpg", ".jpeg", ".png", ".webp"]);
+const ignoredDirectoryNames = new Set(["@eadir", "#recycle"]);
+
+function isCatalogDirectory(entry: Dirent): boolean {
+  return (
+    entry.isDirectory() &&
+    !entry.name.startsWith(".") &&
+    !ignoredDirectoryNames.has(entry.name.toLowerCase())
+  );
+}
 
 export interface Scanner {
   scanCatalog(): Promise<ScanStatus>;
@@ -118,14 +127,14 @@ async function scanCatalog(
 ): Promise<CatalogSnapshot> {
   const root = configuration.media.videosDirectory;
   const courseEntries = (await fs.readdir(root, { withFileTypes: true }))
-    .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
+    .filter(isCatalogDirectory)
     .sort((left, right) => naturalOrder(left.name, right.name));
   const courses: CourseRecord[] = [];
   const sections: SectionRecord[] = [];
   const lessons: LessonRecord[] = [];
   const skippedLessonIds: string[] = [];
 
-  for (const [courseIndex, courseEntry] of courseEntries.entries()) {
+  for (const courseEntry of courseEntries) {
     const courseDirectory = path.join(root, courseEntry.name);
     const courseRelativePath = posixPath(path.relative(root, courseDirectory));
     const courseId = identifier(courseRelativePath);
@@ -142,14 +151,15 @@ async function scanCatalog(
       description: metadata?.description ?? "",
       coverPath: localCover ? posixPath(path.relative(root, localCover)) : null,
       coverOrigin: localCover ? "videos" : null,
-      sortOrder: courseIndex,
+      sortOrder: courses.length,
     };
-    courses.push(course);
     const courseLessonStart = lessons.length;
+    let courseVideoCount = 0;
 
     const directVideos = entries.filter(
       (entry) => entry.isFile() && videoExtensions.has(path.extname(entry.name).toLowerCase()),
     );
+    courseVideoCount += directVideos.length;
     await appendLessons({
       files: directVideos,
       directory: courseDirectory,
@@ -163,25 +173,26 @@ async function scanCatalog(
       ffprobePath: configuration.media.ffprobePath,
     });
 
-    const sectionEntries = entries.filter(
-      (entry) => entry.isDirectory() && !entry.name.startsWith("."),
-    );
-    for (const [sectionIndex, sectionEntry] of sectionEntries.entries()) {
+    const sectionEntries = entries.filter(isCatalogDirectory);
+    let sectionIndex = 0;
+    for (const sectionEntry of sectionEntries) {
       const sectionDirectory = path.join(courseDirectory, sectionEntry.name);
       const sectionRelativePath = posixPath(path.relative(root, sectionDirectory));
       const sectionId = identifier(sectionRelativePath);
-      sections.push({
-        id: sectionId,
-        courseId,
-        path: sectionRelativePath,
-        title: displayName(sectionEntry.name),
-        sortOrder: sectionIndex,
-      });
       const sectionFiles = (await fs.readdir(sectionDirectory, { withFileTypes: true }))
         .filter(
           (entry) => entry.isFile() && videoExtensions.has(path.extname(entry.name).toLowerCase()),
         )
         .sort((left, right) => naturalOrder(left.name, right.name));
+      if (sectionFiles.length === 0) continue;
+      courseVideoCount += sectionFiles.length;
+      sections.push({
+        id: sectionId,
+        courseId,
+        path: sectionRelativePath,
+        title: displayName(sectionEntry.name),
+        sortOrder: sectionIndex++,
+      });
       await appendLessons({
         files: sectionFiles,
         directory: sectionDirectory,
@@ -195,6 +206,9 @@ async function scanCatalog(
         ffprobePath: configuration.media.ffprobePath,
       });
     }
+
+    if (courseVideoCount === 0) continue;
+    courses.push(course);
 
     if (!course.coverPath) {
       const firstLesson = lessons.slice(courseLessonStart).at(0);
