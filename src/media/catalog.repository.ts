@@ -72,11 +72,10 @@ export function createCatalogRepository(database: Knex): CatalogRepository {
             .merge();
         }
 
-        await deleteMissing(
-          transaction,
-          "lessons",
-          snapshot.lessons.map((item) => item.id),
-        );
+        await deleteMissing(transaction, "lessons", [
+          ...snapshot.lessons.map((item) => item.id),
+          ...snapshot.skippedLessonIds,
+        ]);
         await deleteMissing(
           transaction,
           "sections",

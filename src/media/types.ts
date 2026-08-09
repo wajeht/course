@@ -36,6 +36,7 @@ export interface CatalogSnapshot {
   courses: CourseRecord[];
   sections: SectionRecord[];
   lessons: LessonRecord[];
+  skippedLessonIds: string[];
 }
 
 export interface ScanWarning {
