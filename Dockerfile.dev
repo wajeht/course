@@ -1,0 +1,24 @@
+FROM node:24-bookworm-slim
+
+WORKDIR /app
+
+RUN sed -i 's/Components: main/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources \
+  && apt-get update \
+  && apt-get install --yes --no-install-recommends ca-certificates ffmpeg g++ make python3 tini \
+  && if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
+    apt-get install --yes --no-install-recommends intel-media-va-driver-non-free; \
+  fi \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+
+EXPOSE 80 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD ["node", "-e", "fetch('http://127.0.0.1:80/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["npm", "run", "dev"]

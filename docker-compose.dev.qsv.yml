@@ -1,0 +1,4 @@
+services:
+  course:
+    devices:
+      - /dev/dri:/dev/dri
