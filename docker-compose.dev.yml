@@ -1,0 +1,26 @@
+services:
+  course:
+    container_name: course-dev
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "${APP_PORT:-80}:80"
+      - "${APP_VUE_PORT:-3000}:3000"
+    environment:
+      APP_ENV: development
+      APP_HOST: 0.0.0.0
+      APP_PORT: 80
+      APP_VUE_PORT: 3000
+      VIDEOS_DIR: /videos
+      DATA_DIR: /data
+      SCAN_INTERVAL_MS: "${SCAN_INTERVAL_MS:-300000}"
+      FFMPEG_PATH: ffmpeg
+      FFPROBE_PATH: ffprobe
+      QSV_DEVICE: /dev/dri/renderD128
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./data:/data
+      - "${VIDEOS_DIR:-/Volumes/plex/videos}:/videos:ro"
