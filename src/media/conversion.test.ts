@@ -117,4 +117,20 @@ describe("conversion manager", () => {
       error: "Quick Sync unavailable",
     });
   });
+
+  it("rebuilds a ready conversion when its playlist is missing", async () => {
+    let calls = 0;
+    const { database, catalog, manager } = await createFixture(async (lesson) => {
+      calls++;
+      return `/missing/${lesson.id}/index.m3u8`;
+    });
+    const lesson = (await catalog.findLesson("b".repeat(24)))!;
+
+    await manager.requestConversion(lesson);
+    await waitForStatus(database, lesson.id, "ready");
+    await manager.requestConversion(lesson);
+    await waitForStatus(database, lesson.id, "ready");
+
+    expect(calls).toBe(2);
+  });
 });
