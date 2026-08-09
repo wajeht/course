@@ -64,10 +64,11 @@ Optional `course.json`:
 - On first play, convert incompatible videos to cached HLS using FFmpeg.
 - Preserve source resolution; do not cap at 1080p or generate adaptive qualities.
 - Remux compatible streams when possible; otherwise convert to H.264/AAC.
-- Use Intel Quick Sync through `/dev/dri`, with software fallback.
+- Use Intel Quick Sync through `/dev/dri`; never fall back to CPU transcoding.
 - Show conversion progress and begin playback once initial HLS segments exist.
 - Keep converted files indefinitely and never modify originals.
-- Prevent duplicate conversion jobs for the same lesson.
+- Run at most one conversion at a time and prevent duplicate jobs for the same lesson.
+- If Quick Sync is unavailable or conversion fails, show a clear error and leave the original untouched.
 - Save playback position every ten seconds and on pause, navigation, or tab close.
 - SQLite stores catalog metadata, playback position, completion, and recent activity.
 - Progress is one global profile; OAuth is only the external access gate.
@@ -84,7 +85,7 @@ Optional `course.json`:
   - `/home/jaw/data/course:/data`
   - `/dev/dri` for hardware conversion
   - Existing Traefik, security, health-check, logging, image-pinning, and Docker CD conventions.
-- Test scanner fallback and ordering, JSON handling, progress/resume/reset, search, range requests, path traversal protection, conversion deduplication, and FFmpeg failure recovery.
+- Test scanner fallback and ordering, JSON handling, progress/resume/reset, search, range requests, path traversal protection, single-job conversion, deduplication, and Quick Sync failure recovery without CPU fallback.
 - Verify desktop and mobile layouts, OAuth protection, direct MP4/WebM playback, MKV conversion, seeking, progress persistence, rescanning, and container restart recovery.
 
 ## Assumptions
