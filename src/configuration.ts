@@ -51,7 +51,7 @@ export function createConfiguration(environment: NodeJS.ProcessEnv = process.env
       host: parsed.APP_HOST,
       port: parsed.APP_PORT,
       vuePort: parsed.APP_VUE_PORT,
-      clientDirectory: path.resolve("dist/client"),
+      clientDirectory: path.resolve("public"),
     },
     media: {
       videosDirectory,
