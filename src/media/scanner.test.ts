@@ -100,12 +100,23 @@ describe("media scanner", () => {
     expect(lessons).toEqual([{ title: "Start" }, { title: "Finish" }, { title: "Bridge" }]);
 
     const existingLesson = await database.connection("lessons").where({ title: "Start" }).first();
+    const convertedLesson = await database.connection("lessons").where({ title: "Finish" }).first();
     await database.connection("progress").insert({
       lesson_id: existingLesson.id,
       position_seconds: 30,
       completed: false,
       updated_at: new Date().toISOString(),
     });
+    await database.connection("conversion_jobs").insert({
+      lesson_id: convertedLesson.id,
+      status: "ready",
+      progress: 100,
+      playlist_path: "/data/hls/index.m3u8",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+    const changedAt = new Date(Date.now() + 10_000);
+    await fs.utimes(path.join(courseDirectory, "10 - Finish.mp4"), changedAt, changedAt);
     failExistingLesson = true;
 
     await scanner.scanCatalog();
@@ -118,5 +129,8 @@ describe("media scanner", () => {
     ).toMatchObject({
       position_seconds: 30,
     });
+    expect(
+      await database.connection("conversion_jobs").where({ lesson_id: convertedLesson.id }).first(),
+    ).toBeUndefined();
   });
 });
