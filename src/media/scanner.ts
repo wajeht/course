@@ -90,7 +90,7 @@ export function createScanner({
     }
   }
 
-  return {
+  const scanner: Scanner = {
     scan() {
       if (activeScan) return activeScan;
       activeScan = scanOnce().finally(() => {
@@ -100,11 +100,12 @@ export function createScanner({
     },
     getStatus: () => repository.getScanStatus(),
     startSchedule() {
-      const timer = setInterval(() => void this.scan(), configuration.media.scanIntervalMs);
+      const timer = setInterval(() => void scanner.scan(), configuration.media.scanIntervalMs);
       timer.unref();
       return () => clearInterval(timer);
     },
   };
+  return scanner;
 }
 
 async function buildSnapshot(

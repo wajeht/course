@@ -1,0 +1,112 @@
+import { createReadStream } from "node:fs";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { Readable } from "node:stream";
+
+import { zValidator } from "@hono/zod-validator";
+import { Hono } from "hono";
+import { z } from "zod";
+
+import type { AppContext } from "../../context.js";
+import { resolveContainedPath } from "../../media/path.js";
+import { lessonParametersSchema } from "../api/catalog/catalog.schema.js";
+import { parseByteRange } from "./range.js";
+
+const hlsParametersSchema = z.object({
+  lessonId: lessonParametersSchema.shape.lessonId,
+  filename: z.string().regex(/^(?:index\.m3u8|segment-\d{5}\.ts)$/),
+});
+
+const videoContentTypes: Record<string, string> = {
+  ".mp4": "video/mp4",
+  ".m4v": "video/x-m4v",
+  ".webm": "video/webm",
+  ".mov": "video/quicktime",
+  ".mkv": "video/x-matroska",
+  ".avi": "video/x-msvideo",
+  ".mpeg": "video/mpeg",
+  ".mpg": "video/mpeg",
+};
+
+function bodyFromFile(filename: string, range?: { start: number; end: number }): ReadableStream {
+  return Readable.toWeb(createReadStream(filename, range)) as ReadableStream;
+}
+
+export function createMediaRouter(context: AppContext) {
+  const app = new Hono();
+
+  app.get("/media/:lessonId", zValidator("param", lessonParametersSchema), async (c) => {
+    const lesson = await context.catalog.lessonRecord(c.req.valid("param").lessonId);
+    if (!lesson) return c.json({ message: "Lesson not found" }, 404);
+    const filename = resolveContainedPath(context.configuration.media.videosDirectory, lesson.path);
+    const statistics = await fs.stat(filename);
+    const contentType =
+      videoContentTypes[path.extname(filename).toLowerCase()] ?? "application/octet-stream";
+    c.header("Accept-Ranges", "bytes");
+    c.header("Content-Type", contentType);
+    c.header("Cache-Control", "private, no-store");
+
+    try {
+      const range = parseByteRange(c.req.header("range"), statistics.size);
+      if (!range) {
+        c.header("Content-Length", String(statistics.size));
+        return c.body(bodyFromFile(filename));
+      }
+      c.header("Content-Range", `bytes ${range.start}-${range.end}/${statistics.size}`);
+      c.header("Content-Length", String(range.end - range.start + 1));
+      return c.body(bodyFromFile(filename, range), 206);
+    } catch (error) {
+      if (!(error instanceof RangeError)) throw error;
+      c.header("Content-Range", `bytes */${statistics.size}`);
+      return c.body(null, 416);
+    }
+  });
+
+  app.get(
+    "/covers/:courseId",
+    zValidator("param", z.object({ courseId: lessonParametersSchema.shape.lessonId })),
+    async (c) => {
+      const course = await context.catalogRepository.findCourse(c.req.valid("param").courseId);
+      if (!course?.cover_path || !course.cover_origin) return c.body(null, 404);
+      const root =
+        course.cover_origin === "videos"
+          ? context.configuration.media.videosDirectory
+          : context.configuration.media.generatedCoversDirectory;
+      const filename = resolveContainedPath(root, course.cover_path);
+      const statistics = await fs.stat(filename);
+      const extension = path.extname(filename).toLowerCase();
+      const contentType =
+        extension === ".png" ? "image/png" : extension === ".webp" ? "image/webp" : "image/jpeg";
+      c.header("Content-Type", contentType);
+      c.header("Content-Length", String(statistics.size));
+      c.header("Cache-Control", "public, max-age=300");
+      return c.body(bodyFromFile(filename));
+    },
+  );
+
+  app.get("/hls/:lessonId/:filename", zValidator("param", hlsParametersSchema), async (c) => {
+    const { lessonId, filename } = c.req.valid("param");
+    const file = resolveContainedPath(
+      path.join(context.configuration.media.hlsDirectory, lessonId),
+      filename,
+    );
+    try {
+      const statistics = await fs.stat(file);
+      c.header(
+        "Content-Type",
+        filename.endsWith(".m3u8") ? "application/vnd.apple.mpegurl" : "video/mp2t",
+      );
+      c.header(
+        "Cache-Control",
+        filename.endsWith(".m3u8") ? "private, no-cache" : "private, max-age=31536000, immutable",
+      );
+      c.header("Content-Length", String(statistics.size));
+      return c.body(bodyFromFile(file));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return c.body(null, 404);
+      throw error;
+    }
+  });
+
+  return app;
+}
