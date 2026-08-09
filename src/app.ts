@@ -4,6 +4,7 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
 import { compress } from "hono/compress";
 import { requestId } from "hono/request-id";
+import { proxy } from "hono/proxy";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
 
@@ -29,7 +30,8 @@ export function createApp(context: AppContext) {
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:", "blob:"],
         mediaSrc: ["'self'", "blob:"],
-        connectSrc: ["'self'"],
+        connectSrc:
+          context.configuration.app.env === "development" ? ["'self'", "ws:"] : ["'self'"],
         objectSrc: ["'none'"],
         frameAncestors: ["'none'"],
         baseUri: ["'self'"],
@@ -54,6 +56,20 @@ export function createApp(context: AppContext) {
       if (path.extname(c.req.path)) return next();
       c.header("Cache-Control", "no-cache");
       return serveStatic({ path: path.join(clientDirectory, "index.html") })(c, next);
+    });
+  } else if (context.configuration.app.env === "development") {
+    routedApp.all("*", (c) => {
+      const target = new URL(c.req.url);
+      target.protocol = "http:";
+      target.hostname = "127.0.0.1";
+      target.port = String(context.configuration.app.vuePort);
+      return proxy(target, {
+        raw: c.req.raw,
+        headers: {
+          ...c.req.header(),
+          host: `localhost:${context.configuration.app.vuePort}`,
+        },
+      });
     });
   }
 

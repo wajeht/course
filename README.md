@@ -45,8 +45,8 @@ npm run db:migrate
 npm run dev
 ```
 
-The Vue client runs at `http://localhost:5173`; Hono runs at
-`http://localhost:3000`. Without `.env`, local commands use
+Hono runs at `http://localhost` and proxies the development Vue client running
+internally on port 3000, so there is one browser URL. Without `.env`, local commands use
 `/Volumes/plex/videos` and store the database/cache in `./data`. Change those
 paths in `.env` on another machine. The video directory itself is never changed.
 

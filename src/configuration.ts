@@ -5,7 +5,8 @@ import { z } from "zod";
 const environmentSchema = z.object({
   APP_ENV: z.enum(["development", "testing", "production"]).default("development"),
   APP_HOST: z.string().default("0.0.0.0"),
-  APP_PORT: z.coerce.number().int().positive().default(3000),
+  APP_PORT: z.coerce.number().int().positive().default(80),
+  APP_VUE_PORT: z.coerce.number().int().positive().default(3000),
   VIDEOS_DIR: z.string().default("/Volumes/plex/videos"),
   DATA_DIR: z.string().default("data"),
   SCAN_INTERVAL_MS: z.coerce.number().int().min(10_000).default(300_000),
@@ -21,6 +22,7 @@ export interface Configuration {
     env: AppEnvironment;
     host: string;
     port: number;
+    vuePort: number;
     clientDirectory: string;
   };
   media: {
@@ -48,6 +50,7 @@ export function createConfiguration(environment: NodeJS.ProcessEnv = process.env
       env: parsed.APP_ENV,
       host: parsed.APP_HOST,
       port: parsed.APP_PORT,
+      vuePort: parsed.APP_VUE_PORT,
       clientDirectory: path.resolve("dist/client"),
     },
     media: {
