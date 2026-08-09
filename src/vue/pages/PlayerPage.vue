@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
-import { api, type CourseDetailDto, type LessonDto, type PlaybackResult } from "../client";
+import { api, type CourseDetailDto, type LessonDto, type PlaybackResult } from "../api";
 import LessonRow from "../components/LessonRow.vue";
 
 const route = useRoute();

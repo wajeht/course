@@ -2,7 +2,7 @@
 import { computed, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
-import { api, type CourseDetailDto } from "../client";
+import { api, type CourseDetailDto } from "../api";
 import LessonRow from "../components/LessonRow.vue";
 import ProgressBar from "../components/ProgressBar.vue";
 import { durationText } from "../utils/format";
