@@ -6,8 +6,8 @@ const environmentSchema = z.object({
   APP_ENV: z.enum(["development", "testing", "production"]).default("development"),
   APP_HOST: z.string().default("0.0.0.0"),
   APP_PORT: z.coerce.number().int().positive().default(3000),
-  VIDEOS_DIR: z.string().default("/videos"),
-  DATA_DIR: z.string().default("/data"),
+  VIDEOS_DIR: z.string().optional(),
+  DATA_DIR: z.string().optional(),
   SCAN_INTERVAL_MS: z.coerce.number().int().min(10_000).default(300_000),
   FFMPEG_PATH: z.string().default("ffmpeg"),
   FFPROBE_PATH: z.string().default("ffprobe"),
@@ -40,7 +40,11 @@ export interface Configuration {
 
 export function createConfiguration(environment: NodeJS.ProcessEnv = process.env): Configuration {
   const parsed = environmentSchema.parse(environment);
-  const dataDirectory = path.resolve(parsed.DATA_DIR);
+  const production = parsed.APP_ENV === "production";
+  const dataDirectory = path.resolve(parsed.DATA_DIR ?? (production ? "/data" : "data"));
+  const videosDirectory = path.resolve(
+    parsed.VIDEOS_DIR ?? (production ? "/videos" : "/Volumes/plex/videos"),
+  );
 
   return {
     app: {
@@ -50,7 +54,7 @@ export function createConfiguration(environment: NodeJS.ProcessEnv = process.env
       clientDirectory: path.resolve("dist/client"),
     },
     media: {
-      videosDirectory: path.resolve(parsed.VIDEOS_DIR),
+      videosDirectory,
       dataDirectory,
       generatedCoversDirectory: path.join(dataDirectory, "covers"),
       hlsDirectory: path.join(dataDirectory, "hls"),
