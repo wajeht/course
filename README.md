@@ -1,6 +1,7 @@
 # Course
 
 [![Node.js CI](https://github.com/wajeht/course/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/wajeht/course/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 A private, self-hosted video course library. It scans a read-only video folder,
 streams browser-compatible files directly, converts other files to cached HLS
@@ -89,3 +90,7 @@ authentication layer. Its health endpoint is `/healthz`.
 ## Docs
 
 - See [IMPLEMENTATION PLAN](./docs/plan.md) for the original architecture and delivery plan.
+
+## License
+
+Distributed under the MIT License © [wajeht](https://github.com/wajeht). See [LICENSE](./LICENSE) for more information.
