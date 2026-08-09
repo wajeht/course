@@ -23,7 +23,7 @@ export interface ConversionManager {
 
 export function createFfmpegConversionExecutor(configuration: Configuration): ConversionExecutor {
   return async (lesson, onProgress) => {
-    const source = resolveContainedPath(configuration.media.videosDirectory, lesson.path);
+    const source = await resolveContainedPath(configuration.media.videosDirectory, lesson.path);
     const outputDirectory = path.join(configuration.media.hlsDirectory, lesson.id);
     const playlist = path.join(outputDirectory, "index.m3u8");
     await fs.rm(outputDirectory, { recursive: true, force: true });

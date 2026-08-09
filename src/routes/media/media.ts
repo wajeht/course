@@ -38,7 +38,10 @@ export function createMediaRouter(context: AppContext) {
   app.get("/media/:lessonId", zValidator("param", lessonParametersSchema), async (c) => {
     const lesson = await context.catalog.findLessonRecord(c.req.valid("param").lessonId);
     if (!lesson) return c.json({ message: "Lesson not found" }, 404);
-    const filename = resolveContainedPath(context.configuration.media.videosDirectory, lesson.path);
+    const filename = await resolveContainedPath(
+      context.configuration.media.videosDirectory,
+      lesson.path,
+    );
     const statistics = await fs.stat(filename);
     const contentType =
       videoContentTypes[path.extname(filename).toLowerCase()] ?? "application/octet-stream";
@@ -72,7 +75,7 @@ export function createMediaRouter(context: AppContext) {
         course.cover_origin === "videos"
           ? context.configuration.media.videosDirectory
           : context.configuration.media.generatedCoversDirectory;
-      const filename = resolveContainedPath(root, course.cover_path);
+      const filename = await resolveContainedPath(root, course.cover_path);
       const statistics = await fs.stat(filename);
       const extension = path.extname(filename).toLowerCase();
       const contentType =
@@ -86,11 +89,11 @@ export function createMediaRouter(context: AppContext) {
 
   app.get("/hls/:lessonId/:filename", zValidator("param", hlsParametersSchema), async (c) => {
     const { lessonId, filename } = c.req.valid("param");
-    const file = resolveContainedPath(
-      path.join(context.configuration.media.hlsDirectory, lessonId),
-      filename,
-    );
     try {
+      const file = await resolveContainedPath(
+        path.join(context.configuration.media.hlsDirectory, lessonId),
+        filename,
+      );
       const statistics = await fs.stat(file);
       c.header(
         "Content-Type",
