@@ -120,6 +120,62 @@ jobs:
             echo "tags=${IMAGE}:${VERSION},${IMAGE}:${SHORT_SHA},${IMAGE}:latest"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Generate changelog
+        id: changelog
+        env:
+          PREVIOUS_TAG: ${{ steps.meta.outputs.previous }}
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          REPO="https://github.com/${{ github.repository }}"
+          if [ -n "$PREVIOUS_TAG" ]; then
+            RANGE="${PREVIOUS_TAG}..HEAD"
+            CHANGELOG_URL="${REPO}/compare/${PREVIOUS_TAG}...${VERSION}"
+          else
+            RANGE="HEAD"
+            CHANGELOG_URL="${REPO}/commits/${VERSION}"
+          fi
+
+          BODY=""
+          declare -A SECTIONS
+          declare -a ORDER
+          while IFS='|' read -r MSG SHORTHASH FULLHASH AUTHOR_EMAIL; do
+            [ -z "$MSG" ] && continue
+            TYPE=$(echo "$MSG" | sed -n 's/^\([a-z]*\)\(([^)]*)\)\?: .*/\1/p')
+            [ -z "$TYPE" ] && TYPE="other"
+            STRIPPED=$(echo "$MSG" | sed 's/^[a-z]*([^)]*): //;s/^[a-z]*: //')
+            AUTHOR_LOGIN=""
+            case "$AUTHOR_EMAIL" in
+              *+*@users.noreply.github.com)
+                AUTHOR_LOGIN="${AUTHOR_EMAIL#*+}"
+                AUTHOR_LOGIN="${AUTHOR_LOGIN%@users.noreply.github.com}"
+                ;;
+              *@users.noreply.github.com)
+                AUTHOR_LOGIN="${AUTHOR_EMAIL%@users.noreply.github.com}"
+                ;;
+            esac
+            AUTHOR_SUFFIX=""
+            if [ -n "$AUTHOR_LOGIN" ] && [ "$AUTHOR_LOGIN" != "noreply" ]; then
+              AUTHOR_SUFFIX=" @${AUTHOR_LOGIN}"
+            fi
+            LINE="- ${STRIPPED} ([${SHORTHASH}](${REPO}/commit/${FULLHASH}))${AUTHOR_SUFFIX}"
+            if [ -z "${SECTIONS[$TYPE]+x}" ]; then
+              ORDER+=("$TYPE")
+            fi
+            SECTIONS[$TYPE]="${SECTIONS[$TYPE]}${LINE}"$'\n'
+          done <<< "$(git log "$RANGE" --pretty=format:"%s|%h|%H|%ae" --no-merges)"
+
+          for TYPE in "${ORDER[@]}"; do
+            BODY="${BODY}### ${TYPE}"$'\n'"${SECTIONS[$TYPE]}"$'\n'
+          done
+
+          {
+            echo "body<<EOF"
+            echo "## What's Changed"
+            echo "$BODY"
+            echo "**Full Changelog**: ${CHANGELOG_URL}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Build and push
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
@@ -134,10 +190,9 @@ jobs:
       - name: Create GitHub release
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
-          generate_release_notes: true
+          body: ${{ steps.changelog.outputs.body }}
           tag_name: ${{ steps.meta.outputs.version }}
           target_commitish: ${{ github.sha }}
-          previous_tag: ${{ steps.meta.outputs.previous }}
 
   deploy:
     name: Deploy
