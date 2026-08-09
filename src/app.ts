@@ -38,27 +38,28 @@ export function createApp(context: AppContext) {
   );
   app.use("/api/*", middleware.apiCache);
 
-  app.get("/healthz", (c) => c.json({ status: "ok" }));
-  app.route("/api", createApiRouter(context));
-  app.route("/", createMediaRouter(context));
+  const routedApp = app
+    .get("/healthz", (c) => c.json({ status: "ok" }))
+    .route("/api", createApiRouter(context))
+    .route("/", createMediaRouter(context));
 
   if (context.configuration.app.env === "production") {
     const clientDirectory = context.configuration.app.clientDirectory;
-    app.use("/assets/*", async (c, next) => {
+    routedApp.use("/assets/*", async (c, next) => {
       c.header("Cache-Control", "public, max-age=31536000, immutable");
       await next();
     });
-    app.use("/assets/*", serveStatic({ root: clientDirectory }));
-    app.get("*", async (c, next) => {
+    routedApp.use("/assets/*", serveStatic({ root: clientDirectory }));
+    routedApp.get("*", async (c, next) => {
       if (path.extname(c.req.path)) return next();
       c.header("Cache-Control", "no-cache");
       return serveStatic({ path: path.join(clientDirectory, "index.html") })(c, next);
     });
   }
 
-  app.notFound(middleware.notFound);
-  app.onError(middleware.onError);
-  return app;
+  routedApp.notFound(middleware.notFound);
+  routedApp.onError(middleware.onError);
+  return routedApp;
 }
 
 export type AppType = ReturnType<typeof createApp>;

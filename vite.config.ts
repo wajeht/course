@@ -19,7 +19,8 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: {
-      "/api": "http://localhost:3000",
+      "^/api/(catalog|progress|playback|scan)": "http://localhost:3000",
+      "/covers": "http://localhost:3000",
       "/media": "http://localhost:3000",
       "/hls": "http://localhost:3000",
       "/healthz": "http://localhost:3000",
