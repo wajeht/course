@@ -1,2 +1,10 @@
+node_modules/
+dist/
+coverage/
 .env
-node_modules
+.DS_Store
+*.log
+data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal

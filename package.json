@@ -1,0 +1,59 @@
+{
+  "name": "course",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A private, self-hosted video course platform",
+  "type": "module",
+  "main": "dist/server/src/server.js",
+  "scripts": {
+    "dev": "concurrently --kill-others --names API,WEB --prefix-colors green,cyan \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "APP_ENV=development node --env-file-if-exists=.env --import=tsx --watch --watch-preserve-output src/server.ts",
+    "dev:client": "vite --config vite.config.ts",
+    "start": "APP_ENV=production node --env-file-if-exists=.env dist/server/src/server.js",
+    "build": "npm run build:server && npm run build:client",
+    "build:server": "tsc -p tsconfig.server.json",
+    "build:client": "vite build --config vite.config.ts",
+    "typecheck": "npm run typecheck:server && npm run typecheck:client",
+    "typecheck:server": "tsc -p tsconfig.server.json --noEmit",
+    "typecheck:client": "vue-tsc -p tsconfig.client.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "oxlint .",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run build",
+    "db:migrate": "APP_ENV=development node --env-file-if-exists=.env --import=tsx src/db/migrate.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "2.1.0",
+    "@hono/zod-validator": "0.9.0",
+    "better-sqlite3": "13.0.3",
+    "hls.js": "1.6.17",
+    "hono": "4.13.1",
+    "knex": "3.3.0",
+    "vue": "3.5.41",
+    "vue-router": "5.2.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "@types/better-sqlite3": "9.6.0",
+    "@types/node": "26.2.0",
+    "@vitejs/plugin-vue": "6.0.8",
+    "@vitest/coverage-v8": "4.1.10",
+    "concurrently": "10.0.4",
+    "oxfmt": "0.62.0",
+    "oxlint": "1.77.0",
+    "tailwindcss": "4.3.3",
+    "tsx": "4.23.11",
+    "typescript": "6.0.3",
+    "vite": "8.2.1",
+    "vitest": "4.1.10",
+    "vue-tsc": "3.3.9"
+  },
+  "engines": {
+    "node": ">=24.0.0 <27",
+    "npm": ">=11.0.0"
+  },
+  "packageManager": "npm@11.13.0"
+}
