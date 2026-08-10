@@ -4,6 +4,9 @@ export interface CourseRow {
   id: string;
   title: string;
   description: string;
+  category: string;
+  instructors_json: string;
+  tags_json: string;
   cover_path: string | null;
   cover_origin: "videos" | "data" | null;
   lesson_count: number;
@@ -11,10 +14,16 @@ export interface CourseRow {
   total_duration: number;
 }
 
+export interface CategoryRow {
+  name: string;
+  course_count: number;
+}
+
 export interface LessonRow {
   id: string;
   course_id: string;
   course_title: string;
+  course_cover_path: string | null;
   section_id: string | null;
   section_title: string | null;
   title: string;
@@ -32,7 +41,8 @@ export interface LessonRow {
 }
 
 export interface CatalogRepository {
-  listCourses(query?: string): Promise<CourseRow[]>;
+  listCourses(query?: string, category?: string): Promise<CourseRow[]>;
+  listCategories(): Promise<CategoryRow[]>;
   listContinueWatching(): Promise<LessonRow[]>;
   findCourse(courseId: string): Promise<CourseRow | undefined>;
   listCourseLessons(courseId: string): Promise<LessonRow[]>;
@@ -43,6 +53,7 @@ const lessonSelect = [
   "lessons.id",
   "lessons.course_id",
   "courses.title as course_title",
+  "courses.cover_path as course_cover_path",
   "lessons.section_id",
   "sections.title as section_title",
   "lessons.title",
@@ -76,6 +87,9 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
         "courses.id",
         "courses.title",
         "courses.description",
+        "courses.category",
+        "courses.instructors_json",
+        "courses.tags_json",
         "courses.cover_path",
         "courses.cover_origin",
         database.raw("COUNT(DISTINCT lessons.id) as lesson_count"),
@@ -88,14 +102,18 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
   }
 
   return {
-    async listCourses(query) {
+    async listCourses(query, category) {
       const queryBuilder = createCourseQuery().orderBy("courses.sort_order");
+      if (category) queryBuilder.where("courses.category", category);
       if (query) {
         const search = `%${query}%`;
         queryBuilder.where((where) => {
           where
             .whereLike("courses.title", search)
             .orWhereLike("courses.description", search)
+            .orWhereLike("courses.category", search)
+            .orWhereLike("courses.instructors_json", search)
+            .orWhereLike("courses.tags_json", search)
             .orWhereExists(
               database("lessons as matching_lessons")
                 .select(database.raw("1"))
@@ -105,6 +123,14 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
         });
       }
       return queryBuilder;
+    },
+
+    listCategories() {
+      return database<CategoryRow>("courses")
+        .select("category as name")
+        .count("id as course_count")
+        .groupBy("category")
+        .orderByRaw("category COLLATE NOCASE");
     },
 
     listContinueWatching() {

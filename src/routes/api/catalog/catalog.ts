@@ -14,8 +14,8 @@ import {
 export function createCatalogRouter(context: AppContext) {
   return new Hono()
     .get("/", zValidator("query", catalogQuerySchema), async (c) => {
-      const { query } = c.req.valid("query");
-      return c.json(catalogResponseSchema.parse(await context.catalog.getCatalog(query)));
+      const { query, category } = c.req.valid("query");
+      return c.json(catalogResponseSchema.parse(await context.catalog.getCatalog(query, category)));
     })
     .get("/courses/:courseId", zValidator("param", courseParametersSchema), async (c) => {
       const result = await context.catalog.getCourse(c.req.valid("param").courseId);

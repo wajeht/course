@@ -30,6 +30,9 @@ describe("course metadata", () => {
         title: "Guard Retention",
         description: "Stay connected",
         cover: "cover.jpg",
+        category: "Martial Arts",
+        instructors: ["Jane Smith", "jane smith", "John Doe"],
+        tags: ["Guard", "Gi"],
       }),
     );
 
@@ -39,6 +42,9 @@ describe("course metadata", () => {
         title: "Guard Retention",
         description: "Stay connected",
         cover: "cover.jpg",
+        category: "Martial Arts",
+        instructors: ["Jane Smith", "John Doe"],
+        tags: ["Guard", "Gi"],
       },
       warning: null,
     });

@@ -6,23 +6,32 @@ import { api, type CatalogDto, type ScanStatus } from "../api";
 import CourseCard from "../components/CourseCard.vue";
 import ProgressBar from "../components/ProgressBar.vue";
 
-const catalog = ref<CatalogDto>({ courses: [], continueWatching: [] });
+const catalog = ref<CatalogDto>({ courses: [], categories: [], continueWatching: [] });
 const scanStatus = ref<ScanStatus | null>(null);
 const query = ref("");
+const selectedCategory = ref("");
 const loading = ref(true);
 const scanning = ref(false);
 const error = ref("");
 let searchTimer: ReturnType<typeof setTimeout> | undefined;
 
-const courseById = computed(
-  () => new Map(catalog.value.courses.map((course) => [course.id, course])),
+const courseCount = computed(() =>
+  catalog.value.categories.reduce((total, category) => total + category.courseCount, 0),
 );
+const libraryTitle = computed(() => {
+  if (query.value) return `${catalog.value.courses.length} matching courses`;
+  if (selectedCategory.value) return `${selectedCategory.value} courses`;
+  return "All courses";
+});
 
 async function loadCatalog(): Promise<void> {
   loading.value = true;
   error.value = "";
   try {
-    catalog.value = await api.getCatalog(query.value || undefined);
+    catalog.value = await api.getCatalog(
+      query.value || undefined,
+      selectedCategory.value || undefined,
+    );
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : "Could not load your library";
   } finally {
@@ -43,7 +52,7 @@ async function rescanCatalog(): Promise<void> {
   }
 }
 
-watch(query, () => {
+watch([query, selectedCategory], () => {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => void loadCatalog(), 220);
 });
@@ -141,9 +150,9 @@ onMounted(async () => {
           class="group relative min-h-[230px] overflow-hidden rounded-[10px] bg-pine text-white shadow-course [scroll-snap-align:start]"
         >
           <img
-            v-if="courseById.get(lesson.courseId)?.coverUrl"
+            v-if="lesson.courseCoverUrl"
             class="absolute inset-0 h-full w-full object-cover transition-transform duration-[400ms] group-hover:scale-[1.035]"
-            :src="courseById.get(lesson.courseId)?.coverUrl ?? ''"
+            :src="lesson.courseCoverUrl"
             :alt="`${lesson.courseTitle} cover`"
           />
           <div
@@ -181,7 +190,7 @@ onMounted(async () => {
             {{ query ? "Search results" : "Your library" }}
           </p>
           <h2 class="font-display text-[clamp(1.9rem,3vw,2.7rem)] font-[750] tracking-[-.035em]">
-            {{ query ? `${catalog.courses.length} matching courses` : "All courses" }}
+            {{ libraryTitle }}
           </h2>
         </div>
         <span v-if="scanStatus?.completedAt" class="text-[.78rem] font-semibold text-muted">
@@ -192,6 +201,45 @@ onMounted(async () => {
           }}
         </span>
       </div>
+
+      <nav
+        v-if="catalog.categories.length > 1"
+        class="mb-7 overflow-x-auto border-b border-line pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        aria-label="Filter courses by category"
+      >
+        <div class="flex min-w-max gap-2">
+          <button
+            class="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-[7px] border px-4 text-[.72rem] font-extrabold tracking-[.04em] uppercase transition-[background,color,border-color,transform] duration-[160ms] hover:-translate-y-px"
+            :class="
+              selectedCategory === ''
+                ? 'border-pine-deep bg-pine-deep text-white shadow-[inset_0_-3px_0_#c4933f]'
+                : 'border-line bg-white/65 text-pine-deep hover:border-[#abb8b0] hover:bg-white'
+            "
+            :aria-pressed="selectedCategory === ''"
+            @click="selectedCategory = ''"
+          >
+            All
+            <span class="font-body text-[.66rem] font-semibold opacity-65">{{ courseCount }}</span>
+          </button>
+          <button
+            v-for="category in catalog.categories"
+            :key="category.name"
+            class="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-[7px] border px-4 text-[.72rem] font-extrabold tracking-[.04em] uppercase transition-[background,color,border-color,transform] duration-[160ms] hover:-translate-y-px"
+            :class="
+              selectedCategory === category.name
+                ? 'border-pine-deep bg-pine-deep text-white shadow-[inset_0_-3px_0_#c4933f]'
+                : 'border-line bg-white/65 text-pine-deep hover:border-[#abb8b0] hover:bg-white'
+            "
+            :aria-pressed="selectedCategory === category.name"
+            @click="selectedCategory = category.name"
+          >
+            {{ category.name }}
+            <span class="font-body text-[.66rem] font-semibold opacity-65">
+              {{ category.courseCount }}
+            </span>
+          </button>
+        </div>
+      </nav>
 
       <div
         v-if="loading"
@@ -215,11 +263,13 @@ onMounted(async () => {
         class="grid min-h-80 place-items-center content-center rounded-[10px] border border-dashed border-[#bfc8c2] bg-white/55 p-10 text-center"
       >
         <span class="mb-1.5 text-5xl text-belt" aria-hidden="true">⌁</span>
-        <h3 class="mb-2">{{ query ? "No lessons match that search" : "No courses found" }}</h3>
+        <h3 class="mb-2">
+          {{ query || selectedCategory ? "No courses match these filters" : "No courses found" }}
+        </h3>
         <p class="mb-[22px] max-w-[480px] text-muted">
           {{
-            query
-              ? "Try a topic, instructor, or course title."
+            query || selectedCategory
+              ? "Try another category or search term."
               : "Add a course folder to /videos, then rescan."
           }}
         </p>

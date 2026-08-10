@@ -1,9 +1,10 @@
-import type { CatalogRepository, CourseRow, LessonRow } from "./catalog.repository.js";
+import type { CatalogRepository, CategoryRow, CourseRow, LessonRow } from "./catalog.repository.js";
 
 export interface LessonDto {
   id: string;
   courseId: string;
   courseTitle: string;
+  courseCoverUrl: string | null;
   sectionId: string | null;
   sectionTitle: string | null;
   title: string;
@@ -17,11 +18,19 @@ export interface CourseDto {
   id: string;
   title: string;
   description: string;
+  category: string;
+  instructors: string[];
+  tags: string[];
   coverUrl: string | null;
   lessonCount: number;
   completedCount: number;
   progressPercent: number;
   durationSeconds: number;
+}
+
+export interface CategoryDto {
+  name: string;
+  courseCount: number;
 }
 
 export interface CourseDetailDto extends CourseDto {
@@ -33,10 +42,21 @@ export interface CourseDetailDto extends CourseDto {
 }
 
 export interface CatalogService {
-  getCatalog(query?: string): Promise<{ courses: CourseDto[]; continueWatching: LessonDto[] }>;
+  getCatalog(
+    query?: string,
+    category?: string,
+  ): Promise<{
+    courses: CourseDto[];
+    categories: CategoryDto[];
+    continueWatching: LessonDto[];
+  }>;
   getCourse(courseId: string): Promise<CourseDetailDto | null>;
   getLesson(lessonId: string): Promise<{ lesson: LessonDto; course: CourseDetailDto } | null>;
   findLessonRecord(lessonId: string): Promise<LessonRow | undefined>;
+}
+
+function stringList(value: string): string[] {
+  return JSON.parse(value) as string[];
 }
 
 function progressPercent(completed: number, total: number): number {
@@ -50,6 +70,9 @@ function courseDto(row: CourseRow): CourseDto {
     id: row.id,
     title: row.title,
     description: row.description,
+    category: row.category,
+    instructors: stringList(row.instructors_json),
+    tags: stringList(row.tags_json),
     coverUrl: row.cover_path ? `/covers/${row.id}` : null,
     lessonCount,
     completedCount,
@@ -58,12 +81,17 @@ function courseDto(row: CourseRow): CourseDto {
   };
 }
 
+function categoryDto(row: CategoryRow): CategoryDto {
+  return { name: row.name, courseCount: Number(row.course_count) };
+}
+
 function lessonDto(row: LessonRow): LessonDto {
   const position = row.completed ? Number(row.duration_seconds) : Number(row.position_seconds ?? 0);
   return {
     id: row.id,
     courseId: row.course_id,
     courseTitle: row.course_title,
+    courseCoverUrl: row.course_cover_path ? `/covers/${row.course_id}` : null,
     sectionId: row.section_id,
     sectionTitle: row.section_title,
     title: row.title,
@@ -97,13 +125,15 @@ export function createCatalogService(repository: CatalogRepository): CatalogServ
   }
 
   return {
-    async getCatalog(query) {
-      const [courses, continuing] = await Promise.all([
-        repository.listCourses(query),
+    async getCatalog(query, category) {
+      const [courses, categories, continuing] = await Promise.all([
+        repository.listCourses(query, category),
+        repository.listCategories(),
         repository.listContinueWatching(),
       ]);
       return {
         courses: courses.map(courseDto),
+        categories: categories.map(categoryDto),
         continueWatching: continuing.map(lessonDto),
       };
     },

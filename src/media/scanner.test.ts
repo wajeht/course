@@ -86,6 +86,9 @@ describe("media scanner", () => {
         title: "Essential Guard",
         description: "Build reliable layers",
         cover: "cover.jpg",
+        category: "Martial Arts",
+        instructors: ["Jane Smith"],
+        tags: ["Guard", "Defense"],
       }),
     );
     await fs.writeFile(path.join(courseDirectory, "cover.jpg"), "cover");
@@ -125,7 +128,7 @@ describe("media scanner", () => {
     const status = await scanner.scanCatalog();
     const courses = await database
       .connection("courses")
-      .select("title", "description", "cover_path");
+      .select("title", "description", "category", "instructors_json", "tags_json", "cover_path");
     const sections = await database.connection("sections").select("title");
     const lessons = await database
       .connection("lessons")
@@ -144,6 +147,9 @@ describe("media scanner", () => {
       {
         title: "Essential Guard",
         description: "Build reliable layers",
+        category: "Martial Arts",
+        instructors_json: '["Jane Smith"]',
+        tags_json: '["Guard","Defense"]',
         cover_path: "Course 1/cover.jpg",
       },
     ]);
