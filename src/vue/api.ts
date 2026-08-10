@@ -3,6 +3,7 @@ import { hc } from "hono/client";
 import type { AppType } from "../app";
 import type { ScanStatus } from "../media/types";
 import type {
+  CatalogFilters,
   CatalogService,
   CourseDetailDto,
   LessonDto,
@@ -37,8 +38,8 @@ async function expectJson<T>(response: Response): Promise<T> {
 }
 
 export const api = {
-  async getCatalog(query?: string, category?: string, instructor?: string): Promise<CatalogDto> {
-    const response = await apiClient.api.catalog.$get({ query: { query, category, instructor } });
+  async getCatalog(filters: CatalogFilters = {}): Promise<CatalogDto> {
+    const response = await apiClient.api.catalog.$get({ query: filters });
     return expectJson<CatalogDto>(response);
   },
   async getCourse(courseId: string): Promise<CourseDetailDto> {

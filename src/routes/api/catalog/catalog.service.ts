@@ -1,8 +1,8 @@
 import type {
   CatalogRepository,
-  CategoryRow,
+  CourseCountRow,
+  CourseFilters,
   CourseRow,
-  InstructorRow,
   LessonRow,
 } from "./catalog.repository.js";
 
@@ -34,15 +34,12 @@ export interface CourseDto {
   durationSeconds: number;
 }
 
-export interface CategoryDto {
+export interface CatalogFilterDto {
   name: string;
   courseCount: number;
 }
 
-export interface InstructorDto {
-  name: string;
-  courseCount: number;
-}
+export type CatalogFilters = CourseFilters;
 
 export interface CourseDetailDto extends CourseDto {
   sections: Array<{
@@ -53,14 +50,11 @@ export interface CourseDetailDto extends CourseDto {
 }
 
 export interface CatalogService {
-  getCatalog(
-    query?: string,
-    category?: string,
-    instructor?: string,
-  ): Promise<{
+  getCatalog(filters?: CatalogFilters): Promise<{
     courses: CourseDto[];
-    categories: CategoryDto[];
-    instructors: InstructorDto[];
+    categories: CatalogFilterDto[];
+    instructors: CatalogFilterDto[];
+    tags: CatalogFilterDto[];
     continueWatching: LessonDto[];
   }>;
   getCourse(courseId: string): Promise<CourseDetailDto | null>;
@@ -94,11 +88,7 @@ function courseDto(row: CourseRow): CourseDto {
   };
 }
 
-function categoryDto(row: CategoryRow): CategoryDto {
-  return { name: row.name, courseCount: Number(row.course_count) };
-}
-
-function instructorDto(row: InstructorRow): InstructorDto {
+function catalogFilterDto(row: CourseCountRow): CatalogFilterDto {
   return { name: row.name, courseCount: Number(row.course_count) };
 }
 
@@ -142,17 +132,19 @@ export function createCatalogService(repository: CatalogRepository): CatalogServ
   }
 
   return {
-    async getCatalog(query, category, instructor) {
-      const [courses, categories, instructors, continuing] = await Promise.all([
-        repository.listCourses(query, category, instructor),
+    async getCatalog(filters) {
+      const [courses, categories, instructors, tags, continuing] = await Promise.all([
+        repository.listCourses(filters),
         repository.listCategories(),
         repository.listInstructors(),
+        repository.listTags(),
         repository.listContinueWatching(),
       ]);
       return {
         courses: courses.map(courseDto),
-        categories: categories.map(categoryDto),
-        instructors: instructors.map(instructorDto),
+        categories: categories.map(catalogFilterDto),
+        instructors: instructors.map(catalogFilterDto),
+        tags: tags.map(catalogFilterDto),
         continueWatching: continuing.map(lessonDto),
       };
     },

@@ -45,7 +45,7 @@ describe("catalog service", () => {
   it("filters courses by category and lists category counts", async () => {
     const service = createCatalogService(createCatalogApiRepository(database.connection));
 
-    await expect(service.getCatalog(undefined, "Technology")).resolves.toMatchObject({
+    await expect(service.getCatalog({ category: "Technology" })).resolves.toMatchObject({
       courses: [
         {
           title: "Container Fundamentals",
@@ -65,11 +65,11 @@ describe("catalog service", () => {
     const service = createCatalogService(createCatalogApiRepository(database.connection));
 
     for (const query of ["Technology", "Docker"]) {
-      const result = await service.getCatalog(query);
+      const result = await service.getCatalog({ query });
       expect(result.courses.map((course) => course.title)).toEqual(["Container Fundamentals"]);
     }
 
-    const instructorResult = await service.getCatalog("Jane Smith");
+    const instructorResult = await service.getCatalog({ query: "Jane Smith" });
     expect(instructorResult.courses.map((course) => course.title)).toEqual([
       "Container Fundamentals",
       "Guard Retention",
@@ -79,7 +79,7 @@ describe("catalog service", () => {
   it("filters by an exact instructor and lists instructor counts", async () => {
     const service = createCatalogService(createCatalogApiRepository(database.connection));
 
-    await expect(service.getCatalog(undefined, undefined, "Jane Smith")).resolves.toMatchObject({
+    await expect(service.getCatalog({ instructor: "Jane Smith" })).resolves.toMatchObject({
       courses: [{ title: "Container Fundamentals" }, { title: "Guard Retention" }],
       instructors: [
         { name: "Jane Smith", courseCount: 2 },
@@ -87,8 +87,23 @@ describe("catalog service", () => {
       ],
     });
 
-    await expect(service.getCatalog(undefined, undefined, "Jane")).resolves.toMatchObject({
+    await expect(service.getCatalog({ instructor: "Jane" })).resolves.toMatchObject({
       courses: [],
     });
+  });
+
+  it("filters by an exact tag and lists tag counts", async () => {
+    const service = createCatalogService(createCatalogApiRepository(database.connection));
+
+    await expect(service.getCatalog({ tag: "Guard" })).resolves.toMatchObject({
+      courses: [{ title: "Guard Retention" }],
+      tags: [
+        { name: "DevOps", courseCount: 1 },
+        { name: "Docker", courseCount: 1 },
+        { name: "Guard", courseCount: 1 },
+      ],
+    });
+
+    await expect(service.getCatalog({ tag: "Gua" })).resolves.toMatchObject({ courses: [] });
   });
 });
