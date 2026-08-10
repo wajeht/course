@@ -203,7 +203,6 @@ onMounted(async () => {
       </div>
 
       <nav
-        v-if="catalog.categories.length > 1"
         class="mb-7 overflow-x-auto border-b border-line pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         aria-label="Filter courses by category"
       >
