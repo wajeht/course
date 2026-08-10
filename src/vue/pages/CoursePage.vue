@@ -12,6 +12,7 @@ const course = ref<CourseDetailDto | null>(null);
 const loading = ref(true);
 const resetting = ref(false);
 const error = ref("");
+const expandedSectionKeys = ref<Set<string>>(new Set());
 
 const allLessons = computed(
   () => course.value?.sections.flatMap((section) => section.lessons) ?? [],
@@ -20,11 +21,40 @@ const nextLesson = computed(
   () => allLessons.value.find((lesson) => !lesson.completed) ?? allLessons.value.at(0),
 );
 
+type CourseSection = CourseDetailDto["sections"][number];
+
+function sectionKey(section: CourseSection): string {
+  return section.id ?? "direct";
+}
+
+function sectionPanelId(section: CourseSection): string {
+  return `course-section-${sectionKey(section)}`;
+}
+
+function isSectionExpanded(section: CourseSection): boolean {
+  return expandedSectionKeys.value.has(sectionKey(section));
+}
+
+function toggleSection(section: CourseSection): void {
+  const key = sectionKey(section);
+  const expandedKeys = new Set(expandedSectionKeys.value);
+  if (expandedKeys.has(key)) expandedKeys.delete(key);
+  else expandedKeys.add(key);
+  expandedSectionKeys.value = expandedKeys;
+}
+
 async function loadCourse(): Promise<void> {
   loading.value = true;
   error.value = "";
   try {
-    course.value = await api.getCourse(String(route.params.courseId));
+    const loadedCourse = await api.getCourse(String(route.params.courseId));
+    course.value = loadedCourse;
+    const loadedLessons = loadedCourse.sections.flatMap((section) => section.lessons);
+    const startingLesson = loadedLessons.find((lesson) => !lesson.completed) ?? loadedLessons.at(0);
+    const startingSection = loadedCourse.sections.find((section) =>
+      section.lessons.some((lesson) => lesson.id === startingLesson?.id),
+    );
+    expandedSectionKeys.value = new Set(startingSection ? [sectionKey(startingSection)] : []);
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : "Could not load this course";
   } finally {
@@ -174,23 +204,49 @@ watch(
         class="mb-5 overflow-hidden rounded-[10px] border border-line bg-white shadow-[0_6px_22px_rgb(24_32_29_/_4%)]"
       >
         <header
-          class="flex items-center justify-between border-b border-pine/15 bg-mist px-[22px] py-4 text-pine-deep shadow-[inset_4px_0_0_#c4933f]"
+          class="border-b border-pine/15 bg-mist text-pine-deep shadow-[inset_4px_0_0_#c4933f]"
         >
-          <h3 class="font-display text-[1.12rem] font-extrabold tracking-[.05em] uppercase">
-            {{ section.title }}
+          <h3>
+            <button
+              class="flex w-full cursor-pointer items-center justify-between gap-4 px-[22px] py-4 text-left focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-belt"
+              type="button"
+              :aria-expanded="isSectionExpanded(section)"
+              :aria-controls="sectionPanelId(section)"
+              @click="toggleSection(section)"
+            >
+              <span class="font-display text-[1.12rem] font-extrabold tracking-[.05em] uppercase">
+                {{ section.title }}
+              </span>
+              <span class="flex flex-none items-center gap-2.5">
+                <span
+                  class="rounded-full border border-pine/15 bg-pine/10 px-2.5 py-1 text-[.66rem] font-bold tracking-[.06em] text-pine-deep uppercase"
+                >
+                  {{ section.lessons.length }} lessons
+                </span>
+                <span
+                  class="grid h-8 w-8 place-items-center rounded-full border border-pine/20 bg-white/55 text-pine"
+                  aria-hidden="true"
+                >
+                  <svg
+                    class="w-3 fill-none stroke-current stroke-2 transition-transform duration-200 motion-reduce:transition-none"
+                    :class="isSectionExpanded(section) ? 'rotate-180' : ''"
+                    viewBox="0 0 12 8"
+                  >
+                    <path d="m1 1 5 5 5-5" />
+                  </svg>
+                </span>
+              </span>
+            </button>
           </h3>
-          <span
-            class="rounded-full border border-pine/15 bg-pine/10 px-2.5 py-1 text-[.66rem] font-bold tracking-[.06em] text-pine-deep uppercase"
-          >
-            {{ section.lessons.length }} lessons
-          </span>
         </header>
-        <LessonRow
-          v-for="(lesson, index) in section.lessons"
-          :key="lesson.id"
-          :lesson="lesson"
-          :index="index"
-        />
+        <div v-show="isSectionExpanded(section)" :id="sectionPanelId(section)">
+          <LessonRow
+            v-for="(lesson, index) in section.lessons"
+            :key="lesson.id"
+            :lesson="lesson"
+            :index="index"
+          />
+        </div>
       </article>
     </section>
   </main>
