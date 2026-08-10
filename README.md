@@ -6,6 +6,27 @@
 
 A private, opinionated, self-hosted video course library.
 
+## Usage
+
+Use it at [course.jaw.dev](https://course.jaw.dev), or run it locally:
+
+```bash
+docker run --rm \
+  --publish 80:80 \
+  --read-only \
+  --tmpfs /tmp \
+  --cap-drop ALL \
+  --cap-add DAC_OVERRIDE \
+  --cap-add NET_BIND_SERVICE \
+  --security-opt no-new-privileges \
+  --device /dev/dri:/dev/dri \
+  --volume course-data:/data \
+  --volume /path/to/videos:/videos:ro \
+  ghcr.io/wajeht/course:latest
+```
+
+Then open [localhost](http://localhost).
+
 ## Library Layout
 
 ```text
