@@ -174,7 +174,7 @@ onMounted(async () => {
         </span>
       </div>
 
-      <div class="mb-7 flex flex-wrap items-stretch gap-2 border-b border-line pb-3">
+      <div class="mb-7 flex flex-wrap items-stretch gap-2">
         <CourseFilterSelect
           v-model="selectedCategory"
           label="Category"
