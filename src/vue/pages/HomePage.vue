@@ -67,12 +67,12 @@ onMounted(async () => {
     >
       <div>
         <p class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase">
-          Personal training room
+          Personal learning library
         </p>
         <h1
           class="max-w-[720px] font-display text-[clamp(3.2rem,7vw,7rem)] leading-[.86] font-extrabold tracking-[-.055em] max-[860px]:text-[clamp(3.5rem,13vw,6.3rem)]"
         >
-          Pick up where<br />the mat left off.
+          Pick up where<br />you left off.
         </h1>
       </div>
       <div class="flex items-stretch gap-[10px] max-[600px]:flex-col">
@@ -219,7 +219,7 @@ onMounted(async () => {
         <p class="mb-[22px] max-w-[480px] text-muted">
           {{
             query
-              ? "Try a technique, instructor, or course title."
+              ? "Try a topic, instructor, or course title."
               : "Add a course folder to /videos, then rescan."
           }}
         </p>

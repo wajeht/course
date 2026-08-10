@@ -91,7 +91,7 @@ watch(
         <p
           class="mb-[34px] max-w-[700px] text-[clamp(.95rem,1.4vw,1.12rem)] leading-[1.65] text-white/72 max-[600px]:col-span-full max-[600px]:text-[.86rem]"
         >
-          {{ course.description || "Your private course, ready whenever you are." }}
+          {{ course.description || "Your course, ready whenever you are." }}
         </p>
         <div class="mb-[30px] max-w-[620px] max-[600px]:col-span-full">
           <div class="mb-[10px] flex justify-between text-[.74rem] font-[650] text-white/68">
@@ -128,7 +128,7 @@ watch(
       >
         <div>
           <p class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase">
-            Ordered practice
+            Structured learning
           </p>
           <h2 class="font-display text-[clamp(1.9rem,3vw,2.7rem)] font-[750] tracking-[-.035em]">
             Course curriculum

@@ -4,9 +4,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Open Source Love svg1](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://github.com/wajeht/course)
 
-A private, self-hosted video course library. It scans a read-only video folder,
-streams browser-compatible files directly, converts other files to cached HLS
-with Intel Quick Sync, and keeps one profile's viewing progress in SQLite.
+A private, self-hosted learning library for video courses stored on your own
+server. It scans a read-only video folder, organizes lessons from any source
+into sections, streams browser-compatible files directly, converts other files
+to cached HLS with Intel Quick Sync, and tracks one profile's viewing progress
+in SQLite.
 
 ## How It Works
 
@@ -27,13 +29,16 @@ with Intel Quick Sync, and keeps one profile's viewing progress in SQLite.
     course.json
     cover.jpg
     01 - Introduction.mp4
-    Volume 2/
+    Module 2/
       01 - Next lesson.mkv
 ```
 
-Videos may be directly inside a course or one folder deeper. Supported files
-include MP4, M4V, MKV, WebM, MOV, AVI, MPEG, and MPG. Number prefixes determine
-natural lesson order and are removed from display titles.
+Videos may be directly inside a course or one folder deeper. Direct videos
+appear under **Course lessons**. Each first-level folder becomes a named
+curriculum section on the course page and in the player sidebar; deeper nesting
+is not scanned. Supported files include MP4, M4V, MKV, WebM, MOV, AVI, MPEG,
+and MPG. Number prefixes determine natural lesson order and are removed from
+display titles.
 
 Course metadata is optional:
 
