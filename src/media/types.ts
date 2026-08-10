@@ -3,6 +3,9 @@ export interface CourseRecord {
   path: string;
   title: string;
   description: string;
+  category: string;
+  instructors: string[];
+  tags: string[];
   coverPath: string | null;
   coverOrigin: "videos" | "data" | null;
   sortOrder: number;

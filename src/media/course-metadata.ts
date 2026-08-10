@@ -3,11 +3,28 @@ import path from "node:path";
 
 import { z } from "zod";
 
+function uniqueValues(values: string[]): string[] {
+  const seen = new Set<string>();
+  return values.filter((value) => {
+    const key = value.toLocaleLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+const metadataNameSchema = z.string().trim().min(1);
+const filterNameSchema = metadataNameSchema.max(200);
+const metadataNamesSchema = z.array(filterNameSchema).max(50).transform(uniqueValues);
+
 const courseMetadataSchema = z.object({
   version: z.literal(1),
-  title: z.string().trim().min(1).optional(),
+  title: metadataNameSchema.optional(),
   description: z.string().trim().optional(),
-  cover: z.string().trim().min(1).optional(),
+  cover: metadataNameSchema.optional(),
+  category: filterNameSchema.optional(),
+  instructors: metadataNamesSchema.optional(),
+  tags: metadataNamesSchema.optional(),
 });
 
 export type CourseMetadata = z.infer<typeof courseMetadataSchema>;

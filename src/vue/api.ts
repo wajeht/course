@@ -37,8 +37,8 @@ async function expectJson<T>(response: Response): Promise<T> {
 }
 
 export const api = {
-  async getCatalog(query?: string): Promise<CatalogDto> {
-    const response = await apiClient.api.catalog.$get({ query: { query } });
+  async getCatalog(query?: string, category?: string): Promise<CatalogDto> {
+    const response = await apiClient.api.catalog.$get({ query: { query, category } });
     return expectJson<CatalogDto>(response);
   },
   async getCourse(courseId: string): Promise<CourseDetailDto> {

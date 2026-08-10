@@ -37,12 +37,21 @@ defineProps<{ course: CatalogDto["courses"][number] }>();
       </div>
     </div>
     <div class="flex flex-1 flex-col p-[18px]">
+      <p class="mb-2 text-[.64rem] font-extrabold tracking-[.13em] text-belt uppercase">
+        {{ course.category }}
+      </p>
       <h3
         class="line-clamp-2 min-h-[2.6em] overflow-hidden text-[.98rem] leading-[1.3] max-[600px]:min-h-0"
       >
         {{ course.title }}
       </h3>
-      <p class="mt-[7px] mb-5 text-[.73rem] text-muted">
+      <p
+        v-if="course.instructors.length"
+        class="mt-[7px] truncate text-[.73rem] font-semibold text-pine"
+      >
+        {{ course.instructors.join(", ") }}
+      </p>
+      <p class="mt-[5px] mb-5 text-[.73rem] text-muted">
         {{ durationText(course.durationSeconds) }}
       </p>
       <div class="mt-auto grid grid-cols-[1fr_auto] items-center gap-[10px]">

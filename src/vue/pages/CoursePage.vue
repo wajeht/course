@@ -81,6 +81,7 @@ watch(
         <p
           class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase max-[600px]:mb-[55px] max-[600px]:self-end"
         >
+          <template v-if="course.category !== 'Uncategorized'">{{ course.category }} · </template>
           {{ course.lessonCount }} lessons · {{ durationText(course.durationSeconds) }}
         </p>
         <h1
@@ -89,10 +90,30 @@ watch(
           {{ course.title }}
         </h1>
         <p
-          class="mb-[34px] max-w-[700px] text-[clamp(.95rem,1.4vw,1.12rem)] leading-[1.65] text-white/72 max-[600px]:col-span-full max-[600px]:text-[.86rem]"
+          v-if="course.instructors.length"
+          class="-mt-3 mb-4 text-[.78rem] font-bold tracking-[.04em] text-belt-light"
+        >
+          With {{ course.instructors.join(", ") }}
+        </p>
+        <p
+          class="max-w-[700px] text-[clamp(.95rem,1.4vw,1.12rem)] leading-[1.65] text-white/72 max-[600px]:col-span-full max-[600px]:text-[.86rem]"
+          :class="course.tags.length ? 'mb-5' : 'mb-[34px]'"
         >
           {{ course.description || "Your course, ready whenever you are." }}
         </p>
+        <div
+          v-if="course.tags.length"
+          class="mb-[30px] flex max-w-[700px] flex-wrap gap-2 max-[600px]:col-span-full"
+          aria-label="Course topics"
+        >
+          <span
+            v-for="tag in course.tags"
+            :key="tag"
+            class="rounded-full border border-white/20 bg-white/8 px-3 py-1 text-[.68rem] font-semibold text-white/78"
+          >
+            {{ tag }}
+          </span>
+        </div>
         <div class="mb-[30px] max-w-[620px] max-[600px]:col-span-full">
           <div class="mb-[10px] flex justify-between text-[.74rem] font-[650] text-white/68">
             <span>Course progress</span

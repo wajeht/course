@@ -32,12 +32,17 @@ Course metadata is optional:
   "version": 1,
   "title": "Course Title",
   "description": "What the course teaches",
-  "cover": "cover.jpg"
+  "cover": "cover.jpg",
+  "category": "Technology",
+  "instructors": ["Jane Smith"],
+  "tags": ["Docker", "Kubernetes", "DevOps"]
 }
 ```
 
-The cover must be a local JPG, PNG, or WebP. When it is omitted, Course creates
-a cover from the first valid video.
+`category` supplies the library filter, while instructors and tags appear in
+course details and are included in search. Courses without a category appear
+under **Uncategorized**. The cover must be a local JPG, PNG, or WebP. When it is
+omitted, Course creates a cover from the first valid video.
 
 ## Docs
 
