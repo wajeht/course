@@ -60,10 +60,11 @@ Course metadata is optional:
 }
 ```
 
-`category` supplies the library filter, while instructors and tags appear in
-course details and are included in search. Courses without a category appear
-under **Uncategorized**. The cover must be a local JPG, PNG, or WebP. When it is
-omitted, Course creates a cover from the first valid video.
+`category` and `instructors` supply library filters. Each instructor also gets a
+page containing all of their courses. Instructors and tags are included in
+search. Courses without a category appear under **Uncategorized**. The cover
+must be a local JPG, PNG, or WebP. When it is omitted, Course creates a cover
+from the first valid video.
 
 ## Docs
 

@@ -9,12 +9,13 @@ defineProps<{ course: CatalogDto["courses"][number] }>();
 </script>
 
 <template>
-  <RouterLink
-    :to="{ name: 'course', params: { courseId: course.id } }"
+  <article
     class="group flex min-w-0 flex-col overflow-hidden rounded-[10px] border border-line bg-white shadow-[0_8px_30px_rgb(24_32_29_/_5%)] transition-[transform,box-shadow,border-color] duration-[220ms] hover:-translate-y-1 hover:border-[#b9c6be] hover:shadow-course max-[600px]:grid max-[600px]:grid-cols-[125px_minmax(0,1fr)]"
   >
-    <div
+    <RouterLink
+      :to="{ name: 'course', params: { courseId: course.id } }"
       class="relative aspect-[4/4.7] overflow-hidden bg-mist max-[600px]:min-h-[175px] max-[600px]:aspect-auto"
+      :aria-label="`Open ${course.title}`"
     >
       <img
         v-if="course.coverUrl"
@@ -35,21 +36,29 @@ defineProps<{ course: CatalogDto["courses"][number] }>();
       >
         {{ course.lessonCount }} lessons
       </div>
-    </div>
+    </RouterLink>
     <div class="flex flex-1 flex-col p-[18px]">
       <p class="mb-2 text-[.64rem] font-extrabold tracking-[.13em] text-belt uppercase">
         {{ course.category }}
       </p>
-      <h3
-        class="line-clamp-2 min-h-[2.6em] overflow-hidden text-[.98rem] leading-[1.3] max-[600px]:min-h-0"
-      >
-        {{ course.title }}
+      <h3 class="min-h-[2.6em] text-[.98rem] leading-[1.3] max-[600px]:min-h-0">
+        <RouterLink
+          :to="{ name: 'course', params: { courseId: course.id } }"
+          class="line-clamp-2 overflow-hidden hover:text-pine"
+        >
+          {{ course.title }}
+        </RouterLink>
       </h3>
-      <p
-        v-if="course.instructors.length"
-        class="mt-[7px] truncate text-[.73rem] font-semibold text-pine"
-      >
-        {{ course.instructors.join(", ") }}
+      <p v-if="course.instructors.length" class="mt-[7px] truncate text-[.73rem] text-pine">
+        <template v-for="(instructor, index) in course.instructors" :key="instructor">
+          <span v-if="index" aria-hidden="true">, </span>
+          <RouterLink
+            :to="{ name: 'instructor', params: { instructorName: instructor } }"
+            class="font-semibold underline decoration-pine/25 underline-offset-[3px] hover:decoration-pine"
+          >
+            {{ instructor }}
+          </RouterLink>
+        </template>
       </p>
       <p class="mt-[5px] mb-5 text-[.73rem] text-muted">
         {{ durationText(course.durationSeconds) }}
@@ -62,5 +71,5 @@ defineProps<{ course: CatalogDto["courses"][number] }>();
         <span class="text-[.68rem] font-extrabold text-pine"> {{ course.progressPercent }}% </span>
       </div>
     </div>
-  </RouterLink>
+  </article>
 </template>

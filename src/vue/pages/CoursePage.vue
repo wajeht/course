@@ -93,7 +93,16 @@ watch(
           v-if="course.instructors.length"
           class="-mt-3 mb-4 text-[.78rem] font-bold tracking-[.04em] text-belt-light"
         >
-          With {{ course.instructors.join(", ") }}
+          With
+          <template v-for="(instructor, index) in course.instructors" :key="instructor">
+            <span v-if="index" aria-hidden="true">, </span>
+            <RouterLink
+              :to="{ name: 'instructor', params: { instructorName: instructor } }"
+              class="underline decoration-belt-light/35 underline-offset-4 hover:decoration-belt-light"
+            >
+              {{ instructor }}
+            </RouterLink>
+          </template>
         </p>
         <p
           class="max-w-[700px] text-[clamp(.95rem,1.4vw,1.12rem)] leading-[1.65] text-white/72 max-[600px]:col-span-full max-[600px]:text-[.86rem]"
