@@ -1,4 +1,10 @@
-import type { CatalogRepository, CategoryRow, CourseRow, LessonRow } from "./catalog.repository.js";
+import type {
+  CatalogRepository,
+  CategoryRow,
+  CourseRow,
+  InstructorRow,
+  LessonRow,
+} from "./catalog.repository.js";
 
 export interface LessonDto {
   id: string;
@@ -33,6 +39,11 @@ export interface CategoryDto {
   courseCount: number;
 }
 
+export interface InstructorDto {
+  name: string;
+  courseCount: number;
+}
+
 export interface CourseDetailDto extends CourseDto {
   sections: Array<{
     id: string | null;
@@ -45,9 +56,11 @@ export interface CatalogService {
   getCatalog(
     query?: string,
     category?: string,
+    instructor?: string,
   ): Promise<{
     courses: CourseDto[];
     categories: CategoryDto[];
+    instructors: InstructorDto[];
     continueWatching: LessonDto[];
   }>;
   getCourse(courseId: string): Promise<CourseDetailDto | null>;
@@ -82,6 +95,10 @@ function courseDto(row: CourseRow): CourseDto {
 }
 
 function categoryDto(row: CategoryRow): CategoryDto {
+  return { name: row.name, courseCount: Number(row.course_count) };
+}
+
+function instructorDto(row: InstructorRow): InstructorDto {
   return { name: row.name, courseCount: Number(row.course_count) };
 }
 
@@ -125,15 +142,17 @@ export function createCatalogService(repository: CatalogRepository): CatalogServ
   }
 
   return {
-    async getCatalog(query, category) {
-      const [courses, categories, continuing] = await Promise.all([
-        repository.listCourses(query, category),
+    async getCatalog(query, category, instructor) {
+      const [courses, categories, instructors, continuing] = await Promise.all([
+        repository.listCourses(query, category, instructor),
         repository.listCategories(),
+        repository.listInstructors(),
         repository.listContinueWatching(),
       ]);
       return {
         courses: courses.map(courseDto),
         categories: categories.map(categoryDto),
+        instructors: instructors.map(instructorDto),
         continueWatching: continuing.map(lessonDto),
       };
     },

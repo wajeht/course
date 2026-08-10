@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 
 import CoursePage from "../pages/CoursePage.vue";
 import HomePage from "../pages/HomePage.vue";
+import InstructorPage from "../pages/InstructorPage.vue";
 import PlayerPage from "../pages/PlayerPage.vue";
 
 export const router = createRouter({
@@ -12,6 +13,11 @@ export const router = createRouter({
       path: "/courses/:courseId",
       name: "course",
       component: CoursePage,
+    },
+    {
+      path: "/instructors/:instructorName",
+      name: "instructor",
+      component: InstructorPage,
     },
     {
       path: "/lessons/:lessonId",

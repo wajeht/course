@@ -30,7 +30,7 @@ beforeEach(async () => {
       title: "Guard Retention",
       description: "Stay connected",
       category: "Martial Arts",
-      instructors_json: JSON.stringify(["John Doe"]),
+      instructors_json: JSON.stringify(["John Doe", "jane smith"]),
       tags_json: JSON.stringify(["Guard"]),
       sort_order: 1,
       created_at: now,
@@ -64,9 +64,31 @@ describe("catalog service", () => {
   it("searches category, instructors, and tags", async () => {
     const service = createCatalogService(createCatalogApiRepository(database.connection));
 
-    for (const query of ["Technology", "Jane Smith", "Docker"]) {
+    for (const query of ["Technology", "Docker"]) {
       const result = await service.getCatalog(query);
       expect(result.courses.map((course) => course.title)).toEqual(["Container Fundamentals"]);
     }
+
+    const instructorResult = await service.getCatalog("Jane Smith");
+    expect(instructorResult.courses.map((course) => course.title)).toEqual([
+      "Container Fundamentals",
+      "Guard Retention",
+    ]);
+  });
+
+  it("filters by an exact instructor and lists instructor counts", async () => {
+    const service = createCatalogService(createCatalogApiRepository(database.connection));
+
+    await expect(service.getCatalog(undefined, undefined, "Jane Smith")).resolves.toMatchObject({
+      courses: [{ title: "Container Fundamentals" }, { title: "Guard Retention" }],
+      instructors: [
+        { name: "Jane Smith", courseCount: 2 },
+        { name: "John Doe", courseCount: 1 },
+      ],
+    });
+
+    await expect(service.getCatalog(undefined, undefined, "Jane")).resolves.toMatchObject({
+      courses: [],
+    });
   });
 });

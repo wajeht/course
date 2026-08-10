@@ -6,10 +6,16 @@ import { api, type CatalogDto, type ScanStatus } from "../api";
 import CourseCard from "../components/CourseCard.vue";
 import ProgressBar from "../components/ProgressBar.vue";
 
-const catalog = ref<CatalogDto>({ courses: [], categories: [], continueWatching: [] });
+const catalog = ref<CatalogDto>({
+  courses: [],
+  categories: [],
+  instructors: [],
+  continueWatching: [],
+});
 const scanStatus = ref<ScanStatus | null>(null);
 const query = ref("");
 const selectedCategory = ref("");
+const selectedInstructor = ref("");
 const loading = ref(true);
 const scanning = ref(false);
 const error = ref("");
@@ -20,6 +26,7 @@ const courseCount = computed(() =>
 );
 const libraryTitle = computed(() => {
   if (query.value) return `${catalog.value.courses.length} matching courses`;
+  if (selectedInstructor.value) return `${selectedInstructor.value} courses`;
   if (selectedCategory.value) return `${selectedCategory.value} courses`;
   return "All courses";
 });
@@ -31,6 +38,7 @@ async function loadCatalog(): Promise<void> {
     catalog.value = await api.getCatalog(
       query.value || undefined,
       selectedCategory.value || undefined,
+      selectedInstructor.value || undefined,
     );
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : "Could not load your library";
@@ -52,7 +60,7 @@ async function rescanCatalog(): Promise<void> {
   }
 }
 
-watch([query, selectedCategory], () => {
+watch([query, selectedCategory, selectedInstructor], () => {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => void loadCatalog(), 220);
 });
@@ -196,9 +204,45 @@ onMounted(async () => {
           </div>
         </nav>
 
-        <div class="flex w-[min(100%,510px)] flex-none items-stretch gap-2 max-[900px]:w-full">
+        <div
+          class="flex w-[min(100%,700px)] flex-none items-stretch gap-2 max-[900px]:w-full max-[600px]:flex-wrap"
+        >
           <label
-            class="flex min-h-10 flex-1 items-center gap-2.5 rounded-[7px] border border-line bg-white px-3.5 shadow-[0_8px_30px_rgb(24_32_29_/_5%)] focus-within:border-pine focus-within:shadow-[0_0_0_3px_rgb(36_77_59_/_10%)]"
+            class="relative flex min-h-10 w-[190px] items-center gap-2.5 rounded-[7px] border border-line bg-white px-3.5 shadow-[0_8px_30px_rgb(24_32_29_/_5%)] focus-within:border-pine focus-within:shadow-[0_0_0_3px_rgb(36_77_59_/_10%)] max-[600px]:w-full"
+          >
+            <svg
+              class="w-[17px] flex-none fill-none stroke-pine stroke-[1.7] [stroke-linecap:round]"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="8" r="3.5" />
+              <path d="M5.5 20c.5-4.1 2.7-6.2 6.5-6.2s6 2.1 6.5 6.2" />
+            </svg>
+            <span class="sr-only">Filter courses by instructor</span>
+            <select
+              v-model="selectedInstructor"
+              class="w-full min-w-0 cursor-pointer appearance-none border-0 bg-transparent pr-5 text-[.78rem] font-semibold text-pine-deep outline-0"
+              aria-label="Filter courses by instructor"
+            >
+              <option value="">All instructors</option>
+              <option
+                v-for="instructor in catalog.instructors"
+                :key="instructor.name"
+                :value="instructor.name"
+              >
+                {{ instructor.name }} ({{ instructor.courseCount }})
+              </option>
+            </select>
+            <svg
+              class="pointer-events-none absolute right-3.5 w-3 fill-none stroke-pine stroke-2"
+              viewBox="0 0 12 8"
+              aria-hidden="true"
+            >
+              <path d="m1 1 5 5 5-5" />
+            </svg>
+          </label>
+          <label
+            class="flex min-h-10 min-w-[210px] flex-1 items-center gap-2.5 rounded-[7px] border border-line bg-white px-3.5 shadow-[0_8px_30px_rgb(24_32_29_/_5%)] focus-within:border-pine focus-within:shadow-[0_0_0_3px_rgb(36_77_59_/_10%)] max-[600px]:min-w-0"
           >
             <svg
               class="w-[18px] flex-none fill-none stroke-pine stroke-[1.7] [stroke-linecap:round]"
@@ -255,12 +299,16 @@ onMounted(async () => {
       >
         <span class="mb-1.5 text-5xl text-belt" aria-hidden="true">⌁</span>
         <h3 class="mb-2">
-          {{ query || selectedCategory ? "No courses match these filters" : "No courses found" }}
+          {{
+            query || selectedCategory || selectedInstructor
+              ? "No courses match these filters"
+              : "No courses found"
+          }}
         </h3>
         <p class="mb-[22px] max-w-[480px] text-muted">
           {{
-            query || selectedCategory
-              ? "Try another category or search term."
+            query || selectedCategory || selectedInstructor
+              ? "Try another category, instructor, or search term."
               : "Add a course folder to /videos, then rescan."
           }}
         </p>

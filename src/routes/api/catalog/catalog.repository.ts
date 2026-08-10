@@ -19,6 +19,11 @@ export interface CategoryRow {
   course_count: number;
 }
 
+export interface InstructorRow {
+  name: string;
+  course_count: number;
+}
+
 export interface LessonRow {
   id: string;
   course_id: string;
@@ -41,8 +46,9 @@ export interface LessonRow {
 }
 
 export interface CatalogRepository {
-  listCourses(query?: string, category?: string): Promise<CourseRow[]>;
+  listCourses(query?: string, category?: string, instructor?: string): Promise<CourseRow[]>;
   listCategories(): Promise<CategoryRow[]>;
+  listInstructors(): Promise<InstructorRow[]>;
   listContinueWatching(): Promise<LessonRow[]>;
   findCourse(courseId: string): Promise<CourseRow | undefined>;
   listCourseLessons(courseId: string): Promise<LessonRow[]>;
@@ -102,9 +108,15 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
   }
 
   return {
-    async listCourses(query, category) {
+    async listCourses(query, category, instructor) {
       const queryBuilder = createCourseQuery().orderBy("courses.sort_order");
       if (category) queryBuilder.where("courses.category", category);
+      if (instructor) {
+        queryBuilder.whereRaw(
+          "EXISTS (SELECT 1 FROM json_each(courses.instructors_json) WHERE value = ? COLLATE NOCASE)",
+          [instructor],
+        );
+      }
       if (query) {
         const search = `%${query}%`;
         queryBuilder.where((where) => {
@@ -131,6 +143,15 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
         .count("id as course_count")
         .groupBy("category")
         .orderByRaw("category COLLATE NOCASE");
+    },
+
+    listInstructors() {
+      return database<InstructorRow>("courses")
+        .joinRaw("JOIN json_each(courses.instructors_json) AS instructor")
+        .select(database.raw("MIN(instructor.value) as name"))
+        .countDistinct("courses.id as course_count")
+        .groupByRaw("instructor.value COLLATE NOCASE")
+        .orderByRaw("name COLLATE NOCASE");
     },
 
     listContinueWatching() {
