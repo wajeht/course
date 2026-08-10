@@ -15,6 +15,7 @@ const error = ref("");
 const ended = ref(false);
 const sidebarOpen = ref(false);
 const playbackRate = ref(1);
+const expandedSectionKeys = ref<Set<string>>(new Set());
 let hls: import("hls.js").default | null = null;
 let pollTimer: ReturnType<typeof setTimeout> | undefined;
 let lastSavedAt = 0;
@@ -28,6 +29,28 @@ const currentIndex = computed(() =>
   allLessons.value.findIndex((item) => item.id === lesson.value?.id),
 );
 const nextLesson = computed(() => allLessons.value.at(currentIndex.value + 1));
+
+type CourseSection = CourseDetailDto["sections"][number];
+
+function sectionKey(section: CourseSection): string {
+  return section.id ?? "direct";
+}
+
+function sectionPanelId(section: CourseSection): string {
+  return `sidebar-section-${sectionKey(section)}`;
+}
+
+function isSectionExpanded(section: CourseSection): boolean {
+  return expandedSectionKeys.value.has(sectionKey(section));
+}
+
+function toggleSection(section: CourseSection): void {
+  const key = sectionKey(section);
+  const expandedKeys = new Set(expandedSectionKeys.value);
+  if (expandedKeys.has(key)) expandedKeys.delete(key);
+  else expandedKeys.add(key);
+  expandedSectionKeys.value = expandedKeys;
+}
 
 function destroyPlayback(): void {
   clearTimeout(pollTimer);
@@ -94,6 +117,7 @@ async function handlePlayback(
 
 async function loadPlayer(): Promise<void> {
   const requestId = ++playerRequestId;
+  const previousCourseId = course.value?.id;
   destroyPlayback();
   loading.value = true;
   error.value = "";
@@ -105,6 +129,16 @@ async function loadPlayer(): Promise<void> {
     if (requestId !== playerRequestId) return;
     lesson.value = detail.lesson;
     course.value = detail.course;
+    const activeSection = detail.course.sections.find((section) =>
+      section.lessons.some((item) => item.id === detail.lesson.id),
+    );
+    if (activeSection) {
+      const activeKey = sectionKey(activeSection);
+      expandedSectionKeys.value =
+        previousCourseId === detail.course.id
+          ? new Set([...expandedSectionKeys.value, activeKey])
+          : new Set([activeKey]);
+    }
     const preparedPlayback = await api.preparePlayback(lessonId);
     await handlePlayback(preparedPlayback, lessonId, requestId);
   } catch (caught) {
@@ -363,18 +397,40 @@ onBeforeUnmount(() => {
       <div class="flex-1 overflow-y-auto overscroll-contain">
         <section v-for="section in course.sections" :key="section.id ?? 'direct'">
           <h3
-            class="sticky top-0 z-[2] border-y border-pine/15 bg-mist px-4 py-3 font-display text-[.78rem] font-extrabold tracking-[.08em] text-pine-deep uppercase shadow-[inset_4px_0_0_#c4933f]"
+            class="sticky top-0 z-[2] border-y border-pine/15 bg-mist font-display text-[.78rem] font-extrabold tracking-[.08em] text-pine-deep uppercase shadow-[inset_4px_0_0_#c4933f]"
           >
-            {{ section.title }}
+            <button
+              class="flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-belt"
+              type="button"
+              :aria-expanded="isSectionExpanded(section)"
+              :aria-controls="sectionPanelId(section)"
+              @click="toggleSection(section)"
+            >
+              <span>{{ section.title }}</span>
+              <span
+                class="grid h-7 w-7 flex-none place-items-center rounded-full border border-pine/20 bg-white/45 text-pine"
+                aria-hidden="true"
+              >
+                <svg
+                  class="w-3 fill-none stroke-current stroke-2 transition-transform duration-200 motion-reduce:transition-none"
+                  :class="isSectionExpanded(section) ? 'rotate-180' : ''"
+                  viewBox="0 0 12 8"
+                >
+                  <path d="m1 1 5 5 5-5" />
+                </svg>
+              </span>
+            </button>
           </h3>
-          <LessonRow
-            v-for="(item, index) in section.lessons"
-            :key="item.id"
-            :lesson="item"
-            :index="index"
-            :active="item.id === lesson?.id"
-            sidebar
-          />
+          <div v-show="isSectionExpanded(section)" :id="sectionPanelId(section)">
+            <LessonRow
+              v-for="(item, index) in section.lessons"
+              :key="item.id"
+              :lesson="item"
+              :index="index"
+              :active="item.id === lesson?.id"
+              sidebar
+            />
+          </div>
         </section>
       </div>
     </aside>
