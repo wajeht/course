@@ -54,7 +54,10 @@ defineProps<{ course: CatalogDto["courses"][number] }>();
       <p class="mt-[5px] mb-5 text-[.73rem] text-muted">
         {{ durationText(course.durationSeconds) }}
       </p>
-      <div class="mt-auto grid grid-cols-[1fr_auto] items-center gap-[10px]">
+      <div
+        v-if="course.progressPercent > 0"
+        class="mt-auto grid grid-cols-[1fr_auto] items-center gap-[10px]"
+      >
         <ProgressBar :value="course.progressPercent" compact />
         <span class="text-[.68rem] font-extrabold text-pine"> {{ course.progressPercent }}% </span>
       </div>
