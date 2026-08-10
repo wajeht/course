@@ -363,7 +363,7 @@ onBeforeUnmount(() => {
       <div class="flex-1 overflow-y-auto overscroll-contain">
         <section v-for="section in course.sections" :key="section.id ?? 'direct'">
           <h3
-            class="sticky top-0 z-[2] border-y border-line bg-[#e8eee9] px-4 py-[14px] text-[.72rem] tracking-[.06em] text-pine-deep uppercase"
+            class="sticky top-0 z-[2] border-y border-pine/15 bg-mist px-4 py-3 font-display text-[.78rem] font-extrabold tracking-[.08em] text-pine-deep uppercase shadow-[inset_4px_0_0_#c4933f]"
           >
             {{ section.title }}
           </h3>
