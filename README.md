@@ -4,11 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Open Source Love svg1](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://github.com/wajeht/course)
 
-A private, self-hosted learning library for video courses stored on your own
-server. It scans a read-only video folder, organizes lessons from any source
-into sections, streams browser-compatible files directly, converts other files
-to cached HLS with Intel Quick Sync, and tracks one profile's viewing progress
-in SQLite.
+A private, opinionated, self-hosted video course library.
 
 ## Library Layout
 
