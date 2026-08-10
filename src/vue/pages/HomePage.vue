@@ -69,57 +69,8 @@ onMounted(async () => {
 
 <template>
   <main
-    class="mx-auto w-[min(1380px,calc(100%-8vw))] pt-[clamp(48px,7vw,92px)] pb-[90px] max-[860px]:w-[min(100%-40px,1380px)] max-[600px]:pt-[42px]"
+    class="mx-auto w-[min(1380px,calc(100%-8vw))] pt-[clamp(36px,4vw,58px)] pb-[90px] max-[860px]:w-[min(100%-40px,1380px)]"
   >
-    <section
-      class="grid grid-cols-[minmax(0,1fr)_minmax(320px,.7fr)] items-end gap-12 pb-[clamp(44px,6vw,78px)] max-[860px]:grid-cols-1 max-[860px]:items-start max-[860px]:gap-[30px]"
-    >
-      <div>
-        <p class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase">
-          Personal learning library
-        </p>
-        <h1
-          class="max-w-[720px] font-display text-[clamp(3.2rem,7vw,7rem)] leading-[.86] font-extrabold tracking-[-.055em] max-[860px]:text-[clamp(3.5rem,13vw,6.3rem)]"
-        >
-          Pick up where<br />you left off.
-        </h1>
-      </div>
-      <div class="flex items-stretch gap-[10px] max-[600px]:flex-col">
-        <label
-          class="flex min-h-12 flex-1 items-center gap-3 rounded-[7px] border border-line bg-white px-4 shadow-[0_8px_30px_rgb(24_32_29_/_5%)] focus-within:border-pine focus-within:shadow-[0_0_0_3px_rgb(36_77_59_/_10%)]"
-        >
-          <svg
-            class="w-5 flex-none fill-none stroke-pine stroke-[1.7] [stroke-linecap:round]"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path d="m21 21-4.4-4.4m2.4-5.1a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z" />
-          </svg>
-          <span class="sr-only">Search courses and lessons</span>
-          <input
-            v-model="query"
-            class="w-full min-w-0 border-0 bg-transparent p-0 text-ink outline-0 placeholder:text-[#89918d]"
-            type="search"
-            placeholder="Search courses and lessons"
-          />
-        </label>
-        <button
-          class="inline-flex min-h-11 cursor-pointer items-center justify-center gap-[9px] rounded-[7px] border border-line bg-white/60 px-[18px] text-[.82rem] font-[750] text-pine-deep transition-[transform,background,border-color] duration-[160ms] enabled:hover:-translate-y-px enabled:hover:border-[#abb8b0] enabled:hover:bg-white disabled:cursor-wait disabled:opacity-55 max-[600px]:self-start"
-          :disabled="scanning"
-          @click="rescanCatalog"
-        >
-          <svg
-            class="w-[18px] fill-none stroke-current stroke-[1.8]"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path d="M20 7v5h-5M4 17v-5h5m10.1-3A8 8 0 0 0 5.5 6M4.9 15A8 8 0 0 0 18.5 18" />
-          </svg>
-          {{ scanning ? "Scanning…" : "Rescan" }}
-        </button>
-      </div>
-    </section>
-
     <div
       v-if="error"
       class="mb-7 rounded-lg border border-[#e8b7ae] bg-[#f8e5e1] px-[18px] py-[14px] text-[.88rem] text-[#6c241c]"
@@ -202,43 +153,84 @@ onMounted(async () => {
         </span>
       </div>
 
-      <nav
-        class="mb-7 overflow-x-auto border-b border-line pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        aria-label="Filter courses by category"
+      <div
+        class="mb-7 flex items-center gap-4 border-b border-line pb-3 max-[900px]:flex-col max-[900px]:items-stretch"
       >
-        <div class="flex min-w-max gap-2">
-          <button
-            class="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-[7px] border px-4 text-[.72rem] font-extrabold tracking-[.04em] uppercase transition-[background,color,border-color,transform] duration-[160ms] hover:-translate-y-px"
-            :class="
-              selectedCategory === ''
-                ? 'border-pine-deep bg-pine-deep text-white shadow-[inset_0_-3px_0_#c4933f]'
-                : 'border-line bg-white/65 text-pine-deep hover:border-[#abb8b0] hover:bg-white'
-            "
-            :aria-pressed="selectedCategory === ''"
-            @click="selectedCategory = ''"
+        <nav
+          class="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          aria-label="Filter courses by category"
+        >
+          <div class="flex min-w-max gap-2">
+            <button
+              class="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-[7px] border px-4 text-[.72rem] font-extrabold tracking-[.04em] uppercase transition-[background,color,border-color,transform] duration-[160ms] hover:-translate-y-px"
+              :class="
+                selectedCategory === ''
+                  ? 'border-pine-deep bg-pine-deep text-white shadow-[inset_0_-3px_0_#c4933f]'
+                  : 'border-line bg-white/65 text-pine-deep hover:border-[#abb8b0] hover:bg-white'
+              "
+              :aria-pressed="selectedCategory === ''"
+              @click="selectedCategory = ''"
+            >
+              All
+              <span class="font-body text-[.66rem] font-semibold opacity-65">{{
+                courseCount
+              }}</span>
+            </button>
+            <button
+              v-for="category in catalog.categories"
+              :key="category.name"
+              class="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-[7px] border px-4 text-[.72rem] font-extrabold tracking-[.04em] uppercase transition-[background,color,border-color,transform] duration-[160ms] hover:-translate-y-px"
+              :class="
+                selectedCategory === category.name
+                  ? 'border-pine-deep bg-pine-deep text-white shadow-[inset_0_-3px_0_#c4933f]'
+                  : 'border-line bg-white/65 text-pine-deep hover:border-[#abb8b0] hover:bg-white'
+              "
+              :aria-pressed="selectedCategory === category.name"
+              @click="selectedCategory = category.name"
+            >
+              {{ category.name }}
+              <span class="font-body text-[.66rem] font-semibold opacity-65">
+                {{ category.courseCount }}
+              </span>
+            </button>
+          </div>
+        </nav>
+
+        <div class="flex w-[min(100%,510px)] flex-none items-stretch gap-2 max-[900px]:w-full">
+          <label
+            class="flex min-h-10 flex-1 items-center gap-2.5 rounded-[7px] border border-line bg-white px-3.5 shadow-[0_8px_30px_rgb(24_32_29_/_5%)] focus-within:border-pine focus-within:shadow-[0_0_0_3px_rgb(36_77_59_/_10%)]"
           >
-            All
-            <span class="font-body text-[.66rem] font-semibold opacity-65">{{ courseCount }}</span>
-          </button>
+            <svg
+              class="w-[18px] flex-none fill-none stroke-pine stroke-[1.7] [stroke-linecap:round]"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path d="m21 21-4.4-4.4m2.4-5.1a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z" />
+            </svg>
+            <span class="sr-only">Search courses and lessons</span>
+            <input
+              v-model="query"
+              class="w-full min-w-0 border-0 bg-transparent p-0 text-[.85rem] text-ink outline-0 placeholder:text-[#89918d]"
+              type="search"
+              placeholder="Search courses and lessons"
+            />
+          </label>
           <button
-            v-for="category in catalog.categories"
-            :key="category.name"
-            class="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-[7px] border px-4 text-[.72rem] font-extrabold tracking-[.04em] uppercase transition-[background,color,border-color,transform] duration-[160ms] hover:-translate-y-px"
-            :class="
-              selectedCategory === category.name
-                ? 'border-pine-deep bg-pine-deep text-white shadow-[inset_0_-3px_0_#c4933f]'
-                : 'border-line bg-white/65 text-pine-deep hover:border-[#abb8b0] hover:bg-white'
-            "
-            :aria-pressed="selectedCategory === category.name"
-            @click="selectedCategory = category.name"
+            class="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-[7px] border border-line bg-white/60 px-4 text-[.78rem] font-[750] text-pine-deep transition-[transform,background,border-color] duration-[160ms] enabled:hover:-translate-y-px enabled:hover:border-[#abb8b0] enabled:hover:bg-white disabled:cursor-wait disabled:opacity-55"
+            :disabled="scanning"
+            @click="rescanCatalog"
           >
-            {{ category.name }}
-            <span class="font-body text-[.66rem] font-semibold opacity-65">
-              {{ category.courseCount }}
-            </span>
+            <svg
+              class="w-4 fill-none stroke-current stroke-[1.8]"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path d="M20 7v5h-5M4 17v-5h5m10.1-3A8 8 0 0 0 5.5 6M4.9 15A8 8 0 0 0 18.5 18" />
+            </svg>
+            {{ scanning ? "Scanning…" : "Rescan" }}
           </button>
         </div>
-      </nav>
+      </div>
 
       <div
         v-if="loading"
