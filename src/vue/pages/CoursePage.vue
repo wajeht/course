@@ -144,10 +144,16 @@ watch(
         class="mb-5 overflow-hidden rounded-[10px] border border-line bg-white shadow-[0_6px_22px_rgb(24_32_29_/_4%)]"
       >
         <header
-          class="flex items-center justify-between border-b border-line bg-[#eef2ee] px-[22px] py-[18px]"
+          class="flex items-center justify-between border-b border-pine/15 bg-mist px-[22px] py-4 text-pine-deep shadow-[inset_4px_0_0_#c4933f]"
         >
-          <h3 class="font-display text-[1.18rem]">{{ section.title }}</h3>
-          <span class="text-[.7rem] text-muted">{{ section.lessons.length }} lessons</span>
+          <h3 class="font-display text-[1.12rem] font-extrabold tracking-[.05em] uppercase">
+            {{ section.title }}
+          </h3>
+          <span
+            class="rounded-full border border-pine/15 bg-pine/10 px-2.5 py-1 text-[.66rem] font-bold tracking-[.06em] text-pine-deep uppercase"
+          >
+            {{ section.lessons.length }} lessons
+          </span>
         </header>
         <LessonRow
           v-for="(lesson, index) in section.lessons"
