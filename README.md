@@ -10,17 +10,6 @@ into sections, streams browser-compatible files directly, converts other files
 to cached HLS with Intel Quick Sync, and tracks one profile's viewing progress
 in SQLite.
 
-## How It Works
-
-```text
-📁 Read-only video library → 🔍 Startup and scheduled scans → 🗄️ SQLite catalog
-                                      ↓
-👤 Browser → Hono API → Browser-compatible video → Direct byte-range streaming
-                         Incompatible video       → Quick Sync → Cached HLS
-                                      ↓
-                         Playback progress shared across devices
-```
-
 ## Library Layout
 
 ```text
@@ -58,7 +47,6 @@ a cover from the first valid video.
 
 - See the [DEVELOPMENT GUIDE](./docs/development.md) for local setup, commands, and container usage.
 - See the [CONTRIBUTION GUIDE](./docs/contribution.md) before submitting changes.
-- See [IMPLEMENTATION PLAN](./docs/plan.md) for the original architecture and delivery plan.
 
 ## License
 
