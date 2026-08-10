@@ -29,7 +29,7 @@ async function loadInstructor(): Promise<void> {
   loading.value = true;
   error.value = "";
   try {
-    const catalog = await api.getCatalog(undefined, undefined, instructorName.value);
+    const catalog = await api.getCatalog({ instructor: instructorName.value });
     courses.value = catalog.courses;
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : "Could not load this instructor";

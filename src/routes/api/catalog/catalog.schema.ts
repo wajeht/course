@@ -6,6 +6,7 @@ export const catalogQuerySchema = z.object({
   query: z.string().trim().max(200).optional(),
   category: z.string().trim().min(1).max(200).optional(),
   instructor: z.string().trim().min(1).max(200).optional(),
+  tag: z.string().trim().min(1).max(200).optional(),
 });
 
 export const courseParametersSchema = z.object({
@@ -63,6 +64,12 @@ export const catalogResponseSchema = z.object({
     }),
   ),
   instructors: z.array(
+    z.object({
+      name: z.string(),
+      courseCount: z.number().int().nonnegative(),
+    }),
+  ),
+  tags: z.array(
     z.object({
       name: z.string(),
       courseCount: z.number().int().nonnegative(),

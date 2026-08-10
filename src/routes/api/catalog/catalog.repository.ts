@@ -14,14 +14,16 @@ export interface CourseRow {
   total_duration: number;
 }
 
-export interface CategoryRow {
+export interface CourseCountRow {
   name: string;
   course_count: number;
 }
 
-export interface InstructorRow {
-  name: string;
-  course_count: number;
+export interface CourseFilters {
+  query?: string;
+  category?: string;
+  instructor?: string;
+  tag?: string;
 }
 
 export interface LessonRow {
@@ -46,9 +48,10 @@ export interface LessonRow {
 }
 
 export interface CatalogRepository {
-  listCourses(query?: string, category?: string, instructor?: string): Promise<CourseRow[]>;
-  listCategories(): Promise<CategoryRow[]>;
-  listInstructors(): Promise<InstructorRow[]>;
+  listCourses(filters?: CourseFilters): Promise<CourseRow[]>;
+  listCategories(): Promise<CourseCountRow[]>;
+  listInstructors(): Promise<CourseCountRow[]>;
+  listTags(): Promise<CourseCountRow[]>;
   listContinueWatching(): Promise<LessonRow[]>;
   findCourse(courseId: string): Promise<CourseRow | undefined>;
   listCourseLessons(courseId: string): Promise<LessonRow[]>;
@@ -108,13 +111,19 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
   }
 
   return {
-    async listCourses(query, category, instructor) {
+    async listCourses({ query, category, instructor, tag } = {}) {
       const queryBuilder = createCourseQuery().orderBy("courses.sort_order");
       if (category) queryBuilder.where("courses.category", category);
       if (instructor) {
         queryBuilder.whereRaw(
           "EXISTS (SELECT 1 FROM json_each(courses.instructors_json) WHERE value = ? COLLATE NOCASE)",
           [instructor],
+        );
+      }
+      if (tag) {
+        queryBuilder.whereRaw(
+          "EXISTS (SELECT 1 FROM json_each(courses.tags_json) WHERE value = ? COLLATE NOCASE)",
+          [tag],
         );
       }
       if (query) {
@@ -138,7 +147,7 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
     },
 
     listCategories() {
-      return database<CategoryRow>("courses")
+      return database<CourseCountRow>("courses")
         .select("category as name")
         .count("id as course_count")
         .groupBy("category")
@@ -146,11 +155,20 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
     },
 
     listInstructors() {
-      return database<InstructorRow>("courses")
+      return database<CourseCountRow>("courses")
         .joinRaw("JOIN json_each(courses.instructors_json) AS instructor")
         .select(database.raw("MIN(instructor.value) as name"))
         .countDistinct("courses.id as course_count")
         .groupByRaw("instructor.value COLLATE NOCASE")
+        .orderByRaw("name COLLATE NOCASE");
+    },
+
+    listTags() {
+      return database<CourseCountRow>("courses")
+        .joinRaw("JOIN json_each(courses.tags_json) AS tag")
+        .select(database.raw("MIN(tag.value) as name"))
+        .countDistinct("courses.id as course_count")
+        .groupByRaw("tag.value COLLATE NOCASE")
         .orderByRaw("name COLLATE NOCASE");
     },
 
