@@ -10,6 +10,7 @@ const route = useRoute();
 const courses = ref<CatalogDto["courses"]>([]);
 const loading = ref(true);
 const error = ref("");
+let requestSequence = 0;
 
 const instructorName = computed(() => String(route.params.instructorName));
 const instructorInitials = computed(() =>
@@ -26,15 +27,19 @@ const totalDuration = computed(() =>
 );
 
 async function loadInstructor(): Promise<void> {
+  const requestId = ++requestSequence;
   loading.value = true;
   error.value = "";
   try {
     const catalog = await api.getCatalog({ instructor: instructorName.value });
+    if (requestId !== requestSequence) return;
     courses.value = catalog.courses;
   } catch (caught) {
+    if (requestId !== requestSequence) return;
+    courses.value = [];
     error.value = caught instanceof Error ? caught.message : "Could not load this instructor";
   } finally {
-    loading.value = false;
+    if (requestId === requestSequence) loading.value = false;
   }
 }
 
