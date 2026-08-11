@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createConfiguration } from "../configuration.js";
 import { createDatabase, type Database } from "../db/db.js";
 import { createCatalogApiRepository } from "../routes/api/catalog/catalog.repository.js";
-import { createLogger } from "../utils/logger.js";
+import { createLogger } from "../logger.js";
 import { createConversionManager, type ConversionExecutor } from "./conversion.js";
 import { createConversionRepository } from "./conversion.repository.js";
 

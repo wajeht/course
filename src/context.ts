@@ -23,7 +23,7 @@ import {
   createProgressService,
   type ProgressService,
 } from "./routes/api/progress/progress.service.js";
-import { createLogger, type Logger } from "./utils/logger.js";
+import { createLogger, type Logger } from "./logger.js";
 
 export interface AppContext {
   configuration: Configuration;

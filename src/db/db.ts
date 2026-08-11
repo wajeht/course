@@ -4,7 +4,7 @@ import path from "node:path";
 import knex, { type Knex } from "knex";
 
 import type { Configuration } from "../configuration.js";
-import type { Logger } from "../utils/logger.js";
+import type { Logger } from "../logger.js";
 import { createKnexConfig } from "./knexfile.js";
 
 export interface Database {

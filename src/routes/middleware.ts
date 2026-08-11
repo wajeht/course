@@ -3,7 +3,7 @@ import { HTTPException } from "hono/http-exception";
 import { ZodError } from "zod";
 
 import type { AppEnvironment } from "../configuration.js";
-import type { Logger } from "../utils/logger.js";
+import type { Logger } from "../logger.js";
 
 export function createMiddleware(
   logger: Logger,
