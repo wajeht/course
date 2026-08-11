@@ -101,8 +101,8 @@ export const api = {
     });
     await expectJson(response);
   },
-  async getScanStatus(): Promise<ScanStatus> {
-    return expectJson<ScanStatus>(await apiClient.api.scan.$get());
+  async getScanStatus(signal?: AbortSignal): Promise<ScanStatus> {
+    return expectJson<ScanStatus>(await apiClient.api.scan.$get({}, { init: { signal } }));
   },
   async rescanCatalog(): Promise<ScanStatus> {
     return expectJson<ScanStatus>(await apiClient.api.scan.$post());

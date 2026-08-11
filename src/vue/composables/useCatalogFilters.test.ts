@@ -1,4 +1,3 @@
-import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { createApp, effectScope } from "vue";
 import { createMemoryHistory, createRouter } from "vue-router";
 import { describe, expect, it, vi } from "vitest";
@@ -46,7 +45,7 @@ function scanStatus(): ScanStatus {
 async function setup(
   client: {
     getCatalog(filters?: CatalogFilters, signal?: AbortSignal): Promise<CatalogDto>;
-    getScanStatus(): Promise<ScanStatus>;
+    getScanStatus(signal?: AbortSignal): Promise<ScanStatus>;
   },
   path = "/",
   debounceMilliseconds = 0,
@@ -56,17 +55,14 @@ async function setup(
     routes: [{ path: "/", component: { template: "<div />" } }],
   });
   await router.push(path);
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false, gcTime: Infinity } },
-  });
   const app = createApp({});
-  app.use(router).use(VueQueryPlugin, { queryClient });
+  app.use(router);
   const scope = effectScope();
   const filters = app.runWithContext(() =>
     scope.run(() => useCatalogFilters(client, debounceMilliseconds)),
   );
   if (!filters) throw new Error("Composable did not initialize");
-  return { filters, router, stop: () => (scope.stop(), queryClient.clear()) };
+  return { filters, router, stop: () => scope.stop() };
 }
 
 describe("useCatalogFilters", () => {

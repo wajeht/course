@@ -1,31 +1,25 @@
 <script setup lang="ts">
-import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
-import { computed, watch } from "vue";
+import { computed, ref, shallowRef, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
 import { api } from "../api";
 import LessonRow from "../components/LessonRow.vue";
 import ProgressBar from "../components/ProgressBar.vue";
+import { useAsyncData } from "../composables/useAsyncData.js";
 import { useExpandableSections } from "../composables/useExpandableSections.js";
-import { catalogKeys } from "../queries/queryKeys.js";
 import { durationText } from "../utils/format";
 
 const route = useRoute();
-const queryClient = useQueryClient();
 const courseId = computed(() => String(route.params.courseId));
-const courseQuery = useQuery({
-  queryKey: computed(() => catalogKeys.course(courseId.value)),
-  queryFn: ({ queryKey, signal }) => api.getCourse(queryKey[2], signal),
+const courseRequest = useAsyncData(({ signal }) => api.getCourse(courseId.value, signal), {
+  immediate: false,
 });
-const resetCourseMutation = useMutation({
-  mutationFn: (id: string) => api.resetCourse(id),
-  onSuccess: () => queryClient.invalidateQueries({ queryKey: catalogKeys.all }),
-});
-const course = computed(() => courseQuery.data.value ?? null);
-const loading = computed(() => courseQuery.isPending.value);
-const resetting = computed(() => resetCourseMutation.isPending.value);
+const resetting = ref(false);
+const resetError = shallowRef<unknown>(null);
+const course = computed(() => courseRequest.data.value);
+const loading = computed(() => courseRequest.loading.value && course.value === null);
 const error = computed(() => {
-  const caught = resetCourseMutation.error.value ?? courseQuery.error.value;
+  const caught = resetError.value ?? courseRequest.error.value;
   return caught instanceof Error ? caught.message : caught ? "Could not load this course" : "";
 });
 const { isSectionExpanded, replaceExpandedSections, sectionPanelId, toggleSection } =
@@ -40,11 +34,28 @@ const nextLesson = computed(
 
 async function resetProgress(): Promise<void> {
   if (!course.value || !window.confirm("Reset all lesson progress for this course?")) return;
-  await resetCourseMutation.mutateAsync(course.value.id).catch(() => undefined);
+  resetting.value = true;
+  resetError.value = null;
+  try {
+    await api.resetCourse(course.value.id);
+    await courseRequest.refresh();
+  } catch (caught) {
+    resetError.value = caught;
+  } finally {
+    resetting.value = false;
+  }
 }
 
 watch(
-  () => courseQuery.data.value,
+  courseId,
+  () => {
+    courseRequest.data.value = null;
+    void courseRequest.refresh().catch(() => undefined);
+  },
+  { immediate: true },
+);
+watch(
+  courseRequest.data,
   (loadedCourse) => {
     if (!loadedCourse) return;
     const loadedLessons = loadedCourse.sections.flatMap((section) => section.lessons);

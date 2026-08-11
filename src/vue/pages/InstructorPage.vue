@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { keepPreviousData, useQuery } from "@tanstack/vue-query";
 import { computed, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
 import { api, type CatalogFilters } from "../api";
 import CourseCard from "../components/CourseCard.vue";
 import PaginationControls from "../components/PaginationControls.vue";
-import { catalogKeys } from "../queries/queryKeys.js";
+import { useAsyncData } from "../composables/useAsyncData.js";
 
 const route = useRoute();
 const router = useRouter();
@@ -21,19 +20,15 @@ const filters = computed<CatalogFilters>(() => ({
   page: page.value,
   pageSize: 24,
 }));
-const instructorQuery = useQuery({
-  queryKey: computed(() => catalogKeys.list(filters.value)),
-  queryFn: ({ queryKey, signal }) => api.getCatalog(queryKey[2], signal),
-  placeholderData: keepPreviousData,
+const instructorRequest = useAsyncData(({ signal }) => api.getCatalog(filters.value, signal), {
+  immediate: false,
 });
-const catalog = computed(() => instructorQuery.data.value ?? null);
+const catalog = computed(() => instructorRequest.data.value);
 const courses = computed(() => catalog.value?.courses ?? []);
-const loading = computed(() => instructorQuery.isPending.value);
-const refreshing = computed(
-  () => instructorQuery.isFetching.value && !instructorQuery.isPending.value,
-);
+const loading = computed(() => instructorRequest.loading.value && catalog.value === null);
+const refreshing = computed(() => instructorRequest.loading.value && catalog.value !== null);
 const error = computed(() => {
-  const caught = instructorQuery.error.value;
+  const caught = instructorRequest.error.value;
   return caught instanceof Error ? caught.message : caught ? "Could not load this instructor" : "";
 });
 const instructorInitials = computed(() =>
@@ -56,15 +51,12 @@ function setPage(nextPage: number): void {
   void router.push({ query: pageQuery(Math.max(1, nextPage)) });
 }
 
-watch(
-  () => instructorQuery.dataUpdatedAt.value,
-  () => {
-    if (instructorQuery.isPlaceholderData.value) return;
-    const loadedPage = catalog.value?.pagination.page;
-    if (!loadedPage || loadedPage === page.value) return;
-    void router.replace({ query: pageQuery(loadedPage) });
-  },
-);
+watch(filters, () => void instructorRequest.refresh().catch(() => undefined), { immediate: true });
+watch(instructorRequest.data, (loadedCatalog) => {
+  const loadedPage = loadedCatalog?.pagination.page;
+  if (!loadedPage || loadedPage === page.value) return;
+  void router.replace({ query: pageQuery(loadedPage) });
+});
 </script>
 
 <template>
