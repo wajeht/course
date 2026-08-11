@@ -7,7 +7,7 @@ import LessonRow from "../components/LessonRow.vue";
 import ProgressBar from "../components/ProgressBar.vue";
 import { useAsyncData } from "../composables/useAsyncData.js";
 import { useExpandableSections } from "../composables/useExpandableSections.js";
-import { durationText } from "../utils/format";
+import { durationText } from "../utils.js";
 
 const route = useRoute();
 const courseId = computed(() => String(route.params.courseId));
