@@ -4,15 +4,7 @@ import { RouterLink, useRoute } from "vue-router";
 
 import { api, type CourseDetailDto, type LessonDto, type PlaybackResult } from "../api";
 import LessonRow from "../components/LessonRow.vue";
-import {
-  activatePlaybackSession,
-  createPlaybackSession,
-  exitPlaybackPosition,
-  persistPlaybackProgress,
-  recordPlaybackPosition,
-  stopPlaybackSession,
-  type PlaybackSession,
-} from "../playback-session.js";
+import { usePlaybackProgress } from "../composables/usePlaybackProgress.js";
 
 const route = useRoute();
 const video = ref<HTMLVideoElement | null>(null);
@@ -29,7 +21,9 @@ let hls: import("hls.js").default | null = null;
 let pollTimer: ReturnType<typeof setTimeout> | undefined;
 let resumeApplied = false;
 let playerRequestId = 0;
-let playbackSession: PlaybackSession | null = null;
+const playbackProgress = usePlaybackProgress((lessonId, positionSeconds) =>
+  api.saveProgress(lessonId, positionSeconds),
+);
 
 const allLessons = computed(
   () => course.value?.sections.flatMap((section) => section.lessons) ?? [],
@@ -62,8 +56,7 @@ function toggleSection(section: CourseSection): void {
 }
 
 function destroyPlayback(): void {
-  if (playbackSession) stopPlaybackSession(playbackSession);
-  playbackSession = null;
+  playbackProgress.clearSession();
   clearTimeout(pollTimer);
   hls?.destroy();
   hls = null;
@@ -128,8 +121,8 @@ async function handlePlayback(
 
 async function loadPlayer(): Promise<void> {
   const requestId = ++playerRequestId;
-  capturePlaybackPosition();
-  await savePlaybackProgress(true);
+  if (ended.value) playbackProgress.stopSession();
+  else await playbackProgress.finishSession(video.value?.currentTime);
   if (requestId !== playerRequestId) return;
   const previousCourseId = course.value?.id;
   destroyPlayback();
@@ -142,7 +135,7 @@ async function loadPlayer(): Promise<void> {
     const detail = await api.getLesson(lessonId);
     if (requestId !== playerRequestId) return;
     lesson.value = detail.lesson;
-    playbackSession = createPlaybackSession(detail.lesson.id, detail.lesson.positionSeconds);
+    playbackProgress.startSession(detail.lesson.id, detail.lesson.positionSeconds);
     course.value = detail.course;
     const activeSection = detail.course.sections.find((section) =>
       section.lessons.some((item) => item.id === detail.lesson.id),
@@ -165,9 +158,8 @@ async function loadPlayer(): Promise<void> {
 }
 
 function applyResume(): void {
-  const session = playbackSession;
-  if (!video.value || !lesson.value || !session || resumeApplied) return;
-  if (session.lessonId !== lesson.value.id) return;
+  if (!video.value || !lesson.value || resumeApplied) return;
+  if (!playbackProgress.isSessionFor(lesson.value.id)) return;
   resumeApplied = true;
   if (!lesson.value.completed && lesson.value.positionSeconds > 0) {
     video.value.currentTime = Math.min(
@@ -176,45 +168,27 @@ function applyResume(): void {
     );
   }
   video.value.playbackRate = playbackRate.value;
-  activatePlaybackSession(session, video.value.currentTime);
-}
-
-function capturePlaybackPosition(): PlaybackSession | null {
-  const session = playbackSession;
-  if (!session?.ready || !video.value) return null;
-  recordPlaybackPosition(session, video.value.currentTime);
-  return session;
-}
-
-async function savePlaybackProgress(force = false): Promise<void> {
-  const session = playbackSession;
-  if (!session?.ready || ended.value) return;
-  await persistPlaybackProgress(
-    session,
-    (lessonId, positionSeconds) => api.saveProgress(lessonId, positionSeconds),
-    force,
-  );
+  playbackProgress.activateSession(video.value.currentTime);
 }
 
 function saveOnTimeUpdate(): void {
-  capturePlaybackPosition();
-  void savePlaybackProgress();
+  playbackProgress.recordPosition(video.value?.currentTime);
+  if (!ended.value) void playbackProgress.persistProgress();
 }
 
 function saveOnPause(): void {
-  capturePlaybackPosition();
-  void savePlaybackProgress(true);
+  playbackProgress.recordPosition(video.value?.currentTime);
+  if (!ended.value) void playbackProgress.persistProgress(true);
 }
 
 function saveOnExit(): void {
-  const session = capturePlaybackPosition();
-  if (!session || ended.value) return;
-  const position = exitPlaybackPosition(session);
-  if (position === null) return;
-  void fetch(`/api/progress/lessons/${session.lessonId}`, {
+  if (ended.value) return;
+  const snapshot = playbackProgress.captureExitSnapshot(video.value?.currentTime);
+  if (!snapshot) return;
+  void fetch(`/api/progress/lessons/${snapshot.lessonId}`, {
     method: "PUT",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ positionSeconds: position }),
+    body: JSON.stringify({ positionSeconds: snapshot.positionSeconds }),
     keepalive: true,
   });
 }
@@ -224,6 +198,7 @@ async function markComplete(): Promise<void> {
   try {
     await api.completeLesson(lesson.value.id);
     ended.value = true;
+    playbackProgress.stopSession();
     lesson.value.completed = true;
     lesson.value.progressPercent = 100;
   } catch (caught) {
@@ -241,24 +216,17 @@ async function retryConversion(): Promise<void> {
 
 async function resetProgress(): Promise<void> {
   if (!lesson.value || !window.confirm("Reset progress for this lesson?")) return;
-  const session = playbackSession;
-  if (session) stopPlaybackSession(session);
-  const previousPosition = session?.positionSeconds ?? 0;
   try {
-    await session?.saveQueue;
-    await api.resetLesson(lesson.value.id);
+    await playbackProgress.resetSession(video.value?.currentTime, (lessonId) =>
+      api.resetLesson(lessonId),
+    );
     lesson.value.positionSeconds = 0;
     lesson.value.progressPercent = 0;
     lesson.value.completed = false;
     ended.value = false;
     if (video.value) video.value.currentTime = 0;
-    if (session) activatePlaybackSession(session, 0);
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : "Could not reset this lesson";
-  } finally {
-    if (session && playbackSession === session && !session.ready) {
-      activatePlaybackSession(session, previousPosition);
-    }
   }
 }
 
@@ -268,8 +236,8 @@ function updatePlaybackRate(): void {
 
 function handleVisibility(): void {
   if (document.visibilityState !== "hidden") return;
-  capturePlaybackPosition();
-  void savePlaybackProgress(true);
+  playbackProgress.recordPosition(video.value?.currentTime);
+  if (!ended.value) void playbackProgress.persistProgress(true);
 }
 
 watch(
@@ -282,8 +250,8 @@ document.addEventListener("visibilitychange", handleVisibility);
 
 onBeforeUnmount(() => {
   playerRequestId++;
-  capturePlaybackPosition();
-  void savePlaybackProgress(true);
+  if (ended.value) playbackProgress.stopSession();
+  else void playbackProgress.finishSession(video.value?.currentTime);
   destroyPlayback();
   window.removeEventListener("pagehide", saveOnExit);
   document.removeEventListener("visibilitychange", handleVisibility);
