@@ -49,9 +49,9 @@ export interface LessonRow {
 
 export interface CatalogRepository {
   listCourses(filters?: CourseFilters): Promise<CourseRow[]>;
-  listCategories(): Promise<CourseCountRow[]>;
-  listInstructors(): Promise<CourseCountRow[]>;
-  listTags(): Promise<CourseCountRow[]>;
+  listCategories(filters?: CourseFilters): Promise<CourseCountRow[]>;
+  listInstructors(filters?: CourseFilters): Promise<CourseCountRow[]>;
+  listTags(filters?: CourseFilters): Promise<CourseCountRow[]>;
   listContinueWatching(): Promise<LessonRow[]>;
   findCourse(courseId: string): Promise<CourseRow | undefined>;
   listCourseLessons(courseId: string): Promise<LessonRow[]>;
@@ -110,66 +110,79 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
       .groupBy("courses.id");
   }
 
+  function applyCourseFilters(
+    queryBuilder: Knex.QueryBuilder,
+    { query, category, instructor, tag }: CourseFilters = {},
+  ): void {
+    if (category) queryBuilder.where("courses.category", category);
+    if (instructor) {
+      queryBuilder.whereRaw(
+        "EXISTS (SELECT 1 FROM json_each(courses.instructors_json) WHERE value = ? COLLATE NOCASE)",
+        [instructor],
+      );
+    }
+    if (tag) {
+      queryBuilder.whereRaw(
+        "EXISTS (SELECT 1 FROM json_each(courses.tags_json) WHERE value = ? COLLATE NOCASE)",
+        [tag],
+      );
+    }
+    if (query) {
+      const search = `%${query}%`;
+      queryBuilder.where((where) => {
+        where
+          .whereLike("courses.title", search)
+          .orWhereLike("courses.description", search)
+          .orWhereLike("courses.category", search)
+          .orWhereLike("courses.instructors_json", search)
+          .orWhereLike("courses.tags_json", search)
+          .orWhereExists(
+            database("lessons as matching_lessons")
+              .select(database.raw("1"))
+              .whereRaw("matching_lessons.course_id = courses.id")
+              .whereLike("matching_lessons.title", search),
+          );
+      });
+    }
+  }
+
   return {
-    async listCourses({ query, category, instructor, tag } = {}) {
+    async listCourses(filters = {}) {
       const queryBuilder = createCourseQuery().orderBy("courses.sort_order");
-      if (category) queryBuilder.where("courses.category", category);
-      if (instructor) {
-        queryBuilder.whereRaw(
-          "EXISTS (SELECT 1 FROM json_each(courses.instructors_json) WHERE value = ? COLLATE NOCASE)",
-          [instructor],
-        );
-      }
-      if (tag) {
-        queryBuilder.whereRaw(
-          "EXISTS (SELECT 1 FROM json_each(courses.tags_json) WHERE value = ? COLLATE NOCASE)",
-          [tag],
-        );
-      }
-      if (query) {
-        const search = `%${query}%`;
-        queryBuilder.where((where) => {
-          where
-            .whereLike("courses.title", search)
-            .orWhereLike("courses.description", search)
-            .orWhereLike("courses.category", search)
-            .orWhereLike("courses.instructors_json", search)
-            .orWhereLike("courses.tags_json", search)
-            .orWhereExists(
-              database("lessons as matching_lessons")
-                .select(database.raw("1"))
-                .whereRaw("matching_lessons.course_id = courses.id")
-                .whereLike("matching_lessons.title", search),
-            );
-        });
-      }
+      applyCourseFilters(queryBuilder, filters);
       return queryBuilder;
     },
 
-    listCategories() {
-      return database<CourseCountRow>("courses")
+    async listCategories(filters = {}) {
+      const queryBuilder = database<CourseCountRow>("courses")
         .select("category as name")
-        .count("id as course_count")
+        .countDistinct("courses.id as course_count")
         .groupBy("category")
         .orderByRaw("category COLLATE NOCASE");
+      applyCourseFilters(queryBuilder, filters);
+      return (await queryBuilder) as unknown as CourseCountRow[];
     },
 
-    listInstructors() {
-      return database<CourseCountRow>("courses")
+    async listInstructors(filters = {}) {
+      const queryBuilder = database<CourseCountRow>("courses")
         .joinRaw("JOIN json_each(courses.instructors_json) AS instructor")
         .select(database.raw("MIN(instructor.value) as name"))
         .countDistinct("courses.id as course_count")
         .groupByRaw("instructor.value COLLATE NOCASE")
         .orderByRaw("name COLLATE NOCASE");
+      applyCourseFilters(queryBuilder, filters);
+      return (await queryBuilder) as unknown as CourseCountRow[];
     },
 
-    listTags() {
-      return database<CourseCountRow>("courses")
+    async listTags(filters = {}) {
+      const queryBuilder = database<CourseCountRow>("courses")
         .joinRaw("JOIN json_each(courses.tags_json) AS tag")
         .select(database.raw("MIN(tag.value) as name"))
         .countDistinct("courses.id as course_count")
         .groupByRaw("tag.value COLLATE NOCASE")
         .orderByRaw("name COLLATE NOCASE");
+      applyCourseFilters(queryBuilder, filters);
+      return (await queryBuilder) as unknown as CourseCountRow[];
     },
 
     listContinueWatching() {

@@ -58,6 +58,23 @@ describe("catalog service", () => {
         { name: "Martial Arts", courseCount: 1 },
         { name: "Technology", courseCount: 1 },
       ],
+      instructors: [{ name: "Jane Smith", courseCount: 1 }],
+      tags: [
+        { name: "DevOps", courseCount: 1 },
+        { name: "Docker", courseCount: 1 },
+      ],
+    });
+  });
+
+  it("limits the other dropdown choices to the selected category", async () => {
+    const service = createCatalogService(createCatalogApiRepository(database.connection));
+
+    await expect(service.getCatalog({ category: "Martial Arts" })).resolves.toMatchObject({
+      instructors: [
+        { name: "jane smith", courseCount: 1 },
+        { name: "John Doe", courseCount: 1 },
+      ],
+      tags: [{ name: "Guard", courseCount: 1 }],
     });
   });
 

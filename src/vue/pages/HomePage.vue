@@ -16,8 +16,6 @@ const {
   libraryTitle,
   loading,
   query,
-  rescanCatalog,
-  scanning,
   scanStatus,
   selectedCategory,
   selectedFilters,
@@ -183,20 +181,6 @@ onMounted(() => void initializeCatalog());
             placeholder="Search courses and lessons"
           />
         </label>
-        <button
-          class="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-[7px] border border-line bg-white/60 px-4 text-[.78rem] font-[750] text-pine-deep transition-[transform,background,border-color] duration-[160ms] enabled:hover:-translate-y-px enabled:hover:border-[#abb8b0] enabled:hover:bg-white disabled:cursor-wait disabled:opacity-55 max-[700px]:w-full"
-          :disabled="scanning"
-          @click="rescanCatalog"
-        >
-          <svg
-            class="w-4 fill-none stroke-current stroke-[1.8]"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path d="M20 7v5h-5M4 17v-5h5m10.1-3A8 8 0 0 0 5.5 6M4.9 15A8 8 0 0 0 18.5 18" />
-          </svg>
-          {{ scanning ? "Scanning…" : "Rescan" }}
-        </button>
       </div>
 
       <div
