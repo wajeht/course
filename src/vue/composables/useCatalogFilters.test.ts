@@ -49,7 +49,6 @@ describe("useCatalogFilters", () => {
     const client = {
       getCatalog: vi.fn(async () => catalog()),
       getScanStatus: vi.fn(async () => scanStatus()),
-      rescanCatalog: vi.fn(async () => scanStatus()),
     };
     const scope = effectScope();
     const filters = scope.run(() => useCatalogFilters(client, 0));
@@ -68,7 +67,6 @@ describe("useCatalogFilters", () => {
     const client = {
       getCatalog: vi.fn(async () => catalog()),
       getScanStatus: vi.fn(async () => scanStatus()),
-      rescanCatalog: vi.fn(async () => scanStatus()),
     };
     const scope = effectScope();
     const filters = scope.run(() => useCatalogFilters(client, 220));
@@ -105,7 +103,6 @@ describe("useCatalogFilters", () => {
     const client = {
       getCatalog: vi.fn().mockReturnValueOnce(first).mockReturnValueOnce(second),
       getScanStatus: vi.fn(async () => scanStatus()),
-      rescanCatalog: vi.fn(async () => scanStatus()),
     };
     const scope = effectScope();
     const filters = scope.run(() => useCatalogFilters(client, 0));
@@ -120,30 +117,6 @@ describe("useCatalogFilters", () => {
     await firstLoad;
 
     expect(filters.catalog.value.courses[0]?.title).toBe("New result");
-    scope.stop();
-  });
-
-  it("rescans before refreshing the catalog", async () => {
-    const events: string[] = [];
-    const client = {
-      getCatalog: vi.fn(async () => {
-        events.push("catalog");
-        return catalog();
-      }),
-      getScanStatus: vi.fn(async () => scanStatus()),
-      rescanCatalog: vi.fn(async () => {
-        events.push("scan");
-        return scanStatus();
-      }),
-    };
-    const scope = effectScope();
-    const filters = scope.run(() => useCatalogFilters(client, 0));
-    if (!filters) throw new Error("Composable did not initialize");
-
-    await filters.rescanCatalog();
-
-    expect(events).toEqual(["scan", "catalog"]);
-    expect(filters.scanning.value).toBe(false);
     scope.stop();
   });
 });

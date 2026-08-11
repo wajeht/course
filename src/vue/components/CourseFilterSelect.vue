@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from "vue";
+
 interface FilterOption {
   name: string;
   courseCount: number;
@@ -11,6 +13,13 @@ const props = defineProps<{
   options: FilterOption[];
 }>();
 const emit = defineEmits<{ "update:modelValue": [value: string] }>();
+
+const visibleOptions = computed(() => {
+  if (!props.modelValue || props.options.some((option) => option.name === props.modelValue)) {
+    return props.options;
+  }
+  return [{ name: props.modelValue, courseCount: 0 }, ...props.options];
+});
 
 function selectFilter(event: Event): void {
   emit("update:modelValue", (event.target as HTMLSelectElement).value);
@@ -30,7 +39,7 @@ function selectFilter(event: Event): void {
       @change="selectFilter"
     >
       <option value="">{{ allLabel }}</option>
-      <option v-for="option in options" :key="option.name" :value="option.name">
+      <option v-for="option in visibleOptions" :key="option.name" :value="option.name">
         {{ option.name }} ({{ option.courseCount }})
       </option>
     </select>

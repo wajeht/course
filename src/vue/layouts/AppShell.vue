@@ -4,6 +4,7 @@ import { RouterLink, useRoute } from "vue-router";
 
 const route = useRoute();
 const isPlayer = computed(() => route.name === "player");
+const isSettings = computed(() => route.name === "settings");
 </script>
 
 <template>
@@ -27,14 +28,24 @@ const isPlayer = computed(() => route.name === "player");
           <i class="block h-full w-1 bg-belt-light" />
           <i class="block h-full w-1 bg-belt-light" />
         </span>
-        <span>Course</span>
+        <span class="max-[600px]:hidden">Course</span>
       </RouterLink>
-      <RouterLink
-        to="/"
-        class="border-b-2 border-belt px-0 py-2 text-[.76rem] font-bold tracking-[.14em] text-white/[.76] uppercase max-[600px]:hidden"
-      >
-        Library
-      </RouterLink>
+      <nav class="flex items-center gap-6 max-[600px]:gap-3" aria-label="Main navigation">
+        <RouterLink
+          to="/"
+          class="border-b-2 px-0 py-2 text-[.76rem] font-bold tracking-[.14em] uppercase"
+          :class="isSettings ? 'border-transparent text-white/55' : 'border-belt text-white/90'"
+        >
+          Library
+        </RouterLink>
+        <RouterLink
+          to="/settings"
+          class="border-b-2 px-0 py-2 text-[.76rem] font-bold tracking-[.14em] uppercase"
+          :class="isSettings ? 'border-belt text-white/90' : 'border-transparent text-white/55'"
+        >
+          Settings
+        </RouterLink>
+      </nav>
     </header>
     <slot />
   </div>

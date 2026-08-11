@@ -135,9 +135,9 @@ export function createCatalogService(repository: CatalogRepository): CatalogServ
     async getCatalog(filters) {
       const [courses, categories, instructors, tags, continuing] = await Promise.all([
         repository.listCourses(filters),
-        repository.listCategories(),
-        repository.listInstructors(),
-        repository.listTags(),
+        repository.listCategories({ ...filters, category: undefined }),
+        repository.listInstructors({ ...filters, instructor: undefined }),
+        repository.listTags({ ...filters, tag: undefined }),
         repository.listContinueWatching(),
       ]);
       return {

@@ -5,7 +5,6 @@ import type { CatalogDto, CatalogFilters, ScanStatus } from "../api.js";
 interface CatalogClient {
   getCatalog(filters?: CatalogFilters): Promise<CatalogDto>;
   getScanStatus(): Promise<ScanStatus>;
-  rescanCatalog(): Promise<ScanStatus>;
 }
 
 function emptyCatalog(): CatalogDto {
@@ -26,7 +25,6 @@ export function useCatalogFilters(client: CatalogClient, debounceMilliseconds = 
   const selectedInstructor = ref("");
   const selectedTag = ref("");
   const loading = ref(true);
-  const scanning = ref(false);
   const error = ref("");
   let searchTimer: ReturnType<typeof setTimeout> | undefined;
   let requestSequence = 0;
@@ -80,19 +78,6 @@ export function useCatalogFilters(client: CatalogClient, debounceMilliseconds = 
     await Promise.all([loadCatalog(), loadScanStatus()]);
   }
 
-  async function rescanCatalog(): Promise<void> {
-    scanning.value = true;
-    error.value = "";
-    try {
-      scanStatus.value = await client.rescanCatalog();
-      await loadCatalog();
-    } catch (caught) {
-      error.value = caught instanceof Error ? caught.message : "Could not rescan the library";
-    } finally {
-      scanning.value = false;
-    }
-  }
-
   const stopFilterWatch = watch([query, selectedCategory, selectedInstructor, selectedTag], () => {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => void loadCatalog(), debounceMilliseconds);
@@ -112,8 +97,6 @@ export function useCatalogFilters(client: CatalogClient, debounceMilliseconds = 
     libraryTitle,
     loading,
     query,
-    rescanCatalog,
-    scanning,
     scanStatus,
     selectedCategory,
     selectedFilters,
