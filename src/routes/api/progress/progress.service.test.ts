@@ -70,4 +70,22 @@ describe("progress service", () => {
     await service.resetCourse("a".repeat(24));
     expect(await database.connection("progress")).toHaveLength(0);
   });
+
+  it("ignores zero positions instead of erasing saved progress", async () => {
+    const service = createProgressService(
+      createProgressRepository(database.connection),
+      createCatalogApiRepository(database.connection),
+    );
+
+    await service.updateProgress("b".repeat(24), 25);
+    await service.updateProgress("b".repeat(24), 0);
+    expect(await database.connection("progress").first()).toMatchObject({
+      position_seconds: 25,
+      completed: 0,
+    });
+
+    await service.resetLesson("b".repeat(24));
+    await service.updateProgress("b".repeat(24), 0);
+    expect(await database.connection("progress")).toHaveLength(0);
+  });
 });
