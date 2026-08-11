@@ -5,8 +5,7 @@ coverage/
 .DS_Store
 *.log
 data/
-public/assets/
-public/index.html
+/public/
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
