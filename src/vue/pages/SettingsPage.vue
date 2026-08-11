@@ -3,17 +3,18 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { computed } from "vue";
 
 import { api } from "../api";
+import { catalogKeys, scanKeys } from "../queries/queryKeys.js";
 
 const queryClient = useQueryClient();
 const scanQuery = useQuery({
-  queryKey: ["scan-status"],
+  queryKey: scanKeys.all,
   queryFn: () => api.getScanStatus(),
 });
 const rescanMutation = useMutation({
   mutationFn: () => api.rescanCatalog(),
   onSuccess(status) {
-    queryClient.setQueryData(["scan-status"], status);
-    void queryClient.invalidateQueries({ queryKey: ["catalog"] });
+    queryClient.setQueryData(scanKeys.all, status);
+    void queryClient.invalidateQueries({ queryKey: catalogKeys.all });
   },
 });
 

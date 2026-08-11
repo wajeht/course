@@ -3,6 +3,7 @@ import { computed, onScopeDispose, ref, watch } from "vue";
 import { useRoute, useRouter, type LocationQueryRaw } from "vue-router";
 
 import type { CatalogDto, CatalogFilters, ScanStatus } from "../api.js";
+import { catalogKeys, scanKeys } from "../queries/queryKeys.js";
 
 interface CatalogClient {
   getCatalog(filters?: CatalogFilters, signal?: AbortSignal): Promise<CatalogDto>;
@@ -71,12 +72,12 @@ export function useCatalogFilters(client: CatalogClient, debounceMilliseconds = 
   }));
 
   const catalogQuery = useQuery({
-    queryKey: computed(() => ["catalog", filters.value] as const),
-    queryFn: ({ queryKey, signal }) => client.getCatalog(queryKey[1], signal),
+    queryKey: computed(() => catalogKeys.list(filters.value)),
+    queryFn: ({ queryKey, signal }) => client.getCatalog(queryKey[2], signal),
     placeholderData: keepPreviousData,
   });
   const scanStatusQuery = useQuery({
-    queryKey: ["scan-status"],
+    queryKey: scanKeys.all,
     queryFn: () => client.getScanStatus(),
   });
 
