@@ -39,7 +39,17 @@ export interface CatalogFilterDto {
   courseCount: number;
 }
 
-export type CatalogFilters = CourseFilters;
+export interface CatalogFilters extends CourseFilters {
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CatalogPaginationDto {
+  page: number;
+  pageSize: number;
+  totalCourses: number;
+  totalPages: number;
+}
 
 export interface CourseDetailDto extends CourseDto {
   sections: Array<{
@@ -56,6 +66,7 @@ export interface CatalogService {
     instructors: CatalogFilterDto[];
     tags: CatalogFilterDto[];
     continueWatching: LessonDto[];
+    pagination: CatalogPaginationDto;
   }>;
   getCourse(courseId: string): Promise<CourseDetailDto | null>;
   getLesson(lessonId: string): Promise<{ lesson: LessonDto; course: CourseDetailDto } | null>;
@@ -133,11 +144,21 @@ export function createCatalogService(repository: CatalogRepository): CatalogServ
 
   return {
     async getCatalog(filters) {
+      const {
+        page: requestedPage = 1,
+        pageSize: requestedPageSize = 24,
+        ...courseFilters
+      } = filters ?? {};
+      const pageSize = Math.min(100, Math.max(1, requestedPageSize));
+      const totalCourses = await repository.countCourses(courseFilters);
+      const totalPages = Math.ceil(totalCourses / pageSize);
+      const page = totalPages === 0 ? 1 : Math.min(Math.max(1, requestedPage), totalPages);
+
       const [courses, categories, instructors, tags, continuing] = await Promise.all([
-        repository.listCourses(filters),
-        repository.listCategories({ ...filters, category: undefined }),
-        repository.listInstructors({ ...filters, instructor: undefined }),
-        repository.listTags({ ...filters, tag: undefined }),
+        repository.listCourses(courseFilters, { limit: pageSize, offset: (page - 1) * pageSize }),
+        repository.listCategories({ ...courseFilters, category: undefined }),
+        repository.listInstructors({ ...courseFilters, instructor: undefined }),
+        repository.listTags({ ...courseFilters, tag: undefined }),
         repository.listContinueWatching(),
       ]);
       return {
@@ -146,6 +167,7 @@ export function createCatalogService(repository: CatalogRepository): CatalogServ
         instructors: instructors.map(catalogFilterDto),
         tags: tags.map(catalogFilterDto),
         continueWatching: continuing.map(lessonDto),
+        pagination: { page, pageSize, totalCourses, totalPages },
       };
     },
     getCourse,

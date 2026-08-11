@@ -28,5 +28,5 @@ export const router = createRouter({
     },
     { path: "/:pathMatch(.*)*", redirect: "/" },
   ],
-  scrollBehavior: () => ({ top: 0 }),
+  scrollBehavior: (to, from) => (to.path === from.path ? false : { top: 0 }),
 });
