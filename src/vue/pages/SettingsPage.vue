@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { computed } from "vue";
 
 import { api } from "../api";
+import PageHeader from "../components/PageHeader.vue";
+import StandardPageLayout from "../layouts/StandardPageLayout.vue";
 import { catalogKeys, scanKeys } from "../queries/queryKeys.js";
 
 const queryClient = useQueryClient();
@@ -27,18 +29,12 @@ const error = computed(() => {
 </script>
 
 <template>
-  <main
-    class="mx-auto w-[min(1380px,calc(100%-8vw))] pt-[clamp(36px,4vw,58px)] pb-[90px] max-[860px]:w-[min(100%-40px,1380px)]"
-  >
-    <p class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase">
-      Course library
-    </p>
-    <h1 class="font-display text-[clamp(1.9rem,3vw,2.7rem)] font-[750] tracking-[-.035em]">
-      Settings
-    </h1>
-    <p class="mt-3 max-w-[600px] text-[.92rem] leading-6 text-muted">
-      Manage how your course library finds and updates local content.
-    </p>
+  <StandardPageLayout>
+    <PageHeader
+      eyebrow="Course library"
+      title="Settings"
+      description="Manage how your course library finds and updates local content."
+    />
 
     <div
       v-if="error"
@@ -82,5 +78,5 @@ const error = computed(() => {
         </button>
       </div>
     </section>
-  </main>
+  </StandardPageLayout>
 </template>
