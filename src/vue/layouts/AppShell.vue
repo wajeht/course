@@ -3,8 +3,8 @@ import { computed } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
 const route = useRoute();
-const isPlayer = computed(() => route.name === "player");
-const isSettings = computed(() => route.name === "settings");
+const activeNavigation = computed(() => route.meta.navigation ?? "library");
+const isPlayer = computed(() => route.meta.shell === "player");
 </script>
 
 <template>
@@ -34,14 +34,22 @@ const isSettings = computed(() => route.name === "settings");
         <RouterLink
           to="/"
           class="border-b-2 px-0 py-2 text-[.76rem] font-bold tracking-[.14em] uppercase"
-          :class="isSettings ? 'border-transparent text-white/55' : 'border-belt text-white/90'"
+          :class="
+            activeNavigation === 'library'
+              ? 'border-belt text-white/90'
+              : 'border-transparent text-white/55'
+          "
         >
           Library
         </RouterLink>
         <RouterLink
           to="/settings"
           class="border-b-2 px-0 py-2 text-[.76rem] font-bold tracking-[.14em] uppercase"
-          :class="isSettings ? 'border-belt text-white/90' : 'border-transparent text-white/55'"
+          :class="
+            activeNavigation === 'settings'
+              ? 'border-belt text-white/90'
+              : 'border-transparent text-white/55'
+          "
         >
           Settings
         </RouterLink>
