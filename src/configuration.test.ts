@@ -16,7 +16,10 @@ describe("createConfiguration", () => {
   });
 
   it("uses the same defaults for a direct production start", () => {
-    const configuration = createConfiguration({ APP_ENV: "production" });
+    const configuration = createConfiguration({
+      APP_ENV: "production",
+      SESSION_SECRET: "production-session-secret-1234567890",
+    });
 
     expect(configuration.media.dataDirectory).toBe(path.resolve("data"));
     expect(configuration.media.videosDirectory).toBe("/Volumes/plex/videos");
@@ -29,11 +32,18 @@ describe("createConfiguration", () => {
       APP_VUE_PORT: "5173",
       DATA_DIR: "/data",
       VIDEOS_DIR: "/videos",
+      SESSION_SECRET: "production-session-secret-1234567890",
     });
 
     expect(configuration.media.dataDirectory).toBe("/data");
     expect(configuration.media.videosDirectory).toBe("/videos");
     expect(configuration.app.port).toBe(3000);
     expect(configuration.app.vuePort).toBe(5173);
+  });
+
+  it("requires an explicit session secret in production", () => {
+    expect(() => createConfiguration({ APP_ENV: "production" })).toThrow(
+      "SESSION_SECRET must be set in production",
+    );
   });
 });

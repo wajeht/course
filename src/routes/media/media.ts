@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import type { AppContext } from "../../context.js";
 import { resolveContainedPath } from "../../media/path.js";
+import { createRequireAuth } from "../api/auth/auth.js";
 import { lessonParametersSchema } from "../api/catalog/catalog.schema.js";
 import { parseByteRange } from "./range.js";
 
@@ -34,39 +35,46 @@ function createFileBody(filename: string, range?: { start: number; end: number }
 
 export function createMediaRouter(context: AppContext) {
   const app = new Hono();
+  const requireAuth = createRequireAuth(context);
 
-  app.get("/media/:lessonId", zValidator("param", lessonParametersSchema), async (c) => {
-    const lesson = await context.catalog.findLessonRecord(c.req.valid("param").lessonId);
-    if (!lesson) return c.json({ message: "Lesson not found" }, 404);
-    const filename = await resolveContainedPath(
-      context.configuration.media.videosDirectory,
-      lesson.path,
-    );
-    const statistics = await fs.stat(filename);
-    const contentType =
-      videoContentTypes[path.extname(filename).toLowerCase()] ?? "application/octet-stream";
-    c.header("Accept-Ranges", "bytes");
-    c.header("Content-Type", contentType);
-    c.header("Cache-Control", "private, no-store");
+  app.get(
+    "/media/:lessonId",
+    requireAuth,
+    zValidator("param", lessonParametersSchema),
+    async (c) => {
+      const lesson = await context.catalog.findLessonRecord(c.req.valid("param").lessonId);
+      if (!lesson) return c.json({ message: "Lesson not found" }, 404);
+      const filename = await resolveContainedPath(
+        context.configuration.media.videosDirectory,
+        lesson.path,
+      );
+      const statistics = await fs.stat(filename);
+      const contentType =
+        videoContentTypes[path.extname(filename).toLowerCase()] ?? "application/octet-stream";
+      c.header("Accept-Ranges", "bytes");
+      c.header("Content-Type", contentType);
+      c.header("Cache-Control", "private, no-store");
 
-    try {
-      const range = parseByteRange(c.req.header("range"), statistics.size);
-      if (!range) {
-        c.header("Content-Length", String(statistics.size));
-        return c.body(createFileBody(filename));
+      try {
+        const range = parseByteRange(c.req.header("range"), statistics.size);
+        if (!range) {
+          c.header("Content-Length", String(statistics.size));
+          return c.body(createFileBody(filename));
+        }
+        c.header("Content-Range", `bytes ${range.start}-${range.end}/${statistics.size}`);
+        c.header("Content-Length", String(range.end - range.start + 1));
+        return c.body(createFileBody(filename, range), 206);
+      } catch (error) {
+        if (!(error instanceof RangeError)) throw error;
+        c.header("Content-Range", `bytes */${statistics.size}`);
+        return c.body(null, 416);
       }
-      c.header("Content-Range", `bytes ${range.start}-${range.end}/${statistics.size}`);
-      c.header("Content-Length", String(range.end - range.start + 1));
-      return c.body(createFileBody(filename, range), 206);
-    } catch (error) {
-      if (!(error instanceof RangeError)) throw error;
-      c.header("Content-Range", `bytes */${statistics.size}`);
-      return c.body(null, 416);
-    }
-  });
+    },
+  );
 
   app.get(
     "/covers/:courseId",
+    requireAuth,
     zValidator("param", z.object({ courseId: lessonParametersSchema.shape.lessonId })),
     async (c) => {
       const course = await context.catalogRepository.findCourse(c.req.valid("param").courseId);
@@ -82,34 +90,36 @@ export function createMediaRouter(context: AppContext) {
         extension === ".png" ? "image/png" : extension === ".webp" ? "image/webp" : "image/jpeg";
       c.header("Content-Type", contentType);
       c.header("Content-Length", String(statistics.size));
-      c.header("Cache-Control", "public, max-age=300");
+      c.header("Cache-Control", "private, no-store");
       return c.body(createFileBody(filename));
     },
   );
 
-  app.get("/hls/:lessonId/:filename", zValidator("param", hlsParametersSchema), async (c) => {
-    const { lessonId, filename } = c.req.valid("param");
-    try {
-      const file = await resolveContainedPath(
-        path.join(context.configuration.media.hlsDirectory, lessonId),
-        filename,
-      );
-      const statistics = await fs.stat(file);
-      c.header(
-        "Content-Type",
-        filename.endsWith(".m3u8") ? "application/vnd.apple.mpegurl" : "video/mp2t",
-      );
-      c.header(
-        "Cache-Control",
-        filename.endsWith(".m3u8") ? "private, no-cache" : "private, max-age=31536000, immutable",
-      );
-      c.header("Content-Length", String(statistics.size));
-      return c.body(createFileBody(file));
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") return c.body(null, 404);
-      throw error;
-    }
-  });
+  app.get(
+    "/hls/:lessonId/:filename",
+    requireAuth,
+    zValidator("param", hlsParametersSchema),
+    async (c) => {
+      const { lessonId, filename } = c.req.valid("param");
+      try {
+        const file = await resolveContainedPath(
+          path.join(context.configuration.media.hlsDirectory, lessonId),
+          filename,
+        );
+        const statistics = await fs.stat(file);
+        c.header(
+          "Content-Type",
+          filename.endsWith(".m3u8") ? "application/vnd.apple.mpegurl" : "video/mp2t",
+        );
+        c.header("Cache-Control", "private, no-store");
+        c.header("Content-Length", String(statistics.size));
+        return c.body(createFileBody(file));
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") return c.body(null, 404);
+        throw error;
+      }
+    },
+  );
 
   return app;
 }

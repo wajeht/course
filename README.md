@@ -13,6 +13,8 @@ Use it at [course.jaw.dev](https://course.jaw.dev), or run it locally:
 ```bash
 docker run --rm \
   --publish 80:80 \
+  --env SESSION_SECRET="$(openssl rand -hex 32)" \
+  --env AUTH_SETUP_TOKEN="choose-a-one-time-setup-token" \
   --read-only \
   --tmpfs /tmp \
   --cap-drop ALL \
@@ -26,6 +28,10 @@ docker run --rm \
 ```
 
 Then open [localhost](http://localhost).
+
+On the first visit, enter `AUTH_SETUP_TOKEN` and create the application password. The setup token
+is ignored after a password exists. `SESSION_SECRET` must remain stable across restarts or existing
+sessions will be signed out.
 
 ## Library Layout
 

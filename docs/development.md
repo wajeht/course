@@ -79,5 +79,7 @@ make up-qsv
 
 Pushes to `main` publish the production `Dockerfile` image to
 `ghcr.io/wajeht/course`. Production deployment configuration lives in the Home
-Ops repository, including video and data mounts, `/dev/dri` access, reverse
-proxy OAuth, and image updates. Course exposes `/healthz` for its health check.
+Ops repository, including video and data mounts, `/dev/dri` access,
+`SESSION_SECRET`, `AUTH_SETUP_TOKEN`, and image updates. Course handles browser
+authentication itself and exposes `/healthz` without authentication for its
+health check.

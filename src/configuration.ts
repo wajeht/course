@@ -13,6 +13,24 @@ const environmentSchema = z.object({
   FFMPEG_PATH: z.string().default("ffmpeg"),
   FFPROBE_PATH: z.string().default("ffprobe"),
   QSV_DEVICE: z.string().default("/dev/dri/renderD128"),
+  SESSION_SECRET: z.string().min(32).optional(),
+  AUTH_SETUP_TOKEN: z.string().min(16).optional(),
+  SESSION_IDLE_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(7 * 24 * 60 * 60 * 1000),
+  SESSION_ABSOLUTE_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(30 * 24 * 60 * 60 * 1000),
+  LOGIN_WINDOW_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(15 * 60 * 1000),
+  LOGIN_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
 });
 
 export type AppEnvironment = z.infer<typeof environmentSchema>["APP_ENV"];
@@ -38,10 +56,21 @@ export interface Configuration {
   database: {
     filename: string;
   };
+  auth: {
+    sessionSecret: string;
+    setupToken?: string;
+    idleTimeoutMs: number;
+    absoluteTimeoutMs: number;
+    loginWindowMs: number;
+    loginMaxAttempts: number;
+  };
 }
 
 export function createConfiguration(environment: NodeJS.ProcessEnv = process.env): Configuration {
   const parsed = environmentSchema.parse(environment);
+  if (parsed.APP_ENV === "production" && !parsed.SESSION_SECRET) {
+    throw new Error("SESSION_SECRET must be set in production");
+  }
   const dataDirectory = path.resolve(parsed.DATA_DIR);
   const videosDirectory = path.resolve(parsed.VIDEOS_DIR);
 
@@ -66,6 +95,14 @@ export function createConfiguration(environment: NodeJS.ProcessEnv = process.env
     database: {
       filename:
         parsed.APP_ENV === "testing" ? ":memory:" : path.join(dataDirectory, "course.sqlite"),
+    },
+    auth: {
+      sessionSecret: parsed.SESSION_SECRET ?? "course-development-session-secret-change-me",
+      setupToken: parsed.AUTH_SETUP_TOKEN,
+      idleTimeoutMs: parsed.SESSION_IDLE_TIMEOUT_MS,
+      absoluteTimeoutMs: parsed.SESSION_ABSOLUTE_TIMEOUT_MS,
+      loginWindowMs: parsed.LOGIN_WINDOW_MS,
+      loginMaxAttempts: parsed.LOGIN_MAX_ATTEMPTS,
     },
   };
 }

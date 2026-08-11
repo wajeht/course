@@ -27,6 +27,9 @@ export class ApiError extends Error {
 async function expectJson<T>(response: Response): Promise<T> {
   const body = (await response.json()) as T | { message?: string };
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined") {
+      window.dispatchEvent(new Event("course:unauthorized"));
+    }
     throw new ApiError(
       "message" in (body as object)
         ? ((body as { message?: string }).message ?? "Request failed")
@@ -38,6 +41,42 @@ async function expectJson<T>(response: Response): Promise<T> {
 }
 
 export const api = {
+  async getAuthState(): Promise<{
+    authenticated: boolean;
+    passwordConfigured: boolean;
+    setupEnabled: boolean;
+    setupTokenRequired: boolean;
+  }> {
+    return expectJson(await apiClient.api.auth.me.$get());
+  },
+  async login(password: string): Promise<void> {
+    await expectJson(await apiClient.api.auth.$post({ json: { password } }));
+  },
+  async logout(): Promise<void> {
+    await expectJson(await apiClient.api.auth.logout.$post());
+  },
+  async setupPassword(
+    password: string,
+    confirmPassword: string,
+    setupToken?: string,
+  ): Promise<void> {
+    await expectJson(
+      await apiClient.api.auth.password.$post({
+        json: { password, confirmPassword, setupToken },
+      }),
+    );
+  },
+  async changePassword(
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string,
+  ): Promise<void> {
+    await expectJson(
+      await apiClient.api.auth.password.$put({
+        json: { currentPassword, newPassword, confirmPassword },
+      }),
+    );
+  },
   async getCatalog(filters: CatalogFilters = {}, signal?: AbortSignal): Promise<CatalogDto> {
     const response = await apiClient.api.catalog.$get(
       {

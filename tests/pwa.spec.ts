@@ -6,6 +6,17 @@ import { expect, test } from "@playwright/test";
 const serviceWorkerPath = path.resolve("public/sw.js");
 
 test("registers, serves deep links offline, and prompts for updates", async ({ context, page }) => {
+  const password = "playwright-password";
+  const setup = await page.request.post("/api/auth/password", {
+    data: {
+      password,
+      confirmPassword: password,
+      setupToken: "course-playwright-setup-token",
+    },
+  });
+  expect([201, 409]).toContain(setup.status());
+  const login = await page.request.post("/api/auth", { data: { password } });
+  expect(login.status()).toBe(200);
   await page.goto("/");
 
   await expect(page.getByRole("heading", { level: 1, name: "All courses" })).toBeVisible();
@@ -25,7 +36,9 @@ test("registers, serves deep links offline, and prompts for updates", async ({ c
   try {
     const response = await page.goto("/settings");
     expect(response?.status()).toBe(200);
-    await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Connection required" }),
+    ).toBeVisible();
   } finally {
     await context.setOffline(false);
   }

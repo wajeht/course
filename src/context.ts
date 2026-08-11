@@ -1,5 +1,7 @@
 import fs from "node:fs/promises";
 
+import { createAuthRepository } from "./auth/auth.repository.js";
+import { createAuthService, type AuthService } from "./auth/auth.service.js";
 import { configuration as defaultConfiguration, type Configuration } from "./configuration.js";
 import { createDatabase, type Database } from "./db/db.js";
 import {
@@ -29,6 +31,7 @@ export interface AppContext {
   configuration: Configuration;
   logger: Logger;
   database: Database;
+  auth: AuthService;
   catalogRepository: CatalogRepository;
   scannerCatalogRepository: ScannerCatalogRepository;
   catalog: CatalogService;
@@ -48,6 +51,7 @@ export async function createContext(
     fs.mkdir(configuration.media.hlsDirectory, { recursive: true }),
   ]);
   const database = await createDatabase(configuration, logger);
+  const auth = createAuthService(createAuthRepository(database.connection), configuration);
   const scannerCatalogRepository = createCatalogRepository(database.connection);
   const catalogRepository = createCatalogApiRepository(database.connection);
   const catalog = createCatalogService(catalogRepository);
@@ -68,6 +72,7 @@ export async function createContext(
     configuration,
     logger,
     database,
+    auth,
     catalogRepository,
     scannerCatalogRepository,
     catalog,

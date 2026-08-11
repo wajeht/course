@@ -3,11 +3,20 @@ import { computed, ref, shallowRef } from "vue";
 
 import { api } from "../api";
 import PageHeader from "../components/PageHeader.vue";
+import { useAuth } from "../composables/useAuth.js";
 import { useAsyncData } from "../composables/useAsyncData.js";
 import StandardPageLayout from "../layouts/StandardPageLayout.vue";
 
 const scanRequest = useAsyncData(({ signal }) => api.getScanStatus(signal));
+const auth = useAuth();
 const scanning = ref(false);
+const changingPassword = ref(false);
+const loggingOut = ref(false);
+const currentPassword = ref("");
+const newPassword = ref("");
+const confirmPassword = ref("");
+const passwordMessage = ref("");
+const passwordError = ref("");
 const rescanError = shallowRef<unknown>(null);
 const scanStatus = computed(() => scanRequest.data.value);
 const error = computed(() => {
@@ -24,6 +33,39 @@ async function rescanCatalog(): Promise<void> {
     rescanError.value = caught;
   } finally {
     scanning.value = false;
+  }
+}
+
+async function changePassword(): Promise<void> {
+  passwordMessage.value = "";
+  passwordError.value = "";
+  if (newPassword.value !== confirmPassword.value) {
+    passwordError.value = "Passwords do not match";
+    return;
+  }
+  changingPassword.value = true;
+  try {
+    await auth.changePassword(currentPassword.value, newPassword.value, confirmPassword.value);
+    currentPassword.value = "";
+    newPassword.value = "";
+    confirmPassword.value = "";
+    passwordMessage.value = "Password changed successfully";
+  } catch (caught) {
+    passwordError.value = caught instanceof Error ? caught.message : "Could not change password";
+  } finally {
+    changingPassword.value = false;
+  }
+}
+
+async function logout(): Promise<void> {
+  loggingOut.value = true;
+  passwordError.value = "";
+  try {
+    await auth.logout();
+  } catch (caught) {
+    passwordError.value = caught instanceof Error ? caught.message : "Could not sign out";
+  } finally {
+    loggingOut.value = false;
   }
 }
 </script>
@@ -76,6 +118,83 @@ async function rescanCatalog(): Promise<void> {
           </svg>
           {{ scanning ? "Scanning…" : "Rescan library" }}
         </button>
+      </div>
+    </section>
+
+    <section
+      class="mt-6 rounded-[10px] border border-line bg-white p-[clamp(22px,4vw,34px)] shadow-course"
+    >
+      <div class="grid gap-8 md:grid-cols-[1fr_1.2fr]">
+        <div>
+          <h2 class="text-lg font-[750]">Access</h2>
+          <p class="mt-1.5 max-w-[500px] text-[.85rem] leading-6 text-muted">
+            Change the password for this private library or sign out of this device.
+          </p>
+          <button
+            class="mt-5 min-h-10 cursor-pointer rounded-[7px] border border-line px-5 text-[.78rem] font-[750] text-pine hover:border-pine"
+            type="button"
+            :disabled="loggingOut"
+            @click="logout"
+          >
+            {{ loggingOut ? "Signing out…" : "Sign out" }}
+          </button>
+        </div>
+
+        <form class="grid gap-4" @submit.prevent="changePassword">
+          <input
+            class="sr-only"
+            name="username"
+            value="admin"
+            autocomplete="username"
+            readonly
+            tabindex="-1"
+          />
+          <label class="text-xs font-bold tracking-[.08em] text-pine uppercase">
+            Current password
+            <input
+              v-model="currentPassword"
+              class="mt-2 min-h-10 w-full rounded-[7px] border border-line px-3 text-sm font-normal tracking-normal text-ink normal-case outline-none focus:border-pine"
+              type="password"
+              autocomplete="current-password"
+              required
+            />
+          </label>
+          <label class="text-xs font-bold tracking-[.08em] text-pine uppercase">
+            New password
+            <input
+              v-model="newPassword"
+              class="mt-2 min-h-10 w-full rounded-[7px] border border-line px-3 text-sm font-normal tracking-normal text-ink normal-case outline-none focus:border-pine"
+              type="password"
+              autocomplete="new-password"
+              minlength="8"
+              maxlength="72"
+              required
+            />
+          </label>
+          <label class="text-xs font-bold tracking-[.08em] text-pine uppercase">
+            Confirm new password
+            <input
+              v-model="confirmPassword"
+              class="mt-2 min-h-10 w-full rounded-[7px] border border-line px-3 text-sm font-normal tracking-normal text-ink normal-case outline-none focus:border-pine"
+              type="password"
+              autocomplete="new-password"
+              minlength="8"
+              maxlength="72"
+              required
+            />
+          </label>
+          <p v-if="passwordError" class="text-sm text-[#8b3025]">{{ passwordError }}</p>
+          <p v-else-if="passwordMessage" class="text-sm font-semibold text-pine">
+            {{ passwordMessage }}
+          </p>
+          <button
+            class="min-h-10 cursor-pointer rounded-[7px] bg-pine px-5 text-[.78rem] font-[750] text-white hover:bg-pine-deep disabled:cursor-wait disabled:opacity-55"
+            type="submit"
+            :disabled="changingPassword"
+          >
+            {{ changingPassword ? "Saving…" : "Change password" }}
+          </button>
+        </form>
       </div>
     </section>
   </StandardPageLayout>

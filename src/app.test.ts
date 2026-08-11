@@ -26,13 +26,14 @@ describe("application", () => {
     const course = path.join(videos, "course");
     await fs.mkdir(course, { recursive: true });
     await fs.writeFile(path.join(course, "lesson.mp4"), "0123456789");
-    const context = await createContext(
-      createConfiguration({
-        APP_ENV: "testing",
-        VIDEOS_DIR: videos,
-        DATA_DIR: path.join(directory, "data"),
-      }),
-    );
+    const configuration = createConfiguration({
+      APP_ENV: "testing",
+      VIDEOS_DIR: videos,
+      DATA_DIR: path.join(directory, "data"),
+      AUTH_SETUP_TOKEN: "course-app-test-setup-token",
+    });
+    configuration.app.env = "production";
+    const context = await createContext(configuration);
     contexts.push(context);
     const clientDirectory = path.join(directory, "client");
     await fs.mkdir(clientDirectory);
@@ -41,7 +42,6 @@ describe("application", () => {
     await fs.writeFile(path.join(clientDirectory, "favicon.svg"), "<svg></svg>");
     await fs.writeFile(path.join(clientDirectory, "manifest.webmanifest"), "{}");
     await fs.writeFile(path.join(clientDirectory, "sw.js"), "// service worker");
-    context.configuration.app.env = "production";
     context.configuration.app.clientDirectory = clientDirectory;
     const now = new Date().toISOString();
     await context.database.connection("courses").insert({
@@ -70,14 +70,51 @@ describe("application", () => {
     const app = createApp(context);
 
     expect(await (await app.request("/healthz")).json()).toEqual({ status: "ok" });
+    expect((await app.request("/api/catalog")).status).toBe(401);
+    expect((await app.request(`/media/${"b".repeat(24)}`)).status).toBe(401);
+    expect((await app.request(`/covers/${"a".repeat(24)}`)).status).toBe(401);
+    expect((await app.request(`/hls/${"b".repeat(24)}/index.m3u8`)).status).toBe(401);
+
+    const rejectedSetup = await app.request("/api/auth/password", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        password: "course-test-password",
+        confirmPassword: "course-test-password",
+        setupToken: "wrong-setup-token",
+      }),
+    });
+    expect(rejectedSetup.status).toBe(400);
+
+    const setup = await app.request("/api/auth/password", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        password: "course-test-password",
+        confirmPassword: "course-test-password",
+        setupToken: "course-app-test-setup-token",
+      }),
+    });
+    expect(setup.status).toBe(201);
+    const login = await app.request("/api/auth", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ password: "course-test-password" }),
+    });
+    expect(login.status).toBe(200);
+    const cookie = login.headers.get("set-cookie")?.split(";")[0];
+    expect(cookie).toBeTruthy();
+
     const response = await app.request(`/media/${"b".repeat(24)}`, {
-      headers: { range: "bytes=2-5" },
+      headers: { range: "bytes=2-5", cookie: cookie! },
     });
     expect(response.status).toBe(206);
     expect(response.headers.get("content-range")).toBe("bytes 2-5/10");
     expect(await response.text()).toBe("2345");
 
-    const apiNotFound = await app.request("/api/does-not-exist");
+    const apiNotFound = await app.request("/api/does-not-exist", {
+      headers: { cookie: cookie! },
+    });
     expect(apiNotFound.status).toBe(404);
     expect(await apiNotFound.json()).toEqual({ message: "Resource not found" });
 
