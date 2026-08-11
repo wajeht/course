@@ -14,15 +14,17 @@
     "build": "npm run build:server && npm run build:client",
     "build:server": "tsc -p tsconfig.server.json",
     "build:client": "vite build --config vite.config.ts",
-    "typecheck": "npm run typecheck:server && npm run typecheck:client",
+    "typecheck": "npm run typecheck:server && npm run typecheck:client && npm run typecheck:pwa",
     "typecheck:server": "tsc -p tsconfig.server.json --noEmit",
     "typecheck:client": "vue-tsc -p tsconfig.client.json --noEmit",
+    "typecheck:pwa": "tsc -p tsconfig.pwa.json --noEmit",
     "test": "vitest run",
+    "test:pwa": "npm run build && playwright test",
     "test:watch": "vitest",
     "lint": "oxlint .",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
-    "check": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run build",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run test:pwa",
     "db:migrate": "APP_ENV=development node --env-file-if-exists=.env --import=tsx src/db/migrate.ts"
   },
   "dependencies": {
@@ -37,6 +39,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "1.62.1",
     "@tailwindcss/vite": "4.3.3",
     "@types/better-sqlite3": "9.6.0",
     "@types/node": "26.2.0",
