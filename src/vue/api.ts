@@ -13,7 +13,7 @@ import type { PlaybackResult } from "../routes/api/playback/playback.service";
 const apiClient = hc<AppType>("/");
 
 export type CatalogDto = Awaited<ReturnType<CatalogService["getCatalog"]>>;
-export type { CourseDetailDto, LessonDto, PlaybackResult, ScanStatus };
+export type { CatalogFilters, CourseDetailDto, LessonDto, PlaybackResult, ScanStatus };
 
 export class ApiError extends Error {
   constructor(
