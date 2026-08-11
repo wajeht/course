@@ -4,6 +4,15 @@ import { RouterLink, useRoute } from "vue-router";
 
 import { api, type CourseDetailDto, type LessonDto, type PlaybackResult } from "../api";
 import LessonRow from "../components/LessonRow.vue";
+import {
+  activatePlaybackSession,
+  createPlaybackSession,
+  exitPlaybackPosition,
+  persistPlaybackProgress,
+  recordPlaybackPosition,
+  stopPlaybackSession,
+  type PlaybackSession,
+} from "../playback-session.js";
 
 const route = useRoute();
 const video = ref<HTMLVideoElement | null>(null);
@@ -18,10 +27,9 @@ const playbackRate = ref(1);
 const expandedSectionKeys = ref<Set<string>>(new Set());
 let hls: import("hls.js").default | null = null;
 let pollTimer: ReturnType<typeof setTimeout> | undefined;
-let lastSavedAt = 0;
 let resumeApplied = false;
-let progressSavingEnabled = false;
 let playerRequestId = 0;
+let playbackSession: PlaybackSession | null = null;
 
 const allLessons = computed(
   () => course.value?.sections.flatMap((section) => section.lessons) ?? [],
@@ -54,7 +62,8 @@ function toggleSection(section: CourseSection): void {
 }
 
 function destroyPlayback(): void {
-  progressSavingEnabled = false;
+  if (playbackSession) stopPlaybackSession(playbackSession);
+  playbackSession = null;
   clearTimeout(pollTimer);
   hls?.destroy();
   hls = null;
@@ -119,7 +128,8 @@ async function handlePlayback(
 
 async function loadPlayer(): Promise<void> {
   const requestId = ++playerRequestId;
-  await saveProgress(true);
+  capturePlaybackPosition();
+  await savePlaybackProgress(true);
   if (requestId !== playerRequestId) return;
   const previousCourseId = course.value?.id;
   destroyPlayback();
@@ -132,7 +142,7 @@ async function loadPlayer(): Promise<void> {
     const detail = await api.getLesson(lessonId);
     if (requestId !== playerRequestId) return;
     lesson.value = detail.lesson;
-    lastSavedAt = 0;
+    playbackSession = createPlaybackSession(detail.lesson.id, detail.lesson.positionSeconds);
     course.value = detail.course;
     const activeSection = detail.course.sections.find((section) =>
       section.lessons.some((item) => item.id === detail.lesson.id),
@@ -155,7 +165,9 @@ async function loadPlayer(): Promise<void> {
 }
 
 function applyResume(): void {
-  if (!video.value || !lesson.value || resumeApplied) return;
+  const session = playbackSession;
+  if (!video.value || !lesson.value || !session || resumeApplied) return;
+  if (session.lessonId !== lesson.value.id) return;
   resumeApplied = true;
   if (!lesson.value.completed && lesson.value.positionSeconds > 0) {
     video.value.currentTime = Math.min(
@@ -164,32 +176,42 @@ function applyResume(): void {
     );
   }
   video.value.playbackRate = playbackRate.value;
-  lastSavedAt = video.value.currentTime;
-  progressSavingEnabled = true;
+  activatePlaybackSession(session, video.value.currentTime);
 }
 
-async function saveProgress(force = false): Promise<void> {
-  if (!progressSavingEnabled || !video.value || !lesson.value || ended.value) return;
-  const lessonId = lesson.value.id;
-  const position = video.value.currentTime;
-  if (position <= 0) return;
-  if (!force && Math.abs(position - lastSavedAt) < 10) return;
-  const previousSavedAt = lastSavedAt;
-  lastSavedAt = position;
-  try {
-    await api.saveProgress(lessonId, position);
-  } catch {
-    if (lesson.value?.id === lessonId && lastSavedAt === position) {
-      lastSavedAt = previousSavedAt;
-    }
-  }
+function capturePlaybackPosition(): PlaybackSession | null {
+  const session = playbackSession;
+  if (!session?.ready || !video.value) return null;
+  recordPlaybackPosition(session, video.value.currentTime);
+  return session;
+}
+
+async function savePlaybackProgress(force = false): Promise<void> {
+  const session = playbackSession;
+  if (!session?.ready || ended.value) return;
+  await persistPlaybackProgress(
+    session,
+    (lessonId, positionSeconds) => api.saveProgress(lessonId, positionSeconds),
+    force,
+  );
+}
+
+function saveOnTimeUpdate(): void {
+  capturePlaybackPosition();
+  void savePlaybackProgress();
+}
+
+function saveOnPause(): void {
+  capturePlaybackPosition();
+  void savePlaybackProgress(true);
 }
 
 function saveOnExit(): void {
-  if (!progressSavingEnabled || !video.value || !lesson.value || ended.value) return;
-  const position = video.value.currentTime;
-  if (position <= 0) return;
-  void fetch(`/api/progress/lessons/${lesson.value.id}`, {
+  const session = capturePlaybackPosition();
+  if (!session || ended.value) return;
+  const position = exitPlaybackPosition(session);
+  if (position === null) return;
+  void fetch(`/api/progress/lessons/${session.lessonId}`, {
     method: "PUT",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ positionSeconds: position }),
@@ -219,12 +241,25 @@ async function retryConversion(): Promise<void> {
 
 async function resetProgress(): Promise<void> {
   if (!lesson.value || !window.confirm("Reset progress for this lesson?")) return;
-  await api.resetLesson(lesson.value.id);
-  lesson.value.positionSeconds = 0;
-  lesson.value.progressPercent = 0;
-  lesson.value.completed = false;
-  ended.value = false;
-  if (video.value) video.value.currentTime = 0;
+  const session = playbackSession;
+  if (session) stopPlaybackSession(session);
+  const previousPosition = session?.positionSeconds ?? 0;
+  try {
+    await session?.saveQueue;
+    await api.resetLesson(lesson.value.id);
+    lesson.value.positionSeconds = 0;
+    lesson.value.progressPercent = 0;
+    lesson.value.completed = false;
+    ended.value = false;
+    if (video.value) video.value.currentTime = 0;
+    if (session) activatePlaybackSession(session, 0);
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : "Could not reset this lesson";
+  } finally {
+    if (session && playbackSession === session && !session.ready) {
+      activatePlaybackSession(session, previousPosition);
+    }
+  }
 }
 
 function updatePlaybackRate(): void {
@@ -232,7 +267,9 @@ function updatePlaybackRate(): void {
 }
 
 function handleVisibility(): void {
-  if (document.visibilityState === "hidden") void saveProgress(true);
+  if (document.visibilityState !== "hidden") return;
+  capturePlaybackPosition();
+  void savePlaybackProgress(true);
 }
 
 watch(
@@ -245,7 +282,8 @@ document.addEventListener("visibilitychange", handleVisibility);
 
 onBeforeUnmount(() => {
   playerRequestId++;
-  void saveProgress(true);
+  capturePlaybackPosition();
+  void savePlaybackProgress(true);
   destroyPlayback();
   window.removeEventListener("pagehide", saveOnExit);
   document.removeEventListener("visibilitychange", handleVisibility);
@@ -283,8 +321,8 @@ onBeforeUnmount(() => {
           controls
           playsinline
           @loadedmetadata="applyResume"
-          @timeupdate="saveProgress()"
-          @pause="saveProgress(true)"
+          @timeupdate="saveOnTimeUpdate"
+          @pause="saveOnPause"
           @ended="markComplete"
         />
         <div
