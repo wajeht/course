@@ -1,10 +1,12 @@
-import { effectScope, nextTick } from "vue";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+import { createApp, effectScope } from "vue";
+import { createMemoryHistory, createRouter } from "vue-router";
+import { describe, expect, it, vi } from "vitest";
 
-import type { CatalogDto, ScanStatus } from "../api.js";
+import type { CatalogDto, CatalogFilters, ScanStatus } from "../api.js";
 import { useCatalogFilters } from "./useCatalogFilters.js";
 
-function catalog(title = "Course"): CatalogDto {
+function catalog(title = "Course", page = 1): CatalogDto {
   return {
     courses: [
       {
@@ -25,6 +27,7 @@ function catalog(title = "Course"): CatalogDto {
     instructors: [],
     tags: [],
     continueWatching: [],
+    pagination: { page, pageSize: 24, totalCourses: 30, totalPages: 2 },
   };
 }
 
@@ -33,146 +36,127 @@ function scanStatus(): ScanStatus {
     startedAt: "2026-08-11T00:00:00.000Z",
     completedAt: "2026-08-11T00:00:01.000Z",
     status: "complete",
-    courseCount: 1,
-    lessonCount: 1,
+    courseCount: 30,
+    lessonCount: 30,
     warnings: [],
     error: null,
   };
 }
 
-afterEach(() => {
-  vi.useRealTimers();
-});
+async function setup(
+  client: {
+    getCatalog(filters?: CatalogFilters, signal?: AbortSignal): Promise<CatalogDto>;
+    getScanStatus(): Promise<ScanStatus>;
+  },
+  path = "/",
+  debounceMilliseconds = 0,
+) {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: "/", component: { template: "<div />" } }],
+  });
+  await router.push(path);
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: Infinity } },
+  });
+  const app = createApp({});
+  app.use(router).use(VueQueryPlugin, { queryClient });
+  const scope = effectScope();
+  const filters = app.runWithContext(() =>
+    scope.run(() => useCatalogFilters(client, debounceMilliseconds)),
+  );
+  if (!filters) throw new Error("Composable did not initialize");
+  return { filters, router, stop: () => (scope.stop(), queryClient.clear()) };
+}
 
 describe("useCatalogFilters", () => {
-  it("loads the catalog and scan status", async () => {
+  it("loads catalog state from a shareable URL", async () => {
     const client = {
       getCatalog: vi.fn(async () => catalog()),
       getScanStatus: vi.fn(async () => scanStatus()),
     };
-    const scope = effectScope();
-    const filters = scope.run(() => useCatalogFilters(client, 0));
-    if (!filters) throw new Error("Composable did not initialize");
+    const { filters, stop } = await setup(
+      client,
+      "/?q=guard&category=Martial+Arts&instructor=John+Danaher&tag=BJJ&page=2",
+    );
 
-    await filters.initializeCatalog();
-
-    expect(filters.catalog.value.courses[0]?.title).toBe("Course");
+    await vi.waitFor(() => expect(filters.catalog.value.courses[0]?.title).toBe("Course"));
+    expect(client.getCatalog).toHaveBeenCalledWith(
+      {
+        query: "guard",
+        category: "Martial Arts",
+        instructor: "John Danaher",
+        tag: "BJJ",
+        page: 2,
+        pageSize: 24,
+      },
+      expect.any(AbortSignal),
+    );
     expect(filters.scanStatus.value?.status).toBe("complete");
-    expect(filters.catalogLoaded.value).toBe(true);
-    expect(filters.loading.value).toBe(false);
-    expect(filters.refreshing.value).toBe(false);
-    scope.stop();
+    stop();
   });
 
-  it("debounces text searches", async () => {
-    vi.useFakeTimers();
+  it("debounces search into the URL", async () => {
     const client = {
       getCatalog: vi.fn(async () => catalog()),
       getScanStatus: vi.fn(async () => scanStatus()),
     };
-    const scope = effectScope();
-    const filters = scope.run(() => useCatalogFilters(client, 220));
-    if (!filters) throw new Error("Composable did not initialize");
-
+    const { filters, router, stop } = await setup(client, "/?page=2", 10);
     filters.query.value = "guard";
-    await nextTick();
-    await vi.advanceTimersByTimeAsync(219);
-    expect(client.getCatalog).not.toHaveBeenCalled();
-    await vi.advanceTimersByTimeAsync(1);
 
-    expect(client.getCatalog).toHaveBeenCalledWith({
-      query: "guard",
-      category: undefined,
-      instructor: undefined,
-      tag: undefined,
-    });
-    expect(filters.libraryTitle.value).toBe("1 matching course");
-    scope.stop();
+    expect(router.currentRoute.value.query.q).toBeUndefined();
+    await vi.waitFor(() => expect(router.currentRoute.value.query.q).toBe("guard"));
+    expect(router.currentRoute.value.query.page).toBeUndefined();
+    stop();
   });
 
-  it("applies dropdown filters immediately", async () => {
-    const client = {
-      getCatalog: vi.fn(async () => catalog()),
-      getScanStatus: vi.fn(async () => scanStatus()),
-    };
-    const scope = effectScope();
-    const filters = scope.run(() => useCatalogFilters(client, 220));
-    if (!filters) throw new Error("Composable did not initialize");
-
-    filters.selectedCategory.value = "Martial Arts";
-    filters.selectedInstructor.value = "John Danaher";
-    filters.selectedTag.value = "BJJ";
-    await nextTick();
-
-    expect(client.getCatalog).toHaveBeenCalledWith({
-      query: undefined,
-      category: "Martial Arts",
-      instructor: "John Danaher",
-      tag: "BJJ",
-    });
-    scope.stop();
-  });
-
-  it("keeps existing courses visible while refreshing", async () => {
-    vi.useFakeTimers();
-    let resolveRefresh: ((value: CatalogDto) => void) | undefined;
-    const refresh = new Promise<CatalogDto>((resolve) => {
-      resolveRefresh = resolve;
+  it("keeps the previous results visible while a new search loads", async () => {
+    let resolveSearch: ((value: CatalogDto) => void) | undefined;
+    const searchResult = new Promise<CatalogDto>((resolve) => {
+      resolveSearch = resolve;
     });
     const client = {
       getCatalog: vi
         .fn()
-        .mockResolvedValueOnce(catalog("Existing result"))
-        .mockReturnValue(refresh),
+        .mockResolvedValueOnce(catalog("Old result"))
+        .mockReturnValueOnce(searchResult),
       getScanStatus: vi.fn(async () => scanStatus()),
     };
-    const scope = effectScope();
-    const filters = scope.run(() => useCatalogFilters(client, 0));
-    if (!filters) throw new Error("Composable did not initialize");
-    await filters.initializeCatalog();
+    const { filters, stop } = await setup(client);
+    await vi.waitFor(() => expect(filters.catalog.value.courses[0]?.title).toBe("Old result"));
 
     filters.query.value = "new";
-    await nextTick();
-    await vi.advanceTimersByTimeAsync(0);
-
-    expect(filters.loading.value).toBe(true);
+    await vi.waitFor(() => expect(client.getCatalog).toHaveBeenCalledTimes(2));
+    expect(filters.catalog.value.courses[0]?.title).toBe("Old result");
+    expect(filters.loading.value).toBe(false);
     expect(filters.refreshing.value).toBe(true);
-    expect(filters.catalog.value.courses[0]?.title).toBe("Existing result");
 
-    resolveRefresh?.(catalog("New result"));
-    await Promise.resolve();
-    await nextTick();
-    expect(filters.catalog.value.courses[0]?.title).toBe("New result");
-    expect(filters.refreshing.value).toBe(false);
-    scope.stop();
+    resolveSearch?.(catalog("New result"));
+    await vi.waitFor(() => expect(filters.catalog.value.courses[0]?.title).toBe("New result"));
+    stop();
   });
 
-  it("ignores a stale catalog response", async () => {
-    let resolveFirst: ((value: CatalogDto) => void) | undefined;
-    let resolveSecond: ((value: CatalogDto) => void) | undefined;
-    const first = new Promise<CatalogDto>((resolve) => {
-      resolveFirst = resolve;
-    });
-    const second = new Promise<CatalogDto>((resolve) => {
-      resolveSecond = resolve;
-    });
+  it("stores pagination changes in the URL", async () => {
     const client = {
-      getCatalog: vi.fn().mockReturnValueOnce(first).mockReturnValueOnce(second),
+      getCatalog: vi.fn(async (filters?: CatalogFilters) => catalog("Course", filters?.page)),
       getScanStatus: vi.fn(async () => scanStatus()),
     };
-    const scope = effectScope();
-    const filters = scope.run(() => useCatalogFilters(client, 0));
-    if (!filters) throw new Error("Composable did not initialize");
+    const { filters, router, stop } = await setup(client);
+    await vi.waitFor(() => expect(filters.catalog.value.pagination.totalPages).toBe(2));
 
-    const firstLoad = filters.initializeCatalog();
-    filters.query.value = "new";
-    const secondLoad = filters.initializeCatalog();
-    resolveSecond?.(catalog("New result"));
-    await secondLoad;
-    resolveFirst?.(catalog("Old result"));
-    await firstLoad;
+    filters.setPage(2);
+    await vi.waitFor(() => expect(router.currentRoute.value.query.page).toBe("2"));
+    stop();
+  });
 
-    expect(filters.catalog.value.courses[0]?.title).toBe("New result");
-    scope.stop();
+  it("normalizes a page beyond the available results", async () => {
+    const client = {
+      getCatalog: vi.fn(async () => catalog("Course", 2)),
+      getScanStatus: vi.fn(async () => scanStatus()),
+    };
+    const { router, stop } = await setup(client, "/?page=99");
+
+    await vi.waitFor(() => expect(router.currentRoute.value.query.page).toBe("2"));
+    stop();
   });
 });

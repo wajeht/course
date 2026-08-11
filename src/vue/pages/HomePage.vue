@@ -1,21 +1,22 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
 import { RouterLink } from "vue-router";
 
 import { api } from "../api";
 import CourseCard from "../components/CourseCard.vue";
 import CourseFilterSelect from "../components/CourseFilterSelect.vue";
+import PageHeader from "../components/PageHeader.vue";
+import PaginationControls from "../components/PaginationControls.vue";
 import ProgressBar from "../components/ProgressBar.vue";
 import { useCatalogFilters } from "../composables/useCatalogFilters.js";
+import StandardPageLayout from "../layouts/StandardPageLayout.vue";
 
 const {
   catalog,
-  catalogLoaded,
   error,
   hasActiveFilters,
-  initializeCatalog,
   libraryTitle,
   loading,
+  page,
   query,
   refreshing,
   scanStatus,
@@ -23,15 +24,12 @@ const {
   selectedFilters,
   selectedInstructor,
   selectedTag,
+  setPage,
 } = useCatalogFilters(api);
-
-onMounted(() => void initializeCatalog());
 </script>
 
 <template>
-  <main
-    class="mx-auto w-[min(1380px,calc(100%-8vw))] pt-[clamp(36px,4vw,58px)] pb-[90px] max-[860px]:w-[min(100%-40px,1380px)]"
-  >
+  <StandardPageLayout>
     <div
       v-if="error"
       class="mb-7 rounded-lg border border-[#e8b7ae] bg-[#f8e5e1] px-[18px] py-[14px] text-[.88rem] text-[#6c241c]"
@@ -94,34 +92,28 @@ onMounted(() => void initializeCatalog());
     </section>
 
     <section
-      :class="!hasActiveFilters && catalog.continueWatching.length ? 'mt-[70px]' : ''"
+      id="catalog-results"
       :aria-busy="refreshing"
+      :class="!hasActiveFilters && catalog.continueWatching.length ? 'mt-[70px]' : ''"
     >
-      <div
-        class="mb-6 flex items-end justify-between gap-6 max-[600px]:flex-col max-[600px]:items-start max-[600px]:gap-2"
+      <PageHeader
+        class="mb-6"
+        :eyebrow="
+          query ? 'Search results' : selectedFilters.length ? 'Filtered library' : 'Your library'
+        "
+        :title="libraryTitle"
+        :heading-level="2"
       >
-        <div>
-          <p class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase">
+        <template #aside>
+          <span v-if="scanStatus?.completedAt" class="text-[.78rem] font-semibold text-muted">
             {{
-              query
-                ? "Search results"
-                : selectedFilters.length
-                  ? "Filtered library"
-                  : "Your library"
+              scanStatus.warnings.length
+                ? `${scanStatus.warnings.length} scan warnings`
+                : "Library up to date"
             }}
-          </p>
-          <h2 class="font-display text-[clamp(1.9rem,3vw,2.7rem)] font-[750] tracking-[-.035em]">
-            {{ libraryTitle }}
-          </h2>
-        </div>
-        <span v-if="scanStatus?.completedAt" class="text-[.78rem] font-semibold text-muted">
-          {{
-            scanStatus.warnings.length
-              ? `${scanStatus.warnings.length} scan warnings`
-              : "Library up to date"
-          }}
-        </span>
-      </div>
+          </span>
+        </template>
+      </PageHeader>
 
       <div class="mb-7 flex flex-wrap items-stretch gap-2">
         <CourseFilterSelect
@@ -189,7 +181,7 @@ onMounted(() => void initializeCatalog());
       </div>
 
       <div
-        v-if="loading && !catalogLoaded"
+        v-if="loading"
         class="grid grid-cols-4 gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[600px]:grid-cols-1"
         aria-label="Loading courses"
       >
@@ -225,6 +217,14 @@ onMounted(() => void initializeCatalog());
           }}
         </p>
       </div>
+
+      <PaginationControls
+        v-if="!loading"
+        :disabled="refreshing"
+        :page="page"
+        :total-pages="catalog.pagination.totalPages"
+        @change="setPage"
+      />
     </section>
-  </main>
+  </StandardPageLayout>
 </template>

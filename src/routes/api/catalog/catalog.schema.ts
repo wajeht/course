@@ -7,6 +7,8 @@ export const catalogQuerySchema = z.object({
   category: z.string().trim().min(1).max(200).optional(),
   instructor: z.string().trim().min(1).max(200).optional(),
   tag: z.string().trim().min(1).max(200).optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(1).max(100).optional(),
 });
 
 export const courseParametersSchema = z.object({
@@ -76,6 +78,12 @@ export const catalogResponseSchema = z.object({
     }),
   ),
   continueWatching: z.array(lessonResponseSchema),
+  pagination: z.object({
+    page: z.number().int().min(1),
+    pageSize: z.number().int().min(1).max(100),
+    totalCourses: z.number().int().nonnegative(),
+    totalPages: z.number().int().nonnegative(),
+  }),
 });
 
 export const lessonDetailResponseSchema = z.object({

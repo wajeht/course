@@ -1,18 +1,41 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
-import { RouterLink, useRoute } from "vue-router";
+import { keepPreviousData, useQuery } from "@tanstack/vue-query";
+import { computed, watch } from "vue";
+import { RouterLink, useRoute, useRouter } from "vue-router";
 
-import { api, type CatalogDto } from "../api";
+import { api, type CatalogFilters } from "../api";
 import CourseCard from "../components/CourseCard.vue";
-import { durationText } from "../utils/format";
+import PaginationControls from "../components/PaginationControls.vue";
+import { catalogKeys } from "../queries/queryKeys.js";
 
 const route = useRoute();
-const courses = ref<CatalogDto["courses"]>([]);
-const loading = ref(true);
-const error = ref("");
-let requestSequence = 0;
+const router = useRouter();
 
 const instructorName = computed(() => String(route.params.instructorName));
+const page = computed(() => {
+  const value = typeof route.query.page === "string" ? Number.parseInt(route.query.page, 10) : 1;
+  return Number.isInteger(value) && value > 0 ? value : 1;
+});
+const filters = computed<CatalogFilters>(() => ({
+  instructor: instructorName.value,
+  page: page.value,
+  pageSize: 24,
+}));
+const instructorQuery = useQuery({
+  queryKey: computed(() => catalogKeys.list(filters.value)),
+  queryFn: ({ queryKey, signal }) => api.getCatalog(queryKey[2], signal),
+  placeholderData: keepPreviousData,
+});
+const catalog = computed(() => instructorQuery.data.value ?? null);
+const courses = computed(() => catalog.value?.courses ?? []);
+const loading = computed(() => instructorQuery.isPending.value);
+const refreshing = computed(
+  () => instructorQuery.isFetching.value && !instructorQuery.isPending.value,
+);
+const error = computed(() => {
+  const caught = instructorQuery.error.value;
+  return caught instanceof Error ? caught.message : caught ? "Could not load this instructor" : "";
+});
 const instructorInitials = computed(() =>
   instructorName.value
     .split(/\s+/)
@@ -22,28 +45,26 @@ const instructorInitials = computed(() =>
     .join("")
     .toUpperCase(),
 );
-const totalDuration = computed(() =>
-  courses.value.reduce((total, course) => total + course.durationSeconds, 0),
-);
-
-async function loadInstructor(): Promise<void> {
-  const requestId = ++requestSequence;
-  loading.value = true;
-  error.value = "";
-  try {
-    const catalog = await api.getCatalog({ instructor: instructorName.value });
-    if (requestId !== requestSequence) return;
-    courses.value = catalog.courses;
-  } catch (caught) {
-    if (requestId !== requestSequence) return;
-    courses.value = [];
-    error.value = caught instanceof Error ? caught.message : "Could not load this instructor";
-  } finally {
-    if (requestId === requestSequence) loading.value = false;
-  }
+function pageQuery(nextPage: number) {
+  const query = { ...route.query };
+  if (nextPage === 1) delete query.page;
+  else query.page = String(nextPage);
+  return query;
 }
 
-watch(instructorName, () => void loadInstructor(), { immediate: true });
+function setPage(nextPage: number): void {
+  void router.push({ query: pageQuery(Math.max(1, nextPage)) });
+}
+
+watch(
+  () => instructorQuery.dataUpdatedAt.value,
+  () => {
+    if (instructorQuery.isPlaceholderData.value) return;
+    const loadedPage = catalog.value?.pagination.page;
+    if (!loadedPage || loadedPage === page.value) return;
+    void router.replace({ query: pageQuery(loadedPage) });
+  },
+);
 </script>
 
 <template>
@@ -90,15 +111,15 @@ watch(instructorName, () => void loadInstructor(), { immediate: true });
             {{ instructorName }}
           </h1>
           <p class="mt-7 text-[.82rem] font-bold tracking-[.04em] text-pine max-[700px]:mt-4">
-            {{ courses.length }} {{ courses.length === 1 ? "course" : "courses" }}
-            <span class="mx-2 text-belt" aria-hidden="true">/</span>
-            {{ durationText(totalDuration) }} of lessons
+            {{ catalog?.pagination.totalCourses }}
+            {{ catalog?.pagination.totalCourses === 1 ? "course" : "courses" }}
           </p>
         </div>
       </div>
     </section>
 
     <section
+      :aria-busy="refreshing"
       class="mx-auto w-[min(1380px,calc(100%-8vw))] pt-[clamp(52px,7vw,86px)] pb-[100px] max-[860px]:w-[min(100%-40px,1380px)]"
     >
       <div class="mb-7">
@@ -114,6 +135,12 @@ watch(instructorName, () => void loadInstructor(), { immediate: true });
       >
         <CourseCard v-for="course in courses" :key="course.id" :course="course" />
       </div>
+      <PaginationControls
+        :disabled="refreshing"
+        :page="page"
+        :total-pages="catalog?.pagination.totalPages ?? 0"
+        @change="setPage"
+      />
     </section>
   </main>
 

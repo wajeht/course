@@ -1,18 +1,33 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+import { computed, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
-import { api, type CourseDetailDto } from "../api";
+import { api } from "../api";
 import LessonRow from "../components/LessonRow.vue";
 import ProgressBar from "../components/ProgressBar.vue";
 import { useExpandableSections } from "../composables/useExpandableSections.js";
+import { catalogKeys } from "../queries/queryKeys.js";
 import { durationText } from "../utils/format";
 
 const route = useRoute();
-const course = ref<CourseDetailDto | null>(null);
-const loading = ref(true);
-const resetting = ref(false);
-const error = ref("");
+const queryClient = useQueryClient();
+const courseId = computed(() => String(route.params.courseId));
+const courseQuery = useQuery({
+  queryKey: computed(() => catalogKeys.course(courseId.value)),
+  queryFn: ({ queryKey, signal }) => api.getCourse(queryKey[2], signal),
+});
+const resetCourseMutation = useMutation({
+  mutationFn: (id: string) => api.resetCourse(id),
+  onSuccess: () => queryClient.invalidateQueries({ queryKey: catalogKeys.all }),
+});
+const course = computed(() => courseQuery.data.value ?? null);
+const loading = computed(() => courseQuery.isPending.value);
+const resetting = computed(() => resetCourseMutation.isPending.value);
+const error = computed(() => {
+  const caught = resetCourseMutation.error.value ?? courseQuery.error.value;
+  return caught instanceof Error ? caught.message : caught ? "Could not load this course" : "";
+});
 const { isSectionExpanded, replaceExpandedSections, sectionPanelId, toggleSection } =
   useExpandableSections("course-section");
 
@@ -23,39 +38,22 @@ const nextLesson = computed(
   () => allLessons.value.find((lesson) => !lesson.completed) ?? allLessons.value.at(0),
 );
 
-async function loadCourse(): Promise<void> {
-  loading.value = true;
-  error.value = "";
-  try {
-    const loadedCourse = await api.getCourse(String(route.params.courseId));
-    course.value = loadedCourse;
+async function resetProgress(): Promise<void> {
+  if (!course.value || !window.confirm("Reset all lesson progress for this course?")) return;
+  await resetCourseMutation.mutateAsync(course.value.id).catch(() => undefined);
+}
+
+watch(
+  () => courseQuery.data.value,
+  (loadedCourse) => {
+    if (!loadedCourse) return;
     const loadedLessons = loadedCourse.sections.flatMap((section) => section.lessons);
     const startingLesson = loadedLessons.find((lesson) => !lesson.completed) ?? loadedLessons.at(0);
     const startingSection = loadedCourse.sections.find((section) =>
       section.lessons.some((lesson) => lesson.id === startingLesson?.id),
     );
     replaceExpandedSections(startingSection ? [startingSection] : []);
-  } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : "Could not load this course";
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function resetProgress(): Promise<void> {
-  if (!course.value || !window.confirm("Reset all lesson progress for this course?")) return;
-  resetting.value = true;
-  try {
-    await api.resetCourse(course.value.id);
-    await loadCourse();
-  } finally {
-    resetting.value = false;
-  }
-}
-
-watch(
-  () => route.params.courseId,
-  () => void loadCourse(),
+  },
   { immediate: true },
 );
 </script>

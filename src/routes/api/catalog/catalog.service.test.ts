@@ -123,4 +123,22 @@ describe("catalog service", () => {
 
     await expect(service.getCatalog({ tag: "Gua" })).resolves.toMatchObject({ courses: [] });
   });
+
+  it("paginates filtered courses and reports the result total", async () => {
+    const service = createCatalogService(createCatalogApiRepository(database.connection));
+
+    await expect(service.getCatalog({ page: 2, pageSize: 1 })).resolves.toMatchObject({
+      courses: [{ title: "Guard Retention" }],
+      pagination: { page: 2, pageSize: 1, totalCourses: 2, totalPages: 2 },
+    });
+  });
+
+  it("clamps a page that is past the final result", async () => {
+    const service = createCatalogService(createCatalogApiRepository(database.connection));
+
+    await expect(service.getCatalog({ page: 99, pageSize: 1 })).resolves.toMatchObject({
+      courses: [{ title: "Guard Retention" }],
+      pagination: { page: 2, pageSize: 1, totalCourses: 2, totalPages: 2 },
+    });
+  });
 });

@@ -1,48 +1,40 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+import { computed } from "vue";
 
-import { api, type ScanStatus } from "../api";
+import { api } from "../api";
+import PageHeader from "../components/PageHeader.vue";
+import StandardPageLayout from "../layouts/StandardPageLayout.vue";
+import { catalogKeys, scanKeys } from "../queries/queryKeys.js";
 
-const error = ref("");
-const scanning = ref(false);
-const scanStatus = ref<ScanStatus | null>(null);
+const queryClient = useQueryClient();
+const scanQuery = useQuery({
+  queryKey: scanKeys.all,
+  queryFn: () => api.getScanStatus(),
+});
+const rescanMutation = useMutation({
+  mutationFn: () => api.rescanCatalog(),
+  onSuccess(status) {
+    queryClient.setQueryData(scanKeys.all, status);
+    void queryClient.invalidateQueries({ queryKey: catalogKeys.all });
+  },
+});
 
-async function loadScanStatus(): Promise<void> {
-  try {
-    scanStatus.value = await api.getScanStatus();
-  } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : "Could not load the scan status";
-  }
-}
-
-async function rescanCatalog(): Promise<void> {
-  scanning.value = true;
-  error.value = "";
-  try {
-    scanStatus.value = await api.rescanCatalog();
-  } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : "Could not rescan the library";
-  } finally {
-    scanning.value = false;
-  }
-}
-
-onMounted(() => void loadScanStatus());
+const scanStatus = computed(() => scanQuery.data.value ?? null);
+const scanning = computed(() => rescanMutation.isPending.value);
+const error = computed(() => {
+  const caught = rescanMutation.error.value ?? scanQuery.error.value;
+  return caught instanceof Error ? caught.message : caught ? "Could not load scan status" : "";
+});
 </script>
 
 <template>
-  <main
-    class="mx-auto w-[min(1380px,calc(100%-8vw))] pt-[clamp(36px,4vw,58px)] pb-[90px] max-[860px]:w-[min(100%-40px,1380px)]"
-  >
-    <p class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase">
-      Course library
-    </p>
-    <h1 class="font-display text-[clamp(1.9rem,3vw,2.7rem)] font-[750] tracking-[-.035em]">
-      Settings
-    </h1>
-    <p class="mt-3 max-w-[600px] text-[.92rem] leading-6 text-muted">
-      Manage how your course library finds and updates local content.
-    </p>
+  <StandardPageLayout>
+    <PageHeader
+      eyebrow="Course library"
+      title="Settings"
+      description="Manage how your course library finds and updates local content."
+    />
 
     <div
       v-if="error"
@@ -73,7 +65,7 @@ onMounted(() => void loadScanStatus());
         <button
           class="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-[7px] bg-pine px-5 text-[.78rem] font-[750] text-white transition-[transform,background] duration-[160ms] enabled:hover:-translate-y-px enabled:hover:bg-pine-deep disabled:cursor-wait disabled:opacity-55 max-[600px]:w-full"
           :disabled="scanning"
-          @click="rescanCatalog"
+          @click="rescanMutation.mutate()"
         >
           <svg
             class="w-4 fill-none stroke-current stroke-[1.8]"
@@ -86,5 +78,5 @@ onMounted(() => void loadScanStatus());
         </button>
       </div>
     </section>
-  </main>
+  </StandardPageLayout>
 </template>

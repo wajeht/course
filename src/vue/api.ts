@@ -38,12 +38,24 @@ async function expectJson<T>(response: Response): Promise<T> {
 }
 
 export const api = {
-  async getCatalog(filters: CatalogFilters = {}): Promise<CatalogDto> {
-    const response = await apiClient.api.catalog.$get({ query: filters });
+  async getCatalog(filters: CatalogFilters = {}, signal?: AbortSignal): Promise<CatalogDto> {
+    const response = await apiClient.api.catalog.$get(
+      {
+        query: {
+          ...filters,
+          page: filters.page === undefined ? undefined : String(filters.page),
+          pageSize: filters.pageSize === undefined ? undefined : String(filters.pageSize),
+        },
+      },
+      { init: { signal } },
+    );
     return expectJson<CatalogDto>(response);
   },
-  async getCourse(courseId: string): Promise<CourseDetailDto> {
-    const response = await apiClient.api.catalog.courses[":courseId"].$get({ param: { courseId } });
+  async getCourse(courseId: string, signal?: AbortSignal): Promise<CourseDetailDto> {
+    const response = await apiClient.api.catalog.courses[":courseId"].$get(
+      { param: { courseId } },
+      { init: { signal } },
+    );
     return expectJson<CourseDetailDto>(response);
   },
   async getLesson(lessonId: string): Promise<{ lesson: LessonDto; course: CourseDetailDto }> {

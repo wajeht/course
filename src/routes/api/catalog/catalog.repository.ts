@@ -26,6 +26,11 @@ export interface CourseFilters {
   tag?: string;
 }
 
+export interface CoursePagination {
+  limit: number;
+  offset: number;
+}
+
 export interface LessonRow {
   id: string;
   course_id: string;
@@ -48,7 +53,8 @@ export interface LessonRow {
 }
 
 export interface CatalogRepository {
-  listCourses(filters?: CourseFilters): Promise<CourseRow[]>;
+  listCourses(filters?: CourseFilters, pagination?: CoursePagination): Promise<CourseRow[]>;
+  countCourses(filters?: CourseFilters): Promise<number>;
   listCategories(filters?: CourseFilters): Promise<CourseCountRow[]>;
   listInstructors(filters?: CourseFilters): Promise<CourseCountRow[]>;
   listTags(filters?: CourseFilters): Promise<CourseCountRow[]>;
@@ -147,10 +153,20 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
   }
 
   return {
-    async listCourses(filters = {}) {
+    async listCourses(filters = {}, pagination) {
       const queryBuilder = createCourseQuery().orderBy("courses.sort_order");
       applyCourseFilters(queryBuilder, filters);
+      if (pagination) queryBuilder.limit(pagination.limit).offset(pagination.offset);
       return queryBuilder;
+    },
+
+    async countCourses(filters = {}) {
+      const queryBuilder = database("courses")
+        .countDistinct({ course_count: "courses.id" })
+        .first();
+      applyCourseFilters(queryBuilder, filters);
+      const row = (await queryBuilder) as { course_count?: number | string } | undefined;
+      return Number(row?.course_count ?? 0);
     },
 
     async listCategories(filters = {}) {
