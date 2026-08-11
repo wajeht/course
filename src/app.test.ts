@@ -39,6 +39,8 @@ describe("application", () => {
     await fs.writeFile(path.join(clientDirectory, "index.html"), "SPA");
     await fs.writeFile(path.join(clientDirectory, "robots.txt"), "User-agent: *\nDisallow: /\n");
     await fs.writeFile(path.join(clientDirectory, "favicon.svg"), "<svg></svg>");
+    await fs.writeFile(path.join(clientDirectory, "manifest.webmanifest"), "{}");
+    await fs.writeFile(path.join(clientDirectory, "sw.js"), "// service worker");
     context.configuration.app.env = "production";
     context.configuration.app.clientDirectory = clientDirectory;
     const now = new Date().toISOString();
@@ -86,6 +88,15 @@ describe("application", () => {
     const favicon = await app.request("/favicon.svg");
     expect(favicon.status).toBe(200);
     expect(favicon.headers.get("content-type")).toContain("image/svg+xml");
+
+    const manifest = await app.request("/manifest.webmanifest");
+    expect(manifest.status).toBe(200);
+    expect(manifest.headers.get("cache-control")).toBe("no-cache");
+
+    const serviceWorker = await app.request("/sw.js");
+    expect(serviceWorker.status).toBe(200);
+    expect(serviceWorker.headers.get("cache-control")).toBe("no-cache");
+    expect(serviceWorker.headers.get("service-worker-allowed")).toBe("/");
 
     for (const route of ["/", "/index.html"]) {
       const index = await app.request(route);
