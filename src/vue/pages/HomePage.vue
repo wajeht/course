@@ -102,7 +102,7 @@ const {
           query ? 'Search results' : selectedFilters.length ? 'Filtered library' : 'Your library'
         "
         :title="libraryTitle"
-        :heading-level="2"
+        :heading-level="1"
       >
         <template #aside>
           <span v-if="scanStatus?.completedAt" class="text-[.78rem] font-semibold text-muted">

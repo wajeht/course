@@ -16,7 +16,7 @@ function close(): void {
     aria-live="polite"
   >
     <p class="font-display text-lg font-extrabold tracking-[.02em]">
-      {{ needRefresh ? "Course update available" : "Course is installed" }}
+      {{ needRefresh ? "Course update available" : "Course is ready offline" }}
     </p>
     <p class="mt-1.5 text-[.78rem] leading-5 text-white/68">
       {{

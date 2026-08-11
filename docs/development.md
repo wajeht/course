@@ -14,6 +14,7 @@ git clone https://github.com/wajeht/course.git
 cd course
 cp .env.example .env
 npm ci
+npx playwright install chromium
 npm run db:migrate
 npm run dev
 ```
@@ -34,6 +35,7 @@ npm run dev:client    # Start only the Vue development server
 npm run db:migrate    # Apply SQLite migrations
 npm run check         # Run types, lint, formatting, tests, and builds
 npm run test          # Run tests once
+npm run test:pwa      # Test production PWA behavior in Chromium
 npm run test:watch    # Run tests in watch mode
 npm run build         # Build the server and client
 npm start             # Start the production build
