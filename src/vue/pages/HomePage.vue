@@ -4,6 +4,7 @@ import { RouterLink } from "vue-router";
 import { api } from "../api";
 import CourseCard from "../components/CourseCard.vue";
 import CourseFilterSelect from "../components/CourseFilterSelect.vue";
+import PaginationControls from "../components/PaginationControls.vue";
 import ProgressBar from "../components/ProgressBar.vue";
 import { useCatalogFilters } from "../composables/useCatalogFilters.js";
 
@@ -224,29 +225,13 @@ const {
         </p>
       </div>
 
-      <nav
-        v-if="!loading && catalog.pagination.totalPages > 1"
-        class="mt-9 flex items-center justify-center gap-4"
-        aria-label="Course pages"
-      >
-        <button
-          class="min-h-10 rounded-[7px] border border-line bg-white px-4 text-[.78rem] font-[750] text-pine disabled:cursor-not-allowed disabled:opacity-45"
-          :disabled="page <= 1 || refreshing"
-          @click="setPage(page - 1)"
-        >
-          Previous
-        </button>
-        <span class="text-[.8rem] font-semibold text-muted">
-          Page {{ page }} of {{ catalog.pagination.totalPages }}
-        </span>
-        <button
-          class="min-h-10 rounded-[7px] border border-line bg-white px-4 text-[.78rem] font-[750] text-pine disabled:cursor-not-allowed disabled:opacity-45"
-          :disabled="page >= catalog.pagination.totalPages || refreshing"
-          @click="setPage(page + 1)"
-        >
-          Next
-        </button>
-      </nav>
+      <PaginationControls
+        v-if="!loading"
+        :disabled="refreshing"
+        :page="page"
+        :total-pages="catalog.pagination.totalPages"
+        @change="setPage"
+      />
     </section>
   </main>
 </template>
