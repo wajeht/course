@@ -17,8 +17,9 @@ function emptyCatalog(): CatalogDto {
   };
 }
 
-export function useCatalogFilters(client: CatalogClient, debounceMilliseconds = 220) {
+export function useCatalogFilters(client: CatalogClient, debounceMilliseconds = 120) {
   const catalog = ref<CatalogDto>(emptyCatalog());
+  const catalogLoaded = ref(false);
   const scanStatus = ref<ScanStatus | null>(null);
   const query = ref("");
   const selectedCategory = ref("");
@@ -33,6 +34,7 @@ export function useCatalogFilters(client: CatalogClient, debounceMilliseconds = 
     [selectedCategory.value, selectedInstructor.value, selectedTag.value].filter(Boolean),
   );
   const hasActiveFilters = computed(() => Boolean(query.value || selectedFilters.value.length));
+  const refreshing = computed(() => loading.value && catalogLoaded.value);
   const libraryTitle = computed(() => {
     const count = catalog.value.courses.length;
     const courseLabel = count === 1 ? "course" : "courses";
@@ -62,7 +64,10 @@ export function useCatalogFilters(client: CatalogClient, debounceMilliseconds = 
       if (requestId !== requestSequence) return;
       error.value = caught instanceof Error ? caught.message : "Could not load your library";
     } finally {
-      if (requestId === requestSequence) loading.value = false;
+      if (requestId === requestSequence) {
+        loading.value = false;
+        catalogLoaded.value = true;
+      }
     }
   }
 
@@ -78,25 +83,36 @@ export function useCatalogFilters(client: CatalogClient, debounceMilliseconds = 
     await Promise.all([loadCatalog(), loadScanStatus()]);
   }
 
-  const stopFilterWatch = watch([query, selectedCategory, selectedInstructor, selectedTag], () => {
+  const stopQueryWatch = watch(query, (value) => {
     clearTimeout(searchTimer);
+    if (!value) {
+      void loadCatalog();
+      return;
+    }
     searchTimer = setTimeout(() => void loadCatalog(), debounceMilliseconds);
+  });
+  const stopSelectWatch = watch([selectedCategory, selectedInstructor, selectedTag], () => {
+    clearTimeout(searchTimer);
+    void loadCatalog();
   });
 
   onScopeDispose(() => {
     clearTimeout(searchTimer);
     requestSequence++;
-    stopFilterWatch();
+    stopQueryWatch();
+    stopSelectWatch();
   });
 
   return {
     catalog,
+    catalogLoaded,
     error,
     hasActiveFilters,
     initializeCatalog,
     libraryTitle,
     loading,
     query,
+    refreshing,
     scanStatus,
     selectedCategory,
     selectedFilters,

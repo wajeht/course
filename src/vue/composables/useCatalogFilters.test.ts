@@ -58,11 +58,13 @@ describe("useCatalogFilters", () => {
 
     expect(filters.catalog.value.courses[0]?.title).toBe("Course");
     expect(filters.scanStatus.value?.status).toBe("complete");
+    expect(filters.catalogLoaded.value).toBe(true);
     expect(filters.loading.value).toBe(false);
+    expect(filters.refreshing.value).toBe(false);
     scope.stop();
   });
 
-  it("debounces filter changes and sends every selected filter", async () => {
+  it("debounces text searches", async () => {
     vi.useFakeTimers();
     const client = {
       getCatalog: vi.fn(async () => catalog()),
@@ -73,9 +75,6 @@ describe("useCatalogFilters", () => {
     if (!filters) throw new Error("Composable did not initialize");
 
     filters.query.value = "guard";
-    filters.selectedCategory.value = "Martial Arts";
-    filters.selectedInstructor.value = "John Danaher";
-    filters.selectedTag.value = "BJJ";
     await nextTick();
     await vi.advanceTimersByTimeAsync(219);
     expect(client.getCatalog).not.toHaveBeenCalled();
@@ -83,11 +82,68 @@ describe("useCatalogFilters", () => {
 
     expect(client.getCatalog).toHaveBeenCalledWith({
       query: "guard",
+      category: undefined,
+      instructor: undefined,
+      tag: undefined,
+    });
+    expect(filters.libraryTitle.value).toBe("1 matching course");
+    scope.stop();
+  });
+
+  it("applies dropdown filters immediately", async () => {
+    const client = {
+      getCatalog: vi.fn(async () => catalog()),
+      getScanStatus: vi.fn(async () => scanStatus()),
+    };
+    const scope = effectScope();
+    const filters = scope.run(() => useCatalogFilters(client, 220));
+    if (!filters) throw new Error("Composable did not initialize");
+
+    filters.selectedCategory.value = "Martial Arts";
+    filters.selectedInstructor.value = "John Danaher";
+    filters.selectedTag.value = "BJJ";
+    await nextTick();
+
+    expect(client.getCatalog).toHaveBeenCalledWith({
+      query: undefined,
       category: "Martial Arts",
       instructor: "John Danaher",
       tag: "BJJ",
     });
-    expect(filters.libraryTitle.value).toBe("1 matching course");
+    scope.stop();
+  });
+
+  it("keeps existing courses visible while refreshing", async () => {
+    vi.useFakeTimers();
+    let resolveRefresh: ((value: CatalogDto) => void) | undefined;
+    const refresh = new Promise<CatalogDto>((resolve) => {
+      resolveRefresh = resolve;
+    });
+    const client = {
+      getCatalog: vi
+        .fn()
+        .mockResolvedValueOnce(catalog("Existing result"))
+        .mockReturnValue(refresh),
+      getScanStatus: vi.fn(async () => scanStatus()),
+    };
+    const scope = effectScope();
+    const filters = scope.run(() => useCatalogFilters(client, 0));
+    if (!filters) throw new Error("Composable did not initialize");
+    await filters.initializeCatalog();
+
+    filters.query.value = "new";
+    await nextTick();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(filters.loading.value).toBe(true);
+    expect(filters.refreshing.value).toBe(true);
+    expect(filters.catalog.value.courses[0]?.title).toBe("Existing result");
+
+    resolveRefresh?.(catalog("New result"));
+    await Promise.resolve();
+    await nextTick();
+    expect(filters.catalog.value.courses[0]?.title).toBe("New result");
+    expect(filters.refreshing.value).toBe(false);
     scope.stop();
   });
 
