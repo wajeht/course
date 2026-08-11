@@ -1,29 +1,28 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
-import { api, type CourseDetailDto, type LessonDto, type PlaybackResult } from "../api";
+import { api, type CourseDetailDto, type LessonDto } from "../api";
 import LessonRow from "../components/LessonRow.vue";
+import { useExpandableSections } from "../composables/useExpandableSections.js";
 import { usePlaybackProgress } from "../composables/usePlaybackProgress.js";
+import { useVideoPlayback } from "../composables/useVideoPlayback.js";
 
 const route = useRoute();
 const video = ref<HTMLVideoElement | null>(null);
 const lesson = ref<LessonDto | null>(null);
 const course = ref<CourseDetailDto | null>(null);
-const playback = ref<PlaybackResult | null>(null);
 const loading = ref(true);
-const error = ref("");
 const ended = ref(false);
 const sidebarOpen = ref(false);
 const playbackRate = ref(1);
-const expandedSectionKeys = ref<Set<string>>(new Set());
-let hls: import("hls.js").default | null = null;
-let pollTimer: ReturnType<typeof setTimeout> | undefined;
-let resumeApplied = false;
-let playerRequestId = 0;
+const { expandSection, isSectionExpanded, replaceExpandedSections, sectionPanelId, toggleSection } =
+  useExpandableSections("sidebar-section");
 const playbackProgress = usePlaybackProgress((lessonId, positionSeconds) =>
   api.saveProgress(lessonId, positionSeconds),
 );
+const videoPlayback = useVideoPlayback(video, api);
+const { error, playback } = videoPlayback;
 
 const allLessons = computed(
   () => course.value?.sections.flatMap((section) => section.lessons) ?? [],
@@ -33,97 +32,16 @@ const currentIndex = computed(() =>
 );
 const nextLesson = computed(() => allLessons.value.at(currentIndex.value + 1));
 
-type CourseSection = CourseDetailDto["sections"][number];
-
-function sectionKey(section: CourseSection): string {
-  return section.id ?? "direct";
-}
-
-function sectionPanelId(section: CourseSection): string {
-  return `sidebar-section-${sectionKey(section)}`;
-}
-
-function isSectionExpanded(section: CourseSection): boolean {
-  return expandedSectionKeys.value.has(sectionKey(section));
-}
-
-function toggleSection(section: CourseSection): void {
-  const key = sectionKey(section);
-  const expandedKeys = new Set(expandedSectionKeys.value);
-  if (expandedKeys.has(key)) expandedKeys.delete(key);
-  else expandedKeys.add(key);
-  expandedSectionKeys.value = expandedKeys;
-}
-
 function destroyPlayback(): void {
   playbackProgress.clearSession();
-  clearTimeout(pollTimer);
-  hls?.destroy();
-  hls = null;
-  if (video.value) {
-    video.value.pause();
-    video.value.removeAttribute("src");
-    video.value.load();
-  }
-}
-
-async function attachSource(url: string, kind: "direct" | "hls", requestId: number): Promise<void> {
-  await nextTick();
-  if (requestId !== playerRequestId) return;
-  const element = video.value;
-  if (!element) return;
-  hls?.destroy();
-  hls = null;
-  resumeApplied = false;
-
-  if (kind === "direct" || element.canPlayType("application/vnd.apple.mpegurl")) {
-    element.src = url;
-    element.load();
-    return;
-  }
-  const { default: Hls } = await import("hls.js/light");
-  if (requestId !== playerRequestId) return;
-  if (!Hls.isSupported()) {
-    error.value = "This browser cannot play the converted video.";
-    return;
-  }
-  hls = new Hls({ enableWorker: true, backBufferLength: 30 });
-  hls.on(Hls.Events.ERROR, (_event, data) => {
-    if (data.fatal) error.value = "Playback stopped because the video stream failed.";
-  });
-  hls.loadSource(url);
-  hls.attachMedia(element);
-}
-
-async function handlePlayback(
-  result: PlaybackResult,
-  lessonId: string,
-  requestId: number,
-): Promise<void> {
-  if (requestId !== playerRequestId) return;
-  playback.value = result;
-  if (result.kind === "direct") return attachSource(result.url, "direct", requestId);
-  if (result.kind === "hls") return attachSource(result.url, "hls", requestId);
-  if (result.kind === "error") {
-    error.value = result.message;
-    return;
-  }
-  pollTimer = setTimeout(async () => {
-    try {
-      const conversion = await api.getConversionStatus(lessonId);
-      await handlePlayback(conversion, lessonId, requestId);
-    } catch (caught) {
-      if (requestId !== playerRequestId) return;
-      error.value = caught instanceof Error ? caught.message : "Could not check conversion";
-    }
-  }, 2_000);
+  videoPlayback.clearSource();
 }
 
 async function loadPlayer(): Promise<void> {
-  const requestId = ++playerRequestId;
+  const requestId = videoPlayback.startRequest();
   if (ended.value) playbackProgress.stopSession();
   else await playbackProgress.finishSession(video.value?.currentTime);
-  if (requestId !== playerRequestId) return;
+  if (!videoPlayback.isCurrentRequest(requestId)) return;
   const previousCourseId = course.value?.id;
   destroyPlayback();
   loading.value = true;
@@ -133,7 +51,7 @@ async function loadPlayer(): Promise<void> {
   try {
     const lessonId = String(route.params.lessonId);
     const detail = await api.getLesson(lessonId);
-    if (requestId !== playerRequestId) return;
+    if (!videoPlayback.isCurrentRequest(requestId)) return;
     lesson.value = detail.lesson;
     playbackProgress.startSession(detail.lesson.id, detail.lesson.positionSeconds);
     course.value = detail.course;
@@ -141,34 +59,30 @@ async function loadPlayer(): Promise<void> {
       section.lessons.some((item) => item.id === detail.lesson.id),
     );
     if (activeSection) {
-      const activeKey = sectionKey(activeSection);
-      expandedSectionKeys.value =
-        previousCourseId === detail.course.id
-          ? new Set([...expandedSectionKeys.value, activeKey])
-          : new Set([activeKey]);
+      if (previousCourseId === detail.course.id) expandSection(activeSection);
+      else replaceExpandedSections([activeSection]);
     }
-    const preparedPlayback = await api.preparePlayback(lessonId);
-    await handlePlayback(preparedPlayback, lessonId, requestId);
+    await videoPlayback.preparePlayback(lessonId, requestId);
   } catch (caught) {
-    if (requestId !== playerRequestId) return;
+    if (!videoPlayback.isCurrentRequest(requestId)) return;
     error.value = caught instanceof Error ? caught.message : "Could not load this lesson";
   } finally {
-    if (requestId === playerRequestId) loading.value = false;
+    if (videoPlayback.isCurrentRequest(requestId)) loading.value = false;
   }
 }
 
 function applyResume(): void {
-  if (!video.value || !lesson.value || resumeApplied) return;
-  if (!playbackProgress.isSessionFor(lesson.value.id)) return;
-  resumeApplied = true;
-  if (!lesson.value.completed && lesson.value.positionSeconds > 0) {
-    video.value.currentTime = Math.min(
-      lesson.value.positionSeconds,
-      Math.max(0, video.value.duration - 1),
-    );
-  }
-  video.value.playbackRate = playbackRate.value;
-  playbackProgress.activateSession(video.value.currentTime);
+  videoPlayback.applyMetadata((element) => {
+    if (!lesson.value || !playbackProgress.isSessionFor(lesson.value.id)) return;
+    if (!lesson.value.completed && lesson.value.positionSeconds > 0) {
+      element.currentTime = Math.min(
+        lesson.value.positionSeconds,
+        Math.max(0, element.duration - 1),
+      );
+    }
+    element.playbackRate = playbackRate.value;
+    playbackProgress.activateSession(element.currentTime);
+  });
 }
 
 function saveOnTimeUpdate(): void {
@@ -208,10 +122,7 @@ async function markComplete(): Promise<void> {
 
 async function retryConversion(): Promise<void> {
   if (!lesson.value) return;
-  error.value = "";
-  const lessonId = lesson.value.id;
-  const requestId = playerRequestId;
-  await handlePlayback(await api.retryConversion(lessonId), lessonId, requestId);
+  await videoPlayback.retryPlayback(lesson.value.id);
 }
 
 async function resetProgress(): Promise<void> {
@@ -249,10 +160,10 @@ window.addEventListener("pagehide", saveOnExit);
 document.addEventListener("visibilitychange", handleVisibility);
 
 onBeforeUnmount(() => {
-  playerRequestId++;
   if (ended.value) playbackProgress.stopSession();
   else void playbackProgress.finishSession(video.value?.currentTime);
-  destroyPlayback();
+  playbackProgress.clearSession();
+  videoPlayback.disposePlayback();
   window.removeEventListener("pagehide", saveOnExit);
   document.removeEventListener("visibilitychange", handleVisibility);
 });

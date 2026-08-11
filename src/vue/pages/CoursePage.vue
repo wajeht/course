@@ -5,6 +5,7 @@ import { RouterLink, useRoute } from "vue-router";
 import { api, type CourseDetailDto } from "../api";
 import LessonRow from "../components/LessonRow.vue";
 import ProgressBar from "../components/ProgressBar.vue";
+import { useExpandableSections } from "../composables/useExpandableSections.js";
 import { durationText } from "../utils/format";
 
 const route = useRoute();
@@ -12,7 +13,8 @@ const course = ref<CourseDetailDto | null>(null);
 const loading = ref(true);
 const resetting = ref(false);
 const error = ref("");
-const expandedSectionKeys = ref<Set<string>>(new Set());
+const { isSectionExpanded, replaceExpandedSections, sectionPanelId, toggleSection } =
+  useExpandableSections("course-section");
 
 const allLessons = computed(
   () => course.value?.sections.flatMap((section) => section.lessons) ?? [],
@@ -20,28 +22,6 @@ const allLessons = computed(
 const nextLesson = computed(
   () => allLessons.value.find((lesson) => !lesson.completed) ?? allLessons.value.at(0),
 );
-
-type CourseSection = CourseDetailDto["sections"][number];
-
-function sectionKey(section: CourseSection): string {
-  return section.id ?? "direct";
-}
-
-function sectionPanelId(section: CourseSection): string {
-  return `course-section-${sectionKey(section)}`;
-}
-
-function isSectionExpanded(section: CourseSection): boolean {
-  return expandedSectionKeys.value.has(sectionKey(section));
-}
-
-function toggleSection(section: CourseSection): void {
-  const key = sectionKey(section);
-  const expandedKeys = new Set(expandedSectionKeys.value);
-  if (expandedKeys.has(key)) expandedKeys.delete(key);
-  else expandedKeys.add(key);
-  expandedSectionKeys.value = expandedKeys;
-}
 
 async function loadCourse(): Promise<void> {
   loading.value = true;
@@ -54,7 +34,7 @@ async function loadCourse(): Promise<void> {
     const startingSection = loadedCourse.sections.find((section) =>
       section.lessons.some((lesson) => lesson.id === startingLesson?.id),
     );
-    expandedSectionKeys.value = new Set(startingSection ? [sectionKey(startingSection)] : []);
+    replaceExpandedSections(startingSection ? [startingSection] : []);
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : "Could not load this course";
   } finally {

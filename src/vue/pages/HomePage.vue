@@ -1,85 +1,31 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { onMounted } from "vue";
 import { RouterLink } from "vue-router";
 
-import { api, type CatalogDto, type ScanStatus } from "../api";
+import { api } from "../api";
 import CourseCard from "../components/CourseCard.vue";
 import CourseFilterSelect from "../components/CourseFilterSelect.vue";
 import ProgressBar from "../components/ProgressBar.vue";
+import { useCatalogFilters } from "../composables/useCatalogFilters.js";
 
-const catalog = ref<CatalogDto>({
-  courses: [],
-  categories: [],
-  instructors: [],
-  tags: [],
-  continueWatching: [],
-});
-const scanStatus = ref<ScanStatus | null>(null);
-const query = ref("");
-const selectedCategory = ref("");
-const selectedInstructor = ref("");
-const selectedTag = ref("");
-const loading = ref(true);
-const scanning = ref(false);
-const error = ref("");
-let searchTimer: ReturnType<typeof setTimeout> | undefined;
+const {
+  catalog,
+  error,
+  hasActiveFilters,
+  initializeCatalog,
+  libraryTitle,
+  loading,
+  query,
+  rescanCatalog,
+  scanning,
+  scanStatus,
+  selectedCategory,
+  selectedFilters,
+  selectedInstructor,
+  selectedTag,
+} = useCatalogFilters(api);
 
-const selectedFilters = computed(() =>
-  [selectedCategory.value, selectedInstructor.value, selectedTag.value].filter(Boolean),
-);
-const hasActiveFilters = computed(() => Boolean(query.value || selectedFilters.value.length));
-const libraryTitle = computed(() => {
-  const count = catalog.value.courses.length;
-  const courseLabel = count === 1 ? "course" : "courses";
-  if (query.value) return `${count} matching ${courseLabel}`;
-  if (selectedFilters.value.length === 1) return `${selectedFilters.value[0]} courses`;
-  if (selectedFilters.value.length > 1) return `${count} filtered ${courseLabel}`;
-  return "All courses";
-});
-
-async function loadCatalog(): Promise<void> {
-  loading.value = true;
-  error.value = "";
-  try {
-    catalog.value = await api.getCatalog({
-      query: query.value || undefined,
-      category: selectedCategory.value || undefined,
-      instructor: selectedInstructor.value || undefined,
-      tag: selectedTag.value || undefined,
-    });
-  } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : "Could not load your library";
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function rescanCatalog(): Promise<void> {
-  scanning.value = true;
-  error.value = "";
-  try {
-    scanStatus.value = await api.rescanCatalog();
-    await loadCatalog();
-  } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : "Could not rescan the library";
-  } finally {
-    scanning.value = false;
-  }
-}
-
-watch([query, selectedCategory, selectedInstructor, selectedTag], () => {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => void loadCatalog(), 220);
-});
-
-onMounted(async () => {
-  await Promise.all([
-    loadCatalog(),
-    api.getScanStatus().then((status) => {
-      scanStatus.value = status;
-    }),
-  ]);
-});
+onMounted(() => void initializeCatalog());
 </script>
 
 <template>
