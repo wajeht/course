@@ -20,6 +20,7 @@ let hls: import("hls.js").default | null = null;
 let pollTimer: ReturnType<typeof setTimeout> | undefined;
 let lastSavedAt = 0;
 let resumeApplied = false;
+let progressSavingEnabled = false;
 let playerRequestId = 0;
 
 const allLessons = computed(
@@ -53,6 +54,7 @@ function toggleSection(section: CourseSection): void {
 }
 
 function destroyPlayback(): void {
+  progressSavingEnabled = false;
   clearTimeout(pollTimer);
   hls?.destroy();
   hls = null;
@@ -117,6 +119,8 @@ async function handlePlayback(
 
 async function loadPlayer(): Promise<void> {
   const requestId = ++playerRequestId;
+  await saveProgress(true);
+  if (requestId !== playerRequestId) return;
   const previousCourseId = course.value?.id;
   destroyPlayback();
   loading.value = true;
@@ -128,6 +132,7 @@ async function loadPlayer(): Promise<void> {
     const detail = await api.getLesson(lessonId);
     if (requestId !== playerRequestId) return;
     lesson.value = detail.lesson;
+    lastSavedAt = 0;
     course.value = detail.course;
     const activeSection = detail.course.sections.find((section) =>
       section.lessons.some((item) => item.id === detail.lesson.id),
@@ -159,26 +164,35 @@ function applyResume(): void {
     );
   }
   video.value.playbackRate = playbackRate.value;
+  lastSavedAt = video.value.currentTime;
+  progressSavingEnabled = true;
 }
 
 async function saveProgress(force = false): Promise<void> {
-  if (!video.value || !lesson.value || ended.value) return;
+  if (!progressSavingEnabled || !video.value || !lesson.value || ended.value) return;
+  const lessonId = lesson.value.id;
   const position = video.value.currentTime;
+  if (position <= 0) return;
   if (!force && Math.abs(position - lastSavedAt) < 10) return;
+  const previousSavedAt = lastSavedAt;
   lastSavedAt = position;
   try {
-    await api.saveProgress(lesson.value.id, position);
+    await api.saveProgress(lessonId, position);
   } catch {
-    // The next periodic save retries without interrupting playback.
+    if (lesson.value?.id === lessonId && lastSavedAt === position) {
+      lastSavedAt = previousSavedAt;
+    }
   }
 }
 
 function saveOnExit(): void {
-  if (!video.value || !lesson.value || ended.value) return;
+  if (!progressSavingEnabled || !video.value || !lesson.value || ended.value) return;
+  const position = video.value.currentTime;
+  if (position <= 0) return;
   void fetch(`/api/progress/lessons/${lesson.value.id}`, {
     method: "PUT",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ positionSeconds: video.value.currentTime }),
+    body: JSON.stringify({ positionSeconds: position }),
     keepalive: true,
   });
 }

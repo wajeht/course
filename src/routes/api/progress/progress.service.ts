@@ -16,6 +16,7 @@ export function createProgressService(
     async updateProgress(lessonId, positionSeconds) {
       const lesson = await catalog.findLesson(lessonId);
       if (!lesson) return false;
+      if (positionSeconds <= 0) return true;
       await repository.savePosition(
         lessonId,
         Math.min(positionSeconds, Number(lesson.duration_seconds)),
