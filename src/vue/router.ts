@@ -1,30 +1,28 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-import CoursePage from "./pages/CoursePage.vue";
-import HomePage from "./pages/HomePage.vue";
-import InstructorPage from "./pages/InstructorPage.vue";
-import PlayerPage from "./pages/PlayerPage.vue";
-import SettingsPage from "./pages/SettingsPage.vue";
-
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: "/", name: "home", component: HomePage },
-    { path: "/settings", name: "settings", component: SettingsPage },
+    { path: "/", name: "home", component: () => import("./pages/HomePage.vue") },
+    {
+      path: "/settings",
+      name: "settings",
+      component: () => import("./pages/SettingsPage.vue"),
+    },
     {
       path: "/courses/:courseId",
       name: "course",
-      component: CoursePage,
+      component: () => import("./pages/CoursePage.vue"),
     },
     {
       path: "/instructors/:instructorName",
       name: "instructor",
-      component: InstructorPage,
+      component: () => import("./pages/InstructorPage.vue"),
     },
     {
       path: "/lessons/:lessonId",
       name: "player",
-      component: PlayerPage,
+      component: () => import("./pages/PlayerPage.vue"),
     },
     { path: "/:pathMatch(.*)*", redirect: "/" },
   ],
