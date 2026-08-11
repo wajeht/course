@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { createConfiguration } from "../../../configuration.js";
 import { createDatabase, type Database } from "../../../db/db.js";
-import { createLogger } from "../../../utils/logger.js";
+import { createLogger } from "../../../logger.js";
 import { createCatalogApiRepository } from "./catalog.repository.js";
 import { createCatalogService } from "./catalog.service.js";
 

@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import type { Configuration } from "../configuration.js";
-import type { Logger } from "../utils/logger.js";
+import type { Logger } from "../logger.js";
 import type { CatalogRepository } from "./catalog.repository.js";
 import { readCourseMetadata } from "./course-metadata.js";
 import { generateCover } from "./cover.js";
