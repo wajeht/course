@@ -1,31 +1,31 @@
 <script setup lang="ts">
-import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
-import { computed } from "vue";
+import { computed, ref, shallowRef } from "vue";
 
 import { api } from "../api";
 import PageHeader from "../components/PageHeader.vue";
+import { useAsyncData } from "../composables/useAsyncData.js";
 import StandardPageLayout from "../layouts/StandardPageLayout.vue";
-import { catalogKeys, scanKeys } from "../queries/queryKeys.js";
 
-const queryClient = useQueryClient();
-const scanQuery = useQuery({
-  queryKey: scanKeys.all,
-  queryFn: () => api.getScanStatus(),
-});
-const rescanMutation = useMutation({
-  mutationFn: () => api.rescanCatalog(),
-  onSuccess(status) {
-    queryClient.setQueryData(scanKeys.all, status);
-    void queryClient.invalidateQueries({ queryKey: catalogKeys.all });
-  },
-});
-
-const scanStatus = computed(() => scanQuery.data.value ?? null);
-const scanning = computed(() => rescanMutation.isPending.value);
+const scanRequest = useAsyncData(({ signal }) => api.getScanStatus(signal));
+const scanning = ref(false);
+const rescanError = shallowRef<unknown>(null);
+const scanStatus = computed(() => scanRequest.data.value);
 const error = computed(() => {
-  const caught = rescanMutation.error.value ?? scanQuery.error.value;
+  const caught = rescanError.value ?? scanRequest.error.value;
   return caught instanceof Error ? caught.message : caught ? "Could not load scan status" : "";
 });
+
+async function rescanCatalog(): Promise<void> {
+  scanning.value = true;
+  rescanError.value = null;
+  try {
+    scanRequest.data.value = await api.rescanCatalog();
+  } catch (caught) {
+    rescanError.value = caught;
+  } finally {
+    scanning.value = false;
+  }
+}
 </script>
 
 <template>
@@ -65,7 +65,7 @@ const error = computed(() => {
         <button
           class="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-[7px] bg-pine px-5 text-[.78rem] font-[750] text-white transition-[transform,background] duration-[160ms] enabled:hover:-translate-y-px enabled:hover:bg-pine-deep disabled:cursor-wait disabled:opacity-55 max-[600px]:w-full"
           :disabled="scanning"
-          @click="rescanMutation.mutate()"
+          @click="rescanCatalog"
         >
           <svg
             class="w-4 fill-none stroke-current stroke-[1.8]"
