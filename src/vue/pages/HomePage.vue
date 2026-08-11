@@ -10,12 +10,14 @@ import { useCatalogFilters } from "../composables/useCatalogFilters.js";
 
 const {
   catalog,
+  catalogLoaded,
   error,
   hasActiveFilters,
   initializeCatalog,
   libraryTitle,
   loading,
   query,
+  refreshing,
   scanStatus,
   selectedCategory,
   selectedFilters,
@@ -91,7 +93,10 @@ onMounted(() => void initializeCatalog());
       </div>
     </section>
 
-    <section :class="!hasActiveFilters && catalog.continueWatching.length ? 'mt-[70px]' : ''">
+    <section
+      :class="!hasActiveFilters && catalog.continueWatching.length ? 'mt-[70px]' : ''"
+      :aria-busy="refreshing"
+    >
       <div
         class="mb-6 flex items-end justify-between gap-6 max-[600px]:flex-col max-[600px]:items-start max-[600px]:gap-2"
       >
@@ -184,7 +189,7 @@ onMounted(() => void initializeCatalog());
       </div>
 
       <div
-        v-if="loading"
+        v-if="loading && !catalogLoaded"
         class="grid grid-cols-4 gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[600px]:grid-cols-1"
         aria-label="Loading courses"
       >
