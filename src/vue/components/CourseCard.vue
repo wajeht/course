@@ -2,7 +2,7 @@
 import { RouterLink } from "vue-router";
 
 import type { CatalogDto } from "../api";
-import { durationText } from "../utils/format";
+import { durationText } from "../utils.js";
 import ProgressBar from "./ProgressBar.vue";
 
 defineProps<{ course: CatalogDto["courses"][number] }>();
