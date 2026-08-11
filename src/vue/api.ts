@@ -51,8 +51,11 @@ export const api = {
     );
     return expectJson<CatalogDto>(response);
   },
-  async getCourse(courseId: string): Promise<CourseDetailDto> {
-    const response = await apiClient.api.catalog.courses[":courseId"].$get({ param: { courseId } });
+  async getCourse(courseId: string, signal?: AbortSignal): Promise<CourseDetailDto> {
+    const response = await apiClient.api.catalog.courses[":courseId"].$get(
+      { param: { courseId } },
+      { init: { signal } },
+    );
     return expectJson<CourseDetailDto>(response);
   },
   async getLesson(lessonId: string): Promise<{ lesson: LessonDto; course: CourseDetailDto }> {
