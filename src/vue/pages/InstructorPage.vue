@@ -5,6 +5,8 @@ import { RouterLink, useRoute, useRouter } from "vue-router";
 import { api, type CatalogFilters } from "../api";
 import CourseCard from "../components/CourseCard.vue";
 import PaginationControls from "../components/PaginationControls.vue";
+import AppButton from "../components/ui/AppButton.vue";
+import EmptyState from "../components/ui/EmptyState.vue";
 import { useAsyncData } from "../composables/useAsyncData.js";
 
 const route = useRoute();
@@ -145,20 +147,15 @@ watch(instructorRequest.data, (loadedCatalog) => {
       class="h-[42px] w-[42px] animate-spin rounded-full border-[3px] border-mist border-t-belt"
       aria-label="Loading"
     />
-    <div
+    <EmptyState
       v-else
-      class="grid min-h-80 place-items-center content-center rounded-[10px] border border-dashed border-[#bfc8c2] bg-white/55 p-10 text-center"
+      title="Instructor unavailable"
+      :description="error || `No courses list ${instructorName} as an instructor.`"
+      :heading-level="1"
     >
-      <h1 class="mb-2">Instructor unavailable</h1>
-      <p class="mb-[22px] max-w-[480px] text-muted">
-        {{ error || `No courses list ${instructorName} as an instructor.` }}
-      </p>
-      <RouterLink
-        to="/"
-        class="inline-flex min-h-11 items-center justify-center rounded-[7px] bg-pine px-[18px] text-[.82rem] font-[750] text-white shadow-[0_8px_24px_rgb(21_51_38_/_20%)] transition-[transform,background] duration-[160ms] hover:-translate-y-px hover:bg-pine-deep"
-      >
-        Back to library
-      </RouterLink>
-    </div>
+      <template #actions>
+        <AppButton :as="RouterLink" to="/" size="lg">Back to library</AppButton>
+      </template>
+    </EmptyState>
   </main>
 </template>

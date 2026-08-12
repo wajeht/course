@@ -43,6 +43,27 @@ test("registers, serves deep links offline, and prompts for updates", async ({ c
     await context.setOffline(false);
   }
 
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Rescan library" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Library scan complete" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(page.getByRole("dialog", { name: "Sign out?" })).toBeVisible();
+  await page.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await page
+    .getByRole("dialog", { name: "Sign out?" })
+    .getByRole("button", { name: "Sign out" })
+    .click();
+  await expect(page.getByRole("heading", { level: 1, name: "Welcome back" })).toBeVisible();
+  await page.locator('input[autocomplete="current-password"]').fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
+
   const originalServiceWorker = await fs.readFile(serviceWorkerPath, "utf8");
   try {
     await fs.writeFile(serviceWorkerPath, `${originalServiceWorker}\n// pwa-update-test\n`);

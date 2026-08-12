@@ -1,0 +1,109 @@
+<script setup lang="ts">
+import { computed, type Component } from "vue";
+
+defineOptions({ inheritAttrs: false });
+
+const props = withDefaults(
+  defineProps<{
+    as?: string | Component;
+    block?: boolean;
+    disabled?: boolean;
+    loading?: boolean;
+    loadingLabel?: string;
+    size?: "icon" | "lg" | "md" | "sm";
+    type?: "button" | "reset" | "submit";
+    variant?:
+      | "accent"
+      | "danger"
+      | "ghost"
+      | "inverse"
+      | "outline-inverse"
+      | "primary"
+      | "secondary"
+      | "text"
+      | "unstyled";
+  }>(),
+  {
+    as: "button",
+    block: false,
+    disabled: false,
+    loading: false,
+    loadingLabel: "Working…",
+    size: "md",
+    type: "button",
+    variant: "primary",
+  },
+);
+
+const emit = defineEmits<{ click: [event: MouseEvent] }>();
+const isDisabled = computed(() => props.disabled || props.loading);
+const isButton = computed(() => props.as === "button");
+
+const variantClasses = computed(
+  () =>
+    ({
+      accent:
+        "border-transparent bg-belt-light text-pine-deep shadow-[0_8px_24px_rgb(21_51_38_/_20%)] hover:-translate-y-px",
+      danger: "border-clay bg-clay text-white hover:-translate-y-px hover:bg-[#873a31]",
+      ghost: "border-line bg-white text-pine hover:-translate-y-px hover:border-pine",
+      inverse:
+        "border-transparent bg-white text-pine-deep hover:-translate-y-px hover:bg-porcelain",
+      "outline-inverse":
+        "border-white/24 bg-transparent text-white hover:-translate-y-px hover:border-white/55",
+      primary:
+        "border-transparent bg-pine text-white shadow-[0_8px_24px_rgb(21_51_38_/_14%)] hover:-translate-y-px hover:bg-pine-deep",
+      secondary: "border-line bg-white text-pine hover:-translate-y-px hover:border-pine",
+      text: "border-transparent bg-transparent px-0 text-pine hover:text-pine-deep",
+      unstyled: "border-0 bg-transparent p-0 text-inherit",
+    })[props.variant],
+);
+
+const sizeClasses = computed(
+  () =>
+    ({
+      icon: "h-10 w-10 p-0",
+      lg: "min-h-11 px-[18px] text-[.82rem]",
+      md: "min-h-10 px-5 text-[.78rem]",
+      sm: "min-h-9 px-4 text-[.75rem]",
+    })[props.size],
+);
+
+function handleClick(event: MouseEvent): void {
+  if (isDisabled.value) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    return;
+  }
+  emit("click", event);
+}
+</script>
+
+<template>
+  <component
+    :is="as"
+    v-bind="$attrs"
+    :type="isButton ? type : undefined"
+    :disabled="isButton ? isDisabled : undefined"
+    :aria-disabled="!isButton && isDisabled ? 'true' : undefined"
+    :aria-busy="loading ? 'true' : undefined"
+    :class="[
+      variant === 'unstyled'
+        ? 'cursor-pointer disabled:cursor-not-allowed disabled:opacity-55'
+        : 'inline-flex cursor-pointer items-center justify-center gap-2 rounded-[7px] border font-[750] transition-[transform,background,border-color] duration-[160ms] disabled:cursor-not-allowed disabled:opacity-55',
+      variant === 'unstyled' ? '' : sizeClasses,
+      variantClasses,
+      block ? 'w-full' : '',
+      !isButton && isDisabled ? 'pointer-events-none opacity-55' : '',
+    ]"
+    @click="handleClick"
+  >
+    <template v-if="loading">
+      <span
+        class="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent"
+        aria-hidden="true"
+      />
+      {{ loadingLabel }}
+    </template>
+    <slot v-else />
+  </component>
+</template>

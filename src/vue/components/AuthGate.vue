@@ -2,6 +2,12 @@
 import { computed, ref } from "vue";
 
 import type { AuthStatus } from "../composables/useAuth.js";
+import AlertMessage from "./ui/AlertMessage.vue";
+import AppButton from "./ui/AppButton.vue";
+import AppInput from "./ui/AppInput.vue";
+import AppLogo from "./ui/AppLogo.vue";
+import FormField from "./ui/FormField.vue";
+import PanelCard from "./ui/PanelCard.vue";
 
 const props = defineProps<{
   status: AuthStatus;
@@ -41,23 +47,9 @@ async function submit(): Promise<void> {
 
 <template>
   <main class="grid min-h-screen place-items-center bg-canvas px-5 py-12">
-    <section
-      class="w-full max-w-[430px] overflow-hidden rounded-[12px] border border-line bg-white shadow-course"
-    >
+    <PanelCard class="w-full max-w-[430px]" padding="none">
       <header class="bg-pine-deep px-8 py-7 text-white">
-        <div
-          class="flex items-center gap-3 font-display text-2xl font-extrabold tracking-[.04em] uppercase"
-        >
-          <span
-            class="flex h-[22px] w-9 items-center gap-[3px] rounded-[3px] border-2 border-current px-[5px] py-1"
-            aria-hidden="true"
-          >
-            <i class="block h-full w-1 bg-belt-light" />
-            <i class="block h-full w-1 bg-belt-light" />
-            <i class="block h-full w-1 bg-belt-light" />
-          </span>
-          Course
-        </div>
+        <AppLogo />
         <p class="mt-3 text-sm leading-6 text-white/68">
           {{
             isSetup
@@ -76,13 +68,7 @@ async function submit(): Promise<void> {
         <p class="mt-2 text-sm leading-6 text-muted">
           {{ message || "Course could not verify your session." }}
         </p>
-        <button
-          class="mt-6 min-h-11 w-full cursor-pointer rounded-[7px] bg-pine px-5 text-sm font-bold text-white hover:bg-pine-deep"
-          type="button"
-          @click="emit('retry')"
-        >
-          Try again
-        </button>
+        <AppButton class="mt-6" block size="lg" @click="emit('retry')"> Try again </AppButton>
       </div>
 
       <div v-else-if="isSetup && !setupEnabled" class="px-8 py-8">
@@ -105,25 +91,35 @@ async function submit(): Promise<void> {
           tabindex="-1"
         />
 
-        <label
+        <FormField
           v-if="isSetup && setupTokenRequired"
-          class="mt-6 block text-xs font-bold tracking-[.08em] text-pine uppercase"
+          v-slot="{ inputId, describedBy, invalid }"
+          class="mt-6"
+          label="Setup token"
+          required
         >
-          Setup token
-          <input
+          <AppInput
+            :id="inputId"
             v-model="setupToken"
-            class="mt-2 min-h-11 w-full rounded-[7px] border border-line px-3 text-sm font-normal tracking-normal text-ink normal-case outline-none focus:border-pine"
+            :aria-describedby="describedBy"
+            :invalid="invalid"
             type="password"
             autocomplete="one-time-code"
             required
           />
-        </label>
+        </FormField>
 
-        <label class="mt-6 block text-xs font-bold tracking-[.08em] text-pine uppercase">
-          Password
-          <input
+        <FormField
+          v-slot="{ inputId, describedBy, invalid }"
+          class="mt-6"
+          label="Password"
+          required
+        >
+          <AppInput
+            :id="inputId"
             v-model="password"
-            class="mt-2 min-h-11 w-full rounded-[7px] border border-line px-3 text-sm font-normal tracking-normal text-ink normal-case outline-none focus:border-pine"
+            :aria-describedby="describedBy"
+            :invalid="invalid"
             type="password"
             :autocomplete="isSetup ? 'new-password' : 'current-password'"
             minlength="8"
@@ -131,39 +127,44 @@ async function submit(): Promise<void> {
             required
             autofocus
           />
-        </label>
+        </FormField>
 
-        <label
+        <FormField
           v-if="isSetup"
-          class="mt-4 block text-xs font-bold tracking-[.08em] text-pine uppercase"
+          v-slot="{ inputId, describedBy, invalid }"
+          class="mt-4"
+          label="Confirm password"
+          :error="formError"
+          required
         >
-          Confirm password
-          <input
+          <AppInput
+            :id="inputId"
             v-model="confirmPassword"
-            class="mt-2 min-h-11 w-full rounded-[7px] border border-line px-3 text-sm font-normal tracking-normal text-ink normal-case outline-none focus:border-pine"
+            :aria-describedby="describedBy"
+            :invalid="invalid"
             type="password"
             autocomplete="new-password"
             minlength="8"
             maxlength="72"
             required
           />
-        </label>
+        </FormField>
 
-        <p
-          v-if="formError || message"
-          class="mt-4 rounded-[7px] border border-[#e8b7ae] bg-[#f8e5e1] px-3 py-2 text-sm text-[#6c241c]"
-        >
-          {{ formError || message }}
-        </p>
+        <AlertMessage v-if="message" class="mt-4">
+          {{ message }}
+        </AlertMessage>
 
-        <button
-          class="mt-6 min-h-11 w-full cursor-pointer rounded-[7px] bg-pine px-5 text-sm font-bold text-white hover:bg-pine-deep disabled:cursor-wait disabled:opacity-60"
+        <AppButton
+          class="mt-6"
+          block
+          size="lg"
           type="submit"
-          :disabled="busy"
+          :loading="busy"
+          loading-label="Please wait…"
         >
-          {{ busy ? "Please wait…" : isSetup ? "Create password" : "Sign in" }}
-        </button>
+          {{ isSetup ? "Create password" : "Sign in" }}
+        </AppButton>
       </form>
-    </section>
+    </PanelCard>
   </main>
 </template>

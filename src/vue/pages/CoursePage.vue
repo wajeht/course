@@ -1,12 +1,18 @@
 <script setup lang="ts">
-import { computed, ref, shallowRef, watch } from "vue";
+import { computed, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
 import { api } from "../api";
 import LessonRow from "../components/LessonRow.vue";
 import ProgressBar from "../components/ProgressBar.vue";
+import AppButton from "../components/ui/AppButton.vue";
+import EmptyState from "../components/ui/EmptyState.vue";
+import PanelCard from "../components/ui/PanelCard.vue";
+import { useAsyncAction } from "../composables/useAsyncAction.js";
 import { useAsyncData } from "../composables/useAsyncData.js";
+import { useConfirm } from "../composables/useConfirm.js";
 import { useExpandableSections } from "../composables/useExpandableSections.js";
+import { useToast } from "../composables/useToast.js";
 import { durationText } from "../utils.js";
 
 const route = useRoute();
@@ -14,12 +20,25 @@ const courseId = computed(() => String(route.params.courseId));
 const courseRequest = useAsyncData(({ signal }) => api.getCourse(courseId.value, signal), {
   immediate: false,
 });
-const resetting = ref(false);
-const resetError = shallowRef<unknown>(null);
+const confirmation = useConfirm();
+const toast = useToast();
 const course = computed(() => courseRequest.data.value);
 const loading = computed(() => courseRequest.loading.value && course.value === null);
+const resetAction = useAsyncAction(
+  async (id: string) => {
+    await api.resetCourse(id);
+    await courseRequest.refresh();
+  },
+  {
+    errorMessage: "Could not reset course progress",
+    onSuccess: () => {
+      toast.success("Course progress reset");
+    },
+  },
+);
 const error = computed(() => {
-  const caught = resetError.value ?? courseRequest.error.value;
+  if (resetAction.errorMessage.value) return resetAction.errorMessage.value;
+  const caught = courseRequest.error.value;
   return caught instanceof Error ? caught.message : caught ? "Could not load this course" : "";
 });
 const { isSectionExpanded, replaceExpandedSections, sectionPanelId, toggleSection } =
@@ -33,17 +52,14 @@ const nextLesson = computed(
 );
 
 async function resetProgress(): Promise<void> {
-  if (!course.value || !window.confirm("Reset all lesson progress for this course?")) return;
-  resetting.value = true;
-  resetError.value = null;
-  try {
-    await api.resetCourse(course.value.id);
-    await courseRequest.refresh();
-  } catch (caught) {
-    resetError.value = caught;
-  } finally {
-    resetting.value = false;
-  }
+  if (!course.value) return;
+  const confirmed = await confirmation.confirm({
+    title: "Reset course progress?",
+    message: "This resets every lesson in this course and cannot be undone.",
+    confirmLabel: "Reset progress",
+    variant: "danger",
+  });
+  if (confirmed) await resetAction.run(course.value.id);
 }
 
 watch(
@@ -150,21 +166,25 @@ watch(
           <ProgressBar :value="course.progressPercent" light />
         </div>
         <div class="flex flex-wrap gap-[10px] max-[600px]:col-span-full">
-          <RouterLink
+          <AppButton
             v-if="nextLesson"
+            :as="RouterLink"
             :to="{ name: 'player', params: { lessonId: nextLesson.id } }"
-            class="inline-flex min-h-11 cursor-pointer items-center justify-center gap-[9px] rounded-[7px] border border-transparent bg-belt-light px-[18px] text-[.82rem] font-[750] text-pine-deep shadow-[0_8px_24px_rgb(21_51_38_/_20%)] transition-transform duration-[160ms] hover:-translate-y-px"
+            variant="accent"
+            size="lg"
           >
             <span aria-hidden="true">▶</span>
             {{ nextLesson.positionSeconds ? "Resume course" : "Start course" }}
-          </RouterLink>
-          <button
-            class="inline-flex min-h-11 cursor-pointer items-center justify-center gap-[9px] rounded-[7px] border border-white/24 bg-transparent px-[18px] text-[.82rem] font-[750] text-white transition-transform duration-[160ms] enabled:hover:-translate-y-px disabled:cursor-wait disabled:opacity-55"
-            :disabled="resetting"
+          </AppButton>
+          <AppButton
+            variant="outline-inverse"
+            size="lg"
+            :loading="resetAction.pending.value"
+            loading-label="Resetting…"
             @click="resetProgress"
           >
-            {{ resetting ? "Resetting…" : "Reset progress" }}
-          </button>
+            Reset progress
+          </AppButton>
         </div>
       </div>
     </section>
@@ -187,18 +207,20 @@ watch(
           {{ course.completedCount }} of {{ course.lessonCount }} completed
         </span>
       </div>
-      <article
+      <PanelCard
         v-for="section in course.sections"
         :key="section.id ?? 'direct'"
-        class="mb-5 overflow-hidden rounded-[10px] border border-line bg-white shadow-[0_6px_22px_rgb(24_32_29_/_4%)]"
+        as="article"
+        class="mb-5 shadow-[0_6px_22px_rgb(24_32_29_/_4%)]"
+        padding="none"
       >
         <header
           class="border-b border-pine/15 bg-mist text-pine-deep shadow-[inset_4px_0_0_#c4933f]"
         >
           <h3>
-            <button
+            <AppButton
               class="flex w-full cursor-pointer items-center justify-between gap-4 px-[22px] py-4 text-left focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-belt"
-              type="button"
+              variant="unstyled"
               :aria-expanded="isSectionExpanded(section)"
               :aria-controls="sectionPanelId(section)"
               @click="toggleSection(section)"
@@ -225,7 +247,7 @@ watch(
                   </svg>
                 </span>
               </span>
-            </button>
+            </AppButton>
           </h3>
         </header>
         <div v-show="isSectionExpanded(section)" :id="sectionPanelId(section)">
@@ -236,7 +258,7 @@ watch(
             :index="index"
           />
         </div>
-      </article>
+      </PanelCard>
     </section>
   </main>
 
@@ -249,18 +271,10 @@ watch(
       class="h-[42px] w-[42px] animate-spin rounded-full border-[3px] border-mist border-t-belt"
       aria-label="Loading"
     />
-    <div
-      v-else
-      class="grid min-h-80 place-items-center content-center rounded-[10px] border border-dashed border-[#bfc8c2] bg-white/55 p-10 text-center"
-    >
-      <h1 class="mb-2">Course unavailable</h1>
-      <p class="mb-[22px] max-w-[480px] text-muted">{{ error }}</p>
-      <RouterLink
-        to="/"
-        class="inline-flex min-h-11 cursor-pointer items-center justify-center gap-[9px] rounded-[7px] border border-transparent bg-pine px-[18px] text-[.82rem] font-[750] text-white shadow-[0_8px_24px_rgb(21_51_38_/_20%)] transition-[transform,background] duration-[160ms] hover:-translate-y-px hover:bg-pine-deep"
-      >
-        Back to library
-      </RouterLink>
-    </div>
+    <EmptyState v-else title="Course unavailable" :description="error" :heading-level="1">
+      <template #actions>
+        <AppButton :as="RouterLink" to="/" size="lg">Back to library</AppButton>
+      </template>
+    </EmptyState>
   </main>
 </template>
