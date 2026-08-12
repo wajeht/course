@@ -53,13 +53,15 @@ const nextLesson = computed(
 
 async function resetProgress(): Promise<void> {
   if (!course.value) return;
+  const targetCourseId = course.value.id;
   const confirmed = await confirmation.confirm({
     title: "Reset course progress?",
     message: "This resets every lesson in this course and cannot be undone.",
     confirmLabel: "Reset progress",
     variant: "danger",
   });
-  if (confirmed) await resetAction.run(course.value.id);
+  if (!confirmed || course.value?.id !== targetCourseId) return;
+  await resetAction.run(targetCourseId);
 }
 
 watch(
