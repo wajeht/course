@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
+import bcrypt from "bcryptjs";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createApp } from "../../../app.js";
@@ -303,6 +304,18 @@ describe("password authentication", () => {
         )
       ).status,
     ).toBe(201);
+  });
+
+  it("allows existing passwords shorter than the current creation minimum", async () => {
+    const { app, context } = await testApp();
+    const password = "short123";
+    await context.database.connection("settings").insert({
+      key: "app_password",
+      value: await bcrypt.hash(password, 4),
+      updated_at: new Date().toISOString(),
+    });
+
+    expect((await app.request("/api/auth", jsonRequest("POST", { password }))).status).toBe(200);
   });
 
   it("rejects passwords that bcrypt would silently truncate", async () => {
