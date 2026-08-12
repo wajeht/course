@@ -8,6 +8,7 @@ import AppInput from "@/components/ui/AppInput.vue";
 import FormField from "@/components/ui/FormField.vue";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import PanelCard from "@/components/ui/PanelCard.vue";
+import PanelCardHeader from "@/components/ui/PanelCardHeader.vue";
 import { useAsyncAction } from "@/composables/useAsyncAction.js";
 import { useAsyncData } from "@/composables/useAsyncData.js";
 import { useAuth } from "@/composables/useAuth.js";
@@ -84,10 +85,7 @@ async function logout(): Promise<void> {
   <StandardPageLayout>
     <PageHeader eyebrow="Course settings" title="Settings" />
 
-    <AlertMessage
-      v-if="logoutAction.errorMessage.value"
-      class="mt-8 px-[18px] py-[14px] text-[.88rem]"
-    >
+    <AlertMessage v-if="logoutAction.errorMessage.value" class="mt-8" size="lg">
       {{ logoutAction.errorMessage.value }}
     </AlertMessage>
 
@@ -104,20 +102,17 @@ async function logout(): Promise<void> {
         v-if="activeSection === 'data'"
         id="settings-data-panel"
         class="col-span-3 max-[1120px]:col-span-2 max-[860px]:col-span-1"
-        role="tabpanel"
         aria-labelledby="settings-data-tab"
       >
-        <AlertMessage v-if="scanError" class="mb-5 px-[18px] py-[14px] text-[.88rem]">
+        <AlertMessage v-if="scanError" class="mb-5" size="lg">
           {{ scanError }}
         </AlertMessage>
 
         <PanelCard class="min-h-[260px]" padding="none">
-          <header class="border-b border-line px-[clamp(22px,4vw,34px)] py-6">
-            <h2 class="text-xl font-[750]">Library scan</h2>
-            <p class="mt-1.5 max-w-[620px] text-[.85rem] leading-6 text-muted">
-              Scan your video folders now to find new or changed courses.
-            </p>
-          </header>
+          <PanelCardHeader
+            title="Library scan"
+            description="Scan your video folders now to find new or changed courses."
+          />
           <div
             class="flex min-h-[180px] flex-col items-start justify-between gap-8 p-[clamp(22px,4vw,34px)]"
           >
@@ -159,16 +154,13 @@ async function logout(): Promise<void> {
         v-else
         id="settings-auth-panel"
         class="col-span-3 max-[1120px]:col-span-2 max-[860px]:col-span-1"
-        role="tabpanel"
         aria-labelledby="settings-auth-tab"
       >
         <PanelCard padding="none">
-          <header class="border-b border-line px-[clamp(22px,4vw,34px)] py-6">
-            <h2 class="text-xl font-[750]">Access</h2>
-            <p class="mt-1.5 max-w-[620px] text-[.85rem] leading-6 text-muted">
-              Change the password for this private library or sign out of this device.
-            </p>
-          </header>
+          <PanelCardHeader
+            title="Access"
+            description="Change the password for this private library or sign out of this device."
+          />
           <form class="grid gap-4 p-[clamp(22px,4vw,34px)]" @submit.prevent="changePassword">
             <input
               class="sr-only"

@@ -6,6 +6,7 @@ import { api, type CatalogFilters } from "@/api.js";
 import CourseCard from "@/components/CourseCard.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
+import PageHeader from "@/components/ui/PageHeader.vue";
 import PaginationControls from "@/components/ui/PaginationControls.vue";
 import { useAsyncData } from "@/composables/useAsyncData.js";
 
@@ -116,14 +117,12 @@ watch(instructorRequest.data, (loadedCatalog) => {
       :aria-busy="refreshing"
       class="mx-auto w-[min(1380px,calc(100%-8vw))] pt-[clamp(52px,7vw,86px)] pb-[100px] max-[860px]:w-[min(100%-40px,1380px)]"
     >
-      <div class="mb-7">
-        <p class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase">
-          Instructor library
-        </p>
-        <h2 class="font-display text-[clamp(1.9rem,3vw,2.7rem)] font-[750] tracking-[-.035em]">
-          Courses by {{ instructorName }}
-        </h2>
-      </div>
+      <PageHeader
+        class="mb-7"
+        eyebrow="Instructor library"
+        :title="`Courses by ${instructorName}`"
+        :heading-level="2"
+      />
       <div
         class="grid grid-cols-4 gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[600px]:grid-cols-1"
       >

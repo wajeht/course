@@ -33,23 +33,12 @@ const {
 
 <template>
   <StandardPageLayout>
-    <AlertMessage v-if="error" class="mb-7 px-[18px] py-[14px] text-[.88rem]">
+    <AlertMessage v-if="error" class="mb-7" size="lg">
       {{ error }}
     </AlertMessage>
 
     <section v-if="!hasActiveFilters && catalog.continueWatching.length">
-      <div
-        class="mb-6 flex items-end justify-between gap-6 max-[600px]:flex-col max-[600px]:items-start max-[600px]:gap-2"
-      >
-        <div>
-          <p class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase">
-            In progress
-          </p>
-          <h2 class="font-display text-[clamp(1.9rem,3vw,2.7rem)] font-[750] tracking-[-.035em]">
-            Continue watching
-          </h2>
-        </div>
-      </div>
+      <PageHeader class="mb-6" eyebrow="In progress" title="Continue watching" :heading-level="2" />
       <div
         class="-mx-1 grid auto-cols-[minmax(300px,420px)] grid-flow-col gap-4 overflow-x-auto px-1 pt-1 pb-[18px] [scroll-snap-type:x_proximity] max-[600px]:auto-cols-[86vw]"
       >

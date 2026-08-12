@@ -44,7 +44,7 @@ const variantClasses = computed(
     ({
       accent:
         "border-transparent bg-belt-light text-pine-deep shadow-[0_8px_24px_rgb(21_51_38_/_20%)] hover:-translate-y-px",
-      danger: "border-clay bg-clay text-white hover:-translate-y-px hover:bg-[#873a31]",
+      danger: "border-clay bg-clay text-white hover:-translate-y-px hover:bg-clay-deep",
       ghost: "border-line bg-white text-pine hover:-translate-y-px hover:border-pine",
       inverse:
         "border-transparent bg-white text-pine-deep hover:-translate-y-px hover:bg-porcelain",
