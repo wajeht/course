@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 import { zValidator } from "@hono/zod-validator";
 import type { Context, MiddlewareHandler } from "hono";
 import { Hono } from "hono";
@@ -39,11 +41,6 @@ const changePasswordSchema = z
     message: "Passwords do not match",
     path: ["confirmPassword"],
   });
-
-interface AttemptRecord {
-  failures: number;
-  resetAt: number;
-}
 
 function sessionCookieName(configuration: Configuration): string {
   return configuration.app.env === "production" ? "__Host-course_session" : "course_session";
@@ -87,26 +84,19 @@ export function createRequireAuth(context: AppContext): MiddlewareHandler {
   };
 }
 
-function clientKey(c: Context): string {
-  return (
+function clientKey(c: Context, configuration: Configuration): string {
+  const address =
     c.req.header("cf-connecting-ip") ??
     c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ??
-    "unknown"
-  );
+    "unknown";
+  return crypto
+    .createHmac("sha256", configuration.auth.sessionSecret)
+    .update(address)
+    .digest("hex");
 }
 
 export function createAuthRouter(context: AppContext) {
-  const attempts = new Map<string, AttemptRecord>();
   const configuration = context.configuration;
-
-  function activeAttempt(key: string, now = Date.now()): AttemptRecord | null {
-    const attempt = attempts.get(key);
-    if (!attempt || attempt.resetAt <= now) {
-      attempts.delete(key);
-      return null;
-    }
-    return attempt;
-  }
 
   return new Hono()
     .get("/me", async (c) => {
@@ -122,8 +112,8 @@ export function createAuthRouter(context: AppContext) {
       });
     })
     .post("/", zValidator("json", loginSchema), async (c) => {
-      const key = clientKey(c);
-      const attempt = activeAttempt(key);
+      const key = clientKey(c, configuration);
+      const attempt = await context.auth.getLoginAttempt(key);
       if (attempt && attempt.failures >= configuration.auth.loginMaxAttempts) {
         const retryAfter = Math.max(1, Math.ceil((attempt.resetAt - Date.now()) / 1000));
         c.header("Retry-After", String(retryAfter));
@@ -133,19 +123,11 @@ export function createAuthRouter(context: AppContext) {
         return c.json({ message: "Application password is not configured" }, 409);
       }
       if (!(await context.auth.verifyPassword(c.req.valid("json").password))) {
-        const now = Date.now();
-        const current = activeAttempt(key, now);
-        if (!current && attempts.size >= 1_000) {
-          attempts.delete(attempts.keys().next().value!);
-        }
-        attempts.set(key, {
-          failures: (current?.failures ?? 0) + 1,
-          resetAt: current?.resetAt ?? now + configuration.auth.loginWindowMs,
-        });
+        await context.auth.recordLoginFailure(key);
         context.logger.warn("Failed login attempt", { client: key });
         return c.json({ message: "Invalid password" }, 401);
       }
-      attempts.delete(key);
+      await context.auth.clearLoginFailures(key);
       await writeSession(c, context, context.auth.createSession());
       context.logger.info("Login successful", { client: key });
       return c.json({ authenticated: true });
