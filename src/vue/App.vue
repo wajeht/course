@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { computed } from "vue";
 import { RouterView } from "vue-router";
 
 import AuthGate from "./components/AuthGate.vue";
@@ -23,8 +23,6 @@ const authBusy = computed(() => loginAction.pending.value || setupAction.pending
 const actionError = computed(
   () => loginAction.errorMessage.value || setupAction.errorMessage.value,
 );
-
-onMounted(() => void auth.initialize());
 
 async function login(password: string): Promise<void> {
   setupAction.clearError();
