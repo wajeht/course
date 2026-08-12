@@ -10,12 +10,12 @@ import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
 
 import type { AppContext } from "./context.js";
-import { isViteApiModulePath } from "./development-routing.js";
 import { createApiRouter } from "./routes/api/api.js";
 import { createMediaRouter } from "./routes/media/media.js";
 import { createMiddleware } from "./routes/middleware.js";
 
 const servicePrefixes = ["/api", "/media", "/covers", "/hls", "/healthz"];
+const viteApiModulePattern = /^\/api\/[^/]+\.ts$/;
 
 function isServicePath(requestPath: string): boolean {
   return servicePrefixes.some(
@@ -65,7 +65,7 @@ export function createApp(context: AppContext) {
   );
   if (context.configuration.app.env === "development") {
     app.use("*", (c, next) =>
-      isViteApiModulePath(c.req.path)
+      viteApiModulePattern.test(c.req.path)
         ? proxyVueRequest(c, context.configuration.app.vuePort)
         : next(),
     );
