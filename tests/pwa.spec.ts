@@ -17,7 +17,32 @@ test("registers, serves deep links offline, and prompts for updates", async ({ c
   expect([201, 409]).toContain(setup.status());
   const login = await page.request.post("/api/auth", { data: { password } });
   expect(login.status()).toBe(200);
-  await page.goto("/");
+
+  let releaseAuthCheck: () => void = () => undefined;
+  let markAuthCheckStarted: () => void = () => undefined;
+  const authCheckReleased = new Promise<void>((resolve) => {
+    releaseAuthCheck = resolve;
+  });
+  const authCheckStarted = new Promise<void>((resolve) => {
+    markAuthCheckStarted = resolve;
+  });
+  await page.route(
+    "**/api/auth/me",
+    async (route) => {
+      markAuthCheckStarted();
+      await authCheckReleased;
+      await route.continue();
+    },
+    { times: 1 },
+  );
+  const navigation = page.goto("/");
+  await authCheckStarted;
+  try {
+    await expect(page.getByText("Checking your session…")).toHaveCount(0);
+  } finally {
+    releaseAuthCheck();
+    await navigation;
+  }
 
   await expect(page.getByRole("heading", { level: 1, name: "All courses" })).toBeVisible();
   await expect(page.getByText("Course is ready offline")).toBeVisible();
