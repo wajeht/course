@@ -13,13 +13,13 @@ describe("SettingsNavigation", () => {
     expect(tabs.map((tab) => tab.text())).toEqual(["Data", "Auth"]);
     expect(tabs[0]?.attributes("aria-selected")).toBe("true");
     expect(tabs[1]?.attributes("aria-selected")).toBe("false");
-    expect(tabs[0]?.classes()).toContain("bg-pine!");
+    expect(tabs[0]?.classes()).toContain("bg-pine");
 
     await tabs[1]?.trigger("click");
     expect(wrapper.emitted("update:modelValue")).toEqual([["auth"]]);
 
     await wrapper.setProps({ modelValue: "auth" });
-    expect(tabs[1]?.classes()).toContain("bg-pine!");
+    expect(tabs[1]?.classes()).toContain("bg-pine");
 
     await wrapper.findAll("button").at(-1)?.trigger("click");
     expect(wrapper.emitted("signOut")).toHaveLength(1);
