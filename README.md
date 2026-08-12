@@ -31,7 +31,8 @@ Then open [localhost](http://localhost).
 
 On the first visit, enter `AUTH_SETUP_TOKEN` and create the application password. The setup token
 is ignored after a password exists. `SESSION_SECRET` must remain stable across restarts or existing
-sessions will be signed out.
+sessions will be signed out. Application passwords must contain at least 15 characters. Changing the
+password invalidates every other active session.
 
 ## Library Layout
 

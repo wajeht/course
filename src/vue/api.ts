@@ -24,10 +24,10 @@ export class ApiError extends Error {
   }
 }
 
-async function expectJson<T>(response: Response): Promise<T> {
+async function expectJson<T>(response: Response, notifyUnauthorized = false): Promise<T> {
   const body = (await response.json()) as T | { message?: string };
   if (!response.ok) {
-    if (response.status === 401 && typeof window !== "undefined") {
+    if (notifyUnauthorized && response.status === 401 && typeof window !== "undefined") {
       window.dispatchEvent(new Event("course:unauthorized"));
     }
     throw new ApiError(
@@ -38,6 +38,10 @@ async function expectJson<T>(response: Response): Promise<T> {
     );
   }
   return body as T;
+}
+
+function expectProtectedJson<T>(response: Response): Promise<T> {
+  return expectJson<T>(response, true);
 }
 
 export const api = {
@@ -71,7 +75,7 @@ export const api = {
     newPassword: string,
     confirmPassword: string,
   ): Promise<void> {
-    await expectJson(
+    await expectProtectedJson(
       await apiClient.api.auth.password.$put({
         json: { currentPassword, newPassword, confirmPassword },
       }),
@@ -88,62 +92,62 @@ export const api = {
       },
       { init: { signal } },
     );
-    return expectJson<CatalogDto>(response);
+    return expectProtectedJson<CatalogDto>(response);
   },
   async getCourse(courseId: string, signal?: AbortSignal): Promise<CourseDetailDto> {
     const response = await apiClient.api.catalog.courses[":courseId"].$get(
       { param: { courseId } },
       { init: { signal } },
     );
-    return expectJson<CourseDetailDto>(response);
+    return expectProtectedJson<CourseDetailDto>(response);
   },
   async getLesson(lessonId: string): Promise<{ lesson: LessonDto; course: CourseDetailDto }> {
     const response = await apiClient.api.catalog.lessons[":lessonId"].$get({ param: { lessonId } });
-    return expectJson(response);
+    return expectProtectedJson(response);
   },
   async preparePlayback(lessonId: string): Promise<PlaybackResult> {
-    const response = await apiClient.api.playback[":lessonId"].$get({ param: { lessonId } });
-    return expectJson<PlaybackResult>(response);
+    const response = await apiClient.api.playback[":lessonId"].$post({ param: { lessonId } });
+    return expectProtectedJson<PlaybackResult>(response);
   },
   async getConversionStatus(lessonId: string): Promise<PlaybackResult> {
     const response = await apiClient.api.playback[":lessonId"].conversion.$get({
       param: { lessonId },
     });
-    return expectJson<PlaybackResult>(response);
+    return expectProtectedJson<PlaybackResult>(response);
   },
   async retryConversion(lessonId: string): Promise<PlaybackResult> {
     const response = await apiClient.api.playback[":lessonId"].retry.$post({ param: { lessonId } });
-    return expectJson<PlaybackResult>(response);
+    return expectProtectedJson<PlaybackResult>(response);
   },
   async saveProgress(lessonId: string, positionSeconds: number): Promise<void> {
     const response = await apiClient.api.progress.lessons[":lessonId"].$put({
       param: { lessonId },
       json: { positionSeconds },
     });
-    await expectJson(response);
+    await expectProtectedJson(response);
   },
   async completeLesson(lessonId: string): Promise<void> {
     const response = await apiClient.api.progress.lessons[":lessonId"].complete.$post({
       param: { lessonId },
     });
-    await expectJson(response);
+    await expectProtectedJson(response);
   },
   async resetLesson(lessonId: string): Promise<void> {
     const response = await apiClient.api.progress.lessons[":lessonId"].$delete({
       param: { lessonId },
     });
-    await expectJson(response);
+    await expectProtectedJson(response);
   },
   async resetCourse(courseId: string): Promise<void> {
     const response = await apiClient.api.progress.courses[":courseId"].$delete({
       param: { courseId },
     });
-    await expectJson(response);
+    await expectProtectedJson(response);
   },
   async getScanStatus(signal?: AbortSignal): Promise<ScanStatus> {
-    return expectJson<ScanStatus>(await apiClient.api.scan.$get({}, { init: { signal } }));
+    return expectProtectedJson<ScanStatus>(await apiClient.api.scan.$get({}, { init: { signal } }));
   },
   async rescanCatalog(): Promise<ScanStatus> {
-    return expectJson<ScanStatus>(await apiClient.api.scan.$post());
+    return expectProtectedJson<ScanStatus>(await apiClient.api.scan.$post());
   },
 };

@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import type { Configuration } from "../../../configuration.js";
 import type { AppContext } from "../../../context.js";
+import { MIN_PASSWORD_LENGTH } from "../../../auth/auth.service.js";
 
 const loginPasswordSchema = z
   .string()
@@ -15,8 +16,8 @@ const loginPasswordSchema = z
   .max(72)
   .refine((password) => Buffer.byteLength(password, "utf8") <= 72, "Password is too long");
 const passwordSchema = loginPasswordSchema.refine(
-  (password) => password.length >= 8,
-  "Password must be at least 8 characters",
+  (password) => [...password].length >= MIN_PASSWORD_LENGTH,
+  `Password must be at least ${MIN_PASSWORD_LENGTH} characters`,
 );
 const loginSchema = z.object({ password: loginPasswordSchema }).strict();
 const setupSchema = z
@@ -79,7 +80,7 @@ export function createRequireAuth(context: AppContext): MiddlewareHandler {
   return async (c, next) => {
     const session = await readSession(c, context);
     if (!session) return c.json({ message: "Authentication required" }, 401);
-    await writeSession(c, context, context.auth.refreshSession(session));
+    await context.auth.touchSession(session);
     await next();
   };
 }
@@ -128,11 +129,17 @@ export function createAuthRouter(context: AppContext) {
         return c.json({ message: "Invalid password" }, 401);
       }
       await context.auth.clearLoginFailures(key);
-      await writeSession(c, context, context.auth.createSession());
+      await writeSession(c, context, await context.auth.createSession());
       context.logger.info("Login successful", { client: key });
       return c.json({ authenticated: true });
     })
     .post("/logout", async (c) => {
+      const cookie = await getSignedCookie(
+        c,
+        configuration.auth.sessionSecret,
+        sessionCookieName(configuration),
+      );
+      if (typeof cookie === "string") await context.auth.revokeSession(cookie);
       deleteCookie(c, sessionCookieName(configuration), sessionCookieOptions(configuration));
       return c.json({ authenticated: false });
     })
@@ -159,6 +166,7 @@ export function createAuthRouter(context: AppContext) {
         const { currentPassword, newPassword } = c.req.valid("json");
         const result = await context.auth.changePassword(currentPassword, newPassword);
         if (!result.ok) return c.json({ message: "Current password is incorrect" }, 400);
+        await writeSession(c, context, await context.auth.createSession());
         context.logger.info("Application password changed");
         return c.json({ passwordChanged: true });
       },

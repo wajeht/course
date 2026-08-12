@@ -174,7 +174,7 @@ async function logout(): Promise<void> {
               :invalid="field.invalid"
               type="password"
               autocomplete="new-password"
-              minlength="8"
+              minlength="15"
               maxlength="72"
               required
             />
@@ -187,7 +187,7 @@ async function logout(): Promise<void> {
               :invalid="field.invalid"
               type="password"
               autocomplete="new-password"
-              minlength="8"
+              minlength="15"
               maxlength="72"
               required
             />
