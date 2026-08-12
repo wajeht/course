@@ -40,11 +40,6 @@ const emit = defineEmits<{
         @click="emit('update:modelValue', section.value)"
       >
         <span>{{ section.label }}</span>
-        <span
-          v-if="modelValue === section.value"
-          class="ml-auto h-2 w-2 rounded-full bg-belt-light"
-          aria-hidden="true"
-        />
       </AppButton>
     </div>
     <div class="mt-2 border-t border-line pt-2">
