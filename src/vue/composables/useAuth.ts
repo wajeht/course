@@ -1,51 +1,78 @@
-import { reactive, readonly } from "vue";
+import { inject, reactive, readonly, type InjectionKey } from "vue";
 
-import { api } from "../api.js";
+import { authApi, type AuthStateDto } from "@/api/auth.js";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "error";
 
-const AUTH_CHECK_TIMEOUT_MS = 10_000;
+interface AuthClient {
+  changePassword(
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string,
+  ): Promise<void>;
+  getAuthState(signal?: AbortSignal): Promise<AuthStateDto>;
+  login(password: string): Promise<void>;
+  logout(): Promise<void>;
+  setupPassword(password: string, confirmPassword: string, setupToken?: string): Promise<void>;
+}
 
-const state = reactive({
-  status: "loading" as AuthStatus,
-  passwordConfigured: false,
-  setupEnabled: false,
-  setupTokenRequired: false,
-  error: "",
-});
+export interface AuthController {
+  changePassword: AuthClient["changePassword"];
+  dispose(): void;
+  initialize(): Promise<void>;
+  login(password: string): Promise<void>;
+  logout(): Promise<void>;
+  setupPassword(password: string, confirmPassword: string, setupToken?: string): Promise<void>;
+  state: Readonly<{
+    error: string;
+    passwordConfigured: boolean;
+    setupEnabled: boolean;
+    setupTokenRequired: boolean;
+    status: AuthStatus;
+  }>;
+}
 
-let listening = false;
+export const authKey: InjectionKey<AuthController> = Symbol("course-auth");
 
-function listenForExpiredSessions(): void {
-  if (listening || typeof window === "undefined") return;
-  listening = true;
-  window.addEventListener("course:unauthorized", () => {
+export function createAuth(
+  client: AuthClient = authApi,
+  checkTimeoutMilliseconds = 10_000,
+): AuthController {
+  const state = reactive({
+    status: "loading" as AuthStatus,
+    passwordConfigured: false,
+    setupEnabled: false,
+    setupTokenRequired: false,
+    error: "",
+  });
+
+  function handleUnauthorized(): void {
     state.status = "unauthenticated";
     state.passwordConfigured = true;
     state.error = "Your session expired. Sign in again.";
-  });
-}
+  }
 
-export function useAuth() {
-  listenForExpiredSessions();
+  if (typeof window !== "undefined") {
+    window.addEventListener("course:unauthorized", handleUnauthorized);
+  }
 
   async function initialize(): Promise<void> {
     state.status = "loading";
     state.error = "";
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), AUTH_CHECK_TIMEOUT_MS);
+    const timeout = setTimeout(() => controller.abort(), checkTimeoutMilliseconds);
     try {
-      const result = await api.getAuthState(controller.signal);
+      const result = await client.getAuthState(controller.signal);
       state.passwordConfigured = result.passwordConfigured;
       state.setupEnabled = result.setupEnabled;
       state.setupTokenRequired = result.setupTokenRequired;
       state.status = result.authenticated ? "authenticated" : "unauthenticated";
-    } catch (error) {
+    } catch (caught) {
       state.status = "error";
       state.error = controller.signal.aborted
         ? "Session check timed out. Try again."
-        : error instanceof Error
-          ? error.message
+        : caught instanceof Error
+          ? caught.message
           : "Could not verify authentication";
     } finally {
       clearTimeout(timeout);
@@ -53,7 +80,7 @@ export function useAuth() {
   }
 
   async function login(password: string): Promise<void> {
-    await api.login(password);
+    await client.login(password);
     await initialize();
   }
 
@@ -62,23 +89,34 @@ export function useAuth() {
     confirmPassword: string,
     setupToken?: string,
   ): Promise<void> {
-    await api.setupPassword(password, confirmPassword, setupToken);
+    await client.setupPassword(password, confirmPassword, setupToken);
     state.passwordConfigured = true;
     await login(password);
   }
 
   async function logout(): Promise<void> {
-    await api.logout();
+    await client.logout();
     state.status = "unauthenticated";
     state.error = "";
   }
 
   return {
-    state: readonly(state),
+    changePassword: client.changePassword,
+    dispose: () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("course:unauthorized", handleUnauthorized);
+      }
+    },
     initialize,
     login,
-    setupPassword,
     logout,
-    changePassword: api.changePassword,
+    setupPassword,
+    state: readonly(state),
   };
+}
+
+export function useAuth(): AuthController {
+  const auth = inject(authKey);
+  if (!auth) throw new Error("Auth provider is not installed");
+  return auth;
 }
