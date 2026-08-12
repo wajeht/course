@@ -28,22 +28,28 @@ const emit = defineEmits<{
         :id="`settings-${section.value}-tab`"
         :key="section.value"
         :class="[
-          'flex min-h-11 w-full justify-start rounded-[7px] px-[18px] text-left text-[.82rem] font-[750]',
-          modelValue === section.value ? '' : 'text-pine! hover:bg-porcelain!',
+          'flex min-h-12 w-full items-center rounded-[7px] px-3.5 text-left text-[.82rem] font-bold transition-[background,color,box-shadow] duration-[160ms]',
+          modelValue === section.value
+            ? 'bg-pine! text-white! shadow-[0_7px_18px_rgb(21_51_38_/_16%)]'
+            : 'bg-transparent! text-pine! hover:bg-porcelain!',
         ]"
-        size="lg"
-        :variant="modelValue === section.value ? 'primary' : 'unstyled'"
+        variant="unstyled"
         role="tab"
         :aria-controls="`settings-${section.value}-panel`"
         :aria-selected="modelValue === section.value"
         @click="emit('update:modelValue', section.value)"
       >
-        {{ section.label }}
+        <span>{{ section.label }}</span>
+        <span
+          v-if="modelValue === section.value"
+          class="ml-auto h-2 w-2 rounded-full bg-belt-light"
+          aria-hidden="true"
+        />
       </AppButton>
     </div>
     <div class="mt-2 border-t border-line pt-2">
       <AppButton
-        class="flex min-h-11 w-full justify-start rounded-[7px] px-[18px] text-left text-[.8rem] font-semibold text-clay! hover:bg-[#fff3f0]! hover:text-[#873a31]!"
+        class="flex min-h-11 w-full items-center rounded-[7px] px-3.5 text-left text-[.8rem] font-semibold text-clay! transition-colors duration-[160ms] hover:bg-[#fff3f0]! hover:text-[#873a31]!"
         variant="unstyled"
         :loading="signingOut"
         loading-label="Signing out…"
