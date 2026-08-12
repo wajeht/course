@@ -92,7 +92,7 @@ async function logout(): Promise<void> {
     </AlertMessage>
 
     <div
-      class="mt-6 grid grid-cols-[220px_minmax(0,1fr)] items-start gap-[clamp(36px,6vw,86px)] max-[760px]:grid-cols-1 max-[760px]:gap-8"
+      class="mt-6 grid grid-cols-[220px_minmax(0,1fr)] items-start gap-[clamp(18px,2vw,30px)] max-[760px]:grid-cols-1 max-[760px]:gap-8"
     >
       <SettingsNavigation
         v-model="activeSection"
