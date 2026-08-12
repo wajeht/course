@@ -1,28 +1,34 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted } from "vue";
 import { RouterView } from "vue-router";
 
 import AuthGate from "./components/AuthGate.vue";
 import PwaUpdatePrompt from "./components/PwaUpdatePrompt.vue";
+import ConfirmDialog from "./components/ui/ConfirmDialog.vue";
+import ToastViewport from "./components/ui/ToastViewport.vue";
+import { useAsyncAction } from "./composables/useAsyncAction.js";
 import { useAuth } from "./composables/useAuth.js";
 import AppShell from "./layouts/AppShell.vue";
 
 const auth = useAuth();
-const actionError = ref("");
-const authBusy = ref(false);
+const loginAction = useAsyncAction((password: string) => auth.login(password), {
+  errorMessage: "Could not sign in",
+});
+const setupAction = useAsyncAction(
+  (password: string, confirmPassword: string, setupToken?: string) =>
+    auth.setupPassword(password, confirmPassword, setupToken),
+  { errorMessage: "Could not configure password" },
+);
+const authBusy = computed(() => loginAction.pending.value || setupAction.pending.value);
+const actionError = computed(
+  () => loginAction.errorMessage.value || setupAction.errorMessage.value,
+);
 
 onMounted(() => void auth.initialize());
 
 async function login(password: string): Promise<void> {
-  actionError.value = "";
-  authBusy.value = true;
-  try {
-    await auth.login(password);
-  } catch (error) {
-    actionError.value = error instanceof Error ? error.message : "Could not sign in";
-  } finally {
-    authBusy.value = false;
-  }
+  setupAction.clearError();
+  await loginAction.run(password);
 }
 
 async function setup(
@@ -30,15 +36,8 @@ async function setup(
   confirmPassword: string,
   setupToken?: string,
 ): Promise<void> {
-  actionError.value = "";
-  authBusy.value = true;
-  try {
-    await auth.setupPassword(password, confirmPassword, setupToken);
-  } catch (error) {
-    actionError.value = error instanceof Error ? error.message : "Could not configure password";
-  } finally {
-    authBusy.value = false;
-  }
+  loginAction.clearError();
+  await setupAction.run(password, confirmPassword, setupToken);
 }
 </script>
 
@@ -59,4 +58,6 @@ async function setup(
     @retry="auth.initialize"
   />
   <PwaUpdatePrompt />
+  <ConfirmDialog />
+  <ToastViewport />
 </template>

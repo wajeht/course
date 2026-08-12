@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useRegisterSW } from "virtual:pwa-register/vue";
 
+import AppButton from "./ui/AppButton.vue";
+
 const { needRefresh, offlineReady, updateServiceWorker } = useRegisterSW({ immediate: true });
 
 function close(): void {
@@ -26,21 +28,12 @@ function close(): void {
       }}
     </p>
     <div class="mt-4 flex gap-2">
-      <button
-        v-if="needRefresh"
-        class="min-h-9 cursor-pointer rounded-[6px] bg-belt-light px-4 text-[.75rem] font-bold text-pine-deep"
-        type="button"
-        @click="updateServiceWorker(true)"
-      >
+      <AppButton v-if="needRefresh" variant="accent" size="sm" @click="updateServiceWorker(true)">
         Reload
-      </button>
-      <button
-        class="min-h-9 cursor-pointer rounded-[6px] border border-white/20 px-4 text-[.75rem] font-bold text-white"
-        type="button"
-        @click="close"
-      >
+      </AppButton>
+      <AppButton variant="outline-inverse" size="sm" @click="close">
         {{ needRefresh ? "Later" : "Close" }}
-      </button>
+      </AppButton>
     </div>
   </aside>
 </template>

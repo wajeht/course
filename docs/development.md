@@ -75,6 +75,22 @@ Linux, use the included device override:
 make up-qsv
 ```
 
+## Vue UI Architecture
+
+Reusable interface primitives live in `src/vue/components/ui`. Use these for
+buttons, form controls, panels, empty states, alerts, modals, confirmations,
+toasts, and the Course logo. Keep content-specific components such as
+`CourseCard` and `LessonRow` in `src/vue/components`.
+
+Shared interaction state lives in `src/vue/composables`. Use `useAsyncAction`
+for pending and error state, `useConfirm` instead of `window.confirm`, and
+`useToast` for short success or failure notifications. Mount one
+`ConfirmDialog` and `ToastViewport` at the application root.
+
+New primitives need component tests in Happy DOM. User-facing interaction
+changes also need Playwright coverage when they cross routing, authentication,
+offline behavior, or another browser boundary.
+
 ## Deployment
 
 Pushes to `main` publish the production `Dockerfile` image to

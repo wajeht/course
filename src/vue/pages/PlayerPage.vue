@@ -4,8 +4,13 @@ import { RouterLink, useRoute } from "vue-router";
 
 import { api, type CourseDetailDto, type LessonDto } from "../api";
 import LessonRow from "../components/LessonRow.vue";
+import AppButton from "../components/ui/AppButton.vue";
+import AppSelect from "../components/ui/AppSelect.vue";
+import { useAsyncAction } from "../composables/useAsyncAction.js";
+import { useConfirm } from "../composables/useConfirm.js";
 import { useExpandableSections } from "../composables/useExpandableSections.js";
 import { usePlaybackProgress } from "../composables/usePlaybackProgress.js";
+import { useToast } from "../composables/useToast.js";
 import { useVideoPlayback } from "../composables/useVideoPlayback.js";
 
 const route = useRoute();
@@ -16,6 +21,8 @@ const loading = ref(true);
 const ended = ref(false);
 const sidebarOpen = ref(false);
 const playbackRate = ref(1);
+const confirmation = useConfirm();
+const toast = useToast();
 const { expandSection, isSectionExpanded, replaceExpandedSections, sectionPanelId, toggleSection } =
   useExpandableSections("sidebar-section");
 const playbackProgress = usePlaybackProgress((lessonId, positionSeconds) =>
@@ -23,6 +30,31 @@ const playbackProgress = usePlaybackProgress((lessonId, positionSeconds) =>
 );
 const videoPlayback = useVideoPlayback(video, api);
 const { error, playback } = videoPlayback;
+const retryAction = useAsyncAction(async (lessonId: string) => {
+  await videoPlayback.retryPlayback(lessonId);
+});
+const resetAction = useAsyncAction(
+  async () => {
+    if (!lesson.value) return;
+    await playbackProgress.resetSession(video.value?.currentTime, (lessonId) =>
+      api.resetLesson(lessonId),
+    );
+    lesson.value.positionSeconds = 0;
+    lesson.value.progressPercent = 0;
+    lesson.value.completed = false;
+    ended.value = false;
+    if (video.value) video.value.currentTime = 0;
+  },
+  {
+    errorMessage: "Could not reset this lesson",
+    onError: (caught) => {
+      error.value = caught instanceof Error ? caught.message : "Could not reset this lesson";
+    },
+    onSuccess: () => {
+      toast.success("Lesson progress reset");
+    },
+  },
+);
 
 const allLessons = computed(
   () => course.value?.sections.flatMap((section) => section.lessons) ?? [],
@@ -122,23 +154,18 @@ async function markComplete(): Promise<void> {
 
 async function retryConversion(): Promise<void> {
   if (!lesson.value) return;
-  await videoPlayback.retryPlayback(lesson.value.id);
+  await retryAction.run(lesson.value.id);
 }
 
 async function resetProgress(): Promise<void> {
-  if (!lesson.value || !window.confirm("Reset progress for this lesson?")) return;
-  try {
-    await playbackProgress.resetSession(video.value?.currentTime, (lessonId) =>
-      api.resetLesson(lessonId),
-    );
-    lesson.value.positionSeconds = 0;
-    lesson.value.progressPercent = 0;
-    lesson.value.completed = false;
-    ended.value = false;
-    if (video.value) video.value.currentTime = 0;
-  } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : "Could not reset this lesson";
-  }
+  if (!lesson.value) return;
+  const confirmed = await confirmation.confirm({
+    title: "Reset lesson progress?",
+    message: "Your saved position and completion state for this lesson will be removed.",
+    confirmLabel: "Reset lesson",
+    variant: "danger",
+  });
+  if (confirmed) await resetAction.run();
 }
 
 function updatePlaybackRate(): void {
@@ -184,12 +211,13 @@ onBeforeUnmount(() => {
         >
           ← {{ course.title }}
         </RouterLink>
-        <button
+        <AppButton
           class="hidden rounded-[5px] border border-white/25 bg-transparent px-[11px] py-[7px] text-white max-[860px]:inline-flex"
+          variant="unstyled"
           @click="sidebarOpen = !sidebarOpen"
         >
           Lessons
-        </button>
+        </AppButton>
       </div>
       <div
         class="relative mx-auto mt-4 mb-[26px] grid aspect-video max-h-[calc(100vh-260px)] w-full place-items-center overflow-hidden rounded-[7px] border border-white/10 bg-[#070a08] shadow-[0_28px_80px_rgb(0_0_0_/_35%)] max-[860px]:max-h-none"
@@ -236,13 +264,17 @@ onBeforeUnmount(() => {
             Video unavailable
           </h2>
           <p class="max-w-[540px] text-[.82rem] text-white/58">{{ error }}</p>
-          <button
+          <AppButton
             v-if="playback?.kind === 'error'"
-            class="mt-[22px] inline-flex min-h-11 cursor-pointer items-center justify-center gap-[9px] rounded-[7px] border border-transparent bg-white px-[18px] text-[.82rem] font-[750] text-pine-deep transition-transform duration-[160ms] hover:-translate-y-px"
+            class="mt-[22px]"
+            variant="inverse"
+            size="lg"
+            :loading="retryAction.pending.value"
+            loading-label="Retrying…"
             @click="retryConversion"
           >
             Retry conversion
-          </button>
+          </AppButton>
         </div>
         <div
           v-if="ended"
@@ -254,11 +286,14 @@ onBeforeUnmount(() => {
           <h2 class="mt-4 mb-[7px] font-display text-[clamp(1.6rem,3vw,2.8rem)]">
             {{ nextLesson ? "Ready for the next one?" : "Course complete." }}
           </h2>
-          <RouterLink
+          <AppButton
             v-if="nextLesson"
+            :as="RouterLink"
             :to="{ name: 'player', params: { lessonId: nextLesson.id } }"
-            class="mt-[18px] inline-flex min-h-11 cursor-pointer items-center justify-center gap-[9px] rounded-[7px] border border-transparent bg-white px-[18px] text-[.82rem] font-[750] text-pine-deep transition-transform duration-[160ms] hover:-translate-y-px"
-            >Next lesson →</RouterLink
+            class="mt-[18px]"
+            variant="inverse"
+            size="lg"
+            >Next lesson →</AppButton
           >
         </div>
       </div>
@@ -281,22 +316,26 @@ onBeforeUnmount(() => {
         >
           <label class="text-[.7rem] font-bold text-white/60">
             Speed
-            <select
+            <AppSelect
               v-model="playbackRate"
               class="ml-2 rounded-[5px] border border-white/16 bg-[#202824] py-1.5 pr-6 pl-2 text-white"
+              variant="dark"
               @change="updatePlaybackRate"
             >
               <option v-for="rate in [0.5, 0.75, 1, 1.25, 1.5, 2]" :key="rate" :value="rate">
                 {{ rate }}×
               </option>
-            </select>
+            </AppSelect>
           </label>
-          <button
+          <AppButton
             class="cursor-pointer border-0 border-b border-white/20 bg-transparent px-0 py-[7px] text-[.7rem] text-white/58"
+            variant="unstyled"
+            :loading="resetAction.pending.value"
+            loading-label="Resetting…"
             @click="resetProgress"
           >
             Reset lesson
-          </button>
+          </AppButton>
         </div>
       </div>
     </section>
@@ -317,22 +356,23 @@ onBeforeUnmount(() => {
             {{ currentIndex + 1 }} / {{ allLessons.length }}
           </h2>
         </div>
-        <button
+        <AppButton
           class="hidden h-9 w-9 place-items-center rounded-full border border-line bg-white text-[1.4rem] text-ink max-[860px]:grid"
+          variant="unstyled"
           aria-label="Close lessons"
           @click="sidebarOpen = false"
         >
           ×
-        </button>
+        </AppButton>
       </div>
       <div class="flex-1 overflow-y-auto overscroll-contain">
         <section v-for="section in course.sections" :key="section.id ?? 'direct'">
           <h3
             class="sticky top-0 z-[2] border-y border-pine/15 bg-mist font-display text-[.78rem] font-extrabold tracking-[.08em] text-pine-deep uppercase shadow-[inset_4px_0_0_#c4933f]"
           >
-            <button
+            <AppButton
               class="flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-belt"
-              type="button"
+              variant="unstyled"
               :aria-expanded="isSectionExpanded(section)"
               :aria-controls="sectionPanelId(section)"
               @click="toggleSection(section)"
@@ -350,7 +390,7 @@ onBeforeUnmount(() => {
                   <path d="m1 1 5 5 5-5" />
                 </svg>
               </span>
-            </button>
+            </AppButton>
           </h3>
           <div v-show="isSectionExpanded(section)" :id="sectionPanelId(section)">
             <LessonRow

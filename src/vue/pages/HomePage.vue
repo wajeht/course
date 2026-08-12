@@ -7,6 +7,9 @@ import CourseFilterSelect from "../components/CourseFilterSelect.vue";
 import PageHeader from "../components/PageHeader.vue";
 import PaginationControls from "../components/PaginationControls.vue";
 import ProgressBar from "../components/ProgressBar.vue";
+import AlertMessage from "../components/ui/AlertMessage.vue";
+import AppInput from "../components/ui/AppInput.vue";
+import EmptyState from "../components/ui/EmptyState.vue";
 import { useCatalogFilters } from "../composables/useCatalogFilters.js";
 import StandardPageLayout from "../layouts/StandardPageLayout.vue";
 
@@ -30,12 +33,9 @@ const {
 
 <template>
   <StandardPageLayout>
-    <div
-      v-if="error"
-      class="mb-7 rounded-lg border border-[#e8b7ae] bg-[#f8e5e1] px-[18px] py-[14px] text-[.88rem] text-[#6c241c]"
-    >
+    <AlertMessage v-if="error" class="mb-7 px-[18px] py-[14px] text-[.88rem]">
       {{ error }}
-    </div>
+    </AlertMessage>
 
     <section v-if="!hasActiveFilters && catalog.continueWatching.length">
       <div
@@ -171,9 +171,10 @@ const {
             <path d="m21 21-4.4-4.4m2.4-5.1a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z" />
           </svg>
           <span class="sr-only">Search courses and lessons</span>
-          <input
+          <AppInput
             v-model="query"
             class="w-full min-w-0 border-0 bg-transparent p-0 text-[.85rem] text-ink outline-0 placeholder:text-[#89918d]"
+            variant="bare"
             type="search"
             placeholder="Search courses and lessons"
           />
@@ -197,26 +198,21 @@ const {
       >
         <CourseCard v-for="course in catalog.courses" :key="course.id" :course="course" />
       </div>
-      <div
+      <EmptyState
         v-else
-        class="grid min-h-80 place-items-center content-center rounded-[10px] border border-dashed border-[#bfc8c2] bg-white/55 p-10 text-center"
+        :title="
+          query || selectedCategory || selectedInstructor || selectedTag
+            ? 'No courses match these filters'
+            : 'No courses found'
+        "
+        :description="
+          query || selectedCategory || selectedInstructor || selectedTag
+            ? 'Try another category, instructor, tag, or search term.'
+            : 'Add a course folder to /videos, then rescan.'
+        "
       >
-        <span class="mb-1.5 text-5xl text-belt" aria-hidden="true">⌁</span>
-        <h3 class="mb-2">
-          {{
-            query || selectedCategory || selectedInstructor || selectedTag
-              ? "No courses match these filters"
-              : "No courses found"
-          }}
-        </h3>
-        <p class="mb-[22px] max-w-[480px] text-muted">
-          {{
-            query || selectedCategory || selectedInstructor || selectedTag
-              ? "Try another category, instructor, tag, or search term."
-              : "Add a course folder to /videos, then rescan."
-          }}
-        </p>
-      </div>
+        <template #icon>⌁</template>
+      </EmptyState>
 
       <PaginationControls
         v-if="!loading"

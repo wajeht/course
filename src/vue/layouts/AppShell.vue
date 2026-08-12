@@ -2,6 +2,8 @@
 import { computed } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
+import AppLogo from "../components/ui/AppLogo.vue";
+
 const route = useRoute();
 const activeNavigation = computed(() => route.meta.navigation ?? "library");
 const isPlayer = computed(() => route.meta.shell === "player");
@@ -20,15 +22,7 @@ const isPlayer = computed(() => route.meta.shell === "player");
         class="flex items-center gap-3 font-display text-2xl font-extrabold tracking-[.04em] uppercase"
         aria-label="Course library home"
       >
-        <span
-          class="flex h-[22px] w-9 items-center gap-[3px] rounded-[3px] border-2 border-current px-[5px] py-1"
-          aria-hidden="true"
-        >
-          <i class="block h-full w-1 bg-belt-light" />
-          <i class="block h-full w-1 bg-belt-light" />
-          <i class="block h-full w-1 bg-belt-light" />
-        </span>
-        <span class="max-[600px]:hidden">Course</span>
+        <AppLogo text-class="max-[600px]:hidden" />
       </RouterLink>
       <nav class="flex items-center gap-6 max-[600px]:gap-3" aria-label="Main navigation">
         <RouterLink
