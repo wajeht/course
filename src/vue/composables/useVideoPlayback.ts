@@ -1,6 +1,6 @@
 import { nextTick, ref, type Ref } from "vue";
 
-import type { PlaybackResult } from "@/api/index.js";
+import type { PlaybackResult } from "@/api.js";
 
 interface PlaybackClient {
   preparePlayback(lessonId: string): Promise<PlaybackResult>;

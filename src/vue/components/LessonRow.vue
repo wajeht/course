@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from "vue-router";
 
-import type { LessonDto } from "@/api/index.js";
+import type { LessonDto } from "@/api.js";
 import { durationText } from "@/utils.js";
 
 withDefaults(

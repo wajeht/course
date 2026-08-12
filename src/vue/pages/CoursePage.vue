@@ -2,7 +2,7 @@
 import { computed, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
-import { api } from "@/api/index.js";
+import { api } from "@/api.js";
 import LessonRow from "@/components/LessonRow.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";

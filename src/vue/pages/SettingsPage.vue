@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 
-import { api } from "@/api/index.js";
+import { api } from "@/api.js";
 import AlertMessage from "@/components/ui/AlertMessage.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppInput from "@/components/ui/AppInput.vue";

@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, expectJson, expectProtectedJson } from "./client.js";
+import { ApiError, expectJson, expectProtectedJson } from "./api.js";
 
 const unauthorized = vi.fn();
 

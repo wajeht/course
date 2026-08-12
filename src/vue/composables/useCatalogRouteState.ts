@@ -1,7 +1,7 @@
 import { computed, onScopeDispose, ref, watch } from "vue";
 import { useRoute, useRouter, type LocationQueryRaw } from "vue-router";
 
-import type { CatalogFilters } from "@/api/index.js";
+import type { CatalogFilters } from "@/api.js";
 
 function queryString(value: unknown): string {
   return typeof value === "string" ? value : "";

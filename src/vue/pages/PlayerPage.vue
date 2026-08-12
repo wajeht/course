@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
-import { api, type CourseDetailDto, type LessonDto } from "@/api/index.js";
+import { api, type CourseDetailDto, type LessonDto } from "@/api.js";
 import LessonRow from "@/components/LessonRow.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppSelect from "@/components/ui/AppSelect.vue";
