@@ -41,13 +41,13 @@ async function expectJson<T>(response: Response): Promise<T> {
 }
 
 export const api = {
-  async getAuthState(): Promise<{
+  async getAuthState(signal?: AbortSignal): Promise<{
     authenticated: boolean;
     passwordConfigured: boolean;
     setupEnabled: boolean;
     setupTokenRequired: boolean;
   }> {
-    return expectJson(await apiClient.api.auth.me.$get());
+    return expectJson(await apiClient.api.auth.me.$get({}, { init: { signal } }));
   },
   async login(password: string): Promise<void> {
     await expectJson(await apiClient.api.auth.$post({ json: { password } }));

@@ -39,6 +39,7 @@ test("registers, serves deep links offline, and prompts for updates", async ({ c
   await authCheckStarted;
   try {
     await expect(page.getByText("Checking your session…")).toHaveCount(0);
+    await expect(page.getByRole("status").filter({ hasText: "Opening Course…" })).toBeVisible();
   } finally {
     releaseAuthCheck();
     await navigation;
