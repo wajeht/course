@@ -15,4 +15,11 @@ describe("PageHeader", () => {
     expect(wrapper.get("h2").text()).toBe("All courses");
     expect(wrapper.text()).toContain("Up to date");
   });
+
+  it("omits the eyebrow when one is not provided", () => {
+    const wrapper = mount(PageHeader, { props: { title: "Settings" } });
+
+    expect(wrapper.get("h1").text()).toBe("Settings");
+    expect(wrapper.find("p").exists()).toBe(false);
+  });
 });
