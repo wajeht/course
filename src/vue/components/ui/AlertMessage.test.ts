@@ -12,4 +12,14 @@ describe("AlertMessage", () => {
     expect(wrapper.attributes("role")).toBe("alert");
     expect(wrapper.text()).toBe("Failed");
   });
+
+  it("supports the shared large message size", () => {
+    const wrapper = mount(AlertMessage, {
+      props: { size: "lg", variant: "info" },
+      slots: { default: "Library updated" },
+    });
+
+    expect(wrapper.classes()).toContain("px-[18px]");
+    expect(wrapper.attributes("role")).toBe("status");
+  });
 });

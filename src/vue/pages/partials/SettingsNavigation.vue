@@ -22,7 +22,7 @@ const emit = defineEmits<{
 
 <template>
   <PanelCard as="nav" class="p-8" padding="none" aria-label="Settings sections">
-    <div class="grid gap-1 max-[760px]:grid-cols-2" role="tablist">
+    <div class="grid gap-1 max-[760px]:grid-cols-2">
       <AppButton
         v-for="section in sections"
         :id="`settings-${section.value}-tab`"
@@ -34,9 +34,8 @@ const emit = defineEmits<{
             : 'bg-transparent! text-pine! hover:bg-porcelain!',
         ]"
         variant="unstyled"
-        role="tab"
         :aria-controls="`settings-${section.value}-panel`"
-        :aria-selected="modelValue === section.value"
+        :aria-pressed="modelValue === section.value"
         @click="emit('update:modelValue', section.value)"
       >
         <span>{{ section.label }}</span>
@@ -44,7 +43,7 @@ const emit = defineEmits<{
     </div>
     <div class="mt-4 border-t border-line pt-4">
       <AppButton
-        class="flex min-h-11 w-full items-center rounded-[7px] px-3.5 text-left text-[.8rem] font-semibold text-clay! transition-colors duration-[160ms] hover:bg-[#fff3f0]! hover:text-[#873a31]!"
+        class="flex min-h-11 w-full items-center rounded-[7px] px-3.5 text-left text-[.8rem] font-semibold text-clay! transition-colors duration-[160ms] hover:bg-clay-soft! hover:text-clay-deep!"
         variant="unstyled"
         :loading="signingOut"
         loading-label="Signing out…"

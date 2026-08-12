@@ -6,6 +6,7 @@ import { api } from "@/api.js";
 import LessonRow from "@/components/LessonRow.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
+import PageHeader from "@/components/ui/PageHeader.vue";
 import PanelCard from "@/components/ui/PanelCard.vue";
 import ProgressBar from "@/components/ui/ProgressBar.vue";
 import { useAsyncAction } from "@/composables/useAsyncAction.js";
@@ -194,21 +195,18 @@ watch(
     <section
       class="mx-auto w-[min(1380px,calc(100%-8vw))] pt-[clamp(52px,7vw,90px)] pb-[100px] max-[860px]:w-[min(100%-40px,1380px)]"
     >
-      <div
-        class="mb-6 flex items-end justify-between gap-6 max-[600px]:flex-col max-[600px]:items-start max-[600px]:gap-2"
+      <PageHeader
+        class="mb-6"
+        eyebrow="Structured learning"
+        title="Course curriculum"
+        :heading-level="2"
       >
-        <div>
-          <p class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase">
-            Structured learning
-          </p>
-          <h2 class="font-display text-[clamp(1.9rem,3vw,2.7rem)] font-[750] tracking-[-.035em]">
-            Course curriculum
-          </h2>
-        </div>
-        <span class="text-[.78rem] font-semibold text-muted">
-          {{ course.completedCount }} of {{ course.lessonCount }} completed
-        </span>
-      </div>
+        <template #aside>
+          <span class="text-[.78rem] font-semibold text-muted">
+            {{ course.completedCount }} of {{ course.lessonCount }} completed
+          </span>
+        </template>
+      </PageHeader>
       <PanelCard
         v-for="section in course.sections"
         :key="section.id ?? 'direct'"
