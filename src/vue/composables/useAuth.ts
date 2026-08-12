@@ -1,6 +1,6 @@
 import { inject, reactive, readonly, type InjectionKey } from "vue";
 
-import { authApi, type AuthStateDto } from "@/api/auth.js";
+import { api, type AuthStateDto } from "@/api.js";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "error";
 
@@ -35,7 +35,7 @@ export interface AuthController {
 export const authKey: InjectionKey<AuthController> = Symbol("course-auth");
 
 export function createAuth(
-  client: AuthClient = authApi,
+  client: AuthClient = api,
   checkTimeoutMilliseconds = 10_000,
 ): AuthController {
   const state = reactive({

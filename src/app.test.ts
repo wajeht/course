@@ -2,17 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, it, vi } from "vitest";
-
-vi.mock("hono/proxy", () => ({
-  proxy: vi.fn(() =>
-    Promise.resolve(
-      new Response("export const source = 'vite';", {
-        headers: { "Content-Type": "text/javascript" },
-      }),
-    ),
-  ),
-}));
+import { afterEach, describe, expect, it } from "vitest";
 
 import { createApp } from "./app.js";
 import { createConfiguration } from "./configuration.js";
@@ -29,32 +19,6 @@ afterEach(async () => {
 });
 
 describe("application", () => {
-  it("forwards split API source modules to Vite in development", async () => {
-    const directory = await fs.mkdtemp(path.join(os.tmpdir(), "course-app-development-"));
-    temporaryDirectories.push(directory);
-    const videos = path.join(directory, "videos");
-    await fs.mkdir(videos);
-
-    const configuration = createConfiguration({
-      APP_ENV: "testing",
-      VIDEOS_DIR: videos,
-      DATA_DIR: path.join(directory, "data"),
-    });
-    configuration.app.env = "development";
-    const context = await createContext(configuration);
-    contexts.push(context);
-    const app = createApp(context);
-
-    const sourceModule = await app.request("/api/auth.ts");
-    expect(sourceModule.status).toBe(200);
-    expect(sourceModule.headers.get("content-type")).toContain("text/javascript");
-    expect(await sourceModule.text()).toBe("export const source = 'vite';");
-
-    const backendApi = await app.request("/api/catalog");
-    expect(backendApi.status).toBe(401);
-    expect(backendApi.headers.get("content-type")).toContain("application/json");
-  });
-
   it("serves health, byte ranges, and production routes", async () => {
     const directory = await fs.mkdtemp(path.join(os.tmpdir(), "course-app-"));
     temporaryDirectories.push(directory);

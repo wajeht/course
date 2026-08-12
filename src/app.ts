@@ -1,7 +1,7 @@
 import path from "node:path";
 
 import { serveStatic } from "@hono/node-server/serve-static";
-import { Hono, type Context } from "hono";
+import { Hono } from "hono";
 import { compress } from "hono/compress";
 import { csrf } from "hono/csrf";
 import { requestId } from "hono/request-id";
@@ -15,26 +15,11 @@ import { createMediaRouter } from "./routes/media/media.js";
 import { createMiddleware } from "./routes/middleware.js";
 
 const servicePrefixes = ["/api", "/media", "/covers", "/hls", "/healthz"];
-const viteApiModulePattern = /^\/api\/[^/]+\.ts$/;
 
 function isServicePath(requestPath: string): boolean {
   return servicePrefixes.some(
     (prefix) => requestPath === prefix || requestPath.startsWith(`${prefix}/`),
   );
-}
-
-function proxyVueRequest(c: Context, vuePort: number) {
-  const target = new URL(c.req.url);
-  target.protocol = "http:";
-  target.hostname = "127.0.0.1";
-  target.port = String(vuePort);
-  return proxy(target, {
-    raw: c.req.raw,
-    headers: {
-      ...c.req.header(),
-      host: `localhost:${vuePort}`,
-    },
-  });
 }
 
 export function createApp(context: AppContext) {
@@ -63,13 +48,6 @@ export function createApp(context: AppContext) {
       },
     }),
   );
-  if (context.configuration.app.env === "development") {
-    app.use("*", (c, next) =>
-      viteApiModulePattern.test(c.req.path)
-        ? proxyVueRequest(c, context.configuration.app.vuePort)
-        : next(),
-    );
-  }
   app.use("/api/*", middleware.apiCache);
 
   const routedApp = app
@@ -108,7 +86,17 @@ export function createApp(context: AppContext) {
   } else if (context.configuration.app.env === "development") {
     routedApp.all("*", (c, next) => {
       if (isServicePath(c.req.path)) return next();
-      return proxyVueRequest(c, context.configuration.app.vuePort);
+      const target = new URL(c.req.url);
+      target.protocol = "http:";
+      target.hostname = "127.0.0.1";
+      target.port = String(context.configuration.app.vuePort);
+      return proxy(target, {
+        raw: c.req.raw,
+        headers: {
+          ...c.req.header(),
+          host: `localhost:${context.configuration.app.vuePort}`,
+        },
+      });
     });
   }
 

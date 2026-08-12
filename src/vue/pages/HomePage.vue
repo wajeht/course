@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from "vue-router";
 
-import { api } from "@/api/index.js";
+import { api } from "@/api.js";
 import CourseCard from "@/components/CourseCard.vue";
 import CourseFilterSelect from "@/components/CourseFilterSelect.vue";
 import AlertMessage from "@/components/ui/AlertMessage.vue";

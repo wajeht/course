@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { AuthStateDto } from "@/api/index.js";
+import type { AuthStateDto } from "@/api.js";
 
 import { createAuth } from "./useAuth.js";
 

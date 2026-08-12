@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from "vue-router";
 
-import type { CatalogDto } from "@/api/index.js";
+import type { CatalogDto } from "@/api.js";
 import ProgressBar from "@/components/ui/ProgressBar.vue";
 import { durationText } from "@/utils.js";
 

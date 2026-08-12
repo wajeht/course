@@ -2,7 +2,7 @@
 import { computed, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
-import { api, type CatalogFilters } from "@/api/index.js";
+import { api, type CatalogFilters } from "@/api.js";
 import CourseCard from "@/components/CourseCard.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
