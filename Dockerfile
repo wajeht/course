@@ -11,6 +11,7 @@ RUN npm ci
 
 COPY tsconfig.json tsconfig.server.json tsconfig.client.json vite.config.ts ./
 COPY src ./src
+COPY public ./public
 RUN npm run build \
   && npm prune --omit=dev
 
@@ -36,7 +37,6 @@ RUN sed -i 's/Components: main/Components: main contrib non-free non-free-firmwa
 COPY --from=build /app/package.json /app/package-lock.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
-COPY --from=build /app/public ./public
 
 VOLUME ["/data", "/videos"]
 EXPOSE 80

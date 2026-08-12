@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { expect, test } from "@playwright/test";
 
-const serviceWorkerPath = path.resolve("public/sw.js");
+const serviceWorkerPath = path.resolve("dist/client/sw.js");
 
 test("registers, serves deep links offline, and prompts for updates", async ({ context, page }) => {
   const password = "playwright-password";
