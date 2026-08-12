@@ -1,7 +1,7 @@
 import { nextTick, ref } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { PlaybackResult } from "../api.js";
+import type { PlaybackResult } from "@/api/index.js";
 import { useVideoPlayback } from "./useVideoPlayback.js";
 
 function videoElement() {

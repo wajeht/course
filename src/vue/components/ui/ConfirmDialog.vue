@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useConfirm } from "../../composables/useConfirm.js";
+import { useConfirm } from "@/composables/useConfirm.js";
 import AppButton from "./AppButton.vue";
 import AppModal from "./AppModal.vue";
 

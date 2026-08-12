@@ -2,16 +2,16 @@
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
-import { api, type CourseDetailDto, type LessonDto } from "../api";
-import LessonRow from "../components/LessonRow.vue";
-import AppButton from "../components/ui/AppButton.vue";
-import AppSelect from "../components/ui/AppSelect.vue";
-import { useAsyncAction } from "../composables/useAsyncAction.js";
-import { useConfirm } from "../composables/useConfirm.js";
-import { useExpandableSections } from "../composables/useExpandableSections.js";
-import { usePlaybackProgress } from "../composables/usePlaybackProgress.js";
-import { useToast } from "../composables/useToast.js";
-import { useVideoPlayback } from "../composables/useVideoPlayback.js";
+import { api, type CourseDetailDto, type LessonDto } from "@/api/index.js";
+import LessonRow from "@/components/LessonRow.vue";
+import AppButton from "@/components/ui/AppButton.vue";
+import AppSelect from "@/components/ui/AppSelect.vue";
+import { useAsyncAction } from "@/composables/useAsyncAction.js";
+import { useConfirm } from "@/composables/useConfirm.js";
+import { useExpandableSections } from "@/composables/useExpandableSections.js";
+import { usePlaybackProgress } from "@/composables/usePlaybackProgress.js";
+import { useToast } from "@/composables/useToast.js";
+import { useVideoPlayback } from "@/composables/useVideoPlayback.js";
 
 const route = useRoute();
 const video = ref<HTMLVideoElement | null>(null);

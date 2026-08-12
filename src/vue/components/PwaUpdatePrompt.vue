@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRegisterSW } from "virtual:pwa-register/vue";
 
-import AppButton from "./ui/AppButton.vue";
+import AppButton from "@/components/ui/AppButton.vue";
 
 const { needRefresh, offlineReady, updateServiceWorker } = useRegisterSW({ immediate: true });
 

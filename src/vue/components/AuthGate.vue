@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 
-import type { AuthStatus } from "../composables/useAuth.js";
-import AlertMessage from "./ui/AlertMessage.vue";
-import AppButton from "./ui/AppButton.vue";
-import AppInput from "./ui/AppInput.vue";
-import AppLogo from "./ui/AppLogo.vue";
-import FormField from "./ui/FormField.vue";
-import PanelCard from "./ui/PanelCard.vue";
+import type { AuthStatus } from "@/composables/useAuth.js";
+import AlertMessage from "@/components/ui/AlertMessage.vue";
+import AppButton from "@/components/ui/AppButton.vue";
+import AppInput from "@/components/ui/AppInput.vue";
+import AppLogo from "@/components/ui/AppLogo.vue";
+import FormField from "@/components/ui/FormField.vue";
+import PanelCard from "@/components/ui/PanelCard.vue";
 
 const props = defineProps<{
   status: AuthStatus;

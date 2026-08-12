@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
-import AppLogo from "../components/ui/AppLogo.vue";
+import AppLogo from "@/components/ui/AppLogo.vue";
 
 const route = useRoute();
 const activeNavigation = computed(() => route.meta.navigation ?? "library");

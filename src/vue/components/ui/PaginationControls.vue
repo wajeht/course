@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AppButton from "./ui/AppButton.vue";
+import AppButton from "./AppButton.vue";
 
 defineProps<{
   disabled?: boolean;

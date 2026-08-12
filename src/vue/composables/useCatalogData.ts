@@ -1,7 +1,7 @@
 import { computed, watch, type ComputedRef } from "vue";
 
-import type { CatalogDto, CatalogFilters, ScanStatus } from "../api.js";
-import { useAsyncData } from "./useAsyncData.js";
+import type { CatalogDto, CatalogFilters, ScanStatus } from "@/api/index.js";
+import { useAsyncData } from "@/composables/useAsyncData.js";
 
 export interface CatalogClient {
   getCatalog(filters?: CatalogFilters, signal?: AbortSignal): Promise<CatalogDto>;
