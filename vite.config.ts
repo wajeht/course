@@ -6,9 +6,9 @@ import { VitePWA } from "vite-plugin-pwa";
 import { defineConfig } from "vitest/config";
 
 import { configuration } from "./src/configuration.js";
+import { apiProxyPattern } from "./src/development-routing.js";
 
 const projectRoot = fileURLToPath(new URL(".", import.meta.url));
-export const apiProxyPattern = "^/api/(auth|catalog|progress|playback|scan)(?:/|$)";
 
 export default defineConfig({
   root: "src/vue",
