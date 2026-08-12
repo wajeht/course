@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { RouterView } from "vue-router";
 
 import AuthGate from "./components/AuthGate.vue";
 import PwaUpdatePrompt from "./components/PwaUpdatePrompt.vue";
 import ConfirmDialog from "./components/ui/ConfirmDialog.vue";
 import ToastViewport from "./components/ui/ToastViewport.vue";
+import AppLogo from "./components/ui/AppLogo.vue";
 import { useAsyncAction } from "./composables/useAsyncAction.js";
 import { useAuth } from "./composables/useAuth.js";
 import AppShell from "./layouts/AppShell.vue";
@@ -23,6 +24,23 @@ const authBusy = computed(() => loginAction.pending.value || setupAction.pending
 const actionError = computed(
   () => loginAction.errorMessage.value || setupAction.errorMessage.value,
 );
+const showBootstrap = ref(false);
+let bootstrapTimer: ReturnType<typeof setTimeout> | undefined;
+
+watch(
+  () => auth.state.status,
+  (status) => {
+    clearTimeout(bootstrapTimer);
+    showBootstrap.value = false;
+    if (status === "loading") {
+      bootstrapTimer = setTimeout(() => {
+        showBootstrap.value = true;
+      }, 250);
+    }
+  },
+  { immediate: true },
+);
+onBeforeUnmount(() => clearTimeout(bootstrapTimer));
 
 async function login(password: string): Promise<void> {
   setupAction.clearError();
@@ -40,7 +58,16 @@ async function setup(
 </script>
 
 <template>
-  <AppShell v-if="auth.state.status === 'authenticated'">
+  <main
+    v-if="auth.state.status === 'loading'"
+    class="grid min-h-screen place-items-center bg-canvas px-5"
+  >
+    <div v-if="showBootstrap" class="text-center text-pine-deep" role="status">
+      <AppLogo />
+      <p class="mt-3 text-sm text-muted">Opening Course…</p>
+    </div>
+  </main>
+  <AppShell v-else-if="auth.state.status === 'authenticated'">
     <RouterView />
   </AppShell>
   <AuthGate
