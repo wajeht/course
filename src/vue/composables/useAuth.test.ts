@@ -1,50 +1,51 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-const getAuthState = vi.hoisted(() => vi.fn());
+import type { AuthStateDto } from "@/api/index.js";
 
-vi.mock("../api.js", () => ({
-  api: {
-    changePassword: vi.fn(),
-    getAuthState,
-    login: vi.fn(),
-    logout: vi.fn(),
-    setupPassword: vi.fn(),
-  },
-}));
+import { createAuth } from "./useAuth.js";
 
-import { useAuth } from "./useAuth.js";
+function createClient() {
+  return {
+    changePassword: vi.fn(async () => undefined),
+    getAuthState: vi.fn<(signal?: AbortSignal) => Promise<AuthStateDto>>(),
+    login: vi.fn(async () => undefined),
+    logout: vi.fn(async () => undefined),
+    setupPassword: vi.fn(async () => undefined),
+  };
+}
 
-describe("useAuth", () => {
-  beforeEach(() => {
-    getAuthState.mockReset();
-  });
+describe("createAuth", () => {
   afterEach(() => vi.useRealTimers());
 
   it("authenticates from the server session", async () => {
-    getAuthState.mockResolvedValue({
+    const client = createClient();
+    client.getAuthState.mockResolvedValue({
       authenticated: true,
       passwordConfigured: true,
       setupEnabled: false,
       setupTokenRequired: false,
     });
 
-    const auth = useAuth();
+    const auth = createAuth(client);
     await auth.initialize();
 
     expect(auth.state.status).toBe("authenticated");
-    expect(getAuthState).toHaveBeenCalledWith(expect.any(AbortSignal));
+    expect(client.getAuthState).toHaveBeenCalledWith(expect.any(AbortSignal));
   });
 
   it("moves stalled session checks to a retryable error", async () => {
     vi.useFakeTimers();
-    getAuthState.mockImplementation(
-      (signal: AbortSignal) =>
+    const client = createClient();
+    client.getAuthState.mockImplementation(
+      (signal) =>
         new Promise((_resolve, reject) => {
-          signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
+          signal?.addEventListener("abort", () =>
+            reject(new DOMException("Aborted", "AbortError")),
+          );
         }),
     );
 
-    const auth = useAuth();
+    const auth = createAuth(client);
     const initialization = auth.initialize();
     await vi.advanceTimersByTimeAsync(10_000);
     await initialization;

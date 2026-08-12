@@ -2,14 +2,14 @@
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { RouterView } from "vue-router";
 
-import AuthGate from "./components/AuthGate.vue";
-import PwaUpdatePrompt from "./components/PwaUpdatePrompt.vue";
-import ConfirmDialog from "./components/ui/ConfirmDialog.vue";
-import ToastViewport from "./components/ui/ToastViewport.vue";
-import AppLogo from "./components/ui/AppLogo.vue";
-import { useAsyncAction } from "./composables/useAsyncAction.js";
-import { useAuth } from "./composables/useAuth.js";
-import AppShell from "./layouts/AppShell.vue";
+import AuthGate from "@/components/AuthGate.vue";
+import PwaUpdatePrompt from "@/components/PwaUpdatePrompt.vue";
+import AppLogo from "@/components/ui/AppLogo.vue";
+import ConfirmDialog from "@/components/ui/ConfirmDialog.vue";
+import ToastViewport from "@/components/ui/ToastViewport.vue";
+import { useAsyncAction } from "@/composables/useAsyncAction.js";
+import { useAuth } from "@/composables/useAuth.js";
+import AppShell from "@/layouts/AppShell.vue";
 
 const auth = useAuth();
 const loginAction = useAsyncAction((password: string) => auth.login(password), {
