@@ -92,7 +92,7 @@ async function logout(): Promise<void> {
     </AlertMessage>
 
     <div
-      class="mt-6 grid grid-cols-[220px_minmax(0,1fr)] items-start gap-[clamp(18px,2vw,30px)] max-[760px]:grid-cols-1 max-[760px]:gap-8"
+      class="mt-6 grid grid-cols-4 items-start gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[760px]:grid-cols-1 max-[760px]:gap-8"
     >
       <SettingsNavigation
         v-model="activeSection"
@@ -103,6 +103,7 @@ async function logout(): Promise<void> {
       <section
         v-if="activeSection === 'data'"
         id="settings-data-panel"
+        class="col-span-3 max-[1120px]:col-span-2 max-[860px]:col-span-1"
         role="tabpanel"
         aria-labelledby="settings-data-tab"
       >
@@ -154,7 +155,13 @@ async function logout(): Promise<void> {
         </PanelCard>
       </section>
 
-      <section v-else id="settings-auth-panel" role="tabpanel" aria-labelledby="settings-auth-tab">
+      <section
+        v-else
+        id="settings-auth-panel"
+        class="col-span-3 max-[1120px]:col-span-2 max-[860px]:col-span-1"
+        role="tabpanel"
+        aria-labelledby="settings-auth-tab"
+      >
         <PanelCard padding="none">
           <header class="border-b border-line px-[clamp(22px,4vw,34px)] py-6">
             <h2 class="text-xl font-[750]">Access</h2>
