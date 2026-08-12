@@ -21,7 +21,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <PanelCard as="nav" class="p-2" padding="none" aria-label="Settings sections">
+  <PanelCard as="nav" class="p-8" padding="none" aria-label="Settings sections">
     <div class="grid gap-1 max-[760px]:grid-cols-2" role="tablist">
       <AppButton
         v-for="section in sections"
@@ -42,7 +42,7 @@ const emit = defineEmits<{
         <span>{{ section.label }}</span>
       </AppButton>
     </div>
-    <div class="mt-2 border-t border-line pt-2">
+    <div class="mt-4 border-t border-line pt-4">
       <AppButton
         class="flex min-h-11 w-full items-center rounded-[7px] px-3.5 text-left text-[.8rem] font-semibold text-clay! transition-colors duration-[160ms] hover:bg-[#fff3f0]! hover:text-[#873a31]!"
         variant="unstyled"
