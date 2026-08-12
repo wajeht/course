@@ -83,6 +83,7 @@ async function logout(): Promise<void> {
 <template>
   <StandardPageLayout>
     <PageHeader
+      eyebrow="Course settings"
       title="Settings"
       description="Manage how your course library finds and updates local content."
     />
@@ -109,17 +110,20 @@ async function logout(): Promise<void> {
         role="tabpanel"
         aria-labelledby="settings-data-tab"
       >
-        <h2 class="text-xl font-[750]">Library scan</h2>
-        <p class="mt-1.5 max-w-[620px] text-[.85rem] leading-6 text-muted">
-          Scan your video folders now to find new or changed courses.
-        </p>
-
-        <AlertMessage v-if="scanError" class="mt-5 px-[18px] py-[14px] text-[.88rem]">
+        <AlertMessage v-if="scanError" class="mb-5 px-[18px] py-[14px] text-[.88rem]">
           {{ scanError }}
         </AlertMessage>
 
-        <PanelCard class="mt-5 min-h-[260px]" padding="default">
-          <div class="flex h-full flex-col items-start justify-between gap-8">
+        <PanelCard class="min-h-[260px]" padding="none">
+          <header class="border-b border-line px-[clamp(22px,4vw,34px)] py-6">
+            <h2 class="text-xl font-[750]">Library scan</h2>
+            <p class="mt-1.5 max-w-[620px] text-[.85rem] leading-6 text-muted">
+              Scan your video folders now to find new or changed courses.
+            </p>
+          </header>
+          <div
+            class="flex min-h-[180px] flex-col items-start justify-between gap-8 p-[clamp(22px,4vw,34px)]"
+          >
             <div class="w-full">
               <p class="text-[.68rem] font-extrabold tracking-[.14em] text-belt uppercase">
                 Library status
@@ -155,13 +159,14 @@ async function logout(): Promise<void> {
       </section>
 
       <section v-else id="settings-auth-panel" role="tabpanel" aria-labelledby="settings-auth-tab">
-        <h2 class="text-xl font-[750]">Access</h2>
-        <p class="mt-1.5 max-w-[620px] text-[.85rem] leading-6 text-muted">
-          Change the password for this private library or sign out of this device.
-        </p>
-
-        <PanelCard class="mt-5">
-          <form class="grid gap-4" @submit.prevent="changePassword">
+        <PanelCard padding="none">
+          <header class="border-b border-line px-[clamp(22px,4vw,34px)] py-6">
+            <h2 class="text-xl font-[750]">Access</h2>
+            <p class="mt-1.5 max-w-[620px] text-[.85rem] leading-6 text-muted">
+              Change the password for this private library or sign out of this device.
+            </p>
+          </header>
+          <form class="grid gap-4 p-[clamp(22px,4vw,34px)]" @submit.prevent="changePassword">
             <input
               class="sr-only"
               name="username"
