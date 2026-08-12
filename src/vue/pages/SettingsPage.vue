@@ -82,11 +82,7 @@ async function logout(): Promise<void> {
 
 <template>
   <StandardPageLayout>
-    <PageHeader
-      eyebrow="Course settings"
-      title="Settings"
-      description="Manage how your course library finds and updates local content."
-    />
+    <PageHeader eyebrow="Course settings" title="Settings" />
 
     <AlertMessage
       v-if="logoutAction.errorMessage.value"

@@ -52,6 +52,7 @@ describe("SettingsPage", () => {
     const pageHeader = wrapper.get("main > header");
     expect(pageHeader.get("h1").text()).toBe("Settings");
     expect(pageHeader.text()).toContain("Course settings");
+    expect(pageHeader.findAll("p")).toHaveLength(1);
 
     const dataCard = wrapper.get("#settings-data-panel > section");
     expect(dataCard.get("header h2").text()).toBe("Library scan");
