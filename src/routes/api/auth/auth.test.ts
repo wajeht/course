@@ -1,3 +1,7 @@
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createApp } from "../../../app.js";
@@ -5,20 +9,38 @@ import { createConfiguration } from "../../../configuration.js";
 import { createContext, type AppContext } from "../../../context.js";
 
 const contexts: AppContext[] = [];
+const temporaryDirectories: string[] = [];
 
 afterEach(async () => {
   await Promise.all(contexts.splice(0).map((context) => context.database.close()));
+  await Promise.all(
+    temporaryDirectories.splice(0).map((directory) => fs.rm(directory, { recursive: true })),
+  );
 });
 
-async function testApp(options: { maxAttempts?: number; idleTimeoutMs?: number } = {}) {
-  const configuration = createConfiguration({
+async function testApp(
+  options: { maxAttempts?: number; idleTimeoutMs?: number; dataDirectory?: string } = {},
+) {
+  const baseConfiguration = createConfiguration({
     APP_ENV: "testing",
     LOGIN_MAX_ATTEMPTS: String(options.maxAttempts ?? 5),
     SESSION_IDLE_TIMEOUT_MS: String(options.idleTimeoutMs ?? 60_000),
   });
+  const configuration = options.dataDirectory
+    ? {
+        ...baseConfiguration,
+        database: { filename: path.join(options.dataDirectory, "course.sqlite") },
+      }
+    : baseConfiguration;
   const context = await createContext(configuration);
   contexts.push(context);
   return { app: createApp(context), context };
+}
+
+async function closeContext(context: AppContext): Promise<void> {
+  const index = contexts.indexOf(context);
+  if (index >= 0) contexts.splice(index, 1);
+  await context.database.close();
 }
 
 function jsonRequest(method: string, body: object, cookie?: string): RequestInit {
@@ -112,6 +134,47 @@ describe("password authentication", () => {
     }
 
     const blocked = await app.request(
+      "/api/auth",
+      jsonRequest("POST", { password: "test-password" }),
+    );
+    expect(blocked.status).toBe(429);
+    expect(blocked.headers.get("retry-after")).toBeTruthy();
+  });
+
+  it("clears persisted failures after a successful login", async () => {
+    const { app, context } = await testApp({ maxAttempts: 2 });
+    await context.auth.setupPassword("test-password");
+
+    expect(
+      (await app.request("/api/auth", jsonRequest("POST", { password: "wrong-password" }))).status,
+    ).toBe(401);
+    expect(
+      (await app.request("/api/auth", jsonRequest("POST", { password: "test-password" }))).status,
+    ).toBe(200);
+    expect(
+      (await app.request("/api/auth", jsonRequest("POST", { password: "wrong-password" }))).status,
+    ).toBe(401);
+    expect(
+      (await app.request("/api/auth", jsonRequest("POST", { password: "test-password" }))).status,
+    ).toBe(200);
+  });
+
+  it("preserves blocked logins across application restarts", async () => {
+    const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-auth-test-"));
+    temporaryDirectories.push(dataDirectory);
+    const first = await testApp({ maxAttempts: 2, dataDirectory });
+    await first.context.auth.setupPassword("test-password");
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      expect(
+        (await first.app.request("/api/auth", jsonRequest("POST", { password: "wrong-password" })))
+          .status,
+      ).toBe(401);
+    }
+    await closeContext(first.context);
+
+    const second = await testApp({ maxAttempts: 2, dataDirectory });
+    const blocked = await second.app.request(
       "/api/auth",
       jsonRequest("POST", { password: "test-password" }),
     );

@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 
 import type { Configuration } from "../configuration.js";
-import type { AuthRepository } from "./auth.repository.js";
+import type { AuthRepository, LoginAttempt } from "./auth.repository.js";
 
 export interface SessionPayload {
   createdAt: number;
@@ -20,6 +20,9 @@ export interface AuthService {
   verifyPassword(password: string): Promise<boolean>;
   setupPassword(password: string, setupToken?: string): Promise<PasswordResult>;
   changePassword(currentPassword: string, newPassword: string): Promise<PasswordResult>;
+  getLoginAttempt(clientKey: string, now?: number): Promise<LoginAttempt | null>;
+  recordLoginFailure(clientKey: string, now?: number): Promise<void>;
+  clearLoginFailures(clientKey: string): Promise<void>;
   createSession(now?: number): string;
   refreshSession(payload: SessionPayload, now?: number): string;
   parseSession(value: string, now?: number): SessionPayload | null;
@@ -81,6 +84,18 @@ export function createAuthService(
         await bcrypt.hash(newPassword, configuration.app.env === "testing" ? 4 : 12),
       );
       return { ok: true };
+    },
+
+    getLoginAttempt(clientKey: string, now = Date.now()): Promise<LoginAttempt | null> {
+      return repository.getLoginAttempt(clientKey, now);
+    },
+
+    recordLoginFailure(clientKey: string, now = Date.now()): Promise<void> {
+      return repository.recordLoginFailure(clientKey, now, configuration.auth.loginWindowMs);
+    },
+
+    clearLoginFailures(clientKey: string): Promise<void> {
+      return repository.clearLoginFailures(clientKey);
     },
 
     createSession(now = Date.now()): string {
