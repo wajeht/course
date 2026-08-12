@@ -8,6 +8,7 @@ import { defineConfig } from "vitest/config";
 import { configuration } from "./src/configuration.js";
 
 const projectRoot = fileURLToPath(new URL(".", import.meta.url));
+export const apiProxyPattern = "^/api/(auth|catalog|progress|playback|scan)(?:/|$)";
 
 export default defineConfig({
   root: "src/vue",
@@ -76,7 +77,7 @@ export default defineConfig({
       clientPort: configuration.app.vuePort,
     },
     proxy: {
-      "^/api/(auth|catalog|progress|playback|scan)": `http://localhost:${configuration.app.port}`,
+      [apiProxyPattern]: `http://localhost:${configuration.app.port}`,
       "/covers": `http://localhost:${configuration.app.port}`,
       "/media": `http://localhost:${configuration.app.port}`,
       "/hls": `http://localhost:${configuration.app.port}`,
