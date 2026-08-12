@@ -11,7 +11,7 @@ const projectRoot = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
   root: "src/vue",
-  publicDir: "public",
+  publicDir: fileURLToPath(new URL("./public", import.meta.url)),
   plugins: [
     vue(),
     tailwindcss(),
@@ -84,7 +84,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: "../../public",
+    outDir: "../../dist/client",
     copyPublicDir: true,
     emptyOutDir: true,
     sourcemap: true,
