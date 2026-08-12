@@ -2,7 +2,7 @@
 withDefaults(
   defineProps<{
     description?: string;
-    eyebrow: string;
+    eyebrow?: string;
     headingLevel?: 1 | 2;
     title: string;
   }>(),
@@ -15,7 +15,10 @@ withDefaults(
     class="flex items-end justify-between gap-6 max-[600px]:flex-col max-[600px]:items-start max-[600px]:gap-2"
   >
     <div>
-      <p class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase">
+      <p
+        v-if="eyebrow"
+        class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase"
+      >
         {{ eyebrow }}
       </p>
       <component
