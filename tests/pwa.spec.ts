@@ -86,6 +86,10 @@ test("registers, serves deep links offline, and prompts for updates", async ({ c
     .getByRole("button", { name: "Sign out" })
     .click();
   await expect(page.getByRole("heading", { level: 1, name: "Welcome back" })).toBeVisible();
+  await page.locator('input[autocomplete="current-password"]').fill("wrong-playwright-password");
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "Invalid password" })).toBeVisible();
+  await expect(page.getByText("Your session expired. Sign in again.")).toHaveCount(0);
   await page.locator('input[autocomplete="current-password"]').fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();

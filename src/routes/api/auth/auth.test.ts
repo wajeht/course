@@ -70,7 +70,10 @@ describe("password authentication", () => {
       (
         await app.request(
           "/api/auth/password",
-          jsonRequest("POST", { password: "test-password", confirmPassword: "test-password" }),
+          jsonRequest("POST", {
+            password: "test-course-password",
+            confirmPassword: "test-course-password",
+          }),
         )
       ).status,
     ).toBe(201);
@@ -83,7 +86,7 @@ describe("password authentication", () => {
 
     const login = await app.request(
       "/api/auth",
-      jsonRequest("POST", { password: "test-password" }),
+      jsonRequest("POST", { password: "test-course-password" }),
     );
     expect(login.status).toBe(200);
     const cookie = login.headers.get("set-cookie")?.split(";")[0];
@@ -91,13 +94,35 @@ describe("password authentication", () => {
 
     const catalog = await app.request("/api/catalog", { headers: { cookie: cookie! } });
     expect(catalog.status).toBe(200);
+    const legacyPlaybackPath = "/api/playback/000000000000000000000000";
+    expect(
+      (
+        await app.request(legacyPlaybackPath, {
+          headers: { cookie: cookie!, "sec-fetch-site": "same-site" },
+        })
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await app.request(legacyPlaybackPath, {
+          headers: { cookie: cookie!, "sec-fetch-site": "same-origin" },
+        })
+      ).status,
+    ).toBe(404);
+
+    const otherLogin = await app.request(
+      "/api/auth",
+      jsonRequest("POST", { password: "test-course-password" }),
+    );
+    const otherCookie = otherLogin.headers.get("set-cookie")?.split(";")[0];
+    expect(otherCookie).toMatch(/^course_session=/);
 
     const change = await app.request(
       "/api/auth/password",
       jsonRequest(
         "PUT",
         {
-          currentPassword: "test-password",
+          currentPassword: "test-course-password",
           newPassword: "new-test-password",
           confirmPassword: "new-test-password",
         },
@@ -105,16 +130,29 @@ describe("password authentication", () => {
       ),
     );
     expect(change.status).toBe(200);
+    const refreshedCookie = change.headers.get("set-cookie")?.split(";")[0];
+    expect(refreshedCookie).toMatch(/^course_session=/);
+    expect((await app.request("/api/catalog", { headers: { cookie: cookie! } })).status).toBe(401);
+    expect((await app.request("/api/catalog", { headers: { cookie: otherCookie! } })).status).toBe(
+      401,
+    );
+    expect(
+      (await app.request("/api/catalog", { headers: { cookie: refreshedCookie! } })).status,
+    ).toBe(200);
 
     const logout = await app.request("/api/auth/logout", {
       method: "POST",
-      headers: { cookie: cookie! },
+      headers: { cookie: refreshedCookie!, origin: "http://localhost" },
     });
     expect(logout.status).toBe(200);
     expect(logout.headers.get("set-cookie")).toContain("Max-Age=0");
+    expect(
+      (await app.request("/api/catalog", { headers: { cookie: refreshedCookie! } })).status,
+    ).toBe(401);
 
     expect(
-      (await app.request("/api/auth", jsonRequest("POST", { password: "test-password" }))).status,
+      (await app.request("/api/auth", jsonRequest("POST", { password: "test-course-password" })))
+        .status,
     ).toBe(401);
     expect(
       (await app.request("/api/auth", jsonRequest("POST", { password: "new-test-password" })))
@@ -124,7 +162,7 @@ describe("password authentication", () => {
 
   it("blocks repeated failed logins", async () => {
     const { app, context } = await testApp({ maxAttempts: 2 });
-    await context.auth.setupPassword("test-password");
+    await context.auth.setupPassword("test-course-password");
 
     for (let attempt = 0; attempt < 2; attempt += 1) {
       expect(
@@ -135,7 +173,7 @@ describe("password authentication", () => {
 
     const blocked = await app.request(
       "/api/auth",
-      jsonRequest("POST", { password: "test-password" }),
+      jsonRequest("POST", { password: "test-course-password" }),
     );
     expect(blocked.status).toBe(429);
     expect(blocked.headers.get("retry-after")).toBeTruthy();
@@ -143,19 +181,21 @@ describe("password authentication", () => {
 
   it("clears persisted failures after a successful login", async () => {
     const { app, context } = await testApp({ maxAttempts: 2 });
-    await context.auth.setupPassword("test-password");
+    await context.auth.setupPassword("test-course-password");
 
     expect(
       (await app.request("/api/auth", jsonRequest("POST", { password: "wrong-password" }))).status,
     ).toBe(401);
     expect(
-      (await app.request("/api/auth", jsonRequest("POST", { password: "test-password" }))).status,
+      (await app.request("/api/auth", jsonRequest("POST", { password: "test-course-password" })))
+        .status,
     ).toBe(200);
     expect(
       (await app.request("/api/auth", jsonRequest("POST", { password: "wrong-password" }))).status,
     ).toBe(401);
     expect(
-      (await app.request("/api/auth", jsonRequest("POST", { password: "test-password" }))).status,
+      (await app.request("/api/auth", jsonRequest("POST", { password: "test-course-password" })))
+        .status,
     ).toBe(200);
   });
 
@@ -163,7 +203,7 @@ describe("password authentication", () => {
     const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-auth-test-"));
     temporaryDirectories.push(dataDirectory);
     const first = await testApp({ maxAttempts: 2, dataDirectory });
-    await first.context.auth.setupPassword("test-password");
+    await first.context.auth.setupPassword("test-course-password");
 
     for (let attempt = 0; attempt < 2; attempt += 1) {
       expect(
@@ -176,31 +216,93 @@ describe("password authentication", () => {
     const second = await testApp({ maxAttempts: 2, dataDirectory });
     const blocked = await second.app.request(
       "/api/auth",
-      jsonRequest("POST", { password: "test-password" }),
+      jsonRequest("POST", { password: "test-course-password" }),
     );
     expect(blocked.status).toBe(429);
     expect(blocked.headers.get("retry-after")).toBeTruthy();
   });
 
+  it("preserves active sessions across application restarts", async () => {
+    const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-session-test-"));
+    temporaryDirectories.push(dataDirectory);
+    const first = await testApp({ dataDirectory });
+    await first.context.auth.setupPassword("test-course-password");
+    const login = await first.app.request(
+      "/api/auth",
+      jsonRequest("POST", { password: "test-course-password" }),
+    );
+    const cookie = login.headers.get("set-cookie")?.split(";")[0];
+    await closeContext(first.context);
+
+    const second = await testApp({ dataDirectory });
+
+    expect(
+      (await second.app.request("/api/catalog", { headers: { cookie: cookie! } })).status,
+    ).toBe(200);
+  });
+
   it("rejects unsigned or expired session cookies", async () => {
     const { app, context } = await testApp({ idleTimeoutMs: 1 });
-    await context.auth.setupPassword("test-password");
+    await context.auth.setupPassword("test-course-password");
 
     expect(
       (
         await app.request("/api/catalog", {
-          headers: { cookie: `course_session=${context.auth.createSession()}` },
+          headers: { cookie: `course_session=${await context.auth.createSession()}` },
         })
       ).status,
     ).toBe(401);
 
     const login = await app.request(
       "/api/auth",
-      jsonRequest("POST", { password: "test-password" }),
+      jsonRequest("POST", { password: "test-course-password" }),
     );
     const cookie = login.headers.get("set-cookie")?.split(";")[0];
     await new Promise((resolve) => setTimeout(resolve, 5));
     expect((await app.request("/api/catalog", { headers: { cookie: cookie! } })).status).toBe(401);
+  });
+
+  it("rejects cross-origin form posts", async () => {
+    const { app } = await testApp();
+
+    const response = await app.request("/api/auth/logout", {
+      method: "POST",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+        origin: "https://attacker.jaw.dev",
+      },
+    });
+
+    expect(response.status).toBe(403);
+  });
+
+  it("requires at least 15 Unicode characters for new passwords", async () => {
+    const { app } = await testApp();
+    const shortPassword = "😀".repeat(14);
+    const validPassword = "😀".repeat(15);
+
+    expect(
+      (
+        await app.request(
+          "/api/auth/password",
+          jsonRequest("POST", {
+            password: shortPassword,
+            confirmPassword: shortPassword,
+          }),
+        )
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await app.request(
+          "/api/auth/password",
+          jsonRequest("POST", {
+            password: validPassword,
+            confirmPassword: validPassword,
+          }),
+        )
+      ).status,
+    ).toBe(201);
   });
 
   it("rejects passwords that bcrypt would silently truncate", async () => {

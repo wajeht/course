@@ -5,10 +5,13 @@ import bcrypt from "bcryptjs";
 import type { Configuration } from "../configuration.js";
 import type { AuthRepository, LoginAttempt } from "./auth.repository.js";
 
+export const MIN_PASSWORD_LENGTH = 15;
+
 export interface SessionPayload {
+  sessionKey: string;
+  token: string;
   createdAt: number;
   activeAt: number;
-  nonce: string;
 }
 
 export type PasswordResult =
@@ -23,13 +26,14 @@ export interface AuthService {
   getLoginAttempt(clientKey: string, now?: number): Promise<LoginAttempt | null>;
   recordLoginFailure(clientKey: string, now?: number): Promise<void>;
   clearLoginFailures(clientKey: string): Promise<void>;
-  createSession(now?: number): string;
-  refreshSession(payload: SessionPayload, now?: number): string;
-  parseSession(value: string, now?: number): SessionPayload | null;
+  createSession(now?: number): Promise<string>;
+  touchSession(payload: SessionPayload, now?: number): Promise<void>;
+  parseSession(value: string, now?: number): Promise<SessionPayload | null>;
+  revokeSession(value: string): Promise<void>;
 }
 
 function hasValidPasswordLength(password: string): boolean {
-  return password.length >= 8 && Buffer.byteLength(password, "utf8") <= 72;
+  return [...password].length >= MIN_PASSWORD_LENGTH && Buffer.byteLength(password, "utf8") <= 72;
 }
 
 function safeEqual(left: string, right: string): boolean {
@@ -38,8 +42,8 @@ function safeEqual(left: string, right: string): boolean {
   return crypto.timingSafeEqual(leftHash, rightHash);
 }
 
-function serializeSession(payload: SessionPayload): string {
-  return `${payload.createdAt}.${payload.activeAt}.${payload.nonce}`;
+function sessionKey(value: string): string {
+  return crypto.createHash("sha256").update(value).digest("hex");
 }
 
 export function createAuthService(
@@ -80,7 +84,7 @@ export function createAuthService(
       if (!(await this.verifyPassword(currentPassword)) || !hasValidPasswordLength(newPassword)) {
         return { ok: false, reason: "invalid" };
       }
-      await repository.setPasswordHash(
+      await repository.changePasswordHash(
         await bcrypt.hash(newPassword, configuration.app.env === "testing" ? 4 : 12),
       );
       return { ok: true };
@@ -98,31 +102,52 @@ export function createAuthService(
       return repository.clearLoginFailures(clientKey);
     },
 
-    createSession(now = Date.now()): string {
-      return serializeSession({
-        createdAt: now,
+    async createSession(now = Date.now()): Promise<string> {
+      await repository.deleteExpiredSessions(
+        now - configuration.auth.idleTimeoutMs,
+        now - configuration.auth.absoluteTimeoutMs,
+      );
+      const token = crypto.randomBytes(32).toString("hex");
+      await repository.createSession({
         activeAt: now,
-        nonce: crypto.randomBytes(16).toString("hex"),
+        createdAt: now,
+        sessionKey: sessionKey(token),
       });
+      return token;
     },
 
-    refreshSession(payload: SessionPayload, now = Date.now()): string {
-      return serializeSession({ ...payload, activeAt: now });
+    async touchSession(payload: SessionPayload, now = Date.now()): Promise<void> {
+      const touchInterval = Math.max(
+        1,
+        Math.min(60_000, Math.floor(configuration.auth.idleTimeoutMs / 2)),
+      );
+      const activeAt = now - (now % touchInterval);
+      if (payload.activeAt < activeAt) {
+        await repository.updateSessionActivity(payload.sessionKey, activeAt);
+      }
     },
 
-    parseSession(value: string, now = Date.now()): SessionPayload | null {
-      const parts = value.split(".");
-      if (parts.length !== 3) return null;
-      const [createdAtValue, activeAtValue, nonce] = parts as [string, string, string];
-      if (!/^\d+$/.test(createdAtValue) || !/^\d+$/.test(activeAtValue)) return null;
-      if (!/^[a-f0-9]{32}$/i.test(nonce)) return null;
-      const createdAt = Number(createdAtValue);
-      const activeAt = Number(activeAtValue);
-      if (!Number.isSafeInteger(createdAt) || !Number.isSafeInteger(activeAt)) return null;
-      if (createdAt > now || activeAt < createdAt || activeAt > now) return null;
-      if (now - createdAt > configuration.auth.absoluteTimeoutMs) return null;
-      if (now - activeAt > configuration.auth.idleTimeoutMs) return null;
-      return { createdAt, activeAt, nonce };
+    async parseSession(value: string, now = Date.now()): Promise<SessionPayload | null> {
+      if (!/^[a-f0-9]{64}$/i.test(value)) return null;
+      const key = sessionKey(value);
+      const session = await repository.getSession(key);
+      if (!session) return null;
+      const invalid =
+        session.createdAt > now ||
+        session.activeAt < session.createdAt ||
+        session.activeAt > now ||
+        now - session.createdAt > configuration.auth.absoluteTimeoutMs ||
+        now - session.activeAt > configuration.auth.idleTimeoutMs;
+      if (invalid) {
+        await repository.deleteSession(key);
+        return null;
+      }
+      return { ...session, token: value };
+    },
+
+    async revokeSession(value: string): Promise<void> {
+      if (!/^[a-f0-9]{64}$/i.test(value)) return;
+      await repository.deleteSession(sessionKey(value));
     },
   };
 }

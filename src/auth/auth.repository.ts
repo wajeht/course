@@ -7,12 +7,24 @@ export interface LoginAttempt {
   resetAt: number;
 }
 
+export interface StoredSession {
+  activeAt: number;
+  createdAt: number;
+  sessionKey: string;
+}
+
 export interface AuthRepository {
   getPasswordHash(): Promise<string | null>;
   setPasswordHash(passwordHash: string): Promise<void>;
+  changePasswordHash(passwordHash: string): Promise<void>;
   getLoginAttempt(clientKey: string, now: number): Promise<LoginAttempt | null>;
   recordLoginFailure(clientKey: string, now: number, windowMs: number): Promise<void>;
   clearLoginFailures(clientKey: string): Promise<void>;
+  createSession(session: StoredSession): Promise<void>;
+  getSession(sessionKey: string): Promise<StoredSession | null>;
+  updateSessionActivity(sessionKey: string, activeAt: number): Promise<void>;
+  deleteSession(sessionKey: string): Promise<void>;
+  deleteExpiredSessions(idleCutoff: number, absoluteCutoff: number): Promise<void>;
 }
 
 export function createAuthRepository(database: Knex): AuthRepository {
@@ -30,6 +42,17 @@ export function createAuthRepository(database: Knex): AuthRepository {
         .insert({ key: passwordKey, value: passwordHash, updated_at: updatedAt })
         .onConflict("key")
         .merge({ value: passwordHash, updated_at: updatedAt });
+    },
+
+    async changePasswordHash(passwordHash: string): Promise<void> {
+      const updatedAt = new Date().toISOString();
+      await database.transaction(async (transaction) => {
+        await transaction("settings")
+          .insert({ key: passwordKey, value: passwordHash, updated_at: updatedAt })
+          .onConflict("key")
+          .merge({ value: passwordHash, updated_at: updatedAt });
+        await transaction("auth_sessions").delete();
+      });
     },
 
     async getLoginAttempt(clientKey: string, now: number): Promise<LoginAttempt | null> {
@@ -71,6 +94,45 @@ export function createAuthRepository(database: Knex): AuthRepository {
 
     async clearLoginFailures(clientKey: string): Promise<void> {
       await database("auth_login_attempts").where({ client_key: clientKey }).delete();
+    },
+
+    async createSession(session: StoredSession): Promise<void> {
+      await database("auth_sessions").insert({
+        session_key: session.sessionKey,
+        created_at: session.createdAt,
+        active_at: session.activeAt,
+      });
+    },
+
+    async getSession(sessionKey: string): Promise<StoredSession | null> {
+      const session = await database("auth_sessions")
+        .where({ session_key: sessionKey })
+        .first<{ active_at: number; created_at: number; session_key: string }>();
+      return session
+        ? {
+            activeAt: Number(session.active_at),
+            createdAt: Number(session.created_at),
+            sessionKey: session.session_key,
+          }
+        : null;
+    },
+
+    async updateSessionActivity(sessionKey: string, activeAt: number): Promise<void> {
+      await database("auth_sessions")
+        .where({ session_key: sessionKey })
+        .andWhere("active_at", "<", activeAt)
+        .update({ active_at: activeAt });
+    },
+
+    async deleteSession(sessionKey: string): Promise<void> {
+      await database("auth_sessions").where({ session_key: sessionKey }).delete();
+    },
+
+    async deleteExpiredSessions(idleCutoff: number, absoluteCutoff: number): Promise<void> {
+      await database("auth_sessions")
+        .where("active_at", "<", idleCutoff)
+        .orWhere("created_at", "<", absoluteCutoff)
+        .delete();
     },
   };
 }

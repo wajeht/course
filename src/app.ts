@@ -3,6 +3,7 @@ import path from "node:path";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
 import { compress } from "hono/compress";
+import { csrf } from "hono/csrf";
 import { requestId } from "hono/request-id";
 import { proxy } from "hono/proxy";
 import { secureHeaders } from "hono/secure-headers";
@@ -26,6 +27,7 @@ export function createApp(context: AppContext) {
   const middleware = createMiddleware(context.logger, context.configuration.app.env);
 
   app.use("*", trimTrailingSlash());
+  app.use("*", csrf());
   app.use("*", requestId());
   app.use("*", middleware.requestLogger);
   app.use("*", compress());
