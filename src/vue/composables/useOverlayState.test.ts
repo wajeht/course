@@ -1,3 +1,4 @@
+import { effectScope } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { useConfirm } from "./useConfirm.js";
@@ -30,6 +31,24 @@ describe("useConfirm", () => {
     expect(confirmation.active.value?.title).toBe("Second");
     confirmation.cancel();
     await expect(second).resolves.toBe(false);
+  });
+
+  it("cancels a caller's requests when its Vue scope is disposed", async () => {
+    const scope = effectScope();
+    const scopedConfirmation = scope.run(() => useConfirm());
+    if (!scopedConfirmation) throw new Error("Confirmation did not initialize");
+    const scopedRequest = scopedConfirmation.confirm({
+      title: "Reset course?",
+      message: "This cannot be undone.",
+    });
+    const nextRequest = confirmation.confirm({ title: "Next", message: "Still active." });
+
+    scope.stop();
+
+    await expect(scopedRequest).resolves.toBe(false);
+    expect(confirmation.active.value?.title).toBe("Next");
+    confirmation.accept();
+    await expect(nextRequest).resolves.toBe(true);
   });
 });
 

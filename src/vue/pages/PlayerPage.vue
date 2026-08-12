@@ -34,24 +34,26 @@ const retryAction = useAsyncAction(async (lessonId: string) => {
   await videoPlayback.retryPlayback(lessonId);
 });
 const resetAction = useAsyncAction(
-  async () => {
-    if (!lesson.value) return;
+  async (lessonId: string) => {
+    if (lesson.value?.id !== lessonId || !playbackProgress.isSessionFor(lessonId)) return false;
     await playbackProgress.resetSession(video.value?.currentTime, (lessonId) =>
       api.resetLesson(lessonId),
     );
+    if (lesson.value?.id !== lessonId || !playbackProgress.isSessionFor(lessonId)) return false;
     lesson.value.positionSeconds = 0;
     lesson.value.progressPercent = 0;
     lesson.value.completed = false;
     ended.value = false;
     if (video.value) video.value.currentTime = 0;
+    return true;
   },
   {
     errorMessage: "Could not reset this lesson",
     onError: (caught) => {
       error.value = caught instanceof Error ? caught.message : "Could not reset this lesson";
     },
-    onSuccess: () => {
-      toast.success("Lesson progress reset");
+    onSuccess: (reset) => {
+      if (reset) toast.success("Lesson progress reset");
     },
   },
 );
@@ -159,13 +161,15 @@ async function retryConversion(): Promise<void> {
 
 async function resetProgress(): Promise<void> {
   if (!lesson.value) return;
+  const targetLessonId = lesson.value.id;
   const confirmed = await confirmation.confirm({
     title: "Reset lesson progress?",
     message: "Your saved position and completion state for this lesson will be removed.",
     confirmLabel: "Reset lesson",
     variant: "danger",
   });
-  if (confirmed) await resetAction.run();
+  if (!confirmed || lesson.value?.id !== targetLessonId) return;
+  await resetAction.run(targetLessonId);
 }
 
 function updatePlaybackRate(): void {
