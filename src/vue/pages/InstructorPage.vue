@@ -2,12 +2,12 @@
 import { computed, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
-import { api, type CatalogFilters } from "../api";
-import CourseCard from "../components/CourseCard.vue";
-import PaginationControls from "../components/PaginationControls.vue";
-import AppButton from "../components/ui/AppButton.vue";
-import EmptyState from "../components/ui/EmptyState.vue";
-import { useAsyncData } from "../composables/useAsyncData.js";
+import { api, type CatalogFilters } from "@/api/index.js";
+import CourseCard from "@/components/CourseCard.vue";
+import AppButton from "@/components/ui/AppButton.vue";
+import EmptyState from "@/components/ui/EmptyState.vue";
+import PaginationControls from "@/components/ui/PaginationControls.vue";
+import { useAsyncData } from "@/composables/useAsyncData.js";
 
 const route = useRoute();
 const router = useRouter();

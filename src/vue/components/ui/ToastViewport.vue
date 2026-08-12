@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useToast } from "../../composables/useToast.js";
+import { useToast } from "@/composables/useToast.js";
 import AppButton from "./AppButton.vue";
 
 const toast = useToast();

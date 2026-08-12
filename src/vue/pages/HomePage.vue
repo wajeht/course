@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { RouterLink } from "vue-router";
 
-import { api } from "../api";
-import CourseCard from "../components/CourseCard.vue";
-import CourseFilterSelect from "../components/CourseFilterSelect.vue";
-import PageHeader from "../components/PageHeader.vue";
-import PaginationControls from "../components/PaginationControls.vue";
-import ProgressBar from "../components/ProgressBar.vue";
-import AlertMessage from "../components/ui/AlertMessage.vue";
-import AppInput from "../components/ui/AppInput.vue";
-import EmptyState from "../components/ui/EmptyState.vue";
-import { useCatalogFilters } from "../composables/useCatalogFilters.js";
-import StandardPageLayout from "../layouts/StandardPageLayout.vue";
+import { api } from "@/api/index.js";
+import CourseCard from "@/components/CourseCard.vue";
+import CourseFilterSelect from "@/components/CourseFilterSelect.vue";
+import AlertMessage from "@/components/ui/AlertMessage.vue";
+import AppInput from "@/components/ui/AppInput.vue";
+import EmptyState from "@/components/ui/EmptyState.vue";
+import PageHeader from "@/components/ui/PageHeader.vue";
+import PaginationControls from "@/components/ui/PaginationControls.vue";
+import ProgressBar from "@/components/ui/ProgressBar.vue";
+import { useCatalogFilters } from "@/composables/useCatalogFilters.js";
+import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
 
 const {
   catalog,

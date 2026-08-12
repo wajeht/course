@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from "vue";
 
-import { useModalStack } from "../../composables/useModalStack.js";
+import { useModalStack } from "@/composables/useModalStack.js";
 import AppButton from "./AppButton.vue";
 
 const props = withDefaults(

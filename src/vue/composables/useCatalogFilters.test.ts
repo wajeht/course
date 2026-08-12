@@ -2,7 +2,7 @@ import { createApp, effectScope } from "vue";
 import { createMemoryHistory, createRouter } from "vue-router";
 import { describe, expect, it, vi } from "vitest";
 
-import type { CatalogDto, CatalogFilters, ScanStatus } from "../api.js";
+import type { CatalogDto, CatalogFilters, ScanStatus } from "@/api/index.js";
 import { useCatalogFilters } from "./useCatalogFilters.js";
 
 function catalog(title = "Course", page = 1): CatalogDto {

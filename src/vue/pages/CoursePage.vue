@@ -2,18 +2,18 @@
 import { computed, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
-import { api } from "../api";
-import LessonRow from "../components/LessonRow.vue";
-import ProgressBar from "../components/ProgressBar.vue";
-import AppButton from "../components/ui/AppButton.vue";
-import EmptyState from "../components/ui/EmptyState.vue";
-import PanelCard from "../components/ui/PanelCard.vue";
-import { useAsyncAction } from "../composables/useAsyncAction.js";
-import { useAsyncData } from "../composables/useAsyncData.js";
-import { useConfirm } from "../composables/useConfirm.js";
-import { useExpandableSections } from "../composables/useExpandableSections.js";
-import { useToast } from "../composables/useToast.js";
-import { durationText } from "../utils.js";
+import { api } from "@/api/index.js";
+import LessonRow from "@/components/LessonRow.vue";
+import AppButton from "@/components/ui/AppButton.vue";
+import EmptyState from "@/components/ui/EmptyState.vue";
+import PanelCard from "@/components/ui/PanelCard.vue";
+import ProgressBar from "@/components/ui/ProgressBar.vue";
+import { useAsyncAction } from "@/composables/useAsyncAction.js";
+import { useAsyncData } from "@/composables/useAsyncData.js";
+import { useConfirm } from "@/composables/useConfirm.js";
+import { useExpandableSections } from "@/composables/useExpandableSections.js";
+import { useToast } from "@/composables/useToast.js";
+import { durationText } from "@/utils.js";
 
 const route = useRoute();
 const courseId = computed(() => String(route.params.courseId));

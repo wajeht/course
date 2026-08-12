@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-import AppSelect from "./ui/AppSelect.vue";
+import AppSelect from "@/components/ui/AppSelect.vue";
 
 interface FilterOption {
   name: string;

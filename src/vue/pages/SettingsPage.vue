@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 
-import { api } from "../api";
-import PageHeader from "../components/PageHeader.vue";
-import AlertMessage from "../components/ui/AlertMessage.vue";
-import AppButton from "../components/ui/AppButton.vue";
-import AppInput from "../components/ui/AppInput.vue";
-import FormField from "../components/ui/FormField.vue";
-import PanelCard from "../components/ui/PanelCard.vue";
-import { useAsyncAction } from "../composables/useAsyncAction.js";
-import { useAuth } from "../composables/useAuth.js";
-import { useAsyncData } from "../composables/useAsyncData.js";
-import { useConfirm } from "../composables/useConfirm.js";
-import { useToast } from "../composables/useToast.js";
-import StandardPageLayout from "../layouts/StandardPageLayout.vue";
+import { api } from "@/api/index.js";
+import AlertMessage from "@/components/ui/AlertMessage.vue";
+import AppButton from "@/components/ui/AppButton.vue";
+import AppInput from "@/components/ui/AppInput.vue";
+import FormField from "@/components/ui/FormField.vue";
+import PageHeader from "@/components/ui/PageHeader.vue";
+import PanelCard from "@/components/ui/PanelCard.vue";
+import { useAsyncAction } from "@/composables/useAsyncAction.js";
+import { useAsyncData } from "@/composables/useAsyncData.js";
+import { useAuth } from "@/composables/useAuth.js";
+import { useConfirm } from "@/composables/useConfirm.js";
+import { useToast } from "@/composables/useToast.js";
+import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
 
 const scanRequest = useAsyncData(({ signal }) => api.getScanStatus(signal));
 const auth = useAuth();

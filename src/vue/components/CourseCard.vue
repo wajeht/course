@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { RouterLink } from "vue-router";
 
-import type { CatalogDto } from "../api";
-import { durationText } from "../utils.js";
-import ProgressBar from "./ProgressBar.vue";
+import type { CatalogDto } from "@/api/index.js";
+import ProgressBar from "@/components/ui/ProgressBar.vue";
+import { durationText } from "@/utils.js";
 
 defineProps<{ course: CatalogDto["courses"][number] }>();
 </script>
