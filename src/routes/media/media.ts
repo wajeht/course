@@ -10,26 +10,27 @@ import { z } from "zod";
 import type { AppContext } from "../../context.js";
 import { resolveContainedPath } from "../../media/path.js";
 import { createRequireAuth } from "../api/auth/auth.js";
-import { lessonParametersSchema } from "../api/catalog/catalog.schema.js";
+import { identifierSchema, lessonParametersSchema } from "../api/catalog/catalog.schema.js";
 import { parseByteRange } from "./range.js";
 
 const hlsParametersSchema = z.object({
-  lessonId: lessonParametersSchema.shape.lessonId,
+  lessonId: identifierSchema,
   filename: z.string().regex(/^(?:index\.m3u8|segment-\d{5}\.ts)$/),
 });
 
-const videoContentTypes: Record<string, string> = {
-  ".mp4": "video/mp4",
-  ".m4v": "video/x-m4v",
-  ".webm": "video/webm",
-  ".mov": "video/quicktime",
-  ".mkv": "video/x-matroska",
-  ".avi": "video/x-msvideo",
-  ".mpeg": "video/mpeg",
-  ".mpg": "video/mpeg",
-};
+const videoContentTypes = new Map([
+  [".mp4", "video/mp4"],
+  [".m4v", "video/x-m4v"],
+  [".webm", "video/webm"],
+  [".mov", "video/quicktime"],
+  [".mkv", "video/x-matroska"],
+  [".avi", "video/x-msvideo"],
+  [".mpeg", "video/mpeg"],
+  [".mpg", "video/mpeg"],
+]);
 
 function createFileBody(filename: string, range?: { start: number; end: number }): ReadableStream {
+  // SAFETY: Node's web stream is compatible with the Fetch ReadableStream accepted by Hono.
   return Readable.toWeb(createReadStream(filename, range)) as ReadableStream;
 }
 
@@ -50,7 +51,7 @@ export function createMediaRouter(context: AppContext) {
       );
       const statistics = await fs.stat(filename);
       const contentType =
-        videoContentTypes[path.extname(filename).toLowerCase()] ?? "application/octet-stream";
+        videoContentTypes.get(path.extname(filename).toLowerCase()) ?? "application/octet-stream";
       c.header("Accept-Ranges", "bytes");
       c.header("Content-Type", contentType);
       c.header("Cache-Control", "private, no-store");
@@ -75,7 +76,7 @@ export function createMediaRouter(context: AppContext) {
   app.get(
     "/covers/:courseId",
     requireAuth,
-    zValidator("param", z.object({ courseId: lessonParametersSchema.shape.lessonId })),
+    zValidator("param", z.object({ courseId: identifierSchema })),
     async (c) => {
       const course = await context.catalogRepository.findCourse(c.req.valid("param").courseId);
       if (!course?.cover_path || !course.cover_origin) return c.body(null, 404);
@@ -115,7 +116,8 @@ export function createMediaRouter(context: AppContext) {
         c.header("Content-Length", String(statistics.size));
         return c.body(createFileBody(file));
       } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === "ENOENT") return c.body(null, 404);
+        if (error instanceof Error && "code" in error && error.code === "ENOENT")
+          return c.body(null, 404);
         throw error;
       }
     },

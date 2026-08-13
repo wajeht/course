@@ -20,8 +20,15 @@ export interface ConversionRepository {
   listPendingLessonIds(): Promise<string[]>;
 }
 
+interface ConversionUpdate {
+  status?: ConversionState;
+  progress?: number;
+  playlist_path?: string | null;
+  error?: string | null;
+}
+
 export function createConversionRepository(database: Knex): ConversionRepository {
-  async function update(lessonId: string, values: Record<string, unknown>): Promise<void> {
+  async function update(lessonId: string, values: ConversionUpdate): Promise<void> {
     await database("conversion_jobs")
       .where({ lesson_id: lessonId })
       .update({ ...values, updated_at: new Date().toISOString() });
@@ -31,6 +38,7 @@ export function createConversionRepository(database: Knex): ConversionRepository
     async getConversion(lessonId) {
       const row = await database("conversion_jobs").where({ lesson_id: lessonId }).first();
       if (!row) return null;
+      // SAFETY: Knex returns the columns selected from the locally owned conversion_jobs schema.
       return {
         lessonId: row.lesson_id as string,
         status: row.status as ConversionState,
@@ -75,6 +83,7 @@ export function createConversionRepository(database: Knex): ConversionRepository
       const rows = await database("conversion_jobs")
         .whereIn("status", ["queued", "converting"])
         .select("lesson_id");
+      // SAFETY: This query selects lesson_id from the locally owned conversion_jobs schema.
       return rows.map((row) => row.lesson_id as string);
     },
   };

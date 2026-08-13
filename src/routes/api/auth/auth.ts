@@ -63,7 +63,7 @@ async function readSession(c: Context, context: AppContext) {
     context.configuration.auth.sessionSecret,
     sessionCookieName(context.configuration),
   );
-  return typeof cookie === "string" ? context.auth.parseSession(cookie) : null;
+  return cookie ? context.auth.parseSession(cookie) : null;
 }
 
 async function writeSession(c: Context, context: AppContext, value: string): Promise<void> {
@@ -139,7 +139,7 @@ export function createAuthRouter(context: AppContext) {
         configuration.auth.sessionSecret,
         sessionCookieName(configuration),
       );
-      if (typeof cookie === "string") await context.auth.revokeSession(cookie);
+      if (cookie) await context.auth.revokeSession(cookie);
       deleteCookie(c, sessionCookieName(configuration), sessionCookieOptions(configuration));
       return c.json({ authenticated: false });
     })

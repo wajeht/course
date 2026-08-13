@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+
 import { nextTick, ref } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -5,13 +7,12 @@ import type { PlaybackResult } from "@/api.js";
 import { useVideoPlayback } from "./useVideoPlayback.js";
 
 function videoElement() {
-  return {
-    canPlayType: vi.fn(() => ""),
-    load: vi.fn(),
-    pause: vi.fn(),
-    removeAttribute: vi.fn(),
-    src: "",
-  } as unknown as HTMLVideoElement;
+  const element = document.createElement("video");
+  vi.spyOn(element, "canPlayType").mockReturnValue("");
+  vi.spyOn(element, "load").mockImplementation(() => undefined);
+  vi.spyOn(element, "pause").mockImplementation(() => undefined);
+  vi.spyOn(element, "removeAttribute");
+  return element;
 }
 
 function playbackClient(result: PlaybackResult = { kind: "direct", url: "/media/lesson" }) {
@@ -36,7 +37,7 @@ describe("useVideoPlayback", () => {
 
     await playback.preparePlayback("lesson", requestId);
 
-    expect(element.src).toBe("/media/lesson");
+    expect(element.getAttribute("src")).toBe("/media/lesson");
     expect(element.load).toHaveBeenCalledOnce();
     expect(playback.playback.value).toEqual({ kind: "direct", url: "/media/lesson" });
   });
@@ -57,7 +58,7 @@ describe("useVideoPlayback", () => {
     resolvePlayback?.({ kind: "direct", url: "/media/stale" });
     await preparation;
 
-    expect(element.src).toBe("");
+    expect(element.getAttribute("src")).toBeNull();
     expect(element.load).not.toHaveBeenCalled();
   });
 
@@ -74,7 +75,7 @@ describe("useVideoPlayback", () => {
     await nextTick();
 
     expect(client.getConversionStatus).toHaveBeenCalledWith("lesson");
-    expect(element.src).toBe("/media/ready");
+    expect(element.getAttribute("src")).toBe("/media/ready");
   });
 
   it("applies resume metadata once for each source", async () => {

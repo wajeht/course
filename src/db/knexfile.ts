@@ -23,7 +23,7 @@ export function createKnexConfig(configuration: Configuration): Knex.Config {
       acquireTimeoutMillis: 15_000,
       afterCreate(
         connection: BetterSqlite3.Database,
-        done: (error: Error | null, value: unknown) => void,
+        done: (error: Error | null, value: BetterSqlite3.Database) => void,
       ) {
         try {
           connection.pragma("foreign_keys = ON");
@@ -35,7 +35,10 @@ export function createKnexConfig(configuration: Configuration): Knex.Config {
           connection.pragma("temp_store = MEMORY");
           done(null, connection);
         } catch (error) {
-          done(error as Error, connection);
+          done(
+            error instanceof Error ? error : new Error("Could not configure SQLite"),
+            connection,
+          );
         }
       },
     },

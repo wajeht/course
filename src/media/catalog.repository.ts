@@ -1,6 +1,19 @@
 import type { Knex } from "knex";
+import { z } from "zod";
 
 import type { CatalogSnapshot, ScanStatus } from "./types.js";
+
+const scanStatusRowSchema = z.object({
+  status: z.enum(["idle", "scanning", "complete", "failed"]),
+  started_at: z.string().nullable(),
+  completed_at: z.string().nullable(),
+  course_count: z.coerce.number(),
+  lesson_count: z.coerce.number(),
+  warnings_json: z.string(),
+  error: z.string().nullable(),
+});
+
+const scanWarningsSchema = z.array(z.object({ path: z.string(), message: z.string() }));
 
 export interface CatalogRepository {
   synchronizeCatalog(snapshot: CatalogSnapshot): Promise<void>;
@@ -121,15 +134,15 @@ export function createCatalogRepository(database: Knex): CatalogRepository {
     },
 
     async getScanStatus() {
-      const row = await database("scan_state").where({ id: 1 }).first();
+      const row = scanStatusRowSchema.parse(await database("scan_state").where({ id: 1 }).first());
       return {
-        status: row.status as ScanStatus["status"],
-        startedAt: row.started_at as string | null,
-        completedAt: row.completed_at as string | null,
-        courseCount: Number(row.course_count),
-        lessonCount: Number(row.lesson_count),
-        warnings: JSON.parse(String(row.warnings_json)) as ScanStatus["warnings"],
-        error: row.error as string | null,
+        status: row.status,
+        startedAt: row.started_at,
+        completedAt: row.completed_at,
+        courseCount: row.course_count,
+        lessonCount: row.lesson_count,
+        warnings: scanWarningsSchema.parse(JSON.parse(row.warnings_json)),
+        error: row.error,
       };
     },
   };

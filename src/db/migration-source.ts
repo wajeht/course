@@ -5,6 +5,12 @@ import type { Knex } from "knex";
 
 const sourceExtensions = new Set([".js", ".ts"]);
 
+interface MigrationModule {
+  up?: Knex.Migration["up"];
+  down?: Knex.Migration["down"];
+  default?: Knex.Migration;
+}
+
 export function createMigrationSource(directory: string): Knex.MigrationSource<string> {
   const files = new Map<string, string>();
 
@@ -33,15 +39,13 @@ export function createMigrationSource(directory: string): Knex.MigrationSource<s
 
     async getMigration(migration: string): Promise<Knex.Migration> {
       const file = files.get(migration) ?? migration;
-      const module = (await import(path.join(directory, file))) as {
-        up?: Knex.Migration["up"];
-        down?: Knex.Migration["down"];
-        default?: Knex.Migration;
-      };
+      // SAFETY: Migration files are the project's own modules and are validated below.
+      const module = (await import(path.join(directory, file))) as MigrationModule;
       const loaded = module.default ?? module;
-      if (typeof loaded.up !== "function" || typeof loaded.down !== "function") {
+      if (!(loaded.up instanceof Function) || !(loaded.down instanceof Function)) {
         throw new TypeError(`Migration ${migration} must export up and down functions`);
       }
+      // SAFETY: Both required migration functions were validated immediately above.
       return loaded as Knex.Migration;
     },
   };

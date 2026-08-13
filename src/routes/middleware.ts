@@ -5,15 +5,14 @@ import { ZodError } from "zod";
 import type { AppEnvironment } from "../configuration.js";
 import type { Logger } from "../logger.js";
 
-export function createMiddleware(
-  logger: Logger,
-  environment: AppEnvironment,
-): {
+interface AppMiddleware {
   requestLogger: MiddlewareHandler;
   apiCache: MiddlewareHandler;
   notFound: NotFoundHandler;
   onError: ErrorHandler;
-} {
+}
+
+export function createMiddleware(logger: Logger, environment: AppEnvironment): AppMiddleware {
   return {
     requestLogger: async (c, next) => {
       const start = performance.now();

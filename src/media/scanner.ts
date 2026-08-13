@@ -94,7 +94,7 @@ export function createScanner({
         error: error instanceof Error ? error.message : "Media scan failed",
       };
       await repository.updateScanStatus(failed);
-      logger.error("Media scan failed", { error });
+      logger.error("Media scan failed", { error: error instanceof Error ? error : String(error) });
       return failed;
     }
   }

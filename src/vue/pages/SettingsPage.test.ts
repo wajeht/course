@@ -9,31 +9,32 @@ import { toastKey } from "@/composables/useToast.js";
 
 import SettingsPage from "./SettingsPage.vue";
 
-vi.mock("@/api.js", () => ({
-  api: {
+function settingsClient() {
+  return {
     getScanStatus: vi.fn(async () => ({
       completedAt: "2026-08-12T00:00:00.000Z",
       courseCount: 12,
       error: null,
       lessonCount: 215,
       startedAt: "2026-08-12T00:00:00.000Z",
-      status: "complete",
+      status: "complete" as const,
       warnings: [],
     })),
     rescanCatalog: vi.fn(),
-  },
-}));
+  };
+}
 
 describe("SettingsPage", () => {
   it("uses the shared page hierarchy and keeps section headings inside their cards", async () => {
     const wrapper = mount(SettingsPage, {
+      props: { client: settingsClient() },
       global: {
         provide: {
-          [authKey as symbol]: {
+          [authKey]: {
             changePassword: vi.fn(),
             logout: vi.fn(),
           },
-          [confirmationKey as symbol]: {
+          [confirmationKey]: {
             active: { value: null },
             accept: vi.fn(),
             cancel: vi.fn(),
@@ -41,7 +42,7 @@ describe("SettingsPage", () => {
             clear: vi.fn(),
             request: vi.fn(),
           },
-          [toastKey as symbol]: {
+          [toastKey]: {
             success: vi.fn(),
           },
         },

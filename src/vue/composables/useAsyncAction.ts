@@ -2,7 +2,7 @@ import { computed, ref, shallowRef } from "vue";
 
 interface AsyncActionOptions<TResult> {
   errorMessage?: string;
-  onError?: (error: unknown) => void;
+  onError?: (error: Error) => void;
   onSuccess?: (result: TResult) => void | Promise<void>;
 }
 
@@ -32,8 +32,9 @@ export function useAsyncAction<TArguments extends unknown[], TResult>(
       await options.onSuccess?.(result);
       return result;
     } catch (caught) {
+      const failure = caught instanceof Error ? caught : new Error("Something went wrong");
       error.value = caught;
-      options.onError?.(caught);
+      options.onError?.(failure);
       return undefined;
     } finally {
       pending.value = false;

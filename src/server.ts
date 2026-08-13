@@ -52,7 +52,9 @@ async function runApplication(): Promise<void> {
       clearTimeout(timeout);
       process.exit(0);
     } catch (error) {
-      context.logger.error("Graceful shutdown failed", { error });
+      context.logger.error("Graceful shutdown failed", {
+        error: error instanceof Error ? error : String(error),
+      });
       process.exit(1);
     }
   };
@@ -65,7 +67,9 @@ async function runApplication(): Promise<void> {
     process.exit(1);
   });
   process.on("unhandledRejection", (error) => {
-    context.logger.error("Unhandled rejection", { error });
+    context.logger.error("Unhandled rejection", {
+      error: error instanceof Error ? error : String(error),
+    });
     process.exit(1);
   });
 }

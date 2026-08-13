@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
+import { z } from "zod";
 
 import { api, type CatalogFilters } from "@/api.js";
 import CourseCard from "@/components/CourseCard.vue";
@@ -12,11 +13,11 @@ import { useAsyncData } from "@/composables/useAsyncData.js";
 
 const route = useRoute();
 const router = useRouter();
+const pageSchema = z.coerce.number().int().positive().catch(1);
 
 const instructorName = computed(() => String(route.params.instructorName));
 const page = computed(() => {
-  const value = typeof route.query.page === "string" ? Number.parseInt(route.query.page, 10) : 1;
-  return Number.isInteger(value) && value > 0 ? value : 1;
+  return pageSchema.parse(route.query.page);
 });
 const filters = computed<CatalogFilters>(() => ({
   instructor: instructorName.value,

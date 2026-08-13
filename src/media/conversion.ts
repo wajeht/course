@@ -172,7 +172,10 @@ export function createConversionManager(options: {
         } catch (error) {
           const message = error instanceof Error ? error.message : "Conversion failed";
           await options.repository.markFailed(lessonId, message);
-          options.logger.error("Video conversion failed", { lessonId, error });
+          options.logger.error("Video conversion failed", {
+            lessonId,
+            error: error instanceof Error ? error : String(error),
+          });
         } finally {
           scheduled.delete(lessonId);
         }

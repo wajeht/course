@@ -39,7 +39,7 @@ export async function readCourseMetadata(courseDirectory: string): Promise<{
     if (!result.success) return { metadata: null, warning: result.error.message };
     return { metadata: result.data, warning: null };
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT")
+    if (error instanceof Error && "code" in error && error.code === "ENOENT")
       return { metadata: null, warning: null };
     return {
       metadata: null,

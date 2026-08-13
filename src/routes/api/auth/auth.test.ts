@@ -44,15 +44,17 @@ async function closeContext(context: AppContext): Promise<void> {
   await context.database.close();
 }
 
-function jsonRequest(method: string, body: object, cookie?: string): RequestInit {
-  return {
+interface JsonRequestBody {
+  [key: string]: string;
+}
+
+function jsonRequest(method: string, body: JsonRequestBody, cookie?: string): RequestInit {
+  const request = {
     method,
-    headers: {
-      "content-type": "application/json",
-      ...(cookie ? { cookie } : {}),
-    },
     body: JSON.stringify(body),
   };
+  if (cookie) return { ...request, headers: { "content-type": "application/json", cookie } };
+  return { ...request, headers: { "content-type": "application/json" } };
 }
 
 describe("password authentication", () => {

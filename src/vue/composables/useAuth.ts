@@ -4,6 +4,14 @@ import { api, type AuthStateDto } from "@/api.js";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "error";
 
+interface AuthState {
+  error: string;
+  passwordConfigured: boolean;
+  setupEnabled: boolean;
+  setupTokenRequired: boolean;
+  status: AuthStatus;
+}
+
 interface AuthClient {
   changePassword(
     currentPassword: string,
@@ -38,8 +46,8 @@ export function createAuth(
   client: AuthClient = api,
   checkTimeoutMilliseconds = 10_000,
 ): AuthController {
-  const state = reactive({
-    status: "loading" as AuthStatus,
+  const state = reactive<AuthState>({
+    status: "loading",
     passwordConfigured: false,
     setupEnabled: false,
     setupTokenRequired: false,
@@ -52,7 +60,7 @@ export function createAuth(
     state.error = "Your session expired. Sign in again.";
   }
 
-  if (typeof window !== "undefined") {
+  if ("window" in globalThis) {
     window.addEventListener("course:unauthorized", handleUnauthorized);
   }
 
@@ -103,7 +111,7 @@ export function createAuth(
   return {
     changePassword: client.changePassword,
     dispose: () => {
-      if (typeof window !== "undefined") {
+      if ("window" in globalThis) {
         window.removeEventListener("course:unauthorized", handleUnauthorized);
       }
     },

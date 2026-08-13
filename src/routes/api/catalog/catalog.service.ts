@@ -5,6 +5,9 @@ import type {
   CourseRow,
   LessonRow,
 } from "./catalog.repository.js";
+import { z } from "zod";
+
+const stringListSchema = z.array(z.string());
 
 export interface LessonDto {
   id: string;
@@ -74,7 +77,7 @@ export interface CatalogService {
 }
 
 function stringList(value: string): string[] {
-  return JSON.parse(value) as string[];
+  return stringListSchema.parse(JSON.parse(value));
 }
 
 function progressPercent(completed: number, total: number): number {

@@ -1,13 +1,16 @@
 import { computed, onScopeDispose, ref, watch } from "vue";
-import { useRoute, useRouter, type LocationQueryRaw } from "vue-router";
+import { useRoute, useRouter, type LocationQueryRaw, type LocationQueryValue } from "vue-router";
+import { z } from "zod";
 
 import type { CatalogFilters } from "@/api.js";
 
-function queryString(value: unknown): string {
-  return typeof value === "string" ? value : "";
+const queryStringSchema = z.string().catch("");
+
+function queryString(value: LocationQueryValue | LocationQueryValue[] | undefined): string {
+  return queryStringSchema.parse(value);
 }
 
-function queryPage(value: unknown): number {
+function queryPage(value: LocationQueryValue | LocationQueryValue[] | undefined): number {
   const page = Number.parseInt(queryString(value), 10);
   return Number.isInteger(page) && page > 0 ? page : 1;
 }

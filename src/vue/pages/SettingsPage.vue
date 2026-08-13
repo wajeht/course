@@ -17,7 +17,14 @@ import { useToast } from "@/composables/useToast.js";
 import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
 import SettingsNavigation, { type SettingsSection } from "@/pages/partials/SettingsNavigation.vue";
 
-const scanRequest = useAsyncData(({ signal }) => api.getScanStatus(signal));
+interface SettingsClient {
+  getScanStatus: typeof api.getScanStatus;
+  rescanCatalog: typeof api.rescanCatalog;
+}
+
+const props = defineProps<{ client?: SettingsClient }>();
+const client = props.client ?? api;
+const scanRequest = useAsyncData(({ signal }) => client.getScanStatus(signal));
 const auth = useAuth();
 const confirmation = useConfirm();
 const toast = useToast();
@@ -27,7 +34,7 @@ const newPassword = ref("");
 const confirmPassword = ref("");
 const validationError = ref("");
 const scanStatus = computed(() => scanRequest.data.value);
-const rescanAction = useAsyncAction(() => api.rescanCatalog(), {
+const rescanAction = useAsyncAction(() => client.rescanCatalog(), {
   errorMessage: "Could not rescan the library",
   onSuccess: (status) => {
     scanRequest.data.value = status;

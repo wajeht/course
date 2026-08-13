@@ -1,4 +1,11 @@
 import type { Knex } from "knex";
+import { z } from "zod";
+
+const courseCountRowSchema = z.object({
+  name: z.string(),
+  course_count: z.coerce.number(),
+});
+const courseTotalSchema = z.object({ course_count: z.coerce.number() });
 
 export interface CourseRow {
   id: string;
@@ -165,8 +172,8 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
         .countDistinct({ course_count: "courses.id" })
         .first();
       applyCourseFilters(queryBuilder, filters);
-      const row = (await queryBuilder) as { course_count?: number | string } | undefined;
-      return Number(row?.course_count ?? 0);
+      const row = courseTotalSchema.optional().parse(await queryBuilder);
+      return row?.course_count ?? 0;
     },
 
     async listCategories(filters = {}) {
@@ -176,7 +183,7 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
         .groupBy("category")
         .orderByRaw("category COLLATE NOCASE");
       applyCourseFilters(queryBuilder, filters);
-      return (await queryBuilder) as unknown as CourseCountRow[];
+      return z.array(courseCountRowSchema).parse(await queryBuilder);
     },
 
     async listInstructors(filters = {}) {
@@ -187,7 +194,7 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
         .groupByRaw("instructor.value COLLATE NOCASE")
         .orderByRaw("name COLLATE NOCASE");
       applyCourseFilters(queryBuilder, filters);
-      return (await queryBuilder) as unknown as CourseCountRow[];
+      return z.array(courseCountRowSchema).parse(await queryBuilder);
     },
 
     async listTags(filters = {}) {
@@ -198,7 +205,7 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
         .groupByRaw("tag.value COLLATE NOCASE")
         .orderByRaw("name COLLATE NOCASE");
       applyCourseFilters(queryBuilder, filters);
-      return (await queryBuilder) as unknown as CourseCountRow[];
+      return z.array(courseCountRowSchema).parse(await queryBuilder);
     },
 
     listContinueWatching() {

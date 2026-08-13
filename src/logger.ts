@@ -1,4 +1,21 @@
-export type LogFields = Record<string, unknown>;
+export type LogValue = string | number | boolean | null | undefined | Error | LogValue[];
+export interface LogFields {
+  [key: string]: LogValue;
+}
+
+type SerializedLogValue =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | SerializedLogValue[]
+  | {
+      name: string;
+      message: string;
+      stack?: string;
+      cause?: SerializedLogValue;
+    };
 
 export interface Logger {
   debug(message: string, fields?: LogFields): void;
@@ -7,14 +24,22 @@ export interface Logger {
   error(message: string, fields?: LogFields): void;
 }
 
-function errorValue(value: unknown): unknown {
-  if (!(value instanceof Error)) return value;
-  return {
-    name: value.name,
-    message: value.message,
-    stack: value.stack,
-    cause: errorValue(value.cause),
-  };
+function errorValue(value: LogValue): SerializedLogValue {
+  if (value instanceof Error) {
+    return {
+      name: value.name,
+      message: value.message,
+      stack: value.stack,
+      cause:
+        value.cause instanceof Error
+          ? errorValue(value.cause)
+          : value.cause === undefined
+            ? undefined
+            : String(value.cause),
+    };
+  }
+  if (Array.isArray(value)) return value.map(errorValue);
+  return value;
 }
 
 function writeLog(level: string, message: string, fields: LogFields = {}): void {
