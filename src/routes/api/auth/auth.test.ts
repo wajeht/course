@@ -288,17 +288,17 @@ describe("password authentication", () => {
     const shortPassword = "😀".repeat(14);
     const validPassword = "😀".repeat(15);
 
-    expect(
-      (
-        await app.request(
-          "/api/auth/password",
-          jsonRequest("POST", {
-            password: shortPassword,
-            confirmPassword: shortPassword,
-          }),
-        )
-      ).status,
-    ).toBe(400);
+    const shortResponse = await app.request(
+      "/api/auth/password",
+      jsonRequest("POST", {
+        password: shortPassword,
+        confirmPassword: shortPassword,
+      }),
+    );
+    expect(shortResponse.status).toBe(400);
+    expect(await shortResponse.json()).toEqual({
+      message: "Password must be at least 15 characters",
+    });
     expect(
       (
         await app.request(

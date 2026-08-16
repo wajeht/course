@@ -42,6 +42,15 @@ const changePasswordSchema = z
     path: ["confirmPassword"],
   });
 
+function validationHook(
+  result: { success: boolean; error?: { issues: readonly { message: string }[] } },
+  c: Context,
+): Response | undefined {
+  if (!result.success) {
+    return c.json({ message: result.error?.issues[0]?.message ?? "Invalid request" }, 400);
+  }
+}
+
 function sessionCookieName(configuration: Configuration): string {
   return configuration.app.env === "production" ? "__Host-course_session" : "course_session";
 }
@@ -111,7 +120,7 @@ export function createAuthRouter(context: AppContext) {
         setupTokenRequired: !passwordConfigured && configuration.app.env === "production",
       });
     })
-    .post("/", zValidator("json", loginSchema), async (c) => {
+    .post("/", zValidator("json", loginSchema, validationHook), async (c) => {
       const key = clientKey(c, configuration);
       const attempt = await context.auth.getLoginAttempt(key);
       if (attempt && attempt.failures >= configuration.auth.loginMaxAttempts) {
@@ -142,7 +151,7 @@ export function createAuthRouter(context: AppContext) {
       deleteCookie(c, sessionCookieName(configuration), sessionCookieOptions(configuration));
       return c.json({ authenticated: false });
     })
-    .post("/password", zValidator("json", setupSchema), async (c) => {
+    .post("/password", zValidator("json", setupSchema, validationHook), async (c) => {
       const { password, setupToken } = c.req.valid("json");
       const result = await context.auth.setupPassword(password, setupToken);
       if (result.ok) {
@@ -160,7 +169,7 @@ export function createAuthRouter(context: AppContext) {
     .put(
       "/password",
       createRequireAuth(context),
-      zValidator("json", changePasswordSchema),
+      zValidator("json", changePasswordSchema, validationHook),
       async (c) => {
         const { currentPassword, newPassword } = c.req.valid("json");
         const result = await context.auth.changePassword(currentPassword, newPassword);
