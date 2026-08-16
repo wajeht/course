@@ -18,13 +18,13 @@ function close(): void {
     aria-live="polite"
   >
     <p class="font-display text-lg font-extrabold tracking-[.02em]">
-      {{ needRefresh ? "Course update available" : "Course is ready offline" }}
+      {{ needRefresh ? "Course update available" : "Course can open offline" }}
     </p>
     <p class="mt-1.5 text-[.78rem] leading-5 text-white/68">
       {{
         needRefresh
           ? "Reload when you are ready to use the latest version."
-          : "The app shell works offline; course data and videos still require the server."
+          : "You can open the app without internet, but courses and videos still require a connection to your server."
       }}
     </p>
     <div class="mt-4 flex gap-2">

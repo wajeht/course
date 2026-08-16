@@ -4,7 +4,7 @@ import { RouterLink } from "vue-router";
 import type { CatalogDto } from "@/api.js";
 import CourseCoverPlaceholder from "@/components/CourseCoverPlaceholder.vue";
 import ProgressBar from "@/components/ui/ProgressBar.vue";
-import { durationText } from "@/utils.js";
+import { countText, durationText } from "@/utils.js";
 
 defineProps<{ course: CatalogDto["courses"][number] }>();
 </script>
@@ -29,7 +29,7 @@ defineProps<{ course: CatalogDto["courses"][number] }>();
       <div
         class="absolute right-3 bottom-3 rounded-[5px] border border-white/18 bg-pine-deep/88 px-[9px] py-1.5 text-[.66rem] font-bold text-white backdrop-blur-[6px] max-[600px]:hidden"
       >
-        {{ course.lessonCount }} lessons
+        {{ countText(course.lessonCount, "lesson") }}
       </div>
     </RouterLink>
     <div class="flex flex-1 flex-col p-[18px]">

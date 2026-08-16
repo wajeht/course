@@ -15,7 +15,7 @@ import { useAsyncData } from "@/composables/useAsyncData.js";
 import { useConfirm } from "@/composables/useConfirm.js";
 import { useExpandableSections } from "@/composables/useExpandableSections.js";
 import { useToast } from "@/composables/useToast.js";
-import { durationText } from "@/utils.js";
+import { countText, durationText } from "@/utils.js";
 
 const route = useRoute();
 const courseId = computed(() => String(route.params.courseId));
@@ -119,7 +119,7 @@ watch(
           class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase max-[600px]:mb-[55px] max-[600px]:self-end"
         >
           <template v-if="course.category !== 'Uncategorized'">{{ course.category }} · </template>
-          {{ course.lessonCount }} lessons · {{ durationText(course.durationSeconds) }}
+          {{ countText(course.lessonCount, "lesson") }} · {{ durationText(course.durationSeconds) }}
         </p>
         <h1
           class="mb-[23px] max-w-[880px] font-display text-[clamp(2.7rem,5.2vw,5.8rem)] leading-[.95] font-extrabold tracking-[-.05em] max-[860px]:text-[clamp(2.3rem,6.4vw,4rem)] max-[600px]:text-[clamp(1.8rem,8vw,2.7rem)]"
@@ -232,7 +232,7 @@ watch(
                 <span
                   class="rounded-full border border-pine/15 bg-pine/10 px-2.5 py-1 text-[.66rem] font-bold tracking-[.06em] text-pine-deep uppercase"
                 >
-                  {{ section.lessons.length }} lessons
+                  {{ countText(section.lessons.length, "lesson") }}
                 </span>
                 <span
                   class="grid h-8 w-8 place-items-center rounded-full border border-pine/20 bg-white/55 text-pine"

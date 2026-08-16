@@ -256,10 +256,10 @@ onBeforeUnmount(() => {
             :style="{ '--progress': `${playback.progress * 3.6}deg` }"
           />
           <h2 class="mt-4 mb-[7px] font-display text-[clamp(1.6rem,3vw,2.8rem)]">
-            Converting for your browser
+            Preparing this video
           </h2>
           <p class="max-w-[540px] text-[.82rem] text-white/58">
-            {{ playback.progress }}% · Quick Sync is preparing the first segments.
+            {{ playback.progress }}% complete. This may take a moment.
           </p>
         </div>
         <div
@@ -279,7 +279,7 @@ onBeforeUnmount(() => {
             loading-label="Retrying…"
             @click="retryConversion"
           >
-            Retry conversion
+            Try again
           </AppButton>
         </div>
         <div

@@ -5,8 +5,8 @@ import PanelCard from "@/components/ui/PanelCard.vue";
 export type SettingsSection = "auth" | "data";
 
 const sections: ReadonlyArray<{ label: string; value: SettingsSection }> = [
-  { label: "Data", value: "data" },
-  { label: "Auth", value: "auth" },
+  { label: "Library", value: "data" },
+  { label: "Password & access", value: "auth" },
 ];
 
 defineProps<{

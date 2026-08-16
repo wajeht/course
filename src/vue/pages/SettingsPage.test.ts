@@ -3,6 +3,7 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
+import { api } from "@/api.js";
 import { authKey } from "@/composables/useAuth.js";
 import { confirmationKey } from "@/composables/useConfirm.js";
 import { toastKey } from "@/composables/useToast.js";
@@ -26,29 +27,33 @@ vi.mock("@/api.js", () => ({
   },
 }));
 
-describe("SettingsPage", () => {
-  it("uses the shared page hierarchy and keeps section headings inside their cards", async () => {
-    const wrapper = mount(SettingsPage, {
-      global: {
-        provide: {
-          [authKey as symbol]: {
-            changePassword: vi.fn(),
-            logout: vi.fn(),
-          },
-          [confirmationKey as symbol]: {
-            active: { value: null },
-            accept: vi.fn(),
-            cancel: vi.fn(),
-            cancelOwner: vi.fn(),
-            clear: vi.fn(),
-            request: vi.fn(),
-          },
-          [toastKey as symbol]: {
-            success: vi.fn(),
-          },
+function mountSettings() {
+  return mount(SettingsPage, {
+    global: {
+      provide: {
+        [authKey as symbol]: {
+          changePassword: vi.fn(),
+          logout: vi.fn(),
+        },
+        [confirmationKey as symbol]: {
+          active: { value: null },
+          accept: vi.fn(),
+          cancel: vi.fn(),
+          cancelOwner: vi.fn(),
+          clear: vi.fn(),
+          request: vi.fn(),
+        },
+        [toastKey as symbol]: {
+          success: vi.fn(),
         },
       },
-    });
+    },
+  });
+}
+
+describe("SettingsPage", () => {
+  it("uses the shared page hierarchy and keeps section headings inside their cards", async () => {
+    const wrapper = mountSettings();
     await flushPromises();
 
     const pageHeader = wrapper.get("main > header");
@@ -78,6 +83,26 @@ describe("SettingsPage", () => {
     await wrapper.get("#settings-auth-tab").trigger("click");
     const authCard = wrapper.get("#settings-auth-panel > section");
     expect(authCard.get("header h2").text()).toBe("Access");
+    expect(authCard.text()).toContain("Use at least 15 characters.");
     expect(wrapper.get("[data-mobile-sign-out]").text()).toBe("Sign out");
+  });
+
+  it("shows actionable library issue details with correct singular wording", async () => {
+    vi.mocked(api.getScanStatus).mockResolvedValueOnce({
+      completedAt: "2026-08-12T00:00:00.000Z",
+      courseCount: 1,
+      error: null,
+      lessonCount: 1,
+      startedAt: "2026-08-12T00:00:00.000Z",
+      status: "complete",
+      warnings: [{ path: "Example/course.json", message: "Cover file is missing" }],
+    });
+    const wrapper = mountSettings();
+    await flushPromises();
+
+    const issues = wrapper.get('[aria-label="Library issues"]');
+    expect(wrapper.get("#settings-data-panel").text()).toContain("1 library issue");
+    expect(issues.text()).toContain("Example/course.json");
+    expect(issues.text()).toContain("Cover file is missing");
   });
 });

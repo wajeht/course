@@ -68,13 +68,13 @@ export function useVideoPlayback(
     const { default: Hls } = await import("hls.js/light");
     if (!isCurrentRequest(requestId)) return;
     if (!Hls.isSupported()) {
-      error.value = "This browser cannot play the converted video.";
+      error.value = "This browser cannot play this video.";
       return;
     }
     hls = new Hls({ enableWorker: true, backBufferLength: 30 });
     hls.on(Hls.Events.ERROR, (_event, data) => {
       if (data.fatal && isCurrentRequest(requestId)) {
-        error.value = "Playback stopped because the video stream failed.";
+        error.value = "Video playback stopped unexpectedly. Try again.";
       }
     });
     hls.loadSource(url);
@@ -98,9 +98,9 @@ export function useVideoPlayback(
       try {
         const conversion = await client.getConversionStatus(lessonId);
         await applyPlayback(conversion, lessonId, requestId);
-      } catch (caught) {
+      } catch {
         if (!isCurrentRequest(requestId)) return;
-        error.value = caught instanceof Error ? caught.message : "Could not check conversion";
+        error.value = "We couldn't check the video status. Try again.";
       }
     }, pollMilliseconds);
   }

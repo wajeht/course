@@ -71,7 +71,7 @@ const error = computed(() => {
               {{ lesson.courseTitle }}
             </p>
             <h2 class="mb-5 max-w-[85%] text-xl leading-[1.15]">{{ lesson.title }}</h2>
-            <ProgressBar :value="lesson.progressPercent" compact />
+            <ProgressBar :value="lesson.progressPercent" label="Lesson progress" compact />
           </div>
           <span
             class="absolute top-5 right-5 z-[3] grid h-[42px] w-[42px] place-items-center rounded-full bg-white pl-0.5 text-[.75rem] text-pine-deep"
