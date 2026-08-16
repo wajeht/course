@@ -114,7 +114,7 @@ async function submit(): Promise<void> {
           v-slot="{ inputId, describedBy, invalid }"
           class="mt-6"
           label="Password"
-          help-text="Use at least 15 characters."
+          :help-text="isSetup ? 'Use at least 15 characters.' : undefined"
           required
         >
           <AppInput

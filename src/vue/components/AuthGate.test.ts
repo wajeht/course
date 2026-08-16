@@ -14,14 +14,14 @@ const baseProps = {
 };
 
 describe("AuthGate", () => {
-  it("requires 15 characters when signing in", () => {
+  it("does not show password setup guidance when signing in", () => {
     const wrapper = mount(AuthGate, {
       props: { ...baseProps, passwordConfigured: true },
     });
     const password = wrapper.get('input[autocomplete="current-password"]');
 
     expect(password.attributes("minlength")).toBe("15");
-    expect(wrapper.text()).toContain("Use at least 15 characters.");
+    expect(wrapper.text()).not.toContain("Use at least 15 characters.");
   });
 
   it("requires 15 characters when creating a password", () => {
