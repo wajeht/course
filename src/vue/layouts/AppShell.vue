@@ -10,7 +10,10 @@ const isPlayer = computed(() => route.meta.shell === "player");
 </script>
 
 <template>
-  <div class="min-h-screen">
+  <div
+    class="min-h-screen max-[600px]:pb-[calc(64px+env(safe-area-inset-bottom))]"
+    :class="isPlayer ? 'max-[600px]:bg-[#111714]' : ''"
+  >
     <header
       class="z-40 flex h-[66px] items-center justify-between border-b border-white/12 px-[4vw] text-white max-[860px]:px-[22px]"
       :class="
@@ -22,9 +25,9 @@ const isPlayer = computed(() => route.meta.shell === "player");
         class="flex items-center gap-3 font-display text-2xl font-extrabold tracking-[.04em] uppercase"
         aria-label="Course library home"
       >
-        <AppLogo text-class="max-[600px]:hidden" />
+        <AppLogo />
       </RouterLink>
-      <nav class="flex items-center gap-6 max-[600px]:gap-3" aria-label="Main navigation">
+      <nav class="flex items-center gap-6 max-[600px]:hidden" aria-label="Main navigation">
         <RouterLink
           to="/"
           class="border-b-2 px-0 py-2 text-[.76rem] font-bold tracking-[.14em] uppercase"
@@ -50,5 +53,36 @@ const isPlayer = computed(() => route.meta.shell === "player");
       </nav>
     </header>
     <slot />
+    <nav
+      class="fixed right-0 bottom-0 left-0 z-50 hidden border-t border-white/12 bg-pine-deep/[.98] px-3 pt-1.5 pb-[max(6px,env(safe-area-inset-bottom))] text-white shadow-[0_-12px_35px_rgb(10_25_18_/_18%)] backdrop-blur-[14px] max-[600px]:grid max-[600px]:grid-cols-2"
+      aria-label="Mobile navigation"
+    >
+      <RouterLink
+        to="/"
+        class="relative flex min-h-[52px] items-center justify-center rounded-[8px] text-[.7rem] font-bold tracking-[.1em] uppercase"
+        :class="activeNavigation === 'library' ? 'text-belt-light' : 'text-white/55'"
+        :aria-current="activeNavigation === 'library' ? 'page' : undefined"
+      >
+        <span
+          class="absolute top-0 h-[3px] w-8 rounded-full bg-belt-light transition-opacity"
+          :class="activeNavigation === 'library' ? 'opacity-100' : 'opacity-0'"
+          aria-hidden="true"
+        />
+        Library
+      </RouterLink>
+      <RouterLink
+        to="/settings"
+        class="relative flex min-h-[52px] items-center justify-center rounded-[8px] text-[.7rem] font-bold tracking-[.1em] uppercase"
+        :class="activeNavigation === 'settings' ? 'text-belt-light' : 'text-white/55'"
+        :aria-current="activeNavigation === 'settings' ? 'page' : undefined"
+      >
+        <span
+          class="absolute top-0 h-[3px] w-8 rounded-full bg-belt-light transition-opacity"
+          :class="activeNavigation === 'settings' ? 'opacity-100' : 'opacity-0'"
+          aria-hidden="true"
+        />
+        Settings
+      </RouterLink>
+    </nav>
   </div>
 </template>
