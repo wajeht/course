@@ -18,7 +18,7 @@ const passwordSchema = z
     `Password must be at least ${MIN_PASSWORD_LENGTH} characters`,
   )
   .refine((password) => Buffer.byteLength(password, "utf8") <= 72, "Password is too long");
-const loginSchema = z.object({ password: passwordSchema }).strict();
+const loginSchema = z.object({ password: z.string() }).strict();
 const setupSchema = z
   .object({
     password: passwordSchema,
