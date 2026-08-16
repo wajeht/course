@@ -64,7 +64,7 @@ const logoutAction = useAsyncAction(() => auth.logout(), {
 const scanError = computed(() => {
   if (rescanAction.errorMessage.value) return rescanAction.errorMessage.value;
   const caught = scanRequest.error.value;
-  return caught instanceof Error ? caught.message : caught ? "Could not load scan status" : "";
+  return caught instanceof Error ? caught.message : caught ? "Could not load library status" : "";
 });
 const passwordError = computed(() => validationError.value || passwordAction.errorMessage.value);
 const settingsError = computed(() => {
@@ -169,7 +169,7 @@ async function logout(): Promise<void> {
                       : `${countText(scanStatus.courseCount, "course")} · ${countText(scanStatus.lessonCount, "lesson")}`
                   }}
                 </template>
-                <template v-else>Scan status is loading…</template>
+                <template v-else>Library status is loading…</template>
               </p>
               <div
                 v-if="scanStatus?.warnings.length"

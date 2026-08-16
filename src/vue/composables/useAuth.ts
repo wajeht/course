@@ -73,7 +73,7 @@ export function createAuth(
         ? "Session check timed out. Try again."
         : caught instanceof Error
           ? caught.message
-          : "Could not verify authentication";
+          : "Could not verify your session";
     } finally {
       clearTimeout(timeout);
     }

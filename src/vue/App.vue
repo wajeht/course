@@ -18,7 +18,7 @@ const loginAction = useAsyncAction((password: string) => auth.login(password), {
 const setupAction = useAsyncAction(
   (password: string, confirmPassword: string, setupToken?: string) =>
     auth.setupPassword(password, confirmPassword, setupToken),
-  { errorMessage: "Could not configure password" },
+  { errorMessage: "Could not create the library password" },
 );
 const authBusy = computed(() => loginAction.pending.value || setupAction.pending.value);
 const actionError = computed(

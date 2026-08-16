@@ -153,9 +153,9 @@ export function createAuthRouter(context: AppContext) {
         return c.json({ message: "Library password is already configured" }, 409);
       }
       if (result.reason === "setup_disabled") {
-        return c.json({ message: "Initial password setup is disabled" }, 503);
+        return c.json({ message: "Password setup is unavailable" }, 503);
       }
-      return c.json({ message: "Invalid password or setup token" }, 400);
+      return c.json({ message: "The password or setup token is incorrect" }, 400);
     })
     .put(
       "/password",
