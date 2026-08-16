@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 
 declare module "vue-router" {
   interface RouteMeta {
-    navigation?: "library" | "settings";
+    navigation?: "home" | "library" | "settings";
     shell?: "player";
   }
 }
@@ -14,6 +14,12 @@ export const router = createRouter({
       path: "/",
       name: "home",
       component: () => import("@/pages/HomePage.vue"),
+      meta: { navigation: "home" },
+    },
+    {
+      path: "/library",
+      name: "library",
+      component: () => import("@/pages/LibraryPage.vue"),
       meta: { navigation: "library" },
     },
     {

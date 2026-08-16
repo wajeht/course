@@ -67,7 +67,7 @@ watch(instructorRequest.data, (loadedCatalog) => {
       class="border-b border-pine/15 bg-mist bg-[repeating-linear-gradient(0deg,transparent_0_47px,rgb(36_77_59_/_5%)_47px_48px)] px-[max(4vw,calc((100vw-1380px)/2))] py-[clamp(48px,7vw,88px)]"
     >
       <RouterLink
-        to="/"
+        to="/library"
         class="mb-[38px] inline-block text-[.78rem] font-bold text-pine/70 hover:text-pine-deep"
       >
         ← Library
@@ -152,7 +152,7 @@ watch(instructorRequest.data, (loadedCatalog) => {
       :heading-level="1"
     >
       <template #actions>
-        <AppButton :as="RouterLink" to="/" size="lg">Back to library</AppButton>
+        <AppButton :as="RouterLink" to="/library" size="lg">Back to library</AppButton>
       </template>
     </EmptyState>
   </main>
