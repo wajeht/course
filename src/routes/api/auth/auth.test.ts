@@ -312,7 +312,7 @@ describe("password authentication", () => {
     ).toBe(201);
   });
 
-  it("rejects passwords shorter than the required minimum when signing in", async () => {
+  it("treats short sign-in passwords as invalid credentials", async () => {
     const { app, context } = await testApp();
     const password = "short123";
     await context.database.connection("auth_credentials").insert({
@@ -321,7 +321,9 @@ describe("password authentication", () => {
     });
 
     expect(await context.auth.verifyPassword(password)).toBe(false);
-    expect((await app.request("/api/auth", jsonRequest("POST", { password }))).status).toBe(400);
+    const response = await app.request("/api/auth", jsonRequest("POST", { password }));
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ message: "Invalid password" });
   });
 
   it("rejects passwords that bcrypt would silently truncate", async () => {
@@ -336,9 +338,12 @@ describe("password authentication", () => {
         )
       ).status,
     ).toBe(201);
-    expect(
-      (await app.request("/api/auth", jsonRequest("POST", { password: `${password}a` }))).status,
-    ).toBe(400);
+    const overlongLogin = await app.request(
+      "/api/auth",
+      jsonRequest("POST", { password: `${password}a` }),
+    );
+    expect(overlongLogin.status).toBe(401);
+    expect(await overlongLogin.json()).toEqual({ message: "Invalid password" });
     expect((await app.request("/api/auth", jsonRequest("POST", { password }))).status).toBe(200);
   });
 });
