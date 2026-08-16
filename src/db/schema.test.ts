@@ -22,11 +22,11 @@ describe("database schema", () => {
       .sort();
     expect(tables).toEqual([
       "auth_credentials",
+      "auth_login_attempts",
       "auth_sessions",
       "conversions",
       "courses",
       "lessons",
-      "login_attempts",
       "progress",
       "sections",
       "settings",

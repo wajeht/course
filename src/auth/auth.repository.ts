@@ -54,14 +54,14 @@ export function createAuthRepository(database: Knex): AuthRepository {
     },
 
     async getLoginAttempt(clientKey: string, now: number): Promise<LoginAttempt | null> {
-      const attempt = await database("login_attempts")
+      const attempt = await database("auth_login_attempts")
         .where({ client_key: clientKey })
         .first<{ failures: number; reset_at: number }>();
       if (!attempt) return null;
 
       const resetAt = Number(attempt.reset_at);
       if (resetAt <= now) {
-        await database("login_attempts")
+        await database("auth_login_attempts")
           .where({ client_key: clientKey })
           .andWhere("reset_at", "<=", now)
           .delete();
@@ -73,13 +73,13 @@ export function createAuthRepository(database: Knex): AuthRepository {
 
     async recordLoginFailure(clientKey: string, now: number, windowMs: number): Promise<void> {
       await database.transaction(async (transaction) => {
-        await transaction("login_attempts").where("reset_at", "<=", now).delete();
-        const current = await transaction("login_attempts")
+        await transaction("auth_login_attempts").where("reset_at", "<=", now).delete();
+        const current = await transaction("auth_login_attempts")
           .where({ client_key: clientKey })
           .first<{ failures: number; reset_at: number }>();
         const resetAt = current ? Number(current.reset_at) : now + windowMs;
 
-        await transaction("login_attempts")
+        await transaction("auth_login_attempts")
           .insert({
             client_key: clientKey,
             failures: (current?.failures ?? 0) + 1,
@@ -91,7 +91,7 @@ export function createAuthRepository(database: Knex): AuthRepository {
     },
 
     async clearLoginFailures(clientKey: string): Promise<void> {
-      await database("login_attempts").where({ client_key: clientKey }).delete();
+      await database("auth_login_attempts").where({ client_key: clientKey }).delete();
     },
 
     async createSession(session: StoredSession): Promise<void> {
