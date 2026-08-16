@@ -66,7 +66,7 @@ async function submit(): Promise<void> {
       <div v-else-if="status === 'error'" class="px-8 py-8">
         <h1 class="font-display text-2xl font-extrabold">Connection required</h1>
         <p class="mt-2 text-sm leading-6 text-muted">
-          {{ message || "Course could not verify your session." }}
+          {{ message || "The app could not verify your session." }}
         </p>
         <AppButton class="mt-6" block size="lg" @click="emit('retry')"> Try again </AppButton>
       </div>
@@ -74,13 +74,13 @@ async function submit(): Promise<void> {
       <div v-else-if="isSetup && !setupEnabled" class="px-8 py-8">
         <h1 class="font-display text-2xl font-extrabold">Setup unavailable</h1>
         <p class="mt-2 text-sm leading-6 text-muted">
-          Configure <code>AUTH_SETUP_TOKEN</code> on the server, then restart Course.
+          Configure <code>AUTH_SETUP_TOKEN</code> on the server, then restart the app.
         </p>
       </div>
 
       <form v-else class="px-8 py-8" @submit.prevent="submit">
         <h1 class="font-display text-2xl font-extrabold">
-          {{ isSetup ? "Secure Course" : "Welcome back" }}
+          {{ isSetup ? "Set up your library" : "Welcome back" }}
         </h1>
         <input
           class="sr-only"
@@ -96,6 +96,7 @@ async function submit(): Promise<void> {
           v-slot="{ inputId, describedBy, invalid }"
           class="mt-6"
           label="Setup token"
+          help-text="Enter the one-time setup token configured on your server."
           required
         >
           <AppInput

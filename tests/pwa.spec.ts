@@ -46,7 +46,8 @@ test("registers, serves deep links offline, and prompts for updates", async ({ c
   }
 
   await expect(page.getByRole("heading", { level: 1, name: "Continue watching" })).toBeVisible();
-  await expect(page.getByText("Course can open offline")).toBeVisible();
+  await expect(page).toHaveTitle("Course");
+  await expect(page.getByText("The app can open offline")).toBeVisible();
   await expect
     .poll(() =>
       page.evaluate(async () => (await navigator.serviceWorker.ready).active?.state ?? null),
@@ -55,6 +56,7 @@ test("registers, serves deep links offline, and prompts for updates", async ({ c
 
   await page.goto("/library");
   await expect(page.getByRole("heading", { level: 1, name: "All courses" })).toBeVisible();
+  await expect(page).toHaveTitle("Library · Course");
 
   await page.reload();
   await expect
@@ -74,6 +76,7 @@ test("registers, serves deep links offline, and prompts for updates", async ({ c
 
   await page.getByRole("button", { name: "Try again" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
+  await expect(page).toHaveTitle("Settings · Course");
 
   await page.getByRole("button", { name: "Rescan library" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Library scan complete" })).toBeVisible();
@@ -104,7 +107,7 @@ test("registers, serves deep links offline, and prompts for updates", async ({ c
       const registration = await navigator.serviceWorker.getRegistration();
       await registration?.update();
     });
-    await expect(page.getByText("Course update available")).toBeVisible();
+    await expect(page.getByText("App update available")).toBeVisible();
   } finally {
     await fs.writeFile(serviceWorkerPath, originalServiceWorker);
   }

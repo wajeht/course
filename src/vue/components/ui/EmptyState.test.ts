@@ -9,11 +9,12 @@ describe("EmptyState", () => {
   it("renders its content and optional slots", () => {
     const wrapper = mount(EmptyState, {
       props: { title: "Nothing here", description: "Add a course.", headingLevel: 1 },
-      slots: { actions: "Action", icon: "⌁" },
+      slots: { actions: "Action", details: "Server folder: /videos", icon: "⌁" },
     });
 
     expect(wrapper.get("h1").text()).toBe("Nothing here");
     expect(wrapper.text()).toContain("Add a course.");
     expect(wrapper.text()).toContain("Action");
+    expect(wrapper.text()).toContain("Server folder: /videos");
   });
 });

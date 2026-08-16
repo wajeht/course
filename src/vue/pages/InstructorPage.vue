@@ -9,6 +9,7 @@ import EmptyState from "@/components/ui/EmptyState.vue";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import PaginationControls from "@/components/ui/PaginationControls.vue";
 import { useAsyncData } from "@/composables/useAsyncData.js";
+import { setPageTitle } from "@/utils.js";
 
 const route = useRoute();
 const router = useRouter();
@@ -42,6 +43,9 @@ const instructorInitials = computed(() =>
     .join("")
     .toUpperCase(),
 );
+
+watch(instructorName, (name) => setPageTitle(name), { immediate: true });
+
 function pageQuery(nextPage: number) {
   const query = { ...route.query };
   if (nextPage === 1) delete query.page;
@@ -87,7 +91,7 @@ watch(instructorRequest.data, (loadedCatalog) => {
           <span
             class="absolute top-5 left-6 text-[.62rem] font-extrabold tracking-[.18em] text-belt-light uppercase max-[700px]:top-4 max-[700px]:left-5"
           >
-            Instructor file
+            Instructor
           </span>
           <span
             class="absolute bottom-5 left-6 font-display text-[clamp(2.8rem,6vw,5.4rem)] leading-none font-black tracking-[-.06em] max-[700px]:bottom-4 max-[700px]:left-5 max-[700px]:text-[2.8rem]"
@@ -97,7 +101,7 @@ watch(instructorRequest.data, (loadedCatalog) => {
         </div>
         <div>
           <p class="mb-3 text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase">
-            Course instructor
+            Instructor
           </p>
           <h1
             class="max-w-[900px] font-display text-[clamp(3.4rem,7vw,7.5rem)] leading-[.88] font-extrabold tracking-[-.055em] text-pine-deep max-[700px]:text-[clamp(2.3rem,9vw,4rem)]"
@@ -118,7 +122,7 @@ watch(instructorRequest.data, (loadedCatalog) => {
     >
       <PageHeader
         class="mb-7"
-        eyebrow="Instructor library"
+        eyebrow="Courses"
         :title="`Courses by ${instructorName}`"
         :heading-level="2"
       />

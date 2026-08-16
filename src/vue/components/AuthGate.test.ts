@@ -31,5 +31,14 @@ describe("AuthGate", () => {
 
     expect(wrapper.get('input[autocomplete="new-password"]').attributes("minlength")).toBe("15");
     expect(wrapper.text()).toContain("Use at least 15 characters.");
+    expect(wrapper.text()).toContain("Set up your library");
+  });
+
+  it("explains the setup token", () => {
+    const wrapper = mount(AuthGate, {
+      props: { ...baseProps, passwordConfigured: false, setupTokenRequired: true },
+    });
+
+    expect(wrapper.text()).toContain("Enter the one-time setup token configured on your server.");
   });
 });

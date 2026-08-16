@@ -12,3 +12,7 @@ export function durationText(seconds: number): string {
 export function countText(count: number, singular: string, plural = `${singular}s`): string {
   return `${count} ${count === 1 ? singular : plural}`;
 }
+
+export function setPageTitle(title?: string): void {
+  document.title = title ? `${title} · Course` : "Course";
+}

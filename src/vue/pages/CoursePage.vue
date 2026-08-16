@@ -15,7 +15,7 @@ import { useAsyncData } from "@/composables/useAsyncData.js";
 import { useConfirm } from "@/composables/useConfirm.js";
 import { useExpandableSections } from "@/composables/useExpandableSections.js";
 import { useToast } from "@/composables/useToast.js";
-import { countText, durationText } from "@/utils.js";
+import { countText, durationText, setPageTitle } from "@/utils.js";
 
 const route = useRoute();
 const courseId = computed(() => String(route.params.courseId));
@@ -81,6 +81,7 @@ watch(
   courseRequest.data,
   (loadedCourse) => {
     if (!loadedCourse) return;
+    setPageTitle(loadedCourse.title);
     const loadedLessons = loadedCourse.sections.flatMap((section) => section.lessons);
     const startingLesson = loadedLessons.find((lesson) => !lesson.completed) ?? loadedLessons.at(0);
     const startingSection = loadedCourse.sections.find((section) =>
