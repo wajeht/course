@@ -183,55 +183,50 @@ export function createScanner({
     },
     getScanStatus: () => repository.getScanStatus(),
     startMonitoring() {
+      let debounce: NodeJS.Timeout | null = null;
+      const changedCourses = new Set<string>();
+      const watcher = watchDirectory(
+        configuration.media.videosDirectory,
+        { recursive: true },
+        (_event, filename) => {
+          if (!filename) {
+            fullScanRequested = true;
+          } else {
+            const courseName = posixPath(String(filename)).split("/")[0];
+            if (
+              courseName &&
+              !courseName.startsWith(".") &&
+              !ignoredDirectoryNames.has(courseName.toLowerCase())
+            ) {
+              changedCourses.add(courseName);
+            }
+          }
+          if (debounce) clearTimeout(debounce);
+          debounce = setTimeout(() => {
+            debounce = null;
+            if (fullScanRequested) void ensureSynchronization();
+            else requestCourseSynchronization(changedCourses);
+            changedCourses.clear();
+          }, 750);
+          debounce.unref();
+        },
+      );
       const schedule = setInterval(
         () => void scanner.scanCatalog(),
         configuration.media.scanIntervalMs,
       );
       schedule.unref();
-
-      let watcher: DirectoryWatcher | null = null;
-      let debounce: NodeJS.Timeout | null = null;
-      const changedCourses = new Set<string>();
-      try {
-        watcher = watchDirectory(
-          configuration.media.videosDirectory,
-          { recursive: true },
-          (_event, filename) => {
-            if (!filename) {
-              fullScanRequested = true;
-            } else {
-              const courseName = posixPath(String(filename)).split("/")[0];
-              if (
-                courseName &&
-                !courseName.startsWith(".") &&
-                !ignoredDirectoryNames.has(courseName.toLowerCase())
-              ) {
-                changedCourses.add(courseName);
-              }
-            }
-            if (debounce) clearTimeout(debounce);
-            debounce = setTimeout(() => {
-              debounce = null;
-              if (fullScanRequested) void ensureSynchronization();
-              else requestCourseSynchronization(changedCourses);
-              changedCourses.clear();
-            }, 750);
-            debounce.unref();
-          },
-        );
-        watcher.on("error", (error) => {
-          logger.warn("Library watcher failed; scheduled scans remain active", { error });
-          watcher?.close();
-          watcher = null;
-        });
-      } catch (error) {
-        logger.warn("Library watcher unavailable; scheduled scans remain active", { error });
-      }
+      watcher.on("error", (error) => {
+        clearInterval(schedule);
+        if (debounce) clearTimeout(debounce);
+        watcher.close();
+        throw error;
+      });
 
       return () => {
         clearInterval(schedule);
         if (debounce) clearTimeout(debounce);
-        watcher?.close();
+        watcher.close();
       };
     },
   };
