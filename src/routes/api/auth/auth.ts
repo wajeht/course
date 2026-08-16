@@ -120,7 +120,7 @@ export function createAuthRouter(context: AppContext) {
         return c.json({ message: "Too many login attempts. Try again later." }, 429);
       }
       if (!(await context.auth.isPasswordConfigured())) {
-        return c.json({ message: "Application password is not configured" }, 409);
+        return c.json({ message: "Library password is not configured" }, 409);
       }
       if (!(await context.auth.verifyPassword(c.req.valid("json").password))) {
         await context.auth.recordLoginFailure(key);
@@ -150,7 +150,7 @@ export function createAuthRouter(context: AppContext) {
         return c.json({ passwordConfigured: true }, 201);
       }
       if (result.reason === "already_configured") {
-        return c.json({ message: "Application password is already configured" }, 409);
+        return c.json({ message: "Library password is already configured" }, 409);
       }
       if (result.reason === "setup_disabled") {
         return c.json({ message: "Initial password setup is disabled" }, 503);

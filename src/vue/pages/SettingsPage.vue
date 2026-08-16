@@ -32,10 +32,10 @@ const catalogPageSize = ref<CatalogPageSize>(24);
 const validationError = ref("");
 const scanStatus = computed(() => scanRequest.data.value);
 const rescanAction = useAsyncAction(() => api.rescanCatalog(), {
-  errorMessage: "Could not rescan the library",
+  errorMessage: "Could not refresh the library",
   onSuccess: (status) => {
     scanRequest.data.value = status;
-    toast.success("Library scan complete");
+    toast.success("Library refreshed");
   },
 });
 const settingsAction = useAsyncAction(() => api.updateSettings(catalogPageSize.value), {
@@ -151,8 +151,8 @@ async function logout(): Promise<void> {
 
         <PanelCard class="min-h-[260px]" padding="none">
           <PanelCardHeader
-            title="Library scan"
-            description="Scan your video folders now to find new or changed courses."
+            title="Refresh library"
+            description="Check your video folders now for new or changed courses."
           />
           <div
             class="flex min-h-[180px] flex-col items-start justify-between gap-8 p-[clamp(22px,4vw,34px)]"
@@ -176,7 +176,7 @@ async function logout(): Promise<void> {
                 class="mt-5 rounded-[7px] border border-belt/25 bg-[#fffaf0] p-4"
               >
                 <p class="text-[.78rem] leading-5 text-muted">
-                  Review these files, correct each listed problem, then rescan the library.
+                  Review these files, correct each listed problem, then refresh the library.
                 </p>
                 <ul class="mt-3 grid gap-3" aria-label="Library issues">
                   <li
@@ -193,7 +193,7 @@ async function logout(): Promise<void> {
             <AppButton
               class="self-end max-[600px]:w-full"
               :loading="rescanAction.pending.value"
-              loading-label="Scanning…"
+              loading-label="Refreshing…"
               @click="rescanCatalog"
             >
               <svg
@@ -203,7 +203,7 @@ async function logout(): Promise<void> {
               >
                 <path d="M20 7v5h-5M4 17v-5h5m10.1-3A8 8 0 0 0 5.5 6M4.9 15A8 8 0 0 0 18.5 18" />
               </svg>
-              Rescan library
+              Refresh library
             </AppButton>
           </div>
         </PanelCard>
@@ -242,7 +242,7 @@ async function logout(): Promise<void> {
               :loading="settingsAction.pending.value"
               loading-label="Saving…"
             >
-              Save display
+              Save changes
             </AppButton>
           </form>
         </PanelCard>

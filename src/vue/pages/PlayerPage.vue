@@ -311,7 +311,7 @@ onBeforeUnmount(() => {
       >
         <div>
           <p class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase">
-            {{ lesson.sectionTitle ?? "Course lesson" }}
+            {{ lesson.sectionTitle ?? "Lessons" }}
           </p>
           <h1
             class="max-w-[800px] font-display text-[clamp(1.5rem,2.6vw,2.5rem)] leading-[1.05] tracking-[-.03em]"
@@ -361,7 +361,7 @@ onBeforeUnmount(() => {
             Curriculum
           </p>
           <h2 class="font-mono text-[.92rem] font-semibold">
-            {{ currentIndex + 1 }} / {{ allLessons.length }}
+            Lesson {{ currentIndex + 1 }} of {{ allLessons.length }}
           </h2>
         </div>
         <AppButton

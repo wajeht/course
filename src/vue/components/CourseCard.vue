@@ -33,7 +33,10 @@ defineProps<{ course: CatalogDto["courses"][number] }>();
       </div>
     </RouterLink>
     <div class="flex flex-1 flex-col p-[18px]">
-      <p class="mb-2 text-[.64rem] font-extrabold tracking-[.13em] text-belt uppercase">
+      <p
+        v-if="course.category !== 'Uncategorized'"
+        class="mb-2 text-[.64rem] font-extrabold tracking-[.13em] text-belt uppercase"
+      >
         {{ course.category }}
       </p>
       <h3 class="min-h-[2.6em] text-[.98rem] leading-[1.3] max-[600px]:min-h-0">

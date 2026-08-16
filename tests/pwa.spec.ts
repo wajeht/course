@@ -78,8 +78,8 @@ test("registers, serves deep links offline, and prompts for updates", async ({ c
   await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
   await expect(page).toHaveTitle("Settings · Course");
 
-  await page.getByRole("button", { name: "Rescan library" }).click();
-  await expect(page.getByRole("status").filter({ hasText: "Library scan complete" })).toBeVisible();
+  await page.getByRole("button", { name: "Refresh library" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Library refreshed" })).toBeVisible();
 
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(page.getByRole("dialog", { name: "Sign out?" })).toBeVisible();

@@ -140,7 +140,7 @@ export function createCatalogService(
       const key = row.section_id ?? "__direct";
       const section = sectionMap.get(key) ?? {
         id: row.section_id,
-        title: row.section_title ?? "Course lessons",
+        title: row.section_title ?? "Lessons",
         lessons: [],
       };
       section.lessons.push(lessonDto(row));

@@ -152,7 +152,7 @@ const {
         :description="
           query || selectedCategory || selectedInstructor || selectedTag
             ? 'Try another category, instructor, tag, or search term.'
-            : 'Add a course to your video folder, then rescan the library.'
+            : 'Add a course to your video folder, then refresh the library.'
         "
       >
         <template #icon>⌁</template>

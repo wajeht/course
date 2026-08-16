@@ -47,7 +47,7 @@ password invalidates every other active session.
 ```
 
 Videos may be directly inside a course or one folder deeper. Direct videos
-appear under **Course lessons**. Each first-level folder becomes a named
+appear under **Lessons**. Each first-level folder becomes a named
 curriculum section on the course page and in the player sidebar; deeper nesting
 is not scanned. Supported files include MP4, M4V, MKV, WebM, MOV, AVI, MPEG,
 and MPG. Number prefixes determine natural lesson order and are removed from

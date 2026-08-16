@@ -62,7 +62,7 @@ describe("SettingsPage", () => {
     expect(pageHeader.findAll("p")).toHaveLength(1);
 
     const dataCard = wrapper.get("#settings-data-panel > section");
-    expect(dataCard.get("header h2").text()).toBe("Library scan");
+    expect(dataCard.get("header h2").text()).toBe("Refresh library");
     expect(dataCard.text()).toContain("12 courses · 215 lessons");
     expect(wrapper.get("#settings-data-panel").text()).toContain("Courses per page");
     expect(wrapper.get("[data-settings-layout]").classes()).toContain("gap-[clamp(18px,2vw,30px)]");
