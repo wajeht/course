@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import { zValidator } from "@hono/zod-validator";
 import type { Context, MiddlewareHandler } from "hono";
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { deleteCookie, getSignedCookie, setSignedCookie } from "hono/cookie";
 import { z } from "zod";
 
@@ -10,6 +11,10 @@ import type { Configuration } from "../../../configuration.js";
 import type { AppContext } from "../../../context.js";
 import { MIN_PASSWORD_LENGTH } from "../../../auth/auth.service.js";
 
+const authBodyLimit = bodyLimit({
+  maxSize: 4 * 1024,
+  onError: (c) => c.json({ message: "Authentication request is too large" }, 413),
+});
 const passwordSchema = z
   .string()
   .max(72)
@@ -120,7 +125,7 @@ export function createAuthRouter(context: AppContext) {
         setupTokenRequired: !passwordConfigured && configuration.app.env === "production",
       });
     })
-    .post("/", zValidator("json", loginSchema, validationHook), async (c) => {
+    .post("/", authBodyLimit, zValidator("json", loginSchema, validationHook), async (c) => {
       const key = clientKey(c, configuration);
       const attempt = await context.auth.getLoginAttempt(key);
       if (attempt && attempt.failures >= configuration.auth.loginMaxAttempts) {
@@ -151,24 +156,30 @@ export function createAuthRouter(context: AppContext) {
       deleteCookie(c, sessionCookieName(configuration), sessionCookieOptions(configuration));
       return c.json({ authenticated: false });
     })
-    .post("/password", zValidator("json", setupSchema, validationHook), async (c) => {
-      const { password, setupToken } = c.req.valid("json");
-      const result = await context.auth.setupPassword(password, setupToken);
-      if (result.ok) {
-        context.logger.info("Initial application password configured");
-        return c.json({ passwordConfigured: true }, 201);
-      }
-      if (result.reason === "already_configured") {
-        return c.json({ message: "Library password is already configured" }, 409);
-      }
-      if (result.reason === "setup_disabled") {
-        return c.json({ message: "Password setup is unavailable" }, 503);
-      }
-      return c.json({ message: "The password or setup token is incorrect" }, 400);
-    })
+    .post(
+      "/password",
+      authBodyLimit,
+      zValidator("json", setupSchema, validationHook),
+      async (c) => {
+        const { password, setupToken } = c.req.valid("json");
+        const result = await context.auth.setupPassword(password, setupToken);
+        if (result.ok) {
+          context.logger.info("Initial application password configured");
+          return c.json({ passwordConfigured: true }, 201);
+        }
+        if (result.reason === "already_configured") {
+          return c.json({ message: "Library password is already configured" }, 409);
+        }
+        if (result.reason === "setup_disabled") {
+          return c.json({ message: "Password setup is unavailable" }, 503);
+        }
+        return c.json({ message: "The password or setup token is incorrect" }, 400);
+      },
+    )
     .put(
       "/password",
       createRequireAuth(context),
+      authBodyLimit,
       zValidator("json", changePasswordSchema, validationHook),
       async (c) => {
         const { currentPassword, newPassword } = c.req.valid("json");

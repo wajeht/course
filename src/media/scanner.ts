@@ -343,7 +343,13 @@ async function buildCatalogSnapshot(
     const entries = (await fs.readdir(courseDirectory, { withFileTypes: true })).sort(
       (left, right) => naturalOrder(left.name, right.name),
     );
-    const localCover = await findCover(courseDirectory, entries, metadata?.cover, warnings);
+    const localCover = await findCover(
+      courseDirectory,
+      courseRelativePath,
+      entries,
+      metadata?.cover,
+      warnings,
+    );
     const course: CourseRecord = {
       id: courseId,
       path: courseRelativePath,
@@ -473,22 +479,24 @@ async function appendLessons(options: AppendLessonsOptions): Promise<void> {
 
 async function findCover(
   courseDirectory: string,
+  courseRelativePath: string,
   entries: Dirent[],
   requestedCover: string | undefined,
   warnings: ScanWarning[],
 ): Promise<string | null> {
   if (requestedCover) {
+    const warningPath = `${courseRelativePath}/${posixPath(requestedCover)}`;
     const requestedPath = path.resolve(courseDirectory, requestedCover);
     const relative = path.relative(courseDirectory, requestedPath);
     if (relative.startsWith("..") || path.isAbsolute(relative)) {
-      warnings.push({ path: requestedCover, message: "Cover path leaves the course directory" });
+      warnings.push({ path: warningPath, message: "Cover path leaves the course directory" });
     } else if (!coverExtensions.has(path.extname(requestedPath).toLowerCase())) {
-      warnings.push({ path: requestedCover, message: "Cover must be a JPG, PNG, or WebP image" });
+      warnings.push({ path: warningPath, message: "Cover must be a JPG, PNG, or WebP image" });
     } else {
       try {
         if ((await fs.stat(requestedPath)).isFile()) return requestedPath;
       } catch {
-        warnings.push({ path: requestedCover, message: "Configured cover does not exist" });
+        warnings.push({ path: warningPath, message: "Configured cover does not exist" });
       }
     }
   }
