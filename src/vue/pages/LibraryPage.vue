@@ -152,10 +152,16 @@ const {
         :description="
           query || selectedCategory || selectedInstructor || selectedTag
             ? 'Try another category, instructor, tag, or search term.'
-            : 'Add a course folder to /videos, then rescan.'
+            : 'Add a course to your video folder, then rescan the library.'
         "
       >
         <template #icon>⌁</template>
+        <template
+          v-if="!query && !selectedCategory && !selectedInstructor && !selectedTag"
+          #details
+        >
+          Server folder: <code>/videos</code>
+        </template>
       </EmptyState>
 
       <PaginationControls

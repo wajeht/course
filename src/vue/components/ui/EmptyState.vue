@@ -23,6 +23,9 @@ withDefaults(
       {{ title }}
     </component>
     <p v-if="description" class="max-w-[480px] text-muted">{{ description }}</p>
+    <div v-if="$slots.details" class="mt-3 max-w-[480px] text-sm text-muted">
+      <slot name="details" />
+    </div>
     <div v-if="$slots.actions" class="mt-[22px] flex flex-wrap justify-center gap-2">
       <slot name="actions" />
     </div>

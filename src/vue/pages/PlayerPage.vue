@@ -12,6 +12,7 @@ import { useExpandableSections } from "@/composables/useExpandableSections.js";
 import { usePlaybackProgress } from "@/composables/usePlaybackProgress.js";
 import { useToast } from "@/composables/useToast.js";
 import { useVideoPlayback } from "@/composables/useVideoPlayback.js";
+import { setPageTitle } from "@/utils.js";
 
 const route = useRoute();
 const video = ref<HTMLVideoElement | null>(null);
@@ -89,6 +90,7 @@ async function loadPlayer(): Promise<void> {
     await api.openLesson(lessonId);
     if (!videoPlayback.isCurrentRequest(requestId)) return;
     lesson.value = detail.lesson;
+    setPageTitle(detail.lesson.title);
     playbackProgress.startSession(detail.lesson.id, detail.lesson.positionSeconds);
     course.value = detail.course;
     const activeSection = detail.course.sections.find((section) =>

@@ -98,7 +98,7 @@ async function saveSettings(): Promise<void> {
 async function logout(): Promise<void> {
   const confirmed = await confirmation.confirm({
     title: "Sign out?",
-    message: "You will need the Course password to access this library again.",
+    message: "You will need the library password to access it again.",
     confirmLabel: "Sign out",
   });
   if (!confirmed) return;
