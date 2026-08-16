@@ -31,11 +31,19 @@ const confirmPassword = ref("");
 const catalogPageSize = ref<CatalogPageSize>(24);
 const validationError = ref("");
 const scanStatus = computed(() => scanRequest.data.value);
+const lastScanText = computed(() => {
+  const completedAt = scanStatus.value?.completedAt;
+  if (!completedAt) return "";
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(completedAt));
+});
 const rescanAction = useAsyncAction(() => api.rescanCatalog(), {
   errorMessage: "Could not refresh the library",
   onSuccess: (status) => {
     scanRequest.data.value = status;
-    toast.success("Library refreshed");
+    if (status.status === "complete") toast.success("Library refreshed");
   },
 });
 const settingsAction = useAsyncAction(() => api.updateSettings(catalogPageSize.value), {
@@ -63,6 +71,7 @@ const logoutAction = useAsyncAction(() => auth.logout(), {
 });
 const scanError = computed(() => {
   if (rescanAction.errorMessage.value) return rescanAction.errorMessage.value;
+  if (scanStatus.value?.error) return scanStatus.value.error;
   const caught = scanRequest.error.value;
   return caught instanceof Error ? caught.message : caught ? "Could not load library status" : "";
 });
@@ -157,21 +166,45 @@ async function logout(): Promise<void> {
           />
           <div
             class="flex min-h-[180px] flex-col items-start justify-between gap-8 p-[clamp(22px,4vw,34px)]"
+            data-scan-controls
           >
-            <div class="w-full">
-              <p class="text-[.68rem] font-extrabold tracking-[.14em] text-belt uppercase">
-                Library status
-              </p>
-              <p class="mt-3 text-[.85rem] font-semibold text-pine">
-                <template v-if="scanStatus?.completedAt">
-                  {{
-                    scanStatus.warnings.length
-                      ? countText(scanStatus.warnings.length, "library issue")
-                      : `${countText(scanStatus.courseCount, "course")} · ${countText(scanStatus.lessonCount, "lesson")}`
-                  }}
-                </template>
-                <template v-else>Library status is loading…</template>
-              </p>
+            <div class="min-w-0">
+              <div class="grid gap-6" aria-live="polite">
+                <div data-library-status>
+                  <p class="text-xs font-bold tracking-[.08em] text-pine uppercase">
+                    Library status
+                  </p>
+                  <p
+                    class="mt-2 text-sm"
+                    :class="scanStatus?.warnings.length ? 'font-semibold text-belt' : 'text-muted'"
+                  >
+                    <template v-if="scanStatus?.completedAt">
+                      <template v-if="scanStatus.warnings.length">
+                        {{ countText(scanStatus.warnings.length, "library issue") }}
+                      </template>
+                      <template v-else>
+                        {{ countText(scanStatus.courseCount, "course") }} ·
+                        {{ countText(scanStatus.lessonCount, "lesson") }}
+                      </template>
+                    </template>
+                    <template v-else>Library status is loading…</template>
+                  </p>
+                  <p
+                    v-if="scanStatus?.completedAt && scanStatus.warnings.length"
+                    class="mt-1.5 text-xs leading-5 text-muted"
+                  >
+                    {{ countText(scanStatus.courseCount, "course") }} ·
+                    {{ countText(scanStatus.lessonCount, "lesson") }}
+                  </p>
+                </div>
+
+                <div v-if="scanStatus?.completedAt" data-last-scan>
+                  <p class="text-xs font-bold tracking-[.08em] text-pine uppercase">Last scan</p>
+                  <time class="mt-2 block text-sm text-muted" :datetime="scanStatus.completedAt">
+                    {{ lastScanText }}
+                  </time>
+                </div>
+              </div>
               <div
                 v-if="scanStatus?.warnings.length"
                 class="mt-5 rounded-[7px] border border-belt/25 bg-[#fffaf0] p-4"
@@ -208,7 +241,8 @@ async function logout(): Promise<void> {
             description="Choose how many courses appear on each library page."
           />
           <form
-            class="flex items-end justify-between gap-6 p-[clamp(22px,4vw,34px)] max-[600px]:flex-col max-[600px]:items-stretch"
+            class="flex flex-col items-stretch gap-8 p-[clamp(22px,4vw,34px)]"
+            data-library-display-form
             @submit.prevent="saveSettings"
           >
             <FormField
@@ -235,6 +269,7 @@ async function logout(): Promise<void> {
               </AppSelect>
             </FormField>
             <AppButton
+              class="self-end max-[600px]:w-full"
               type="submit"
               :disabled="settingsRequest.loading.value || !settingsRequest.data.value"
               :loading="settingsAction.pending.value"
@@ -317,7 +352,8 @@ async function logout(): Promise<void> {
               {{ passwordError }}
             </AlertMessage>
             <AppButton
-              class="justify-self-end max-[600px]:w-full"
+              class="mt-4 justify-self-end max-[600px]:w-full"
+              data-change-password
               type="submit"
               :loading="passwordAction.pending.value"
               loading-label="Saving…"

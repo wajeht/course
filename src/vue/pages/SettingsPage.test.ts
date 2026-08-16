@@ -64,6 +64,20 @@ describe("SettingsPage", () => {
     const dataCard = wrapper.get("#settings-data-panel > section");
     expect(dataCard.get("header h2").text()).toBe("Refresh library");
     expect(dataCard.text()).toContain("12 courses · 215 lessons");
+    expect(dataCard.get("[data-scan-controls]").classes()).toContain("flex-col");
+    expect(wrapper.get("[data-library-display-form]").classes()).toContain("flex-col");
+    const labelClasses = ["text-xs", "font-bold", "tracking-[.08em]", "text-pine", "uppercase"];
+    expect(dataCard.get("[data-library-status] > p").classes()).toEqual(
+      expect.arrayContaining(labelClasses),
+    );
+    expect(dataCard.get("[data-last-scan] > p").classes()).toEqual(
+      expect.arrayContaining(labelClasses),
+    );
+    const lastScan = dataCard.get('time[datetime="2026-08-12T00:00:00.000Z"]');
+    expect(lastScan.element.parentElement?.textContent).toContain("Last scan");
+    expect(lastScan.classes()).toEqual(expect.arrayContaining(["text-sm", "text-muted"]));
+    expect(lastScan.classes()).not.toContain("text-pine");
+    expect(lastScan.text()).not.toBe("");
     expect(wrapper.get("#settings-data-panel").text()).toContain("Courses per page");
     expect(wrapper.get("[data-settings-layout]").classes()).toContain("gap-[clamp(18px,2vw,30px)]");
     expect(wrapper.get("#settings-data-panel").classes()).toEqual(
@@ -84,6 +98,7 @@ describe("SettingsPage", () => {
     const authCard = wrapper.get("#settings-auth-panel > section");
     expect(authCard.get("header h2").text()).toBe("Access");
     expect(authCard.text()).toContain("Use at least 15 characters.");
+    expect(authCard.get("[data-change-password]").classes()).toContain("mt-4");
     expect(wrapper.get("[data-mobile-sign-out]").text()).toBe("Sign out");
   });
 
@@ -104,6 +119,22 @@ describe("SettingsPage", () => {
     expect(wrapper.get("#settings-data-panel").text()).toContain("1 library issue");
     expect(issues.text()).toContain("Example/course.json");
     expect(issues.text()).toContain("Cover file is missing");
+  });
+
+  it("shows a failed scan with its useful error", async () => {
+    vi.mocked(api.getScanStatus).mockResolvedValueOnce({
+      completedAt: "2026-08-12T00:00:00.000Z",
+      courseCount: 12,
+      error: "Video folder is unavailable",
+      lessonCount: 215,
+      startedAt: "2026-08-12T00:00:00.000Z",
+      status: "failed",
+      warnings: [],
+    });
+    const wrapper = mountSettings();
+    await flushPromises();
+
+    expect(wrapper.get("#settings-data-panel").text()).toContain("Video folder is unavailable");
   });
 
   it("disables library settings when their saved value cannot be loaded", async () => {
