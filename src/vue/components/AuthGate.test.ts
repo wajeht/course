@@ -14,17 +14,13 @@ const baseProps = {
 };
 
 describe("AuthGate", () => {
-  it("allows existing short passwords when signing in", async () => {
+  it("requires 15 characters when signing in", () => {
     const wrapper = mount(AuthGate, {
       props: { ...baseProps, passwordConfigured: true },
     });
     const password = wrapper.get('input[autocomplete="current-password"]');
 
-    expect(password.attributes("minlength")).toBeUndefined();
-    await password.setValue("short123");
-    await wrapper.get("form").trigger("submit");
-
-    expect(wrapper.emitted("login")).toEqual([["short123"]]);
+    expect(password.attributes("minlength")).toBe("15");
   });
 
   it("requires 15 characters when creating a password", () => {

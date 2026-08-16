@@ -122,7 +122,7 @@ async function submit(): Promise<void> {
             :invalid="invalid"
             type="password"
             :autocomplete="isSetup ? 'new-password' : 'current-password'"
-            :minlength="isSetup ? 15 : undefined"
+            minlength="15"
             maxlength="72"
             required
             autofocus
