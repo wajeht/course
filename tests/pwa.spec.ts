@@ -45,13 +45,16 @@ test("registers, serves deep links offline, and prompts for updates", async ({ c
     await navigation;
   }
 
-  await expect(page.getByRole("heading", { level: 1, name: "All courses" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Continue watching" })).toBeVisible();
   await expect(page.getByText("Course is ready offline")).toBeVisible();
   await expect
     .poll(() =>
       page.evaluate(async () => (await navigator.serviceWorker.ready).active?.state ?? null),
     )
     .toBe("activated");
+
+  await page.goto("/library");
+  await expect(page.getByRole("heading", { level: 1, name: "All courses" })).toBeVisible();
 
   await page.reload();
   await expect
