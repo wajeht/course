@@ -3,6 +3,7 @@ import { RouterLink } from "vue-router";
 
 import { api } from "@/api.js";
 import CourseCard from "@/components/CourseCard.vue";
+import CourseCoverPlaceholder from "@/components/CourseCoverPlaceholder.vue";
 import CourseFilterSelect from "@/components/CourseFilterSelect.vue";
 import AlertMessage from "@/components/ui/AlertMessage.vue";
 import AppInput from "@/components/ui/AppInput.vue";
@@ -54,9 +55,10 @@ const {
             :src="lesson.courseCoverUrl"
             :alt="`${lesson.courseTitle} cover`"
           />
-          <div
+          <CourseCoverPlaceholder
             v-else
-            class="absolute inset-0 h-full w-full bg-pine bg-[repeating-linear-gradient(135deg,transparent_0_16px,rgb(255_255_255_/_5%)_16px_18px)]"
+            class="absolute inset-0 h-full w-full"
+            :title="lesson.courseTitle"
           />
           <div
             class="absolute inset-0 h-full w-full bg-[linear-gradient(90deg,rgb(12_28_21_/_96%)_0%,rgb(12_28_21_/_72%)_55%,rgb(12_28_21_/_30%)_100%)]"

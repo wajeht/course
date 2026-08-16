@@ -8,7 +8,6 @@ import type { Configuration } from "../configuration.js";
 import type { Logger } from "../logger.js";
 import type { CatalogRepository, CourseOrder } from "./catalog.repository.js";
 import { readCourseMetadata } from "./course-metadata.js";
-import { generateCover } from "./cover.js";
 import { displayName, naturalOrder } from "./names.js";
 import { posixPath } from "./path.js";
 import { probeVideo, videoExtensions, type VideoProbe } from "./probe.js";
@@ -323,10 +322,8 @@ async function buildCatalogSnapshot(
       instructors: metadata?.instructors ?? [],
       tags: metadata?.tags ?? [],
       coverPath: localCover ? posixPath(path.relative(root, localCover)) : null,
-      coverOrigin: localCover ? "videos" : null,
       sortOrder: courseEntries.findIndex((entry) => entry.name === courseEntry.name),
     };
-    const courseLessonStart = lessons.length;
     let courseVideoCount = 0;
 
     const directVideos = entries.filter(
@@ -384,27 +381,6 @@ async function buildCatalogSnapshot(
 
     if (courseVideoCount === 0) continue;
     courses.push(course);
-
-    if (!course.coverPath) {
-      const firstLesson = lessons.slice(courseLessonStart).at(0);
-      if (firstLesson) {
-        const generatedFilename = `${courseId}.jpg`;
-        try {
-          await generateCover(
-            path.join(root, firstLesson.path),
-            path.join(configuration.media.generatedCoversDirectory, generatedFilename),
-            configuration.media.ffmpegPath,
-          );
-          course.coverPath = generatedFilename;
-          course.coverOrigin = "data";
-        } catch (error) {
-          warnings.push({
-            path: courseRelativePath,
-            message: `Could not generate cover: ${error instanceof Error ? error.message : "unknown error"}`,
-          });
-        }
-      }
-    }
   }
 
   return {

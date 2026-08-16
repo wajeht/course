@@ -78,12 +78,11 @@ export function createMediaRouter(context: AppContext) {
     zValidator("param", z.object({ courseId: lessonParametersSchema.shape.lessonId })),
     async (c) => {
       const course = await context.catalogRepository.findCourse(c.req.valid("param").courseId);
-      if (!course?.cover_path || !course.cover_origin) return c.body(null, 404);
-      const root =
-        course.cover_origin === "videos"
-          ? context.configuration.media.videosDirectory
-          : context.configuration.media.generatedCoversDirectory;
-      const filename = await resolveContainedPath(root, course.cover_path);
+      if (!course?.cover_path) return c.body(null, 404);
+      const filename = await resolveContainedPath(
+        context.configuration.media.videosDirectory,
+        course.cover_path,
+      );
       const statistics = await fs.stat(filename);
       const extension = path.extname(filename).toLowerCase();
       const contentType =
