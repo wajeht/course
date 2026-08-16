@@ -151,4 +151,76 @@ describe("catalog service", () => {
       pagination: { page: 2, pageSize: 1, totalCourses: 2, totalPages: 2 },
     });
   });
+
+  it("lists only the most recently watched lesson from each course", async () => {
+    const lessonIds = ["c".repeat(24), "d".repeat(24), "e".repeat(24)];
+    await database.connection("lessons").insert([
+      {
+        id: lessonIds[0],
+        course_id: "a".repeat(24),
+        path: "technology/older.mp4",
+        title: "Older lesson",
+        sort_order: 0,
+        duration_seconds: 100,
+        size_bytes: 100,
+        container: "mp4",
+        video_codec: "h264",
+        browser_compatible: true,
+        modified_at: "2026-08-16T12:00:00.000Z",
+      },
+      {
+        id: lessonIds[1],
+        course_id: "a".repeat(24),
+        path: "technology/latest.mp4",
+        title: "Latest lesson",
+        sort_order: 1,
+        duration_seconds: 100,
+        size_bytes: 100,
+        container: "mp4",
+        video_codec: "h264",
+        browser_compatible: true,
+        modified_at: "2026-08-16T12:00:00.000Z",
+      },
+      {
+        id: lessonIds[2],
+        course_id: "b".repeat(24),
+        path: "martial-arts/current.mp4",
+        title: "Other course lesson",
+        sort_order: 0,
+        duration_seconds: 100,
+        size_bytes: 100,
+        container: "mp4",
+        video_codec: "h264",
+        browser_compatible: true,
+        modified_at: "2026-08-16T12:00:00.000Z",
+      },
+    ]);
+    await database.connection("progress").insert([
+      {
+        lesson_id: lessonIds[0],
+        position_seconds: 10,
+        completed: false,
+        updated_at: "2026-08-16T12:01:00.000Z",
+      },
+      {
+        lesson_id: lessonIds[2],
+        position_seconds: 30,
+        completed: false,
+        updated_at: "2026-08-16T12:02:00.000Z",
+      },
+      {
+        lesson_id: lessonIds[1],
+        position_seconds: 20,
+        completed: false,
+        updated_at: "2026-08-16T12:03:00.000Z",
+      },
+    ]);
+
+    const catalog = await createService().getCatalog();
+
+    expect(catalog.continueWatching.map((lesson) => lesson.id)).toEqual([
+      lessonIds[1],
+      lessonIds[2],
+    ]);
+  });
 });

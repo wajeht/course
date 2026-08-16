@@ -203,6 +203,18 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
       return createLessonsQuery()
         .where("progress.position_seconds", ">", 0)
         .where("progress.completed", false)
+        .whereRaw(`
+          progress.lesson_id = (
+            SELECT recent_progress.lesson_id
+            FROM progress AS recent_progress
+            JOIN lessons AS recent_lessons ON recent_lessons.id = recent_progress.lesson_id
+            WHERE recent_lessons.course_id = lessons.course_id
+              AND recent_progress.position_seconds > 0
+              AND recent_progress.completed = 0
+            ORDER BY recent_progress.updated_at DESC, recent_progress.lesson_id DESC
+            LIMIT 1
+          )
+        `)
         .orderBy("progress.updated_at", "desc")
         .limit(12);
     },
