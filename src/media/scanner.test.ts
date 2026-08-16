@@ -26,7 +26,8 @@ afterEach(async () => {
 describe("media scanner", () => {
   it("ignores system metadata and empty directories", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
-    temporaryDirectories.push(root);
+    const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-data-"));
+    temporaryDirectories.push(root, dataDirectory);
     await fs.mkdir(path.join(root, "@eaDir", "metadata"), { recursive: true });
     await fs.writeFile(path.join(root, "@eaDir", "metadata", "thumbnail.mp4"), "video");
     await fs.mkdir(path.join(root, "#recycle", "Deleted Course"), { recursive: true });
@@ -46,7 +47,7 @@ describe("media scanner", () => {
     const configuration = createConfiguration({
       APP_ENV: "testing",
       VIDEOS_DIR: root,
-      DATA_DIR: path.join(root, "data"),
+      DATA_DIR: dataDirectory,
     });
     const database = await createDatabase(configuration, createLogger());
     databases.push(database);
@@ -77,7 +78,8 @@ describe("media scanner", () => {
 
   it("indexes course metadata, sections, natural order, and warnings", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
-    temporaryDirectories.push(root);
+    const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-data-"));
+    temporaryDirectories.push(root, dataDirectory);
     const courseDirectory = path.join(root, "Course 1");
     const sectionDirectory = path.join(courseDirectory, "02 - Escapes");
     await fs.mkdir(sectionDirectory, { recursive: true });
@@ -102,7 +104,7 @@ describe("media scanner", () => {
     const configuration = createConfiguration({
       APP_ENV: "testing",
       VIDEOS_DIR: root,
-      DATA_DIR: path.join(root, "data"),
+      DATA_DIR: dataDirectory,
     });
     const database = await createDatabase(configuration, createLogger());
     databases.push(database);
@@ -280,13 +282,102 @@ describe("media scanner", () => {
     expect(probeCalls).toEqual(["01 - Existing.mp4", "01 - Added.mp4", "01 - Existing.mp4"]);
   });
 
-  it("fails when library monitoring cannot start", async () => {
+  it("keeps warnings for courses that were not rescanned", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
-    temporaryDirectories.push(root);
+    const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-data-"));
+    temporaryDirectories.push(root, dataDirectory);
+    const brokenCourse = path.join(root, "Broken Course");
+    const healthyCourse = path.join(root, "Healthy Course");
+    await Promise.all([fs.mkdir(brokenCourse), fs.mkdir(healthyCourse)]);
+    const brokenVideo = path.join(brokenCourse, "01 - Broken.mp4");
+    const healthyVideo = path.join(healthyCourse, "01 - Healthy.mp4");
+    await Promise.all([
+      fs.writeFile(brokenVideo, "broken video"),
+      fs.writeFile(healthyVideo, "healthy video"),
+    ]);
+
     const configuration = createConfiguration({
       APP_ENV: "testing",
       VIDEOS_DIR: root,
-      DATA_DIR: path.join(root, "data"),
+      DATA_DIR: dataDirectory,
+    });
+    const database = await createDatabase(configuration, createLogger());
+    databases.push(database);
+    let emitWatchEvent = (_filename: string): void => {
+      throw new Error("Library monitoring has not started");
+    };
+    let broken = true;
+    const probeCalls = new Map<string, number>();
+    const scanner = createScanner({
+      configuration,
+      repository: createCatalogRepository(database.connection),
+      logger: createLogger(),
+      watchDirectory: (_directory, _options, listener) => {
+        emitWatchEvent = (filename) => listener("change", filename);
+        return {
+          on() {
+            return this;
+          },
+          close() {},
+        };
+      },
+      probe: async (filename): Promise<VideoProbe> => {
+        const name = path.basename(filename);
+        probeCalls.set(name, (probeCalls.get(name) ?? 0) + 1);
+        if (broken && filename === brokenVideo) throw new Error("Could not inspect broken video");
+        return {
+          durationSeconds: 60,
+          sizeBytes: (await fs.stat(filename)).size,
+          container: "mp4",
+          videoCodec: "h264",
+          audioCodec: "aac",
+          browserCompatible: true,
+        };
+      },
+    });
+
+    expect((await scanner.scanCatalog()).warnings).toEqual([
+      {
+        path: "Broken Course/01 - Broken.mp4",
+        message: "Could not inspect broken video",
+      },
+    ]);
+    monitorStops.push(scanner.startMonitoring());
+
+    const changedAt = new Date(Date.now() + 10_000);
+    await fs.utimes(healthyVideo, changedAt, changedAt);
+    emitWatchEvent("Healthy Course/01 - Healthy.mp4");
+    await waitUntil(
+      async () =>
+        (probeCalls.get("01 - Healthy.mp4") ?? 0) === 2 &&
+        scanner.getScanStatus().status === "complete",
+    );
+    expect(scanner.getScanStatus().warnings).toEqual([
+      {
+        path: "Broken Course/01 - Broken.mp4",
+        message: "Could not inspect broken video",
+      },
+    ]);
+
+    broken = false;
+    await fs.utimes(brokenVideo, changedAt, changedAt);
+    emitWatchEvent("Broken Course/01 - Broken.mp4");
+    await waitUntil(
+      async () =>
+        (probeCalls.get("01 - Broken.mp4") ?? 0) === 2 &&
+        scanner.getScanStatus().status === "complete",
+    );
+    expect(scanner.getScanStatus().warnings).toEqual([]);
+  });
+
+  it("fails when library monitoring cannot start", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
+    const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-data-"));
+    temporaryDirectories.push(root, dataDirectory);
+    const configuration = createConfiguration({
+      APP_ENV: "testing",
+      VIDEOS_DIR: root,
+      DATA_DIR: dataDirectory,
     });
     const database = await createDatabase(configuration, createLogger());
     databases.push(database);

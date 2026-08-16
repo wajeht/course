@@ -72,6 +72,15 @@ export function createConfiguration(environment: NodeJS.ProcessEnv = process.env
   }
   const dataDirectory = path.resolve(parsed.DATA_DIR);
   const videosDirectory = path.resolve(parsed.VIDEOS_DIR);
+  const dataPathFromVideos = path.relative(videosDirectory, dataDirectory);
+  if (
+    dataPathFromVideos === "" ||
+    (dataPathFromVideos !== ".." &&
+      !dataPathFromVideos.startsWith(`..${path.sep}`) &&
+      !path.isAbsolute(dataPathFromVideos))
+  ) {
+    throw new Error("DATA_DIR must be outside VIDEOS_DIR");
+  }
 
   return {
     app: {

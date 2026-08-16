@@ -71,6 +71,7 @@ export function createScanner({
   let fullScanInProgress = false;
   let fullScanRequested = false;
   const requestedCourses = new Set<string>();
+  const courseWarnings = new Map<string, ScanWarning[]>();
   let scanStatus: ScanStatus = {
     status: "idle",
     startedAt: null,
@@ -81,15 +82,36 @@ export function createScanner({
     error: null,
   };
 
+  function currentWarnings(): ScanWarning[] {
+    return [...courseWarnings.values()].flat();
+  }
+
+  function replaceCourseWarnings(
+    courseNames: Iterable<string> | null,
+    warnings: ScanWarning[],
+  ): void {
+    if (courseNames === null) courseWarnings.clear();
+    else for (const courseName of courseNames) courseWarnings.delete(courseName);
+
+    for (const warning of warnings) {
+      const courseName = warning.path.split("/")[0];
+      if (!courseName) continue;
+      const warningsForCourse = courseWarnings.get(courseName) ?? [];
+      warningsForCourse.push(warning);
+      courseWarnings.set(courseName, warningsForCourse);
+    }
+  }
+
   async function scanOnce(courseNames?: string[]): Promise<ScanStatus> {
     const startedAt = new Date().toISOString();
+    const scanWarnings: ScanWarning[] = [];
     const scanning: ScanStatus = {
       status: "scanning",
       startedAt,
       completedAt: null,
       courseCount: scanStatus.courseCount,
       lessonCount: scanStatus.lessonCount,
-      warnings: [],
+      warnings: currentWarnings(),
       error: null,
     };
     scanStatus = scanning;
@@ -108,13 +130,18 @@ export function createScanner({
           )
           .map((entry) => entry.name);
         const courseIdsToScan = courseNamesToScan.map((courseName) => identifier(courseName));
-        const removedCourseIds = storedCourses
-          .filter((course) => !currentCoursePaths.has(course.path))
-          .map((course) => course.id);
+        const removedCourses = storedCourses.filter(
+          (course) => !currentCoursePaths.has(course.path),
+        );
+        const removedCourseIds = removedCourses.map((course) => course.id);
+        const synchronizedCourseNames = new Set([
+          ...courseNamesToScan,
+          ...removedCourses.map((course) => course.path),
+        ]);
         const existingLessons = await repository.getLessons(courseIdsToScan);
         const { snapshot, courseOrder } = await buildCatalogSnapshot(
           configuration,
-          scanning.warnings,
+          scanWarnings,
           probe,
           existingLessons,
           courseEntries,
@@ -125,6 +152,7 @@ export function createScanner({
           [...courseIdsToScan, ...removedCourseIds],
           courseOrder,
         );
+        replaceCourseWarnings(synchronizedCourseNames, scanWarnings);
       } else {
         const [courseEntries, existingLessons] = await Promise.all([
           readCourseEntries(configuration),
@@ -132,18 +160,20 @@ export function createScanner({
         ]);
         const { snapshot } = await buildCatalogSnapshot(
           configuration,
-          scanning.warnings,
+          scanWarnings,
           probe,
           existingLessons,
           courseEntries,
         );
         await repository.synchronizeCatalog(snapshot);
+        replaceCourseWarnings(null, scanWarnings);
       }
       const counts = await repository.getCatalogCounts();
       const complete: ScanStatus = {
         ...scanning,
         status: "complete",
         completedAt: new Date().toISOString(),
+        warnings: currentWarnings(),
         ...counts,
       };
       scanStatus = complete;
@@ -158,6 +188,7 @@ export function createScanner({
         ...scanning,
         status: "failed",
         completedAt: new Date().toISOString(),
+        warnings: currentWarnings(),
         error: error instanceof Error ? error.message : "Media scan failed",
       };
       scanStatus = failed;
