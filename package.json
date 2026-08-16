@@ -11,7 +11,7 @@
     "dev:server": "APP_ENV=development node --env-file-if-exists=.env --import=tsx src/server.ts",
     "dev:client": "node --env-file-if-exists=.env ./node_modules/vite/bin/vite.js --config vite.config.ts",
     "start": "APP_ENV=production node --env-file-if-exists=.env dist/server/src/server.js",
-    "build": "npm run build:server && npm run build:client",
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && npm run build:server && npm run build:client",
     "build:server": "tsc -p tsconfig.server.json",
     "build:client": "vite build --config vite.config.ts",
     "typecheck": "npm run typecheck:server && npm run typecheck:client && npm run typecheck:pwa",

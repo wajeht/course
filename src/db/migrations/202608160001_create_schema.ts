@@ -6,11 +6,12 @@ export async function up(knex: Knex): Promise<void> {
     table.text("path").notNullable().unique();
     table.text("title").notNullable();
     table.text("description").notNullable().defaultTo("");
+    table.text("category").notNullable().defaultTo("Uncategorized");
+    table.text("instructors_json").notNullable().defaultTo("[]");
+    table.text("tags_json").notNullable().defaultTo("[]");
     table.text("cover_path");
     table.text("cover_origin");
     table.integer("sort_order").notNullable();
-    table.text("created_at").notNullable();
-    table.text("updated_at").notNullable();
   });
 
   await knex.schema.createTable("sections", (table) => {
@@ -44,36 +45,53 @@ export async function up(knex: Knex): Promise<void> {
     table.text("updated_at").notNullable();
   });
 
-  await knex.schema.createTable("conversion_jobs", (table) => {
+  await knex.schema.createTable("conversions", (table) => {
     table.text("lesson_id").primary().references("id").inTable("lessons").onDelete("CASCADE");
-    table.text("status").notNullable();
+    table.text("status").notNullable().checkIn(["queued", "converting", "ready", "failed"]);
     table.float("progress").notNullable().defaultTo(0);
-    table.text("playlist_path");
     table.text("error");
-    table.text("created_at").notNullable();
+  });
+
+  await knex.schema.createTable("settings", (table) => {
+    table.text("key").primary();
+    table.text("value").notNullable();
     table.text("updated_at").notNullable();
   });
 
-  await knex.schema.createTable("scan_state", (table) => {
+  await knex.schema.createTable("auth_credentials", (table) => {
     table.integer("id").primary();
-    table.text("status").notNullable();
-    table.text("started_at");
-    table.text("completed_at");
-    table.integer("course_count").notNullable().defaultTo(0);
-    table.integer("lesson_count").notNullable().defaultTo(0);
-    table.text("warnings_json").notNullable().defaultTo("[]");
-    table.text("error");
+    table.text("password_hash").notNullable();
+    table.check("id = 1");
   });
 
-  await knex("scan_state").insert({ id: 1, status: "idle" });
-  await knex.schema.raw("CREATE INDEX lessons_course_sort_idx ON lessons(course_id, sort_order)");
+  await knex.schema.createTable("auth_sessions", (table) => {
+    table.text("session_key").primary();
+    table.bigInteger("created_at").notNullable();
+    table.bigInteger("active_at").notNullable();
+  });
+
+  await knex.schema.createTable("login_attempts", (table) => {
+    table.text("client_key").primary();
+    table.integer("failures").notNullable();
+    table.bigInteger("reset_at").notNullable();
+  });
+
+  await knex.schema.raw("CREATE INDEX courses_category_idx ON courses(category)");
   await knex.schema.raw("CREATE INDEX sections_course_sort_idx ON sections(course_id, sort_order)");
+  await knex.schema.raw("CREATE INDEX lessons_course_sort_idx ON lessons(course_id, sort_order)");
   await knex.schema.raw("CREATE INDEX progress_updated_idx ON progress(updated_at)");
+  await knex.schema.raw("CREATE INDEX conversions_status_idx ON conversions(status)");
+  await knex.schema.raw("CREATE INDEX auth_sessions_created_at_idx ON auth_sessions(created_at)");
+  await knex.schema.raw("CREATE INDEX auth_sessions_active_at_idx ON auth_sessions(active_at)");
+  await knex.schema.raw("CREATE INDEX login_attempts_reset_at_idx ON login_attempts(reset_at)");
 }
 
 export async function down(knex: Knex): Promise<void> {
-  await knex.schema.dropTableIfExists("scan_state");
-  await knex.schema.dropTableIfExists("conversion_jobs");
+  await knex.schema.dropTableIfExists("login_attempts");
+  await knex.schema.dropTableIfExists("auth_sessions");
+  await knex.schema.dropTableIfExists("auth_credentials");
+  await knex.schema.dropTableIfExists("settings");
+  await knex.schema.dropTableIfExists("conversions");
   await knex.schema.dropTableIfExists("progress");
   await knex.schema.dropTableIfExists("lessons");
   await knex.schema.dropTableIfExists("sections");

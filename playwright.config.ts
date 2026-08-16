@@ -8,6 +8,7 @@ const runtimeDirectory = path.join(os.tmpdir(), "course-pwa-tests");
 const dataDirectory = path.join(runtimeDirectory, "data");
 const videosDirectory = path.join(runtimeDirectory, "videos");
 
+fs.rmSync(runtimeDirectory, { recursive: true, force: true });
 fs.mkdirSync(dataDirectory, { recursive: true });
 fs.mkdirSync(videosDirectory, { recursive: true });
 
@@ -24,7 +25,7 @@ export default defineConfig({
   webServer: {
     command: "npm start",
     url: "http://127.0.0.1:4173/healthz",
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 30_000,
     env: {
       APP_ENV: "production",
