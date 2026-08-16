@@ -118,6 +118,12 @@ export const api = {
     });
     return expectProtectedJson(response);
   },
+  async openLesson(lessonId: string): Promise<void> {
+    const response = await apiClient.api.progress.lessons[":lessonId"].open.$post({
+      param: { lessonId },
+    });
+    await expectProtectedJson(response);
+  },
   async preparePlayback(lessonId: string): Promise<PlaybackResult> {
     const response = await apiClient.api.playback[":lessonId"].$post({ param: { lessonId } });
     return expectProtectedJson<PlaybackResult>(response);

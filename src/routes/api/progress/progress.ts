@@ -10,6 +10,10 @@ import {
 
 export function createProgressRouter(context: AppContext) {
   return new Hono()
+    .post("/lessons/:lessonId/open", zValidator("param", progressParametersSchema), async (c) => {
+      const opened = await context.progress.openLesson(c.req.valid("param").lessonId);
+      return opened ? c.json({ opened: true }) : c.json({ message: "Lesson not found" }, 404);
+    })
     .put(
       "/lessons/:lessonId",
       zValidator("param", progressParametersSchema),

@@ -2,6 +2,7 @@ import type { CatalogRepository } from "../catalog/catalog.repository.js";
 import type { ProgressRepository } from "./progress.repository.js";
 
 export interface ProgressService {
+  openLesson(lessonId: string): Promise<boolean>;
   updateProgress(lessonId: string, positionSeconds: number): Promise<boolean>;
   completeLesson(lessonId: string): Promise<boolean>;
   resetLesson(lessonId: string): Promise<void>;
@@ -13,6 +14,11 @@ export function createProgressService(
   catalog: CatalogRepository,
 ): ProgressService {
   return {
+    async openLesson(lessonId) {
+      if (!(await catalog.findLesson(lessonId))) return false;
+      await repository.markOpened(lessonId);
+      return true;
+    },
     async updateProgress(lessonId, positionSeconds) {
       const lesson = await catalog.findLesson(lessonId);
       if (!lesson) return false;
