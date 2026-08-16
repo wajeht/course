@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import SettingsNavigation from "./SettingsNavigation.vue";
 
 describe("SettingsNavigation", () => {
-  it("selects settings panels and keeps sign out separate", async () => {
+  it("selects settings panels", async () => {
     const wrapper = mount(SettingsNavigation, { props: { modelValue: "data" } });
     const sectionButtons = wrapper.findAll("button[aria-pressed]");
 
@@ -15,14 +15,12 @@ describe("SettingsNavigation", () => {
     expect(sectionButtons[1]?.attributes("aria-pressed")).toBe("false");
     expect(sectionButtons[0]?.classes()).toContain("bg-pine!");
     expect(sectionButtons[0]?.classes()).toContain("min-h-12");
+    expect(wrapper.findAll("button")).toHaveLength(2);
 
     await sectionButtons[1]?.trigger("click");
     expect(wrapper.emitted("update:modelValue")).toEqual([["auth"]]);
 
     await wrapper.setProps({ modelValue: "auth" });
     expect(sectionButtons[1]?.classes()).toContain("bg-pine!");
-
-    await wrapper.findAll("button").at(-1)?.trigger("click");
-    expect(wrapper.emitted("signOut")).toHaveLength(1);
   });
 });

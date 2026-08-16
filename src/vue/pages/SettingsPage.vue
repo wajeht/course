@@ -114,24 +114,37 @@ async function logout(): Promise<void> {
     </AlertMessage>
 
     <div
-      class="mt-6 grid grid-cols-4 items-start gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[760px]:grid-cols-1 max-[760px]:gap-8"
+      class="mt-6 grid grid-cols-4 items-start gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[760px]:grid-cols-1"
+      data-settings-layout
     >
-      <SettingsNavigation
-        v-model="activeSection"
-        :signing-out="logoutAction.pending.value"
-        @sign-out="logout"
-      />
+      <div class="grid gap-[clamp(18px,2vw,30px)]">
+        <SettingsNavigation v-model="activeSection" />
+        <div class="max-[760px]:hidden" data-desktop-sign-out-container>
+          <AppButton
+            class="min-h-12"
+            block
+            size="lg"
+            variant="danger"
+            :loading="logoutAction.pending.value"
+            loading-label="Signing out…"
+            data-desktop-sign-out
+            @click="logout"
+          >
+            Sign out
+          </AppButton>
+        </div>
+      </div>
 
       <section
         v-if="activeSection === 'data'"
         id="settings-data-panel"
-        class="col-span-3 max-[1120px]:col-span-2 max-[860px]:col-span-1"
+        class="col-span-3 grid gap-[clamp(18px,2vw,30px)] max-[1120px]:col-span-2 max-[860px]:col-span-1"
         aria-labelledby="settings-data-tab"
       >
-        <AlertMessage v-if="scanError" class="mb-5" size="lg">
+        <AlertMessage v-if="scanError" size="lg">
           {{ scanError }}
         </AlertMessage>
-        <AlertMessage v-if="settingsError" class="mb-5" size="lg">
+        <AlertMessage v-if="settingsError" size="lg">
           {{ settingsError }}
         </AlertMessage>
 
@@ -176,7 +189,7 @@ async function logout(): Promise<void> {
           </div>
         </PanelCard>
 
-        <PanelCard class="mt-5" padding="none">
+        <PanelCard padding="none">
           <PanelCardHeader
             title="Library display"
             description="Choose how many courses appear on each library page."
@@ -292,6 +305,21 @@ async function logout(): Promise<void> {
           </form>
         </PanelCard>
       </section>
+
+      <div class="col-span-full hidden max-[760px]:block" data-mobile-sign-out-container>
+        <AppButton
+          class="min-h-12"
+          block
+          size="lg"
+          variant="danger"
+          :loading="logoutAction.pending.value"
+          loading-label="Signing out…"
+          data-mobile-sign-out
+          @click="logout"
+        >
+          Sign out
+        </AppButton>
+      </div>
     </div>
   </StandardPageLayout>
 </template>

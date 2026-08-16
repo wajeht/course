@@ -11,12 +11,10 @@ const sections: ReadonlyArray<{ label: string; value: SettingsSection }> = [
 
 defineProps<{
   modelValue: SettingsSection;
-  signingOut?: boolean;
 }>();
 
 const emit = defineEmits<{
   "update:modelValue": [section: SettingsSection];
-  signOut: [];
 }>();
 </script>
 
@@ -39,17 +37,6 @@ const emit = defineEmits<{
         @click="emit('update:modelValue', section.value)"
       >
         <span>{{ section.label }}</span>
-      </AppButton>
-    </div>
-    <div class="mt-4 border-t border-line pt-4">
-      <AppButton
-        class="flex min-h-11 w-full items-center rounded-[7px] px-3.5 text-left text-[.8rem] font-semibold text-clay! transition-colors duration-[160ms] hover:bg-clay-soft! hover:text-clay-deep!"
-        variant="unstyled"
-        :loading="signingOut"
-        loading-label="Signing out…"
-        @click="emit('signOut')"
-      >
-        Sign out
       </AppButton>
     </div>
   </PanelCard>
