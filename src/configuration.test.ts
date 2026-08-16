@@ -46,4 +46,17 @@ describe("createConfiguration", () => {
       "SESSION_SECRET must be set in production",
     );
   });
+
+  it.each(["/videos", "/videos/data"])(
+    "rejects a data directory inside the video library: %s",
+    (dataDirectory) => {
+      expect(() =>
+        createConfiguration({
+          APP_ENV: "development",
+          DATA_DIR: dataDirectory,
+          VIDEOS_DIR: "/videos",
+        }),
+      ).toThrow("DATA_DIR must be outside VIDEOS_DIR");
+    },
+  );
 });

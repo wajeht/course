@@ -24,10 +24,16 @@ afterEach(async () => {
 async function createFixture(executor: ConversionExecutor) {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "course-conversion-"));
   temporaryDirectories.push(directory);
+  const dataDirectory = path.join(directory, "data");
+  const videosDirectory = path.join(directory, "videos");
+  await Promise.all([
+    fs.mkdir(dataDirectory, { recursive: true }),
+    fs.mkdir(videosDirectory, { recursive: true }),
+  ]);
   const configuration = createConfiguration({
     APP_ENV: "testing",
-    DATA_DIR: directory,
-    VIDEOS_DIR: directory,
+    DATA_DIR: dataDirectory,
+    VIDEOS_DIR: videosDirectory,
   });
   const database = await createDatabase(configuration, createLogger());
   databases.push(database);

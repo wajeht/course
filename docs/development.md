@@ -24,7 +24,8 @@ Vue client running internally on port 3000.
 
 Without `.env`, local commands use `/Volumes/plex/videos` and store the SQLite
 database and conversion cache in `./data`. Change those paths in `.env` on
-another machine. The video directory itself is never changed.
+another machine. `DATA_DIR` must be outside `VIDEOS_DIR` so app writes cannot
+trigger library scans. The video directory itself is never changed.
 
 The development database uses one bootstrap migration. After changing the
 schema, recreate the SQLite database instead of adding upgrade migrations.
