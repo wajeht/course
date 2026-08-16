@@ -1,11 +1,12 @@
 import { createHash } from "node:crypto";
+import { watch } from "node:fs";
 import type { Dirent } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 
 import type { Configuration } from "../configuration.js";
 import type { Logger } from "../logger.js";
-import type { CatalogRepository } from "./catalog.repository.js";
+import type { CatalogRepository, CourseOrder } from "./catalog.repository.js";
 import { readCourseMetadata } from "./course-metadata.js";
 import { generateCover } from "./cover.js";
 import { displayName, naturalOrder } from "./names.js";
@@ -34,7 +35,7 @@ function isCatalogDirectory(entry: Dirent): boolean {
 export interface Scanner {
   scanCatalog(): Promise<ScanStatus>;
   getScanStatus(): Promise<ScanStatus>;
-  startSchedule(): () => void;
+  startMonitoring(): () => void;
 }
 
 export interface ScannerDependencies {
@@ -42,7 +43,19 @@ export interface ScannerDependencies {
   repository: CatalogRepository;
   logger: Logger;
   probe?: (filename: string, ffprobePath: string) => Promise<VideoProbe>;
+  watchDirectory?: WatchDirectory;
 }
+
+interface DirectoryWatcher {
+  on(event: "error", listener: (error: Error) => void): this;
+  close(): void;
+}
+
+type WatchDirectory = (
+  directory: string,
+  options: { recursive: true },
+  listener: (event: string, filename: string | Buffer | null) => void,
+) => DirectoryWatcher;
 
 function identifier(value: string): string {
   return createHash("sha256").update(value).digest("hex").slice(0, 24);
@@ -53,31 +66,49 @@ export function createScanner({
   repository,
   logger,
   probe = probeVideo,
+  watchDirectory = watch,
 }: ScannerDependencies): Scanner {
-  let activeScan: Promise<ScanStatus> | null = null;
+  let activeSynchronization: Promise<void> | null = null;
+  let fullScanInProgress = false;
+  let fullScanRequested = false;
+  const requestedCourses = new Set<string>();
 
-  async function scanOnce(): Promise<ScanStatus> {
+  async function scanOnce(courseNames?: string[]): Promise<ScanStatus> {
+    const previous = await repository.getScanStatus();
     const startedAt = new Date().toISOString();
     const scanning: ScanStatus = {
       status: "scanning",
       startedAt,
       completedAt: null,
-      courseCount: 0,
-      lessonCount: 0,
+      courseCount: previous.courseCount,
+      lessonCount: previous.lessonCount,
       warnings: [],
       error: null,
     };
     await repository.updateScanStatus(scanning);
 
     try {
-      const snapshot = await scanCatalog(configuration, scanning.warnings, probe);
-      await repository.synchronizeCatalog(snapshot);
+      const existingLessons = await repository.getLessons(
+        courseNames?.map((courseName) => identifier(courseName)),
+      );
+      const { snapshot, courseIds, courseOrder } = await buildCatalogSnapshot(
+        configuration,
+        scanning.warnings,
+        probe,
+        existingLessons,
+        courseNames,
+      );
+      if (courseNames) {
+        await repository.synchronizeCourses(snapshot, courseIds, courseOrder);
+      } else {
+        await repository.synchronizeCatalog(snapshot);
+      }
+      const counts = await repository.getCatalogCounts();
       const complete: ScanStatus = {
         ...scanning,
         status: "complete",
         completedAt: new Date().toISOString(),
-        courseCount: snapshot.courses.length,
-        lessonCount: snapshot.lessons.length,
+        ...counts,
       };
       await repository.updateScanStatus(complete);
       logger.info("Media scan complete", {
@@ -99,42 +130,149 @@ export function createScanner({
     }
   }
 
+  async function drainRequests(): Promise<void> {
+    while (fullScanRequested || requestedCourses.size > 0) {
+      if (fullScanRequested) {
+        fullScanRequested = false;
+        requestedCourses.clear();
+        fullScanInProgress = true;
+        try {
+          await scanOnce();
+        } finally {
+          fullScanInProgress = false;
+        }
+        continue;
+      }
+      const courseNames = [...requestedCourses];
+      requestedCourses.clear();
+      await scanOnce(courseNames);
+    }
+  }
+
+  function ensureSynchronization(): Promise<void> {
+    if (!activeSynchronization) {
+      activeSynchronization = drainRequests().finally(() => {
+        activeSynchronization = null;
+        if (fullScanRequested || requestedCourses.size > 0) void ensureSynchronization();
+      });
+    }
+    return activeSynchronization;
+  }
+
+  async function waitForSynchronization(): Promise<ScanStatus> {
+    do {
+      await ensureSynchronization();
+    } while (activeSynchronization || fullScanRequested || requestedCourses.size > 0);
+    return repository.getScanStatus();
+  }
+
+  function requestCourseSynchronization(courseNames: Iterable<string>): void {
+    if (!fullScanRequested) {
+      for (const courseName of courseNames) requestedCourses.add(courseName);
+    }
+    void ensureSynchronization();
+  }
+
   const scanner: Scanner = {
     scanCatalog() {
-      if (activeScan) return activeScan;
-      activeScan = scanOnce().finally(() => {
-        activeScan = null;
-      });
-      return activeScan;
+      if (!fullScanInProgress) {
+        fullScanRequested = true;
+        requestedCourses.clear();
+      }
+      return waitForSynchronization();
     },
     getScanStatus: () => repository.getScanStatus(),
-    startSchedule() {
-      const timer = setInterval(
+    startMonitoring() {
+      const schedule = setInterval(
         () => void scanner.scanCatalog(),
         configuration.media.scanIntervalMs,
       );
-      timer.unref();
-      return () => clearInterval(timer);
+      schedule.unref();
+
+      let watcher: DirectoryWatcher | null = null;
+      let debounce: NodeJS.Timeout | null = null;
+      const changedCourses = new Set<string>();
+      try {
+        watcher = watchDirectory(
+          configuration.media.videosDirectory,
+          { recursive: true },
+          (_event, filename) => {
+            if (!filename) {
+              fullScanRequested = true;
+            } else {
+              const courseName = posixPath(String(filename)).split("/")[0];
+              if (
+                courseName &&
+                !courseName.startsWith(".") &&
+                !ignoredDirectoryNames.has(courseName.toLowerCase())
+              ) {
+                changedCourses.add(courseName);
+              }
+            }
+            if (debounce) clearTimeout(debounce);
+            debounce = setTimeout(() => {
+              debounce = null;
+              if (fullScanRequested) void ensureSynchronization();
+              else requestCourseSynchronization(changedCourses);
+              changedCourses.clear();
+            }, 750);
+            debounce.unref();
+          },
+        );
+        watcher.on("error", (error) => {
+          logger.warn("Library watcher failed; scheduled scans remain active", { error });
+          watcher?.close();
+          watcher = null;
+        });
+      } catch (error) {
+        logger.warn("Library watcher unavailable; scheduled scans remain active", { error });
+      }
+
+      return () => {
+        clearInterval(schedule);
+        if (debounce) clearTimeout(debounce);
+        watcher?.close();
+      };
     },
   };
   return scanner;
 }
 
-async function scanCatalog(
+interface BuiltCatalogSnapshot {
+  snapshot: CatalogSnapshot;
+  courseIds: string[];
+  courseOrder: CourseOrder[];
+}
+
+async function buildCatalogSnapshot(
   configuration: Configuration,
   warnings: ScanWarning[],
   probe: (filename: string, ffprobePath: string) => Promise<VideoProbe>,
-): Promise<CatalogSnapshot> {
+  existingLessons: LessonRecord[],
+  requestedCourseNames?: string[],
+): Promise<BuiltCatalogSnapshot> {
   const root = configuration.media.videosDirectory;
   const courseEntries = (await fs.readdir(root, { withFileTypes: true }))
     .filter(isCatalogDirectory)
     .sort((left, right) => naturalOrder(left.name, right.name));
+  const requestedNames = requestedCourseNames ? new Set(requestedCourseNames) : null;
+  const entriesToScan = requestedNames
+    ? courseEntries.filter((entry) => requestedNames.has(entry.name))
+    : courseEntries;
+  const courseIds = requestedCourseNames
+    ? requestedCourseNames.map((courseName) => identifier(posixPath(courseName)))
+    : courseEntries.map((entry) => identifier(posixPath(entry.name)));
+  const courseOrder = courseEntries.map((entry, sortOrder) => ({
+    id: identifier(posixPath(entry.name)),
+    sortOrder,
+  }));
+  const existingLessonsByPath = new Map(existingLessons.map((lesson) => [lesson.path, lesson]));
   const courses: CourseRecord[] = [];
   const sections: SectionRecord[] = [];
   const lessons: LessonRecord[] = [];
   const skippedLessonIds: string[] = [];
 
-  for (const courseEntry of courseEntries) {
+  for (const courseEntry of entriesToScan) {
     const courseDirectory = path.join(root, courseEntry.name);
     const courseRelativePath = posixPath(path.relative(root, courseDirectory));
     const courseId = identifier(courseRelativePath);
@@ -154,7 +292,7 @@ async function scanCatalog(
       tags: metadata?.tags ?? [],
       coverPath: localCover ? posixPath(path.relative(root, localCover)) : null,
       coverOrigin: localCover ? "videos" : null,
-      sortOrder: courses.length,
+      sortOrder: courseEntries.findIndex((entry) => entry.name === courseEntry.name),
     };
     const courseLessonStart = lessons.length;
     let courseVideoCount = 0;
@@ -173,6 +311,7 @@ async function scanCatalog(
       skippedLessonIds,
       warnings,
       probe,
+      existingLessonsByPath,
       ffprobePath: configuration.media.ffprobePath,
     });
 
@@ -206,6 +345,7 @@ async function scanCatalog(
         skippedLessonIds,
         warnings,
         probe,
+        existingLessonsByPath,
         ffprobePath: configuration.media.ffprobePath,
       });
     }
@@ -235,7 +375,11 @@ async function scanCatalog(
     }
   }
 
-  return { courses, sections, lessons, skippedLessonIds };
+  return {
+    snapshot: { courses, sections, lessons, skippedLessonIds },
+    courseIds,
+    courseOrder,
+  };
 }
 
 interface AppendLessonsOptions {
@@ -248,6 +392,7 @@ interface AppendLessonsOptions {
   skippedLessonIds: string[];
   warnings: ScanWarning[];
   probe: (filename: string, ffprobePath: string) => Promise<VideoProbe>;
+  existingLessonsByPath: Map<string, LessonRecord>;
   ffprobePath: string;
 }
 
@@ -256,10 +401,13 @@ async function appendLessons(options: AppendLessonsOptions): Promise<void> {
     const absolutePath = path.join(options.directory, file.name);
     const relativePath = posixPath(path.relative(options.root, absolutePath));
     try {
-      const [metadata, video] = await Promise.all([
-        fs.stat(absolutePath),
-        options.probe(absolutePath, options.ffprobePath),
-      ]);
+      const metadata = await fs.stat(absolutePath);
+      const modifiedAt = metadata.mtime.toISOString();
+      const existing = options.existingLessonsByPath.get(relativePath);
+      const video =
+        existing && existing.modifiedAt === modifiedAt && existing.sizeBytes === metadata.size
+          ? existing
+          : await options.probe(absolutePath, options.ffprobePath);
       options.lessons.push({
         id: identifier(relativePath),
         courseId: options.courseId,
@@ -273,7 +421,7 @@ async function appendLessons(options: AppendLessonsOptions): Promise<void> {
         videoCodec: video.videoCodec,
         audioCodec: video.audioCodec,
         browserCompatible: video.browserCompatible,
-        modifiedAt: metadata.mtime.toISOString(),
+        modifiedAt,
       });
     } catch (error) {
       options.skippedLessonIds.push(identifier(relativePath));

@@ -13,8 +13,10 @@ import type { VideoProbe } from "./probe.js";
 
 const temporaryDirectories: string[] = [];
 const databases: Database[] = [];
+const monitorStops: Array<() => void> = [];
 
 afterEach(async () => {
+  for (const stop of monitorStops.splice(0)) stop();
   await Promise.all(databases.splice(0).map((database) => database.close()));
   await Promise.all(
     temporaryDirectories.splice(0).map((directory) => fs.rm(directory, { recursive: true })),
@@ -105,13 +107,16 @@ describe("media scanner", () => {
     const database = await createDatabase(configuration, createLogger());
     databases.push(database);
     let failExistingLesson = false;
+    const probeCalls = new Map<string, number>();
     const fakeProbe = async (filename: string): Promise<VideoProbe> => {
+      const name = path.basename(filename);
+      probeCalls.set(name, (probeCalls.get(name) ?? 0) + 1);
       if (filename.includes("Broken") || (failExistingLesson && filename.includes("Start"))) {
         throw new Error("File is still copying");
       }
       return {
         durationSeconds: 60,
-        sizeBytes: 100,
+        sizeBytes: (await fs.stat(filename)).size,
         container: path.extname(filename).slice(1),
         videoCodec: "h264",
         audioCodec: "aac",
@@ -189,5 +194,92 @@ describe("media scanner", () => {
     expect(
       await database.connection("conversion_jobs").where({ lesson_id: convertedLesson.id }).first(),
     ).toBeUndefined();
+    expect(Object.fromEntries(probeCalls)).toEqual({
+      "02 - Start.mp4": 1,
+      "03 - Broken.mp4": 2,
+      "10 - Finish.mp4": 2,
+      "01 - Bridge.mkv": 1,
+    });
+  });
+
+  it("watches added and removed courses without re-inspecting existing videos", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
+    const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-data-"));
+    temporaryDirectories.push(root, dataDirectory);
+    const existingCourse = path.join(root, "Existing Course");
+    await fs.mkdir(existingCourse);
+    await fs.writeFile(path.join(existingCourse, "01 - Existing.mp4"), "existing video");
+
+    const configuration = createConfiguration({
+      APP_ENV: "testing",
+      VIDEOS_DIR: root,
+      DATA_DIR: dataDirectory,
+    });
+    const database = await createDatabase(configuration, createLogger());
+    databases.push(database);
+    const probeCalls: string[] = [];
+    let emitWatchEvent = (_filename: string): void => {
+      throw new Error("Library monitoring has not started");
+    };
+    const scanner = createScanner({
+      configuration,
+      repository: createCatalogRepository(database.connection),
+      logger: createLogger(),
+      watchDirectory: (_directory, _options, listener) => {
+        emitWatchEvent = (filename) => listener("rename", filename);
+        return {
+          on() {
+            return this;
+          },
+          close() {},
+        };
+      },
+      probe: async (filename): Promise<VideoProbe> => {
+        probeCalls.push(path.basename(filename));
+        return {
+          durationSeconds: 60,
+          sizeBytes: (await fs.stat(filename)).size,
+          container: "mp4",
+          videoCodec: "h264",
+          audioCodec: "aac",
+          browserCompatible: true,
+        };
+      },
+    });
+
+    await scanner.scanCatalog();
+    const stopMonitoring = scanner.startMonitoring();
+    monitorStops.push(stopMonitoring);
+
+    const addedCourse = path.join(root, "Added Course");
+    await fs.mkdir(addedCourse);
+    await fs.writeFile(path.join(addedCourse, "01 - Added.mp4"), "added video");
+    emitWatchEvent("Added Course/01 - Added.mp4");
+    await waitUntil(
+      async () =>
+        Number((await database.connection("courses").count({ count: "id" }).first())?.count) === 2,
+    );
+
+    expect(probeCalls).toEqual(["01 - Existing.mp4", "01 - Added.mp4"]);
+
+    await fs.rm(addedCourse, { recursive: true });
+    emitWatchEvent("Added Course");
+    await waitUntil(
+      async () =>
+        Number((await database.connection("courses").count({ count: "id" }).first())?.count) === 1,
+    );
+    expect(await database.connection("courses").select("title")).toEqual([
+      { title: "Existing Course" },
+    ]);
+    expect(probeCalls).toEqual(["01 - Existing.mp4", "01 - Added.mp4"]);
   });
 });
+
+async function waitUntil(check: () => Promise<boolean>): Promise<void> {
+  const deadline = Date.now() + 5_000;
+  while (Date.now() < deadline) {
+    if (await check()) return;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  throw new Error("Timed out waiting for library synchronization");
+}

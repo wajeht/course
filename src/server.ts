@@ -6,7 +6,7 @@ import { createContext, type AppContext } from "./context.js";
 export interface ServerInfo {
   server: ServerType;
   context: AppContext;
-  stopSchedule: () => void;
+  stopMonitoring: () => void;
 }
 
 export async function startServer(context: AppContext): Promise<ServerInfo> {
@@ -14,7 +14,7 @@ export async function startServer(context: AppContext): Promise<ServerInfo> {
   if (scan.status === "failed")
     context.logger.warn("Starting with the previous catalog", { error: scan.error });
   await context.conversions.recoverConversions();
-  const stopSchedule = context.scanner.startSchedule();
+  const stopMonitoring = context.scanner.startMonitoring();
   const app = createApp(context);
   const server = serve({
     fetch: app.fetch,
@@ -25,11 +25,11 @@ export async function startServer(context: AppContext): Promise<ServerInfo> {
     host: context.configuration.app.host,
     port: context.configuration.app.port,
   });
-  return { server, context, stopSchedule };
+  return { server, context, stopMonitoring };
 }
 
 export async function stopServer(info: ServerInfo): Promise<void> {
-  info.stopSchedule();
+  info.stopMonitoring();
   await new Promise<void>((resolve, reject) => {
     info.server.close((error) => (error ? reject(error) : resolve()));
   });
