@@ -49,6 +49,9 @@ const { isSectionExpanded, replaceExpandedSections, sectionPanelId, toggleSectio
 const allLessons = computed(
   () => course.value?.sections.flatMap((section) => section.lessons) ?? [],
 );
+const hasStarted = computed(() =>
+  allLessons.value.some((lesson) => lesson.completed || lesson.positionSeconds > 0),
+);
 const nextLesson = computed(
   () => allLessons.value.find((lesson) => !lesson.completed) ?? allLessons.value.at(0),
 );
@@ -157,7 +160,7 @@ watch(
             {{ tag }}
           </span>
         </div>
-        <div class="mb-[30px] max-w-[620px] max-[600px]:col-span-full">
+        <div v-if="hasStarted" class="mb-[30px] max-w-[620px] max-[600px]:col-span-full">
           <div class="mb-[10px] flex justify-between text-[.74rem] font-[650] text-white/68">
             <span>Course progress</span
             ><strong class="text-white">{{ course.progressPercent }}%</strong>
@@ -176,6 +179,7 @@ watch(
             {{ nextLesson.positionSeconds ? "Resume course" : "Start course" }}
           </AppButton>
           <AppButton
+            v-if="hasStarted"
             variant="outline-inverse"
             size="lg"
             :loading="resetAction.pending.value"
