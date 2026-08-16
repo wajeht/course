@@ -38,6 +38,27 @@ beforeEach(async () => {
 afterEach(async () => database.close());
 
 describe("progress service", () => {
+  it("marks an in-progress lesson as most recently opened", async () => {
+    const service = createProgressService(
+      createProgressRepository(database.connection),
+      createCatalogApiRepository(database.connection),
+    );
+    await service.updateProgress("b".repeat(24), 25);
+    await database
+      .connection("progress")
+      .where({ lesson_id: "b".repeat(24) })
+      .update({ updated_at: "2020-01-01T00:00:00.000Z" });
+
+    expect(await service.openLesson("b".repeat(24))).toBe(true);
+    expect(await database.connection("progress").first()).toMatchObject({
+      position_seconds: 25,
+      completed: 0,
+    });
+    expect((await database.connection("progress").first()).updated_at).not.toBe(
+      "2020-01-01T00:00:00.000Z",
+    );
+  });
+
   it("clamps positions and completes only through the completion action", async () => {
     const service = createProgressService(
       createProgressRepository(database.connection),

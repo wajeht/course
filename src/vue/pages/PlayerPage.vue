@@ -86,6 +86,8 @@ async function loadPlayer(): Promise<void> {
     const lessonId = String(route.params.lessonId);
     const detail = await api.getLesson(lessonId);
     if (!videoPlayback.isCurrentRequest(requestId)) return;
+    await api.openLesson(lessonId);
+    if (!videoPlayback.isCurrentRequest(requestId)) return;
     lesson.value = detail.lesson;
     playbackProgress.startSession(detail.lesson.id, detail.lesson.positionSeconds);
     course.value = detail.course;
