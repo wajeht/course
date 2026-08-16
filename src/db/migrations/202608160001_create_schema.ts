@@ -70,7 +70,7 @@ export async function up(knex: Knex): Promise<void> {
     table.bigInteger("active_at").notNullable();
   });
 
-  await knex.schema.createTable("login_attempts", (table) => {
+  await knex.schema.createTable("auth_login_attempts", (table) => {
     table.text("client_key").primary();
     table.integer("failures").notNullable();
     table.bigInteger("reset_at").notNullable();
@@ -83,11 +83,13 @@ export async function up(knex: Knex): Promise<void> {
   await knex.schema.raw("CREATE INDEX conversions_status_idx ON conversions(status)");
   await knex.schema.raw("CREATE INDEX auth_sessions_created_at_idx ON auth_sessions(created_at)");
   await knex.schema.raw("CREATE INDEX auth_sessions_active_at_idx ON auth_sessions(active_at)");
-  await knex.schema.raw("CREATE INDEX login_attempts_reset_at_idx ON login_attempts(reset_at)");
+  await knex.schema.raw(
+    "CREATE INDEX auth_login_attempts_reset_at_idx ON auth_login_attempts(reset_at)",
+  );
 }
 
 export async function down(knex: Knex): Promise<void> {
-  await knex.schema.dropTableIfExists("login_attempts");
+  await knex.schema.dropTableIfExists("auth_login_attempts");
   await knex.schema.dropTableIfExists("auth_sessions");
   await knex.schema.dropTableIfExists("auth_credentials");
   await knex.schema.dropTableIfExists("settings");
