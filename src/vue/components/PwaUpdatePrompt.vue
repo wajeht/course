@@ -14,7 +14,7 @@ function close(): void {
 <template>
   <aside
     v-if="offlineReady || needRefresh"
-    class="fixed right-5 bottom-5 z-50 w-[min(380px,calc(100%-40px))] rounded-[10px] border border-white/15 bg-pine-deep p-5 text-white shadow-[0_20px_55px_rgb(10_25_18_/_35%)]"
+    class="fixed right-5 bottom-5 z-50 w-[min(380px,calc(100%-40px))] rounded-[10px] border border-white/15 bg-pine-deep p-5 text-white shadow-[0_20px_55px_rgb(10_25_18_/_35%)] max-[600px]:bottom-[calc(76px+env(safe-area-inset-bottom))]"
     aria-live="polite"
   >
     <p class="font-display text-lg font-extrabold tracking-[.02em]">
