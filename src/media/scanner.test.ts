@@ -273,6 +273,28 @@ describe("media scanner", () => {
     ]);
     expect(probeCalls).toEqual(["01 - Existing.mp4", "01 - Added.mp4"]);
   });
+
+  it("fails when library monitoring cannot start", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
+    temporaryDirectories.push(root);
+    const configuration = createConfiguration({
+      APP_ENV: "testing",
+      VIDEOS_DIR: root,
+      DATA_DIR: path.join(root, "data"),
+    });
+    const database = await createDatabase(configuration, createLogger());
+    databases.push(database);
+    const scanner = createScanner({
+      configuration,
+      repository: createCatalogRepository(database.connection),
+      logger: createLogger(),
+      watchDirectory: () => {
+        throw new Error("Library watcher unavailable");
+      },
+    });
+
+    expect(() => scanner.startMonitoring()).toThrow("Library watcher unavailable");
+  });
 });
 
 async function waitUntil(check: () => Promise<boolean>): Promise<void> {
