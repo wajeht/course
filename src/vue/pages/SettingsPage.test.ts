@@ -60,9 +60,24 @@ describe("SettingsPage", () => {
     expect(dataCard.get("header h2").text()).toBe("Library scan");
     expect(dataCard.text()).toContain("12 courses · 215 lessons");
     expect(wrapper.get("#settings-data-panel").text()).toContain("Courses per page");
+    expect(wrapper.get("[data-settings-layout]").classes()).toContain("gap-[clamp(18px,2vw,30px)]");
+    expect(wrapper.get("#settings-data-panel").classes()).toEqual(
+      expect.arrayContaining(["grid", "gap-[clamp(18px,2vw,30px)]"]),
+    );
+
+    const mobileSignOut = wrapper.get("[data-mobile-sign-out]");
+    expect(mobileSignOut.text()).toBe("Sign out");
+    expect(wrapper.get("[data-mobile-sign-out-container]").classes()).toEqual(
+      expect.arrayContaining(["hidden", "max-[760px]:block"]),
+    );
+    expect(wrapper.get("[data-desktop-sign-out]").text()).toBe("Sign out");
+    expect(wrapper.get("[data-desktop-sign-out-container]").classes()).toContain(
+      "max-[760px]:hidden",
+    );
 
     await wrapper.get("#settings-auth-tab").trigger("click");
     const authCard = wrapper.get("#settings-auth-panel > section");
     expect(authCard.get("header h2").text()).toBe("Access");
+    expect(wrapper.get("[data-mobile-sign-out]").text()).toBe("Sign out");
   });
 });
