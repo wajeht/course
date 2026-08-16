@@ -131,7 +131,7 @@ watch(
           v-if="course.instructors.length"
           class="-mt-3 mb-4 text-[.78rem] font-bold tracking-[.04em] text-belt-light"
         >
-          With
+          Taught by
           <template v-for="(instructor, index) in course.instructors" :key="instructor">
             <span v-if="index" aria-hidden="true">, </span>
             <RouterLink
