@@ -81,7 +81,7 @@ describe("password authentication", () => {
 
     const badLogin = await app.request(
       "/api/auth",
-      jsonRequest("POST", { password: "wrong-password" }),
+      jsonRequest("POST", { password: "wrong-course-password" }),
     );
     expect(badLogin.status).toBe(401);
 
@@ -167,7 +167,7 @@ describe("password authentication", () => {
 
     for (let attempt = 0; attempt < 2; attempt += 1) {
       expect(
-        (await app.request("/api/auth", jsonRequest("POST", { password: "wrong-password" })))
+        (await app.request("/api/auth", jsonRequest("POST", { password: "wrong-course-password" })))
           .status,
       ).toBe(401);
     }
@@ -185,14 +185,16 @@ describe("password authentication", () => {
     await context.auth.setupPassword("test-course-password");
 
     expect(
-      (await app.request("/api/auth", jsonRequest("POST", { password: "wrong-password" }))).status,
+      (await app.request("/api/auth", jsonRequest("POST", { password: "wrong-course-password" })))
+        .status,
     ).toBe(401);
     expect(
       (await app.request("/api/auth", jsonRequest("POST", { password: "test-course-password" })))
         .status,
     ).toBe(200);
     expect(
-      (await app.request("/api/auth", jsonRequest("POST", { password: "wrong-password" }))).status,
+      (await app.request("/api/auth", jsonRequest("POST", { password: "wrong-course-password" })))
+        .status,
     ).toBe(401);
     expect(
       (await app.request("/api/auth", jsonRequest("POST", { password: "test-course-password" })))
@@ -208,8 +210,12 @@ describe("password authentication", () => {
 
     for (let attempt = 0; attempt < 2; attempt += 1) {
       expect(
-        (await first.app.request("/api/auth", jsonRequest("POST", { password: "wrong-password" })))
-          .status,
+        (
+          await first.app.request(
+            "/api/auth",
+            jsonRequest("POST", { password: "wrong-course-password" }),
+          )
+        ).status,
       ).toBe(401);
     }
     await closeContext(first.context);
@@ -306,7 +312,7 @@ describe("password authentication", () => {
     ).toBe(201);
   });
 
-  it("allows existing passwords shorter than the current creation minimum", async () => {
+  it("rejects passwords shorter than the required minimum when signing in", async () => {
     const { app, context } = await testApp();
     const password = "short123";
     await context.database.connection("auth_credentials").insert({
@@ -314,7 +320,8 @@ describe("password authentication", () => {
       password_hash: await bcrypt.hash(password, 4),
     });
 
-    expect((await app.request("/api/auth", jsonRequest("POST", { password }))).status).toBe(200);
+    expect(await context.auth.verifyPassword(password)).toBe(false);
+    expect((await app.request("/api/auth", jsonRequest("POST", { password }))).status).toBe(400);
   });
 
   it("rejects passwords that bcrypt would silently truncate", async () => {

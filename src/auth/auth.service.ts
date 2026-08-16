@@ -57,11 +57,7 @@ export function createAuthService(
 
     async verifyPassword(password: string): Promise<boolean> {
       const hash = await repository.getPasswordHash();
-      return (
-        Boolean(hash) &&
-        Buffer.byteLength(password, "utf8") <= 72 &&
-        bcrypt.compare(password, hash!)
-      );
+      return Boolean(hash) && hasValidPasswordLength(password) && bcrypt.compare(password, hash!);
     },
 
     async setupPassword(password: string, setupToken?: string): Promise<PasswordResult> {

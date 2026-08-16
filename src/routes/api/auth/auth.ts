@@ -10,16 +10,15 @@ import type { Configuration } from "../../../configuration.js";
 import type { AppContext } from "../../../context.js";
 import { MIN_PASSWORD_LENGTH } from "../../../auth/auth.service.js";
 
-const loginPasswordSchema = z
+const passwordSchema = z
   .string()
-  .min(1)
   .max(72)
+  .refine(
+    (password) => [...password].length >= MIN_PASSWORD_LENGTH,
+    `Password must be at least ${MIN_PASSWORD_LENGTH} characters`,
+  )
   .refine((password) => Buffer.byteLength(password, "utf8") <= 72, "Password is too long");
-const passwordSchema = loginPasswordSchema.refine(
-  (password) => [...password].length >= MIN_PASSWORD_LENGTH,
-  `Password must be at least ${MIN_PASSWORD_LENGTH} characters`,
-);
-const loginSchema = z.object({ password: loginPasswordSchema }).strict();
+const loginSchema = z.object({ password: passwordSchema }).strict();
 const setupSchema = z
   .object({
     password: passwordSchema,
@@ -33,7 +32,7 @@ const setupSchema = z
   });
 const changePasswordSchema = z
   .object({
-    currentPassword: loginPasswordSchema,
+    currentPassword: passwordSchema,
     newPassword: passwordSchema,
     confirmPassword: z.string(),
   })
