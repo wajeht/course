@@ -1,6 +1,6 @@
 import type { Knex } from "knex";
 
-const passwordKey = "app_password";
+const credentialsId = 1;
 
 export interface LoginAttempt {
   failures: number;
@@ -30,40 +30,38 @@ export interface AuthRepository {
 export function createAuthRepository(database: Knex): AuthRepository {
   return {
     async getPasswordHash(): Promise<string | null> {
-      const setting = await database("settings")
-        .where({ key: passwordKey })
-        .first<{ value: string }>();
-      return setting?.value ?? null;
+      const credentials = await database("auth_credentials")
+        .where({ id: credentialsId })
+        .first<{ password_hash: string }>();
+      return credentials?.password_hash ?? null;
     },
 
     async setPasswordHash(passwordHash: string): Promise<void> {
-      const updatedAt = new Date().toISOString();
-      await database("settings")
-        .insert({ key: passwordKey, value: passwordHash, updated_at: updatedAt })
-        .onConflict("key")
-        .merge({ value: passwordHash, updated_at: updatedAt });
+      await database("auth_credentials")
+        .insert({ id: credentialsId, password_hash: passwordHash })
+        .onConflict("id")
+        .merge({ password_hash: passwordHash });
     },
 
     async changePasswordHash(passwordHash: string): Promise<void> {
-      const updatedAt = new Date().toISOString();
       await database.transaction(async (transaction) => {
-        await transaction("settings")
-          .insert({ key: passwordKey, value: passwordHash, updated_at: updatedAt })
-          .onConflict("key")
-          .merge({ value: passwordHash, updated_at: updatedAt });
+        await transaction("auth_credentials")
+          .insert({ id: credentialsId, password_hash: passwordHash })
+          .onConflict("id")
+          .merge({ password_hash: passwordHash });
         await transaction("auth_sessions").delete();
       });
     },
 
     async getLoginAttempt(clientKey: string, now: number): Promise<LoginAttempt | null> {
-      const attempt = await database("auth_login_attempts")
+      const attempt = await database("login_attempts")
         .where({ client_key: clientKey })
         .first<{ failures: number; reset_at: number }>();
       if (!attempt) return null;
 
       const resetAt = Number(attempt.reset_at);
       if (resetAt <= now) {
-        await database("auth_login_attempts")
+        await database("login_attempts")
           .where({ client_key: clientKey })
           .andWhere("reset_at", "<=", now)
           .delete();
@@ -75,13 +73,13 @@ export function createAuthRepository(database: Knex): AuthRepository {
 
     async recordLoginFailure(clientKey: string, now: number, windowMs: number): Promise<void> {
       await database.transaction(async (transaction) => {
-        await transaction("auth_login_attempts").where("reset_at", "<=", now).delete();
-        const current = await transaction("auth_login_attempts")
+        await transaction("login_attempts").where("reset_at", "<=", now).delete();
+        const current = await transaction("login_attempts")
           .where({ client_key: clientKey })
           .first<{ failures: number; reset_at: number }>();
         const resetAt = current ? Number(current.reset_at) : now + windowMs;
 
-        await transaction("auth_login_attempts")
+        await transaction("login_attempts")
           .insert({
             client_key: clientKey,
             failures: (current?.failures ?? 0) + 1,
@@ -93,7 +91,7 @@ export function createAuthRepository(database: Knex): AuthRepository {
     },
 
     async clearLoginFailures(clientKey: string): Promise<void> {
-      await database("auth_login_attempts").where({ client_key: clientKey }).delete();
+      await database("login_attempts").where({ client_key: clientKey }).delete();
     },
 
     async createSession(session: StoredSession): Promise<void> {

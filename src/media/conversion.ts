@@ -6,13 +6,17 @@ import path from "node:path";
 import type { Configuration } from "../configuration.js";
 import type { CatalogRepository, LessonRow } from "../routes/api/catalog/catalog.repository.js";
 import type { Logger } from "../logger.js";
-import type { ConversionRecord, ConversionRepository } from "./conversion.repository.js";
+import type { ConversionRepository, StoredConversion } from "./conversion.repository.js";
 import { resolveContainedPath } from "./path.js";
 
 export type ConversionExecutor = (
   lesson: LessonRow,
   onProgress: (progress: number) => Promise<void>,
-) => Promise<string>;
+) => Promise<void>;
+
+export interface ConversionRecord extends StoredConversion {
+  playlistPath: string;
+}
 
 export interface ConversionManager {
   requestConversion(lesson: LessonRow): Promise<ConversionRecord>;
@@ -124,8 +128,6 @@ export function createFfmpegConversionExecutor(configuration: Configuration): Co
         else reject(new Error(stderr.trim() || `FFmpeg exited with code ${code}`));
       });
     });
-
-    return playlist;
   };
 }
 
@@ -140,6 +142,17 @@ export function createConversionManager(options: {
   const queue: string[] = [];
   const scheduled = new Set<string>();
   let processing = false;
+
+  function conversionRecord(stored: StoredConversion): ConversionRecord {
+    return {
+      ...stored,
+      playlistPath: path.join(
+        options.configuration.media.hlsDirectory,
+        stored.lessonId,
+        "index.m3u8",
+      ),
+    };
+  }
 
   function enqueueLesson(lessonId: string): void {
     if (scheduled.has(lessonId)) return;
@@ -160,15 +173,12 @@ export function createConversionManager(options: {
           scheduled.delete(lessonId);
           continue;
         }
-        await options.repository.markConverting(
-          lessonId,
-          path.join(options.configuration.media.hlsDirectory, lessonId, "index.m3u8"),
-        );
+        await options.repository.markConverting(lessonId);
         try {
-          const playlist = await executor(lesson, (progress) =>
+          await executor(lesson, (progress) =>
             options.repository.updateProgress(lessonId, progress),
           );
-          await options.repository.markReady(lessonId, playlist);
+          await options.repository.markReady(lessonId);
         } catch (error) {
           const message = error instanceof Error ? error.message : "Conversion failed";
           await options.repository.markFailed(lessonId, message);
@@ -183,20 +193,24 @@ export function createConversionManager(options: {
   }
 
   async function queueLesson(lesson: LessonRow, force: boolean): Promise<ConversionRecord> {
-    const existing = await options.repository.getConversion(lesson.id);
-    if (!force && existing) {
+    const stored = await options.repository.getConversion(lesson.id);
+    if (!force && stored) {
+      const existing = conversionRecord(stored);
       if (existing.status !== "ready" || (await hasConversionPlaylist(existing))) return existing;
       options.logger.warn("Rebuilding missing conversion cache", { lessonId: lesson.id });
     }
     await options.repository.queueConversion(lesson.id);
     enqueueLesson(lesson.id);
-    return (await options.repository.getConversion(lesson.id))!;
+    return conversionRecord((await options.repository.getConversion(lesson.id))!);
   }
 
   return {
     requestConversion: (lesson) => queueLesson(lesson, false),
     retryConversion: (lesson) => queueLesson(lesson, true),
-    getConversion: (lessonId) => options.repository.getConversion(lessonId),
+    async getConversion(lessonId) {
+      const stored = await options.repository.getConversion(lessonId);
+      return stored ? conversionRecord(stored) : null;
+    },
     async recoverConversions() {
       for (const lessonId of await options.repository.listPendingLessonIds()) {
         await options.repository.queueConversion(lessonId);
@@ -207,7 +221,6 @@ export function createConversionManager(options: {
 }
 
 async function hasConversionPlaylist(record: ConversionRecord): Promise<boolean> {
-  if (!record.playlistPath) return false;
   try {
     await fs.access(record.playlistPath);
     return true;

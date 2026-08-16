@@ -18,8 +18,6 @@ beforeEach(async () => {
     title: "Course",
     description: "",
     sort_order: 0,
-    created_at: now,
-    updated_at: now,
   });
   await database.connection("lessons").insert({
     id: "b".repeat(24),

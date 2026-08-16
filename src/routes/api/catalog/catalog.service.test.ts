@@ -10,7 +10,6 @@ let database: Database;
 
 beforeEach(async () => {
   database = await createDatabase(createConfiguration({ APP_ENV: "testing" }), createLogger());
-  const now = new Date().toISOString();
   await database.connection("courses").insert([
     {
       id: "a".repeat(24),
@@ -21,8 +20,6 @@ beforeEach(async () => {
       instructors_json: JSON.stringify(["Jane Smith"]),
       tags_json: JSON.stringify(["Docker", "DevOps"]),
       sort_order: 0,
-      created_at: now,
-      updated_at: now,
     },
     {
       id: "b".repeat(24),
@@ -33,8 +30,6 @@ beforeEach(async () => {
       instructors_json: JSON.stringify(["John Doe", "jane smith"]),
       tags_json: JSON.stringify(["Guard"]),
       sort_order: 1,
-      created_at: now,
-      updated_at: now,
     },
   ]);
 });

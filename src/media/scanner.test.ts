@@ -169,13 +169,10 @@ describe("media scanner", () => {
       completed: false,
       updated_at: new Date().toISOString(),
     });
-    await database.connection("conversion_jobs").insert({
+    await database.connection("conversions").insert({
       lesson_id: convertedLesson.id,
       status: "ready",
       progress: 100,
-      playlist_path: "/data/hls/index.m3u8",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     });
     const changedAt = new Date(Date.now() + 10_000);
     await fs.utimes(path.join(courseDirectory, "10 - Finish.mp4"), changedAt, changedAt);
@@ -192,7 +189,7 @@ describe("media scanner", () => {
       position_seconds: 30,
     });
     expect(
-      await database.connection("conversion_jobs").where({ lesson_id: convertedLesson.id }).first(),
+      await database.connection("conversions").where({ lesson_id: convertedLesson.id }).first(),
     ).toBeUndefined();
     expect(Object.fromEntries(probeCalls)).toEqual({
       "02 - Start.mp4": 1,

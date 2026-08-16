@@ -309,10 +309,9 @@ describe("password authentication", () => {
   it("allows existing passwords shorter than the current creation minimum", async () => {
     const { app, context } = await testApp();
     const password = "short123";
-    await context.database.connection("settings").insert({
-      key: "app_password",
-      value: await bcrypt.hash(password, 4),
-      updated_at: new Date().toISOString(),
+    await context.database.connection("auth_credentials").insert({
+      id: 1,
+      password_hash: await bcrypt.hash(password, 4),
     });
 
     expect((await app.request("/api/auth", jsonRequest("POST", { password }))).status).toBe(200);
