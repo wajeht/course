@@ -110,7 +110,7 @@ watch(
       </div>
       <div class="max-w-[800px] self-center max-[600px]:contents">
         <RouterLink
-          to="/"
+          to="/library"
           class="mb-[42px] inline-block text-[.78rem] font-bold text-white/68 hover:text-white max-[860px]:mb-[25px] max-[600px]:col-span-full max-[600px]:mb-0"
         >
           ← Library
@@ -273,7 +273,7 @@ watch(
     />
     <EmptyState v-else title="Course unavailable" :description="error" :heading-level="1">
       <template #actions>
-        <AppButton :as="RouterLink" to="/" size="lg">Back to library</AppButton>
+        <AppButton :as="RouterLink" to="/library" size="lg">Back to library</AppButton>
       </template>
     </EmptyState>
   </main>

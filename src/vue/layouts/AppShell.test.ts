@@ -7,7 +7,12 @@ import { describe, expect, it } from "vitest";
 import AppShell from "./AppShell.vue";
 
 const routes: RouteRecordRaw[] = [
-  { path: "/", component: { template: "<div />" }, meta: { navigation: "library" } },
+  { path: "/", component: { template: "<div />" }, meta: { navigation: "home" } },
+  {
+    path: "/library",
+    component: { template: "<div />" },
+    meta: { navigation: "library" },
+  },
   {
     path: "/settings",
     component: { template: "<div />" },
@@ -35,7 +40,17 @@ describe("AppShell", () => {
       "max-[600px]:hidden",
     );
     expect(mobileNavigation.findAll("svg")).toHaveLength(0);
+    expect(mobileNavigation.findAll("a")).toHaveLength(3);
     expect(mobileNavigation.get('a[href="/settings"]').attributes("aria-current")).toBe("page");
+    expect(mobileNavigation.get('a[href="/"]').attributes("aria-current")).toBeUndefined();
+    expect(mobileNavigation.get('a[href="/library"]').attributes("aria-current")).toBeUndefined();
+  });
+
+  it("selects the library navigation on the library page", async () => {
+    const wrapper = await mountShell("/library");
+    const mobileNavigation = wrapper.get('nav[aria-label="Mobile navigation"]');
+
+    expect(mobileNavigation.get('a[href="/library"]').attributes("aria-current")).toBe("page");
     expect(mobileNavigation.get('a[href="/"]').attributes("aria-current")).toBeUndefined();
   });
 });
