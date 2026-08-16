@@ -197,13 +197,6 @@ async function logout(): Promise<void> {
               loading-label="Refreshing…"
               @click="rescanCatalog"
             >
-              <svg
-                class="w-4 fill-none stroke-current stroke-[1.8]"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path d="M20 7v5h-5M4 17v-5h5m10.1-3A8 8 0 0 0 5.5 6M4.9 15A8 8 0 0 0 18.5 18" />
-              </svg>
               Refresh library
             </AppButton>
           </div>
