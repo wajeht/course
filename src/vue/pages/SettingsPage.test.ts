@@ -20,7 +20,9 @@ vi.mock("@/api.js", () => ({
       status: "complete",
       warnings: [],
     })),
+    getSettings: vi.fn(async () => ({ catalogPageSize: 24 })),
     rescanCatalog: vi.fn(),
+    updateSettings: vi.fn(async (catalogPageSize) => ({ catalogPageSize })),
   },
 }));
 
@@ -57,6 +59,7 @@ describe("SettingsPage", () => {
     const dataCard = wrapper.get("#settings-data-panel > section");
     expect(dataCard.get("header h2").text()).toBe("Library scan");
     expect(dataCard.text()).toContain("12 courses · 215 lessons");
+    expect(wrapper.get("#settings-data-panel").text()).toContain("Courses per page");
 
     await wrapper.get("#settings-auth-tab").trigger("click");
     const authCard = wrapper.get("#settings-auth-panel > section");

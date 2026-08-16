@@ -12,6 +12,11 @@ function queryPage(value: unknown): number {
   return Number.isInteger(page) && page > 0 ? page : 1;
 }
 
+function queryPageSize(value: unknown): number | undefined {
+  const pageSize = Number.parseInt(queryString(value), 10);
+  return Number.isInteger(pageSize) && pageSize >= 1 && pageSize <= 100 ? pageSize : undefined;
+}
+
 export function useCatalogRouteState(debounceMilliseconds = 150) {
   const route = useRoute();
   const router = useRouter();
@@ -55,7 +60,7 @@ export function useCatalogRouteState(debounceMilliseconds = 150) {
     instructor: selectedInstructor.value || undefined,
     tag: selectedTag.value || undefined,
     page: page.value,
-    pageSize: 24,
+    pageSize: queryPageSize(route.query.pageSize),
   }));
 
   let searchTimer: ReturnType<typeof setTimeout> | undefined;

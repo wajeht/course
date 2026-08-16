@@ -58,6 +58,12 @@ export async function up(knex: Knex): Promise<void> {
     table.text("updated_at").notNullable();
   });
 
+  await knex("settings").insert({
+    key: "catalog_page_size",
+    value: "24",
+    updated_at: new Date().toISOString(),
+  });
+
   await knex.schema.createTable("auth_credentials", (table) => {
     table.integer("id").primary();
     table.text("password_hash").notNullable();

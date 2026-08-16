@@ -6,6 +6,7 @@ import { createCatalogRouter } from "./catalog/catalog.js";
 import { createPlaybackRouter } from "./playback/playback.js";
 import { createProgressRouter } from "./progress/progress.js";
 import { createScanRouter } from "./scan/scan.js";
+import { createSettingsRouter } from "./settings/settings.js";
 
 export function createApiRouter(context: AppContext) {
   return new Hono()
@@ -14,5 +15,6 @@ export function createApiRouter(context: AppContext) {
     .route("/catalog", createCatalogRouter(context))
     .route("/progress", createProgressRouter(context))
     .route("/playback", createPlaybackRouter(context))
+    .route("/settings", createSettingsRouter(context))
     .route("/scan", createScanRouter(context));
 }

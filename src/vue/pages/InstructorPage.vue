@@ -21,7 +21,6 @@ const page = computed(() => {
 const filters = computed<CatalogFilters>(() => ({
   instructor: instructorName.value,
   page: page.value,
-  pageSize: 24,
 }));
 const instructorRequest = useAsyncData(({ signal }) => api.getCatalog(filters.value, signal), {
   immediate: false,

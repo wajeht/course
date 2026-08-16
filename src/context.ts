@@ -25,6 +25,11 @@ import {
   createProgressService,
   type ProgressService,
 } from "./routes/api/progress/progress.service.js";
+import { createSettingsRepository } from "./routes/api/settings/settings.repository.js";
+import {
+  createSettingsService,
+  type SettingsService,
+} from "./routes/api/settings/settings.service.js";
 import { createLogger, type Logger } from "./logger.js";
 
 export interface AppContext {
@@ -36,6 +41,7 @@ export interface AppContext {
   scannerCatalogRepository: ScannerCatalogRepository;
   catalog: CatalogService;
   progress: ProgressService;
+  settings: SettingsService;
   playback: PlaybackService;
   scanner: Scanner;
   conversions: ConversionManager;
@@ -54,7 +60,8 @@ export async function createContext(
   const auth = createAuthService(createAuthRepository(database.connection), configuration);
   const scannerCatalogRepository = createCatalogRepository(database.connection);
   const catalogRepository = createCatalogApiRepository(database.connection);
-  const catalog = createCatalogService(catalogRepository);
+  const settings = createSettingsService(createSettingsRepository(database.connection));
+  const catalog = createCatalogService(catalogRepository, settings);
   const progress = createProgressService(
     createProgressRepository(database.connection),
     catalogRepository,
@@ -77,6 +84,7 @@ export async function createContext(
     scannerCatalogRepository,
     catalog,
     progress,
+    settings,
     playback,
     scanner,
     conversions,

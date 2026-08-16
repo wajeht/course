@@ -9,6 +9,7 @@ import type {
   LessonDto,
 } from "../routes/api/catalog/catalog.service";
 import type { PlaybackResult } from "../routes/api/playback/playback.service";
+import type { CatalogPageSize, SettingsDto } from "../routes/api/settings/settings.service";
 
 const apiClient = hc<AppType>("/");
 
@@ -20,7 +21,15 @@ export interface AuthStateDto {
 }
 
 export type CatalogDto = Awaited<ReturnType<CatalogService["getCatalog"]>>;
-export type { CatalogFilters, CourseDetailDto, LessonDto, PlaybackResult, ScanStatus };
+export type {
+  CatalogFilters,
+  CatalogPageSize,
+  CourseDetailDto,
+  LessonDto,
+  PlaybackResult,
+  ScanStatus,
+  SettingsDto,
+};
 
 export class ApiError extends Error {
   constructor(
@@ -149,6 +158,16 @@ export const api = {
       param: { courseId },
     });
     await expectProtectedJson(response);
+  },
+  async getSettings(signal?: AbortSignal): Promise<SettingsDto> {
+    return expectProtectedJson<SettingsDto>(
+      await apiClient.api.settings.$get({}, { init: { signal } }),
+    );
+  },
+  async updateSettings(catalogPageSize: CatalogPageSize): Promise<SettingsDto> {
+    return expectProtectedJson<SettingsDto>(
+      await apiClient.api.settings.$put({ json: { catalogPageSize } }),
+    );
   },
   async getScanStatus(signal?: AbortSignal): Promise<ScanStatus> {
     return expectProtectedJson<ScanStatus>(await apiClient.api.scan.$get({}, { init: { signal } }));

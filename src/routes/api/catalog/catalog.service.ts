@@ -73,6 +73,10 @@ export interface CatalogService {
   findLessonRecord(lessonId: string): Promise<LessonRow | undefined>;
 }
 
+export interface CatalogSettings {
+  getCatalogPageSize(): Promise<number>;
+}
+
 function stringList(value: string): string[] {
   return JSON.parse(value) as string[];
 }
@@ -120,7 +124,10 @@ function lessonDto(row: LessonRow): LessonDto {
   };
 }
 
-export function createCatalogService(repository: CatalogRepository): CatalogService {
+export function createCatalogService(
+  repository: CatalogRepository,
+  settings: CatalogSettings,
+): CatalogService {
   async function getCourse(courseId: string): Promise<CourseDetailDto | null> {
     const [courseRow, lessonRows] = await Promise.all([
       repository.findCourse(courseId),
@@ -146,10 +153,11 @@ export function createCatalogService(repository: CatalogRepository): CatalogServ
     async getCatalog(filters) {
       const {
         page: requestedPage = 1,
-        pageSize: requestedPageSize = 24,
+        pageSize: requestedPageSize,
         ...courseFilters
       } = filters ?? {};
-      const pageSize = Math.min(100, Math.max(1, requestedPageSize));
+      const configuredPageSize = requestedPageSize ?? (await settings.getCatalogPageSize());
+      const pageSize = Math.min(100, Math.max(1, configuredPageSize));
       const totalCourses = await repository.countCourses(courseFilters);
       const totalPages = Math.ceil(totalCourses / pageSize);
       const page = totalPages === 0 ? 1 : Math.min(Math.max(1, requestedPage), totalPages);

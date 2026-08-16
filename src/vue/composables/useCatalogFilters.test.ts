@@ -84,7 +84,7 @@ describe("useCatalogFilters", () => {
         instructor: "John Danaher",
         tag: "BJJ",
         page: 2,
-        pageSize: 24,
+        pageSize: undefined,
       },
       expect.any(AbortSignal),
     );
@@ -142,6 +142,22 @@ describe("useCatalogFilters", () => {
 
     filters.setPage(2);
     await vi.waitFor(() => expect(router.currentRoute.value.query.page).toBe("2"));
+    stop();
+  });
+
+  it("uses a page size from the URL when provided", async () => {
+    const client = {
+      getCatalog: vi.fn(async () => catalog()),
+      getScanStatus: vi.fn(async () => scanStatus()),
+    };
+    const { stop } = await setup(client, "/?pageSize=48");
+
+    await vi.waitFor(() =>
+      expect(client.getCatalog).toHaveBeenCalledWith(
+        expect.objectContaining({ pageSize: 48 }),
+        expect.any(AbortSignal),
+      ),
+    );
     stop();
   });
 

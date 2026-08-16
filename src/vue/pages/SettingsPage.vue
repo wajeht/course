@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 
-import { api } from "@/api.js";
+import { api, type CatalogPageSize } from "@/api.js";
 import AlertMessage from "@/components/ui/AlertMessage.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppInput from "@/components/ui/AppInput.vue";
+import AppSelect from "@/components/ui/AppSelect.vue";
 import FormField from "@/components/ui/FormField.vue";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import PanelCard from "@/components/ui/PanelCard.vue";
@@ -18,6 +19,7 @@ import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
 import SettingsNavigation, { type SettingsSection } from "@/pages/partials/SettingsNavigation.vue";
 
 const scanRequest = useAsyncData(({ signal }) => api.getScanStatus(signal));
+const settingsRequest = useAsyncData(({ signal }) => api.getSettings(signal));
 const auth = useAuth();
 const confirmation = useConfirm();
 const toast = useToast();
@@ -25,6 +27,7 @@ const activeSection = ref<SettingsSection>("data");
 const currentPassword = ref("");
 const newPassword = ref("");
 const confirmPassword = ref("");
+const catalogPageSize = ref<CatalogPageSize>(24);
 const validationError = ref("");
 const scanStatus = computed(() => scanRequest.data.value);
 const rescanAction = useAsyncAction(() => api.rescanCatalog(), {
@@ -32,6 +35,14 @@ const rescanAction = useAsyncAction(() => api.rescanCatalog(), {
   onSuccess: (status) => {
     scanRequest.data.value = status;
     toast.success("Library scan complete");
+  },
+});
+const settingsAction = useAsyncAction(() => api.updateSettings(catalogPageSize.value), {
+  errorMessage: "Could not save library settings",
+  onSuccess: (settings) => {
+    settingsRequest.data.value = settings;
+    catalogPageSize.value = settings.catalogPageSize;
+    toast.success("Library settings saved");
   },
 });
 const passwordAction = useAsyncAction(
@@ -55,6 +66,15 @@ const scanError = computed(() => {
   return caught instanceof Error ? caught.message : caught ? "Could not load scan status" : "";
 });
 const passwordError = computed(() => validationError.value || passwordAction.errorMessage.value);
+const settingsError = computed(() => {
+  if (settingsAction.errorMessage.value) return settingsAction.errorMessage.value;
+  const caught = settingsRequest.error.value;
+  return caught instanceof Error ? caught.message : caught ? "Could not load settings" : "";
+});
+
+watch(settingsRequest.data, (settings) => {
+  if (settings) catalogPageSize.value = settings.catalogPageSize;
+});
 
 async function rescanCatalog(): Promise<void> {
   await rescanAction.run();
@@ -68,6 +88,10 @@ async function changePassword(): Promise<void> {
     return;
   }
   await passwordAction.run();
+}
+
+async function saveSettings(): Promise<void> {
+  await settingsAction.run();
 }
 
 async function logout(): Promise<void> {
@@ -106,6 +130,9 @@ async function logout(): Promise<void> {
       >
         <AlertMessage v-if="scanError" class="mb-5" size="lg">
           {{ scanError }}
+        </AlertMessage>
+        <AlertMessage v-if="settingsError" class="mb-5" size="lg">
+          {{ settingsError }}
         </AlertMessage>
 
         <PanelCard class="min-h-[260px]" padding="none">
@@ -147,6 +174,45 @@ async function logout(): Promise<void> {
               Rescan library
             </AppButton>
           </div>
+        </PanelCard>
+
+        <PanelCard class="mt-5" padding="none">
+          <PanelCardHeader
+            title="Library display"
+            description="Choose how many courses appear on each library page."
+          />
+          <form
+            class="flex items-end justify-between gap-6 p-[clamp(22px,4vw,34px)] max-[600px]:flex-col max-[600px]:items-stretch"
+            @submit.prevent="saveSettings"
+          >
+            <FormField
+              v-slot="field"
+              class="w-full max-w-xs"
+              label="Courses per page"
+              help-text="This becomes the default for library and instructor pages."
+            >
+              <AppSelect
+                :id="field.inputId"
+                v-model="catalogPageSize"
+                :aria-describedby="field.describedBy"
+                :disabled="settingsRequest.loading.value || settingsAction.pending.value"
+                class="w-full"
+              >
+                <option :value="12">12</option>
+                <option :value="24">24</option>
+                <option :value="48">48</option>
+                <option :value="96">96</option>
+              </AppSelect>
+            </FormField>
+            <AppButton
+              type="submit"
+              :disabled="settingsRequest.loading.value"
+              :loading="settingsAction.pending.value"
+              loading-label="Saving…"
+            >
+              Save display
+            </AppButton>
+          </form>
         </PanelCard>
       </section>
 

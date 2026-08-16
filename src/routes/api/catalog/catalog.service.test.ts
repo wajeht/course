@@ -36,9 +36,15 @@ beforeEach(async () => {
 
 afterEach(async () => database.close());
 
+function createService(pageSize = 24) {
+  return createCatalogService(createCatalogApiRepository(database.connection), {
+    getCatalogPageSize: async () => pageSize,
+  });
+}
+
 describe("catalog service", () => {
   it("filters courses by category and lists category counts", async () => {
-    const service = createCatalogService(createCatalogApiRepository(database.connection));
+    const service = createService();
 
     await expect(service.getCatalog({ category: "Technology" })).resolves.toMatchObject({
       courses: [
@@ -62,7 +68,7 @@ describe("catalog service", () => {
   });
 
   it("limits the other dropdown choices to the selected category", async () => {
-    const service = createCatalogService(createCatalogApiRepository(database.connection));
+    const service = createService();
 
     await expect(service.getCatalog({ category: "Martial Arts" })).resolves.toMatchObject({
       instructors: [
@@ -74,7 +80,7 @@ describe("catalog service", () => {
   });
 
   it("searches category, instructors, and tags", async () => {
-    const service = createCatalogService(createCatalogApiRepository(database.connection));
+    const service = createService();
 
     for (const query of ["Technology", "Docker"]) {
       const result = await service.getCatalog({ query });
@@ -89,7 +95,7 @@ describe("catalog service", () => {
   });
 
   it("filters by an exact instructor and lists instructor counts", async () => {
-    const service = createCatalogService(createCatalogApiRepository(database.connection));
+    const service = createService();
 
     await expect(service.getCatalog({ instructor: "Jane Smith" })).resolves.toMatchObject({
       courses: [{ title: "Container Fundamentals" }, { title: "Guard Retention" }],
@@ -105,7 +111,7 @@ describe("catalog service", () => {
   });
 
   it("filters by an exact tag and lists tag counts", async () => {
-    const service = createCatalogService(createCatalogApiRepository(database.connection));
+    const service = createService();
 
     await expect(service.getCatalog({ tag: "Guard" })).resolves.toMatchObject({
       courses: [{ title: "Guard Retention" }],
@@ -120,7 +126,7 @@ describe("catalog service", () => {
   });
 
   it("paginates filtered courses and reports the result total", async () => {
-    const service = createCatalogService(createCatalogApiRepository(database.connection));
+    const service = createService();
 
     await expect(service.getCatalog({ page: 2, pageSize: 1 })).resolves.toMatchObject({
       courses: [{ title: "Guard Retention" }],
@@ -128,8 +134,17 @@ describe("catalog service", () => {
     });
   });
 
+  it("uses the configured page size when the request omits one", async () => {
+    const service = createService(1);
+
+    await expect(service.getCatalog()).resolves.toMatchObject({
+      courses: [{ title: "Container Fundamentals" }],
+      pagination: { page: 1, pageSize: 1, totalCourses: 2, totalPages: 2 },
+    });
+  });
+
   it("clamps a page that is past the final result", async () => {
-    const service = createCatalogService(createCatalogApiRepository(database.connection));
+    const service = createService();
 
     await expect(service.getCatalog({ page: 99, pageSize: 1 })).resolves.toMatchObject({
       courses: [{ title: "Guard Retention" }],
