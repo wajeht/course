@@ -10,7 +10,6 @@ export async function up(knex: Knex): Promise<void> {
     table.text("instructors_json").notNullable().defaultTo("[]");
     table.text("tags_json").notNullable().defaultTo("[]");
     table.text("cover_path");
-    table.text("cover_origin");
     table.integer("sort_order").notNullable();
   });
 

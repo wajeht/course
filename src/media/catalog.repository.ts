@@ -143,7 +143,6 @@ async function upsertSnapshot(
         instructors_json: JSON.stringify(course.instructors),
         tags_json: JSON.stringify(course.tags),
         cover_path: course.coverPath,
-        cover_origin: course.coverOrigin,
         sort_order: course.sortOrder,
       })
       .onConflict("id")
@@ -155,7 +154,6 @@ async function upsertSnapshot(
         instructors_json: JSON.stringify(course.instructors),
         tags_json: JSON.stringify(course.tags),
         cover_path: course.coverPath,
-        cover_origin: course.coverOrigin,
         sort_order: course.sortOrder,
       });
   }

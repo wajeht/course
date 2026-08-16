@@ -53,7 +53,6 @@ export async function createContext(
   const logger = createLogger();
   await Promise.all([
     fs.mkdir(configuration.media.dataDirectory, { recursive: true }),
-    fs.mkdir(configuration.media.generatedCoversDirectory, { recursive: true }),
     fs.mkdir(configuration.media.hlsDirectory, { recursive: true }),
   ]);
   const database = await createDatabase(configuration, logger);

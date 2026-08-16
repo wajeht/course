@@ -7,7 +7,6 @@ export interface CourseRecord {
   instructors: string[];
   tags: string[];
   coverPath: string | null;
-  coverOrigin: "videos" | "data" | null;
   sortOrder: number;
 }
 

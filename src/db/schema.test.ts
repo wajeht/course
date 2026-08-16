@@ -38,6 +38,9 @@ describe("database schema", () => {
     await expect(database.connection("courses").columnInfo()).resolves.not.toHaveProperty(
       "updated_at",
     );
+    await expect(database.connection("courses").columnInfo()).resolves.not.toHaveProperty(
+      "cover_origin",
+    );
     await expect(database.connection("conversions").columnInfo()).resolves.toEqual(
       expect.objectContaining({
         lesson_id: expect.any(Object),

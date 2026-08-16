@@ -2,6 +2,7 @@
 import { RouterLink } from "vue-router";
 
 import type { CatalogDto } from "@/api.js";
+import CourseCoverPlaceholder from "@/components/CourseCoverPlaceholder.vue";
 import ProgressBar from "@/components/ui/ProgressBar.vue";
 import { durationText } from "@/utils.js";
 
@@ -24,13 +25,7 @@ defineProps<{ course: CatalogDto["courses"][number] }>();
         :alt="`${course.title} cover`"
         loading="lazy"
       />
-      <div
-        v-else
-        class="grid h-full w-full place-items-center bg-pine bg-[linear-gradient(135deg,transparent_49%,rgb(255_255_255_/_12%)_50%,transparent_51%)] bg-[length:30px_30px] font-display text-[2rem] font-black tracking-[.12em] text-white/65"
-        aria-hidden="true"
-      >
-        COURSE
-      </div>
+      <CourseCoverPlaceholder v-else class="h-full w-full" :title="course.title" />
       <div
         class="absolute right-3 bottom-3 rounded-[5px] border border-white/18 bg-pine-deep/88 px-[9px] py-1.5 text-[.66rem] font-bold text-white backdrop-blur-[6px] max-[600px]:hidden"
       >

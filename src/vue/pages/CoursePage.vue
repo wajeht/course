@@ -3,6 +3,7 @@ import { computed, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
 import { api } from "@/api.js";
+import CourseCoverPlaceholder from "@/components/CourseCoverPlaceholder.vue";
 import LessonRow from "@/components/LessonRow.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
@@ -102,12 +103,7 @@ watch(
           :src="course.coverUrl"
           :alt="`${course.title} cover`"
         />
-        <div
-          v-else
-          class="grid h-full w-full place-items-center bg-pine bg-[linear-gradient(135deg,transparent_49%,rgb(255_255_255_/_12%)_50%,transparent_51%)] bg-[length:30px_30px] font-display text-[2rem] font-black tracking-[.12em] text-white/65"
-        >
-          COURSE
-        </div>
+        <CourseCoverPlaceholder v-else class="h-full w-full" :title="course.title" />
       </div>
       <div class="max-w-[800px] self-center max-[600px]:contents">
         <RouterLink

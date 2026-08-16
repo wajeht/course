@@ -8,7 +8,6 @@ export interface CourseRow {
   instructors_json: string;
   tags_json: string;
   cover_path: string | null;
-  cover_origin: "videos" | "data" | null;
   lesson_count: number;
   completed_count: number;
   total_duration: number;
@@ -106,7 +105,6 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
         "courses.instructors_json",
         "courses.tags_json",
         "courses.cover_path",
-        "courses.cover_origin",
         database.raw("COUNT(DISTINCT lessons.id) as lesson_count"),
         database.raw(
           "COUNT(DISTINCT CASE WHEN progress.completed = 1 THEN lessons.id END) as completed_count",
