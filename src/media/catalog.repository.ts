@@ -7,6 +7,11 @@ export interface CourseOrder {
   sortOrder: number;
 }
 
+export interface StoredCourse {
+  id: string;
+  path: string;
+}
+
 export interface CatalogCounts {
   courseCount: number;
   lessonCount: number;
@@ -19,6 +24,7 @@ export interface CatalogRepository {
     courseIds: string[],
     courseOrder: CourseOrder[],
   ): Promise<void>;
+  getCourses(): Promise<StoredCourse[]>;
   getLessons(courseIds?: string[]): Promise<LessonRecord[]>;
   getCatalogCounts(): Promise<CatalogCounts>;
 }
@@ -78,6 +84,11 @@ export function createCatalogRepository(database: Knex): CatalogRepository {
           await courses.whereNotIn("id", retainedCourseIds).delete();
         } else await courses.delete();
       });
+    },
+
+    async getCourses() {
+      const rows = await database("courses").select("id", "path");
+      return rows.map((row) => ({ id: String(row.id), path: String(row.path) }));
     },
 
     async getLessons(courseIds) {

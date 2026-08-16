@@ -199,7 +199,7 @@ describe("media scanner", () => {
     });
   });
 
-  it("watches added and removed courses without re-inspecting existing videos", async () => {
+  it("reconciles added, removed, and renamed courses without re-inspecting other videos", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
     const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-data-"));
     temporaryDirectories.push(root, dataDirectory);
@@ -259,6 +259,15 @@ describe("media scanner", () => {
 
     expect(probeCalls).toEqual(["01 - Existing.mp4", "01 - Added.mp4"]);
 
+    const renamedCourse = path.join(root, "Renamed Course");
+    await fs.rename(existingCourse, renamedCourse);
+    emitWatchEvent("Existing Course");
+    await waitUntil(async () => {
+      const courses = await database.connection("courses").select("title");
+      return courses.length === 2 && courses.some((course) => course.title === "Renamed Course");
+    });
+    expect(probeCalls).toEqual(["01 - Existing.mp4", "01 - Added.mp4", "01 - Existing.mp4"]);
+
     await fs.rm(addedCourse, { recursive: true });
     emitWatchEvent("Added Course");
     await waitUntil(
@@ -266,9 +275,9 @@ describe("media scanner", () => {
         Number((await database.connection("courses").count({ count: "id" }).first())?.count) === 1,
     );
     expect(await database.connection("courses").select("title")).toEqual([
-      { title: "Existing Course" },
+      { title: "Renamed Course" },
     ]);
-    expect(probeCalls).toEqual(["01 - Existing.mp4", "01 - Added.mp4"]);
+    expect(probeCalls).toEqual(["01 - Existing.mp4", "01 - Added.mp4", "01 - Existing.mp4"]);
   });
 
   it("fails when library monitoring cannot start", async () => {

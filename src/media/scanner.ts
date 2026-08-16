@@ -96,19 +96,48 @@ export function createScanner({
     scanStatus = scanning;
 
     try {
-      const existingLessons = await repository.getLessons(
-        courseNames?.map((courseName) => identifier(courseName)),
-      );
-      const { snapshot, courseIds, courseOrder } = await buildCatalogSnapshot(
-        configuration,
-        scanning.warnings,
-        probe,
-        existingLessons,
-        courseNames,
-      );
       if (courseNames) {
-        await repository.synchronizeCourses(snapshot, courseIds, courseOrder);
+        const courseEntries = await readCourseEntries(configuration);
+        const storedCourses = await repository.getCourses();
+        const currentCoursePaths = new Set(courseEntries.map((entry) => posixPath(entry.name)));
+        const storedCoursePaths = new Set(storedCourses.map((course) => course.path));
+        const requestedCourseNames = new Set(courseNames);
+        const courseNamesToScan = courseEntries
+          .filter(
+            (entry) =>
+              requestedCourseNames.has(entry.name) || !storedCoursePaths.has(posixPath(entry.name)),
+          )
+          .map((entry) => entry.name);
+        const courseIdsToScan = courseNamesToScan.map((courseName) => identifier(courseName));
+        const removedCourseIds = storedCourses
+          .filter((course) => !currentCoursePaths.has(course.path))
+          .map((course) => course.id);
+        const existingLessons = await repository.getLessons(courseIdsToScan);
+        const { snapshot, courseOrder } = await buildCatalogSnapshot(
+          configuration,
+          scanning.warnings,
+          probe,
+          existingLessons,
+          courseEntries,
+          courseNamesToScan,
+        );
+        await repository.synchronizeCourses(
+          snapshot,
+          [...courseIdsToScan, ...removedCourseIds],
+          courseOrder,
+        );
       } else {
+        const [courseEntries, existingLessons] = await Promise.all([
+          readCourseEntries(configuration),
+          repository.getLessons(),
+        ]);
+        const { snapshot } = await buildCatalogSnapshot(
+          configuration,
+          scanning.warnings,
+          probe,
+          existingLessons,
+          courseEntries,
+        );
         await repository.synchronizeCatalog(snapshot);
       }
       const counts = await repository.getCatalogCounts();
@@ -243,8 +272,13 @@ export function createScanner({
 
 interface BuiltCatalogSnapshot {
   snapshot: CatalogSnapshot;
-  courseIds: string[];
   courseOrder: CourseOrder[];
+}
+
+async function readCourseEntries(configuration: Configuration): Promise<Dirent[]> {
+  return (await fs.readdir(configuration.media.videosDirectory, { withFileTypes: true }))
+    .filter(isCatalogDirectory)
+    .sort((left, right) => naturalOrder(left.name, right.name));
 }
 
 async function buildCatalogSnapshot(
@@ -252,19 +286,14 @@ async function buildCatalogSnapshot(
   warnings: ScanWarning[],
   probe: (filename: string, ffprobePath: string) => Promise<VideoProbe>,
   existingLessons: LessonRecord[],
+  courseEntries: Dirent[],
   requestedCourseNames?: string[],
 ): Promise<BuiltCatalogSnapshot> {
   const root = configuration.media.videosDirectory;
-  const courseEntries = (await fs.readdir(root, { withFileTypes: true }))
-    .filter(isCatalogDirectory)
-    .sort((left, right) => naturalOrder(left.name, right.name));
   const requestedNames = requestedCourseNames ? new Set(requestedCourseNames) : null;
   const entriesToScan = requestedNames
     ? courseEntries.filter((entry) => requestedNames.has(entry.name))
     : courseEntries;
-  const courseIds = requestedCourseNames
-    ? requestedCourseNames.map((courseName) => identifier(posixPath(courseName)))
-    : courseEntries.map((entry) => identifier(posixPath(entry.name)));
   const courseOrder = courseEntries.map((entry, sortOrder) => ({
     id: identifier(posixPath(entry.name)),
     sortOrder,
@@ -380,7 +409,6 @@ async function buildCatalogSnapshot(
 
   return {
     snapshot: { courses, sections, lessons, skippedLessonIds },
-    courseIds,
     courseOrder,
   };
 }
