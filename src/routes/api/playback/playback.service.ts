@@ -17,7 +17,7 @@ export type PlaybackResult =
 
 async function resolveConversionPlayback(record: ConversionRecord): Promise<PlaybackResult> {
   if (record.status === "failed")
-    return { kind: "error", message: record.error ?? "Conversion failed" };
+    return { kind: "error", message: "We couldn't prepare this video. Try again." };
   try {
     await fs.access(record.playlistPath);
     return {

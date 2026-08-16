@@ -17,6 +17,7 @@ import { useConfirm } from "@/composables/useConfirm.js";
 import { useToast } from "@/composables/useToast.js";
 import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
 import SettingsNavigation, { type SettingsSection } from "@/pages/partials/SettingsNavigation.vue";
+import { countText } from "@/utils.js";
 
 const scanRequest = useAsyncData(({ signal }) => api.getScanStatus(signal));
 const settingsRequest = useAsyncData(({ signal }) => api.getSettings(signal));
@@ -164,12 +165,30 @@ async function logout(): Promise<void> {
                 <template v-if="scanStatus?.completedAt">
                   {{
                     scanStatus.warnings.length
-                      ? `${scanStatus.warnings.length} scan warnings`
-                      : `${scanStatus.courseCount} courses · ${scanStatus.lessonCount} lessons`
+                      ? countText(scanStatus.warnings.length, "library issue")
+                      : `${countText(scanStatus.courseCount, "course")} · ${countText(scanStatus.lessonCount, "lesson")}`
                   }}
                 </template>
                 <template v-else>Scan status is loading…</template>
               </p>
+              <div
+                v-if="scanStatus?.warnings.length"
+                class="mt-5 rounded-[7px] border border-belt/25 bg-[#fffaf0] p-4"
+              >
+                <p class="text-[.78rem] leading-5 text-muted">
+                  Review these files, correct each listed problem, then rescan the library.
+                </p>
+                <ul class="mt-3 grid gap-3" aria-label="Library issues">
+                  <li
+                    v-for="warning in scanStatus.warnings"
+                    :key="`${warning.path}:${warning.message}`"
+                    class="grid gap-1 text-[.78rem] leading-5"
+                  >
+                    <code class="break-all font-semibold text-pine-deep">{{ warning.path }}</code>
+                    <span class="text-muted">{{ warning.message }}</span>
+                  </li>
+                </ul>
+              </div>
             </div>
             <AppButton
               class="self-end max-[600px]:w-full"
@@ -260,7 +279,12 @@ async function logout(): Promise<void> {
                 required
               />
             </FormField>
-            <FormField v-slot="field" label="New password" required>
+            <FormField
+              v-slot="field"
+              label="New password"
+              help-text="Use at least 15 characters."
+              required
+            >
               <AppInput
                 :id="field.inputId"
                 v-model="newPassword"

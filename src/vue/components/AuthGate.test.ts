@@ -21,6 +21,7 @@ describe("AuthGate", () => {
     const password = wrapper.get('input[autocomplete="current-password"]');
 
     expect(password.attributes("minlength")).toBe("15");
+    expect(wrapper.text()).toContain("Use at least 15 characters.");
   });
 
   it("requires 15 characters when creating a password", () => {
@@ -29,5 +30,6 @@ describe("AuthGate", () => {
     });
 
     expect(wrapper.get('input[autocomplete="new-password"]').attributes("minlength")).toBe("15");
+    expect(wrapper.text()).toContain("Use at least 15 characters.");
   });
 });

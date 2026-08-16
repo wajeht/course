@@ -8,3 +8,7 @@ export function durationText(seconds: number): string {
   if (minutes > 0) return `${minutes}m ${remainingSeconds}s`;
   return `${remainingSeconds}s`;
 }
+
+export function countText(count: number, singular: string, plural = `${singular}s`): string {
+  return `${count} ${count === 1 ? singular : plural}`;
+}

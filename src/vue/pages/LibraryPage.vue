@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { RouterLink } from "vue-router";
+
 import { api } from "@/api.js";
 import CourseCard from "@/components/CourseCard.vue";
 import CourseFilterSelect from "@/components/CourseFilterSelect.vue";
@@ -9,6 +11,7 @@ import PageHeader from "@/components/ui/PageHeader.vue";
 import PaginationControls from "@/components/ui/PaginationControls.vue";
 import { useCatalogFilters } from "@/composables/useCatalogFilters.js";
 import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
+import { countText } from "@/utils.js";
 
 const {
   catalog,
@@ -43,13 +46,16 @@ const {
         :heading-level="1"
       >
         <template #aside>
-          <span v-if="scanStatus?.completedAt" class="text-[.78rem] font-semibold text-muted">
-            {{
-              scanStatus.warnings.length
-                ? `${scanStatus.warnings.length} scan warnings`
-                : "Library up to date"
-            }}
-          </span>
+          <template v-if="scanStatus?.completedAt">
+            <RouterLink
+              v-if="scanStatus.warnings.length"
+              to="/settings"
+              class="text-[.78rem] font-semibold text-belt underline decoration-belt/30 underline-offset-4 hover:decoration-belt"
+            >
+              {{ countText(scanStatus.warnings.length, "library issue") }}
+            </RouterLink>
+            <span v-else class="text-[.78rem] font-semibold text-muted">Library up to date</span>
+          </template>
         </template>
       </PageHeader>
 

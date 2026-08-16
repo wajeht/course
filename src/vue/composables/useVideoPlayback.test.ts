@@ -77,6 +77,19 @@ describe("useVideoPlayback", () => {
     expect(element.src).toBe("/media/ready");
   });
 
+  it("hides technical errors when conversion status cannot be checked", async () => {
+    vi.useFakeTimers();
+    const client = playbackClient({ kind: "converting", status: "queued", progress: 0 });
+    client.getConversionStatus.mockRejectedValueOnce(new Error("Conversion record missing"));
+    const playback = useVideoPlayback(ref(videoElement()), client, 100);
+    const requestId = playback.startRequest();
+
+    await playback.preparePlayback("lesson", requestId);
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(playback.error.value).toBe("We couldn't check the video status. Try again.");
+  });
+
   it("applies resume metadata once for each source", async () => {
     const element = videoElement();
     const playback = useVideoPlayback(ref(element), playbackClient());
