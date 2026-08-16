@@ -53,6 +53,10 @@ is not scanned. Supported files include MP4, M4V, MKV, WebM, MOV, AVI, MPEG,
 and MPG. Number prefixes determine natural lesson order and are removed from
 display titles.
 
+Course watches the library for changes and updates only the affected course.
+Unchanged videos reuse their saved media details instead of running `ffprobe`
+again. Startup, manual, and scheduled scans remain as safety checks.
+
 Course metadata is optional:
 
 ```json
