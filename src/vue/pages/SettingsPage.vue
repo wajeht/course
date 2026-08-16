@@ -92,6 +92,7 @@ async function changePassword(): Promise<void> {
 }
 
 async function saveSettings(): Promise<void> {
+  if (!settingsRequest.data.value) return;
   await settingsAction.run();
 }
 
@@ -227,7 +228,11 @@ async function logout(): Promise<void> {
                 :id="field.inputId"
                 v-model="catalogPageSize"
                 :aria-describedby="field.describedBy"
-                :disabled="settingsRequest.loading.value || settingsAction.pending.value"
+                :disabled="
+                  settingsRequest.loading.value ||
+                  !settingsRequest.data.value ||
+                  settingsAction.pending.value
+                "
                 class="w-full"
               >
                 <option :value="12">12</option>
@@ -238,7 +243,7 @@ async function logout(): Promise<void> {
             </FormField>
             <AppButton
               type="submit"
-              :disabled="settingsRequest.loading.value"
+              :disabled="settingsRequest.loading.value || !settingsRequest.data.value"
               :loading="settingsAction.pending.value"
               loading-label="Saving…"
             >

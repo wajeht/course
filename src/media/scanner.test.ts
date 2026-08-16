@@ -370,6 +370,69 @@ describe("media scanner", () => {
     expect(scanner.getScanStatus().warnings).toEqual([]);
   });
 
+  it("clears a resolved cover warning after an incremental scan", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
+    const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-data-"));
+    temporaryDirectories.push(root, dataDirectory);
+    const courseDirectory = path.join(root, "Example Course");
+    await fs.mkdir(courseDirectory);
+    await fs.writeFile(
+      path.join(courseDirectory, "course.json"),
+      JSON.stringify({ version: 1, cover: "missing.jpg" }),
+    );
+    await fs.writeFile(path.join(courseDirectory, "01 - Lesson.mp4"), "video");
+
+    const configuration = createConfiguration({
+      APP_ENV: "testing",
+      VIDEOS_DIR: root,
+      DATA_DIR: dataDirectory,
+    });
+    const database = await createDatabase(configuration, createLogger());
+    databases.push(database);
+    let emitWatchEvent = (_filename: string): void => {
+      throw new Error("Library monitoring has not started");
+    };
+    const scanner = createScanner({
+      configuration,
+      repository: createCatalogRepository(database.connection),
+      logger: createLogger(),
+      watchDirectory: (_directory, _options, listener) => {
+        emitWatchEvent = (filename) => listener("rename", filename);
+        return {
+          on() {
+            return this;
+          },
+          close() {},
+        };
+      },
+      probe: async (filename): Promise<VideoProbe> => ({
+        durationSeconds: 60,
+        sizeBytes: (await fs.stat(filename)).size,
+        container: "mp4",
+        videoCodec: "h264",
+        audioCodec: "aac",
+        browserCompatible: true,
+      }),
+    });
+
+    expect((await scanner.scanCatalog()).warnings).toEqual([
+      {
+        path: "Example Course/missing.jpg",
+        message: "Configured cover does not exist",
+      },
+    ]);
+    monitorStops.push(scanner.startMonitoring());
+
+    await fs.writeFile(path.join(courseDirectory, "missing.jpg"), "cover");
+    emitWatchEvent("Example Course/missing.jpg");
+    await waitUntil(async () => {
+      const course = await database.connection("courses").where({ path: "Example Course" }).first();
+      return course?.cover_path === "Example Course/missing.jpg";
+    });
+
+    expect(scanner.getScanStatus().warnings).toEqual([]);
+  });
+
   it("fails when library monitoring cannot start", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
     const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-data-"));

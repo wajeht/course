@@ -326,6 +326,17 @@ describe("password authentication", () => {
     expect(await response.json()).toEqual({ message: "Invalid password" });
   });
 
+  it("rejects oversized authentication requests before parsing them", async () => {
+    const { app } = await testApp();
+    const response = await app.request(
+      "/api/auth",
+      jsonRequest("POST", { password: "x".repeat(4 * 1024) }),
+    );
+
+    expect(response.status).toBe(413);
+    expect(await response.json()).toEqual({ message: "Authentication request is too large" });
+  });
+
   it("rejects passwords that bcrypt would silently truncate", async () => {
     const { app } = await testApp();
     const password = "😀".repeat(18);

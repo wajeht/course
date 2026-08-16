@@ -105,4 +105,16 @@ describe("SettingsPage", () => {
     expect(issues.text()).toContain("Example/course.json");
     expect(issues.text()).toContain("Cover file is missing");
   });
+
+  it("disables library settings when their saved value cannot be loaded", async () => {
+    vi.mocked(api.getSettings).mockRejectedValueOnce(new Error("Could not load settings"));
+    vi.mocked(api.updateSettings).mockClear();
+    const wrapper = mountSettings();
+    await flushPromises();
+
+    expect(wrapper.get("select").attributes("disabled")).toBeDefined();
+    expect(wrapper.get('button[type="submit"]').attributes("disabled")).toBeDefined();
+    await wrapper.get("form").trigger("submit");
+    expect(api.updateSettings).not.toHaveBeenCalled();
+  });
 });
