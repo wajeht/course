@@ -1,8 +1,7 @@
 import fs from "node:fs/promises";
 
 import type { CatalogService } from "../catalog/catalog.service.js";
-import type { ConversionManager } from "../../../media/conversion.js";
-import type { ConversionRecord } from "../../../media/conversion.repository.js";
+import type { ConversionManager, ConversionRecord } from "../../../media/conversion.js";
 
 export interface PlaybackService {
   preparePlayback(lessonId: string): Promise<PlaybackResult | null>;
@@ -19,18 +18,16 @@ export type PlaybackResult =
 async function resolveConversionPlayback(record: ConversionRecord): Promise<PlaybackResult> {
   if (record.status === "failed")
     return { kind: "error", message: record.error ?? "Conversion failed" };
-  if (record.playlistPath) {
-    try {
-      await fs.access(record.playlistPath);
-      return {
-        kind: "hls",
-        url: `/hls/${record.lessonId}/index.m3u8`,
-        status: record.status === "ready" ? "ready" : "converting",
-        progress: record.progress,
-      };
-    } catch {
-      // The playlist may not exist until FFmpeg writes its first segment.
-    }
+  try {
+    await fs.access(record.playlistPath);
+    return {
+      kind: "hls",
+      url: `/hls/${record.lessonId}/index.m3u8`,
+      status: record.status === "ready" ? "ready" : "converting",
+      progress: record.progress,
+    };
+  } catch {
+    // The playlist may not exist until FFmpeg writes its first segment.
   }
   return {
     kind: "converting",

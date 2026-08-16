@@ -1,6 +1,6 @@
 import type { Knex } from "knex";
 
-import type { CatalogSnapshot, LessonRecord, ScanStatus } from "./types.js";
+import type { CatalogSnapshot, LessonRecord } from "./types.js";
 
 export interface CourseOrder {
   id: string;
@@ -21,8 +21,6 @@ export interface CatalogRepository {
   ): Promise<void>;
   getLessons(courseIds?: string[]): Promise<LessonRecord[]>;
   getCatalogCounts(): Promise<CatalogCounts>;
-  updateScanStatus(status: ScanStatus): Promise<void>;
-  getScanStatus(): Promise<ScanStatus>;
 }
 
 export function createCatalogRepository(database: Knex): CatalogRepository {
@@ -116,33 +114,6 @@ export function createCatalogRepository(database: Knex): CatalogRepository {
         lessonCount: Number(lessons?.count ?? 0),
       };
     },
-
-    async updateScanStatus(status) {
-      await database("scan_state")
-        .where({ id: 1 })
-        .update({
-          status: status.status,
-          started_at: status.startedAt,
-          completed_at: status.completedAt,
-          course_count: status.courseCount,
-          lesson_count: status.lessonCount,
-          warnings_json: JSON.stringify(status.warnings),
-          error: status.error,
-        });
-    },
-
-    async getScanStatus() {
-      const row = await database("scan_state").where({ id: 1 }).first();
-      return {
-        status: row.status as ScanStatus["status"],
-        startedAt: row.started_at as string | null,
-        completedAt: row.completed_at as string | null,
-        courseCount: Number(row.course_count),
-        lessonCount: Number(row.lesson_count),
-        warnings: JSON.parse(String(row.warnings_json)) as ScanStatus["warnings"],
-        error: row.error as string | null,
-      };
-    },
   };
 }
 
@@ -150,7 +121,6 @@ async function upsertSnapshot(
   transaction: Knex.Transaction,
   snapshot: CatalogSnapshot,
 ): Promise<void> {
-  const now = new Date().toISOString();
   for (const course of snapshot.courses) {
     await transaction("courses")
       .insert({
@@ -164,8 +134,6 @@ async function upsertSnapshot(
         cover_path: course.coverPath,
         cover_origin: course.coverOrigin,
         sort_order: course.sortOrder,
-        created_at: now,
-        updated_at: now,
       })
       .onConflict("id")
       .merge({
@@ -178,7 +146,6 @@ async function upsertSnapshot(
         cover_path: course.coverPath,
         cover_origin: course.coverOrigin,
         sort_order: course.sortOrder,
-        updated_at: now,
       });
   }
 
@@ -205,7 +172,7 @@ async function upsertSnapshot(
       (existingLesson.modified_at !== lesson.modifiedAt ||
         Number(existingLesson.size_bytes) !== lesson.sizeBytes)
     ) {
-      await transaction("conversion_jobs").where({ lesson_id: lesson.id }).delete();
+      await transaction("conversions").where({ lesson_id: lesson.id }).delete();
     }
     await transaction("lessons")
       .insert({

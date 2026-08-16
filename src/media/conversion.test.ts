@@ -38,8 +38,6 @@ async function createFixture(executor: ConversionExecutor) {
     title: "Course",
     description: "",
     sort_order: 0,
-    created_at: now,
-    updated_at: now,
   });
   for (const [index, id] of ["b".repeat(24), "c".repeat(24)].entries()) {
     await database.connection("lessons").insert({
@@ -70,7 +68,7 @@ async function createFixture(executor: ConversionExecutor) {
 
 async function waitForStatus(database: Database, lessonId: string, status: string): Promise<void> {
   for (let attempt = 0; attempt < 100; attempt++) {
-    const row = await database.connection("conversion_jobs").where({ lesson_id: lessonId }).first();
+    const row = await database.connection("conversions").where({ lesson_id: lessonId }).first();
     if (row?.status === status) return;
     await new Promise((resolve) => setTimeout(resolve, 2));
   }
@@ -82,13 +80,12 @@ describe("conversion manager", () => {
     let active = 0;
     let maximumActive = 0;
     let calls = 0;
-    const { database, catalog, manager } = await createFixture(async (lesson) => {
+    const { database, catalog, manager } = await createFixture(async () => {
       calls++;
       active++;
       maximumActive = Math.max(maximumActive, active);
       await new Promise((resolve) => setTimeout(resolve, 10));
       active--;
-      return `/tmp/${lesson.id}/index.m3u8`;
     });
     const first = (await catalog.findLesson("b".repeat(24)))!;
     const second = (await catalog.findLesson("c".repeat(24)))!;
@@ -120,9 +117,8 @@ describe("conversion manager", () => {
 
   it("rebuilds a ready conversion when its playlist is missing", async () => {
     let calls = 0;
-    const { database, catalog, manager } = await createFixture(async (lesson) => {
+    const { database, catalog, manager } = await createFixture(async () => {
       calls++;
-      return `/missing/${lesson.id}/index.m3u8`;
     });
     const lesson = (await catalog.findLesson("b".repeat(24)))!;
 

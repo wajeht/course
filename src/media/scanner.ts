@@ -34,7 +34,7 @@ function isCatalogDirectory(entry: Dirent): boolean {
 
 export interface Scanner {
   scanCatalog(): Promise<ScanStatus>;
-  getScanStatus(): Promise<ScanStatus>;
+  getScanStatus(): ScanStatus;
   startMonitoring(): () => void;
 }
 
@@ -72,20 +72,28 @@ export function createScanner({
   let fullScanInProgress = false;
   let fullScanRequested = false;
   const requestedCourses = new Set<string>();
+  let scanStatus: ScanStatus = {
+    status: "idle",
+    startedAt: null,
+    completedAt: null,
+    courseCount: 0,
+    lessonCount: 0,
+    warnings: [],
+    error: null,
+  };
 
   async function scanOnce(courseNames?: string[]): Promise<ScanStatus> {
-    const previous = await repository.getScanStatus();
     const startedAt = new Date().toISOString();
     const scanning: ScanStatus = {
       status: "scanning",
       startedAt,
       completedAt: null,
-      courseCount: previous.courseCount,
-      lessonCount: previous.lessonCount,
+      courseCount: scanStatus.courseCount,
+      lessonCount: scanStatus.lessonCount,
       warnings: [],
       error: null,
     };
-    await repository.updateScanStatus(scanning);
+    scanStatus = scanning;
 
     try {
       const existingLessons = await repository.getLessons(
@@ -110,7 +118,7 @@ export function createScanner({
         completedAt: new Date().toISOString(),
         ...counts,
       };
-      await repository.updateScanStatus(complete);
+      scanStatus = complete;
       logger.info("Media scan complete", {
         courses: complete.courseCount,
         lessons: complete.lessonCount,
@@ -124,7 +132,7 @@ export function createScanner({
         completedAt: new Date().toISOString(),
         error: error instanceof Error ? error.message : "Media scan failed",
       };
-      await repository.updateScanStatus(failed);
+      scanStatus = failed;
       logger.error("Media scan failed", { error });
       return failed;
     }
@@ -163,7 +171,7 @@ export function createScanner({
     do {
       await ensureSynchronization();
     } while (activeSynchronization || fullScanRequested || requestedCourses.size > 0);
-    return repository.getScanStatus();
+    return scanStatus;
   }
 
   function requestCourseSynchronization(courseNames: Iterable<string>): void {
@@ -181,7 +189,7 @@ export function createScanner({
       }
       return waitForSynchronization();
     },
-    getScanStatus: () => repository.getScanStatus(),
+    getScanStatus: () => scanStatus,
     startMonitoring() {
       let debounce: NodeJS.Timeout | null = null;
       const changedCourses = new Set<string>();
