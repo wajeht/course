@@ -53,6 +53,17 @@ test("registers, serves deep links offline, and prompts for updates", async ({ c
       page.evaluate(async () => (await navigator.serviceWorker.ready).active?.state ?? null),
     )
     .toBe("activated");
+  const manifestResponse = await page.request.get("/manifest.webmanifest");
+  expect(manifestResponse.status()).toBe(200);
+  const manifest = (await manifestResponse.json()) as {
+    screenshots: Array<{ form_factor: string; src: string }>;
+    shortcuts: Array<{ url: string }>;
+  };
+  expect(manifest.shortcuts.map((shortcut) => shortcut.url)).toEqual(["/library", "/settings"]);
+  expect(manifest.screenshots.map((screenshot) => screenshot.form_factor)).toEqual([
+    "narrow",
+    "wide",
+  ]);
 
   await page.goto("/library");
   await expect(page.getByRole("heading", { level: 1, name: "All courses" })).toBeVisible();
@@ -67,15 +78,16 @@ test("registers, serves deep links offline, and prompts for updates", async ({ c
   try {
     const response = await page.goto("/settings");
     expect(response?.status()).toBe(200);
-    await expect(
-      page.getByRole("heading", { level: 1, name: "Connection required" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Course is offline" })).toBeVisible();
+    await expect(page.getByText("Saved library", { exact: true })).toBeVisible();
+    await expect(page.getByText("0 courses")).toBeVisible();
   } finally {
     await context.setOffline(false);
   }
 
   await page.getByRole("button", { name: "Try again" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
+  await expect(page.getByText("Install Course", { exact: true }).first()).toBeVisible();
   await expect(page).toHaveTitle("Settings · Course");
 
   await page.getByRole("button", { name: "Refresh library" }).click();

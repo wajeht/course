@@ -6,6 +6,7 @@ import AlertMessage from "@/components/ui/AlertMessage.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppInput from "@/components/ui/AppInput.vue";
 import AppSelect from "@/components/ui/AppSelect.vue";
+import PwaInstallCard from "@/components/PwaInstallCard.vue";
 import FormField from "@/components/ui/FormField.vue";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import PanelCard from "@/components/ui/PanelCard.vue";
@@ -294,6 +295,8 @@ async function logout(): Promise<void> {
             </AppButton>
           </form>
         </PanelCard>
+
+        <PwaInstallCard />
       </section>
 
       <section

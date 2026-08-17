@@ -1,6 +1,7 @@
 import { inject, reactive, readonly, type InjectionKey } from "vue";
 
 import { api, type AuthStateDto } from "@/api.js";
+import { clearCatalogSnapshot } from "@/catalog-cache.js";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "error";
 
@@ -47,6 +48,7 @@ export function createAuth(
   });
 
   function handleUnauthorized(): void {
+    clearCatalogSnapshot();
     state.status = "unauthenticated";
     state.passwordConfigured = true;
     state.error = "Your session expired. Sign in again.";
@@ -67,6 +69,7 @@ export function createAuth(
       state.setupEnabled = result.setupEnabled;
       state.setupTokenRequired = result.setupTokenRequired;
       state.status = result.authenticated ? "authenticated" : "unauthenticated";
+      if (!result.authenticated) clearCatalogSnapshot();
     } catch (caught) {
       state.status = "error";
       state.error = controller.signal.aborted
@@ -96,6 +99,7 @@ export function createAuth(
 
   async function logout(): Promise<void> {
     await client.logout();
+    clearCatalogSnapshot();
     state.status = "unauthenticated";
     state.error = "";
   }

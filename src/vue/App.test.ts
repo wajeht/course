@@ -9,6 +9,7 @@ import AuthGate from "./components/AuthGate.vue";
 import { authKey, type AuthController } from "./composables/useAuth.js";
 import { clearFrontendError, showFrontendError } from "./frontend-error.js";
 import NotFoundPage from "./pages/NotFoundPage.vue";
+import OfflinePage from "./pages/OfflinePage.vue";
 import UnexpectedErrorPage from "./pages/UnexpectedErrorPage.vue";
 
 function createUnauthenticatedAuth(): AuthController {
@@ -29,7 +30,7 @@ function createUnauthenticatedAuth(): AuthController {
   };
 }
 
-async function mountAt(path: string) {
+async function mountAt(path: string, auth = createUnauthenticatedAuth()) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -43,7 +44,7 @@ async function mountAt(path: string) {
   return mount(App, {
     global: {
       plugins: [router],
-      provide: { [authKey as symbol]: createUnauthenticatedAuth() },
+      provide: { [authKey as symbol]: auth },
       stubs: {
         ConfirmDialog: true,
         PwaUpdatePrompt: true,
@@ -87,5 +88,16 @@ describe("App", () => {
     expect(wrapper.find("pwa-update-prompt-stub").exists()).toBe(false);
     expect(wrapper.find("confirm-dialog-stub").exists()).toBe(false);
     expect(wrapper.find("toast-viewport-stub").exists()).toBe(false);
+  });
+
+  it("shows connection recovery for valid routes when the session cannot be checked", async () => {
+    const auth = createUnauthenticatedAuth();
+    Object.assign(auth.state, { error: "Failed to fetch", status: "error" });
+
+    const wrapper = await mountAt("/settings", auth);
+
+    expect(wrapper.findComponent(OfflinePage).exists()).toBe(true);
+    expect(wrapper.get("h1").text()).toBe("Course is offline");
+    expect(wrapper.findComponent(AuthGate).exists()).toBe(false);
   });
 });

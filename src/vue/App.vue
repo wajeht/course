@@ -3,18 +3,22 @@ import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { RouterView, useRoute } from "vue-router";
 
 import AuthGate from "@/components/AuthGate.vue";
+import OfflineStatusBanner from "@/components/OfflineStatusBanner.vue";
 import PwaUpdatePrompt from "@/components/PwaUpdatePrompt.vue";
 import AppLogo from "@/components/ui/AppLogo.vue";
 import ConfirmDialog from "@/components/ui/ConfirmDialog.vue";
 import ToastViewport from "@/components/ui/ToastViewport.vue";
 import { useAsyncAction } from "@/composables/useAsyncAction.js";
 import { useAuth } from "@/composables/useAuth.js";
+import { useNetworkStatus } from "@/composables/useNetworkStatus.js";
 import { frontendError } from "@/frontend-error.js";
 import AppShell from "@/layouts/AppShell.vue";
+import OfflinePage from "@/pages/OfflinePage.vue";
 import UnexpectedErrorPage from "@/pages/UnexpectedErrorPage.vue";
 
 const auth = useAuth();
 const route = useRoute();
+const { online } = useNetworkStatus();
 const loginAction = useAsyncAction((password: string) => auth.login(password), {
   errorMessage: "Could not sign in",
 });
@@ -43,6 +47,9 @@ watch(
   },
   { immediate: true },
 );
+watch(online, (isOnline) => {
+  if (isOnline && auth.state.status === "error") void auth.initialize();
+});
 onBeforeUnmount(() => clearTimeout(bootstrapTimer));
 
 async function login(password: string): Promise<void> {
@@ -72,11 +79,13 @@ async function setup(
     </div>
   </main>
   <AppShell v-else-if="auth.state.status === 'authenticated'">
+    <OfflineStatusBanner v-if="!online" />
     <RouterView />
   </AppShell>
   <RouterView v-else-if="route.name === 'not-found'" v-slot="{ Component }">
     <component :is="Component" standalone />
   </RouterView>
+  <OfflinePage v-else-if="auth.state.status === 'error'" @retry="auth.initialize" />
   <AuthGate
     v-else
     :status="auth.state.status"

@@ -283,17 +283,19 @@ export function createScanner({
         configuration.media.scanIntervalMs,
       );
       schedule.unref();
+      let watcherActive = true;
       watcher.on("error", (error) => {
-        clearInterval(schedule);
+        if (!watcherActive) return;
+        watcherActive = false;
         if (debounce) clearTimeout(debounce);
         watcher.close();
-        throw error;
+        logger.warn("Library watcher unavailable; scheduled scans will continue", { error });
       });
 
       return () => {
         clearInterval(schedule);
         if (debounce) clearTimeout(debounce);
-        watcher.close();
+        if (watcherActive) watcher.close();
       };
     },
   };

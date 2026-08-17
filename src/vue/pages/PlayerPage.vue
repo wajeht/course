@@ -9,7 +9,9 @@ import AppSelect from "@/components/ui/AppSelect.vue";
 import { useAsyncAction } from "@/composables/useAsyncAction.js";
 import { useConfirm } from "@/composables/useConfirm.js";
 import { useExpandableSections } from "@/composables/useExpandableSections.js";
+import { useMediaSession } from "@/composables/useMediaSession.js";
 import { usePlaybackProgress } from "@/composables/usePlaybackProgress.js";
+import { useScreenWakeLock } from "@/composables/useScreenWakeLock.js";
 import { useToast } from "@/composables/useToast.js";
 import { useVideoPlayback } from "@/composables/useVideoPlayback.js";
 import { notFoundLocation } from "@/router.js";
@@ -67,7 +69,31 @@ const allLessons = computed(
 const currentIndex = computed(() =>
   allLessons.value.findIndex((item) => item.id === lesson.value?.id),
 );
-const nextLesson = computed(() => allLessons.value.at(currentIndex.value + 1));
+const previousLesson = computed(() =>
+  currentIndex.value > 0 ? allLessons.value.at(currentIndex.value - 1) : undefined,
+);
+const nextLesson = computed(() =>
+  currentIndex.value >= 0 ? allLessons.value.at(currentIndex.value + 1) : undefined,
+);
+const mediaMetadata = computed(() => {
+  if (!lesson.value || !course.value) return null;
+  return {
+    title: lesson.value.title,
+    artist: course.value.instructors.join(", ") || "Course",
+    album: course.value.title,
+    artwork: course.value.coverUrl,
+  };
+});
+
+function openLessonFromMediaSession(target: LessonDto | undefined): void {
+  if (target) void router.push({ name: "player", params: { lessonId: target.id } });
+}
+
+useMediaSession(video, mediaMetadata, {
+  previous: () => openLessonFromMediaSession(previousLesson.value),
+  next: () => openLessonFromMediaSession(nextLesson.value),
+});
+useScreenWakeLock(video);
 
 function destroyPlayback(): void {
   playbackProgress.clearSession();

@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createConfiguration } from "../configuration.js";
 import { createDatabase, type Database } from "../db/db.js";
@@ -454,6 +454,44 @@ describe("media scanner", () => {
     });
 
     expect(() => scanner.startMonitoring()).toThrow("Library watcher unavailable");
+  });
+
+  it("falls back to scheduled scans when an active watcher fails", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
+    const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-data-"));
+    temporaryDirectories.push(root, dataDirectory);
+    const configuration = createConfiguration({
+      APP_ENV: "testing",
+      VIDEOS_DIR: root,
+      DATA_DIR: dataDirectory,
+    });
+    const database = await createDatabase(configuration, createLogger());
+    databases.push(database);
+    const close = vi.fn();
+    let failWatcher: ((error: Error) => void) | undefined;
+    const logger = { ...createLogger(), warn: vi.fn() };
+    const scanner = createScanner({
+      configuration,
+      repository: createCatalogRepository(database.connection),
+      logger,
+      watchDirectory: () => ({
+        on: (_event, listener) => {
+          failWatcher = listener;
+          return { on: vi.fn(), close };
+        },
+        close,
+      }),
+    });
+
+    const stop = scanner.startMonitoring();
+    failWatcher?.(new Error("Library watcher unavailable"));
+    stop();
+
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenCalledWith(
+      "Library watcher unavailable; scheduled scans will continue",
+      expect.objectContaining({ error: expect.any(Error) }),
+    );
   });
 });
 

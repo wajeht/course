@@ -47,5 +47,12 @@ export function useCatalogData(
     return caught instanceof Error ? caught.message : caught ? "Could not load your library" : "";
   });
 
-  return { catalog, error, loading, refreshing, scanStatus };
+  return {
+    catalog,
+    error,
+    loading,
+    refreshCatalog: catalogRequest.refresh,
+    refreshing,
+    scanStatus,
+  };
 }

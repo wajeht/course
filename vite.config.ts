@@ -30,6 +30,36 @@ export default defineConfig({
         start_url: "/",
         scope: "/",
         categories: ["education", "productivity"],
+        shortcuts: [
+          {
+            name: "Open library",
+            short_name: "Library",
+            description: "Browse your video courses.",
+            url: "/library",
+          },
+          {
+            name: "Open settings",
+            short_name: "Settings",
+            description: "Manage Course settings.",
+            url: "/settings",
+          },
+        ],
+        screenshots: [
+          {
+            src: "/pwa-library-narrow.png",
+            sizes: "390x844",
+            type: "image/png",
+            form_factor: "narrow",
+            label: "Course sign-in on mobile",
+          },
+          {
+            src: "/pwa-library-wide.png",
+            sizes: "1440x900",
+            type: "image/png",
+            form_factor: "wide",
+            label: "Course sign-in on desktop",
+          },
+        ],
         icons: [
           {
             src: "/pwa-192x192.png",
@@ -52,6 +82,20 @@ export default defineConfig({
       workbox: {
         cleanupOutdatedCaches: true,
         globPatterns: ["**/*.{js,css,html}"],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith("/covers/"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "course-covers",
+              cacheableResponse: { statuses: [0, 200] },
+              expiration: {
+                maxAgeSeconds: 60 * 60 * 24 * 30,
+                maxEntries: 200,
+              },
+            },
+          },
+        ],
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [
           /^\/api(?:\/|$)/,
