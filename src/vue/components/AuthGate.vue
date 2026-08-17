@@ -4,6 +4,7 @@ import { computed, ref } from "vue";
 import type { AuthStatus } from "@/composables/useAuth.js";
 import AlertMessage from "@/components/ui/AlertMessage.vue";
 import AppButton from "@/components/ui/AppButton.vue";
+import AppFooter from "@/components/ui/AppFooter.vue";
 import AppInput from "@/components/ui/AppInput.vue";
 import AppLogo from "@/components/ui/AppLogo.vue";
 import FormField from "@/components/ui/FormField.vue";
@@ -66,9 +67,9 @@ async function submit(): Promise<void> {
     </aside>
 
     <section
-      class="grid min-h-screen place-items-center px-5 py-12 lg:order-2 lg:border-l lg:border-pine/10 lg:px-6 xl:px-[clamp(32px,3vw,56px)]"
+      class="grid min-h-screen grid-rows-[1fr_auto] px-5 py-8 lg:order-2 lg:border-l lg:border-pine/10 lg:px-6 lg:py-10 xl:px-[clamp(32px,3vw,56px)]"
     >
-      <PanelCard class="w-full max-w-[430px] lg:max-w-[480px]" padding="none">
+      <PanelCard class="w-full max-w-[430px] place-self-center lg:max-w-[480px]" padding="none">
         <header class="bg-pine-deep px-8 py-7 text-white">
           <AppLogo />
           <p class="mt-3 text-sm leading-6 text-white/68">
@@ -189,6 +190,8 @@ async function submit(): Promise<void> {
           </AppButton>
         </form>
       </PanelCard>
+
+      <AppFooter class="mt-8 place-self-center" />
     </section>
   </main>
 </template>

@@ -106,6 +106,7 @@ describe("SettingsPage", () => {
     expect(wrapper.get("[data-desktop-sign-out-container]").classes()).toContain(
       "max-[760px]:hidden",
     );
+    expect(wrapper.get("footer").text()).toContain("© 2026 · github · v0.1.0");
 
     await wrapper.get("#settings-auth-tab").trigger("click");
     const authCard = wrapper.get("#settings-auth-panel > section");

@@ -4,6 +4,7 @@ import { computed, ref, watch } from "vue";
 import { api, type CatalogPageSize } from "@/api.js";
 import AlertMessage from "@/components/ui/AlertMessage.vue";
 import AppButton from "@/components/ui/AppButton.vue";
+import AppFooter from "@/components/ui/AppFooter.vue";
 import AppInput from "@/components/ui/AppInput.vue";
 import AppSelect from "@/components/ui/AppSelect.vue";
 import PwaInstallCard from "@/components/PwaInstallCard.vue";
@@ -397,5 +398,7 @@ async function logout(): Promise<void> {
         </AppButton>
       </div>
     </div>
+
+    <AppFooter class="mt-12" />
   </StandardPageLayout>
 </template>

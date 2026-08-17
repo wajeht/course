@@ -188,6 +188,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+          build-args: APP_VERSION=${{ steps.meta.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -257,6 +258,7 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ steps.image-name.outputs.IMAGE_URL }}
+          build-args: APP_VERSION=${{ steps.image-name.outputs.TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: false
