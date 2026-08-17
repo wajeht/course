@@ -1,11 +1,6 @@
-import fs from "node:fs/promises";
-import path from "node:path";
-
 import { expect, test } from "@playwright/test";
 
-const serviceWorkerPath = path.resolve("dist/client/sw.js");
-
-test("registers, serves deep links offline, and prompts for updates", async ({ context, page }) => {
+test("keeps the install experience online-only", async ({ context, page }) => {
   const password = "playwright-password";
   const setup = await page.request.post("/api/auth/password", {
     data: {
@@ -47,12 +42,6 @@ test("registers, serves deep links offline, and prompts for updates", async ({ c
 
   await expect(page.getByRole("heading", { level: 1, name: "Continue watching" })).toBeVisible();
   await expect(page).toHaveTitle("Course");
-  await expect(page.getByText("The app can open offline")).toBeVisible();
-  await expect
-    .poll(() =>
-      page.evaluate(async () => (await navigator.serviceWorker.ready).active?.state ?? null),
-    )
-    .toBe("activated");
   const manifestResponse = await page.request.get("/manifest.webmanifest");
   expect(manifestResponse.status()).toBe(200);
   const manifest = (await manifestResponse.json()) as {
@@ -72,26 +61,27 @@ test("registers, serves deep links offline, and prompts for updates", async ({ c
   await page.evaluate(async () => {
     localStorage.setItem("course:catalog-snapshot:v1", "legacy catalog");
     await caches.open("course-covers");
+    await caches.open("workbox-precache-v2-course");
   });
   await page.reload();
   await expect
     .poll(() => page.evaluate(() => localStorage.getItem("course:catalog-snapshot:v1")))
     .toBeNull();
-  await expect.poll(() => page.evaluate(() => caches.has("course-covers"))).toBe(false);
+  await expect.poll(() => page.evaluate(async () => (await caches.keys()).length)).toBe(0);
   await expect
-    .poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller)))
-    .toBe(true);
+    .poll(() =>
+      page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length),
+    )
+    .toBe(0);
 
   await context.setOffline(true);
   try {
-    const response = await page.goto("/settings");
-    expect(response?.status()).toBe(200);
-    await expect(page.getByRole("heading", { level: 1, name: "Course is offline" })).toBeVisible();
+    await expect(page.getByText("You’re offline. Reconnect to keep using Course.")).toBeVisible();
   } finally {
     await context.setOffline(false);
   }
 
-  await page.getByRole("button", { name: "Try again" }).click();
+  await page.goto("/settings");
   await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
   await expect(page.getByText("Install Course", { exact: true }).first()).toBeVisible();
   await expect(page).toHaveTitle("Settings · Course");
@@ -117,16 +107,4 @@ test("registers, serves deep links offline, and prompts for updates", async ({ c
   await page.locator('input[autocomplete="current-password"]').fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
-
-  const originalServiceWorker = await fs.readFile(serviceWorkerPath, "utf8");
-  try {
-    await fs.writeFile(serviceWorkerPath, `${originalServiceWorker}\n// pwa-update-test\n`);
-    await page.evaluate(async () => {
-      const registration = await navigator.serviceWorker.getRegistration();
-      await registration?.update();
-    });
-    await expect(page.getByText("App update available")).toBeVisible();
-  } finally {
-    await fs.writeFile(serviceWorkerPath, originalServiceWorker);
-  }
 });

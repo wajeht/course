@@ -47,7 +47,6 @@ async function mountAt(path: string, auth = createUnauthenticatedAuth()) {
       provide: { [authKey as symbol]: auth },
       stubs: {
         ConfirmDialog: true,
-        PwaUpdatePrompt: true,
         ToastViewport: true,
       },
     },
@@ -85,7 +84,6 @@ describe("App", () => {
     expect(wrapper.findComponent(UnexpectedErrorPage).exists()).toBe(true);
     expect(wrapper.get("main").classes()).toContain("min-h-screen");
     expect(wrapper.findComponent(AuthGate).exists()).toBe(false);
-    expect(wrapper.find("pwa-update-prompt-stub").exists()).toBe(false);
     expect(wrapper.find("confirm-dialog-stub").exists()).toBe(false);
     expect(wrapper.find("toast-viewport-stub").exists()).toBe(false);
   });
