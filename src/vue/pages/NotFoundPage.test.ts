@@ -17,5 +17,15 @@ describe("NotFoundPage", () => {
       "/",
       "/library",
     ]);
+    expect(wrapper.get("main").classes()).toContain("min-h-[calc(100vh-66px)]");
+  });
+
+  it("fills the viewport when rendered without the application shell", () => {
+    const wrapper = mount(NotFoundPage, {
+      props: { standalone: true },
+      global: { stubs: { RouterLink: RouterLinkStub } },
+    });
+
+    expect(wrapper.get("main").classes()).toContain("min-h-screen");
   });
 });

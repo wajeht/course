@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { RouterView } from "vue-router";
+import { RouterView, useRoute } from "vue-router";
 
 import AuthGate from "@/components/AuthGate.vue";
 import PwaUpdatePrompt from "@/components/PwaUpdatePrompt.vue";
@@ -14,6 +14,7 @@ import AppShell from "@/layouts/AppShell.vue";
 import UnexpectedErrorPage from "@/pages/UnexpectedErrorPage.vue";
 
 const auth = useAuth();
+const route = useRoute();
 const loginAction = useAsyncAction((password: string) => auth.login(password), {
   errorMessage: "Could not sign in",
 });
@@ -73,6 +74,9 @@ async function setup(
     <UnexpectedErrorPage v-if="frontendError.visible" />
     <RouterView v-else />
   </AppShell>
+  <RouterView v-else-if="route.name === 'not-found'" v-slot="{ Component }">
+    <component :is="Component" standalone />
+  </RouterView>
   <AuthGate
     v-else
     :status="auth.state.status"

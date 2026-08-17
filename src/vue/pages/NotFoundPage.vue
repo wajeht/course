@@ -3,11 +3,16 @@ import { RouterLink } from "vue-router";
 
 import AppButton from "@/components/ui/AppButton.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
+
+withDefaults(defineProps<{ standalone?: boolean }>(), {
+  standalone: false,
+});
 </script>
 
 <template>
   <main
-    class="mx-auto grid min-h-[calc(100vh-66px)] w-[min(1380px,calc(100%-8vw))] place-items-center max-[860px]:w-[min(100%-40px,1380px)]"
+    class="mx-auto grid w-[min(1380px,calc(100%-8vw))] place-items-center max-[860px]:w-[min(100%-40px,1380px)]"
+    :class="standalone ? 'min-h-screen' : 'min-h-[calc(100vh-66px)]'"
   >
     <EmptyState
       title="Page not found"
