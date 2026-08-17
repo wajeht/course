@@ -46,9 +46,9 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <main class="min-h-screen bg-canvas lg:grid lg:grid-cols-[1fr_2fr]">
+  <main class="min-h-screen bg-canvas lg:grid lg:grid-cols-[2fr_1fr]">
     <aside
-      class="hidden min-h-screen items-center justify-center overflow-hidden bg-pine-deep bg-[radial-gradient(circle_at_83%_20%,rgb(196_147_63_/_16%),transparent_30%),repeating-linear-gradient(90deg,transparent_0_52px,rgb(255_255_255_/_2%)_52px_53px)] px-12 text-white lg:order-2 lg:flex"
+      class="hidden min-h-screen items-center justify-center overflow-hidden bg-pine-deep bg-[radial-gradient(circle_at_83%_20%,rgb(196_147_63_/_16%),transparent_30%),repeating-linear-gradient(90deg,transparent_0_52px,rgb(255_255_255_/_2%)_52px_53px)] px-12 text-white lg:order-1 lg:flex"
       aria-label="A private, opinionated, self-hosted video course library."
     >
       <div class="w-full max-w-[720px]" aria-hidden="true">
@@ -66,7 +66,7 @@ async function submit(): Promise<void> {
     </aside>
 
     <section
-      class="grid min-h-screen place-items-center px-5 py-12 lg:order-1 lg:border-r lg:border-pine/10 lg:px-6 xl:px-[clamp(32px,3vw,56px)]"
+      class="grid min-h-screen place-items-center px-5 py-12 lg:order-2 lg:border-l lg:border-pine/10 lg:px-6 xl:px-[clamp(32px,3vw,56px)]"
     >
       <PanelCard class="w-full max-w-[430px] lg:max-w-[480px]" padding="none">
         <header class="bg-pine-deep px-8 py-7 text-white">
