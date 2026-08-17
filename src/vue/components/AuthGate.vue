@@ -49,52 +49,14 @@ async function submit(): Promise<void> {
   <main class="min-h-screen bg-canvas lg:grid lg:grid-cols-[1fr_2fr]">
     <aside
       class="hidden min-h-screen items-center justify-center overflow-hidden bg-pine-deep bg-[radial-gradient(circle_at_83%_20%,rgb(196_147_63_/_16%),transparent_30%),repeating-linear-gradient(90deg,transparent_0_52px,rgb(255_255_255_/_2%)_52px_53px)] px-12 text-white lg:order-2 lg:flex"
-      aria-label="Course lesson preview"
+      aria-label="Course playback"
     >
-      <div class="w-full max-w-[540px]" aria-hidden="true">
-        <p
-          class="mb-5 font-display text-sm font-extrabold tracking-[.14em] text-white/60 uppercase"
-        >
-          Lesson in progress
-        </p>
-        <div
-          class="grid aspect-[5/4] grid-cols-[1.55fr_.8fr] gap-4 rounded-[18px] border border-white/16 bg-white/[.055] p-4 shadow-[0_24px_80px_rgb(0_0_0_/_20%)]"
-        >
-          <div class="relative grid place-items-center overflow-hidden rounded-[12px] bg-ink/45">
-            <div
-              class="grid h-16 w-16 place-items-center rounded-full border border-white/25 bg-white/10"
-            >
-              <span
-                class="ml-1 h-0 w-0 border-y-[11px] border-l-[18px] border-y-transparent border-l-belt-light"
-              />
-            </div>
-            <div
-              class="absolute right-5 bottom-5 left-5 h-1.5 overflow-hidden rounded-full bg-white/16"
-            >
-              <span class="block h-full w-3/5 rounded-full bg-belt-light" />
-            </div>
-          </div>
-
-          <div class="flex flex-col gap-3">
-            <div
-              v-for="lesson in 4"
-              :key="lesson"
-              :class="[
-                'flex flex-1 items-center gap-3 rounded-[10px] border px-3',
-                lesson === 1
-                  ? 'border-belt-light/40 bg-belt-light/10'
-                  : 'border-white/10 bg-white/[.035]',
-              ]"
-            >
-              <span class="font-display text-xs font-extrabold text-belt-light">
-                {{ String(lesson).padStart(2, "0") }}
-              </span>
-              <span class="space-y-2">
-                <i class="block h-1.5 w-16 rounded-full bg-white/48" />
-                <i class="block h-1.5 w-10 rounded-full bg-white/20" />
-              </span>
-            </div>
-          </div>
+      <div class="flex w-full max-w-[560px] flex-col items-center gap-16" aria-hidden="true">
+        <span
+          class="block h-[clamp(96px,12vw,154px)] w-[clamp(110px,14vw,178px)] bg-belt-light drop-shadow-[0_18px_32px_rgb(0_0_0_/_25%)] [clip-path:polygon(0_0,100%_50%,0_100%)]"
+        />
+        <div class="h-[3px] w-full max-w-[460px] overflow-hidden rounded-full bg-white/18">
+          <span class="block h-full w-3/5 rounded-full bg-belt-light" />
         </div>
       </div>
     </aside>
