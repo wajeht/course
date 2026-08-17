@@ -49,16 +49,18 @@ async function submit(): Promise<void> {
   <main class="min-h-screen bg-canvas lg:grid lg:grid-cols-[1fr_2fr]">
     <aside
       class="hidden min-h-screen items-center justify-center overflow-hidden bg-pine-deep bg-[radial-gradient(circle_at_83%_20%,rgb(196_147_63_/_16%),transparent_30%),repeating-linear-gradient(90deg,transparent_0_52px,rgb(255_255_255_/_2%)_52px_53px)] px-12 text-white lg:order-2 lg:flex"
-      aria-label="Your library, your pace"
+      aria-label="A private, opinionated, self-hosted video course library."
     >
       <div class="w-full max-w-[720px]" aria-hidden="true">
         <p
-          class="font-display text-[clamp(4.5rem,7.4vw,9rem)] font-black leading-[0.8] tracking-[-0.025em] uppercase"
+          class="font-display text-[clamp(4rem,6.4vw,8rem)] font-black leading-[0.82] tracking-[-0.025em] uppercase"
         >
-          <span class="block text-white/45">Your</span>
-          <span class="block text-white">Library.</span>
-          <span class="mt-[0.18em] block text-white/45">Your</span>
-          <span class="block text-belt-light">Pace.</span>
+          <span class="block text-white/45">A private,</span>
+          <span class="block text-white">opinionated,</span>
+          <span class="block text-belt-light">self-hosted</span>
+        </p>
+        <p class="mt-8 max-w-xl text-xl font-medium tracking-[0.12em] text-white/60 uppercase">
+          Video course library.
         </p>
       </div>
     </aside>
