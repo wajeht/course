@@ -49,15 +49,17 @@ async function submit(): Promise<void> {
   <main class="min-h-screen bg-canvas lg:grid lg:grid-cols-[1fr_2fr]">
     <aside
       class="hidden min-h-screen items-center justify-center overflow-hidden bg-pine-deep bg-[radial-gradient(circle_at_83%_20%,rgb(196_147_63_/_16%),transparent_30%),repeating-linear-gradient(90deg,transparent_0_52px,rgb(255_255_255_/_2%)_52px_53px)] px-12 text-white lg:order-2 lg:flex"
-      aria-label="Course playback"
+      aria-label="Your library, your pace"
     >
-      <div class="flex w-full max-w-[560px] flex-col items-center gap-16" aria-hidden="true">
-        <span
-          class="block h-[clamp(96px,12vw,154px)] w-[clamp(110px,14vw,178px)] bg-belt-light drop-shadow-[0_18px_32px_rgb(0_0_0_/_25%)] [clip-path:polygon(0_0,100%_50%,0_100%)]"
-        />
-        <div class="h-[3px] w-full max-w-[460px] overflow-hidden rounded-full bg-white/18">
-          <span class="block h-full w-3/5 rounded-full bg-belt-light" />
-        </div>
+      <div class="w-full max-w-[720px]" aria-hidden="true">
+        <p
+          class="font-display text-[clamp(4.5rem,7.4vw,9rem)] font-black leading-[0.8] tracking-[-0.025em] uppercase"
+        >
+          <span class="block text-white/45">Your</span>
+          <span class="block text-white">Library.</span>
+          <span class="mt-[0.18em] block text-white/45">Your</span>
+          <span class="block text-belt-light">Pace.</span>
+        </p>
       </div>
     </aside>
 
