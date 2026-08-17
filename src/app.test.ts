@@ -26,6 +26,7 @@ describe("application", () => {
     const course = path.join(videos, "course");
     await fs.mkdir(course, { recursive: true });
     await fs.writeFile(path.join(course, "lesson.mp4"), "0123456789");
+    await fs.writeFile(path.join(course, "cover.jpg"), "cover");
     const configuration = createConfiguration({
       APP_ENV: "testing",
       VIDEOS_DIR: videos,
@@ -48,6 +49,7 @@ describe("application", () => {
       path: "course",
       title: "Course",
       description: "",
+      cover_path: "course/cover.jpg",
       sort_order: 0,
     });
     await context.database.connection("lessons").insert({
@@ -108,6 +110,14 @@ describe("application", () => {
     expect(response.status).toBe(206);
     expect(response.headers.get("content-range")).toBe("bytes 2-5/10");
     expect(await response.text()).toBe("2345");
+
+    const cover = await app.request(`/covers/${"a".repeat(24)}`, {
+      headers: { cookie: cookie! },
+    });
+    expect(cover.status).toBe(200);
+    expect(cover.headers.get("cache-control")).toBe("private, max-age=31536000, immutable");
+    expect(cover.headers.get("vary")).toBe("Cookie");
+    expect(await cover.text()).toBe("cover");
 
     const apiNotFound = await app.request("/api/does-not-exist", {
       headers: { cookie: cookie! },

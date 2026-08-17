@@ -89,7 +89,8 @@ export function createMediaRouter(context: AppContext) {
         extension === ".png" ? "image/png" : extension === ".webp" ? "image/webp" : "image/jpeg";
       c.header("Content-Type", contentType);
       c.header("Content-Length", String(statistics.size));
-      c.header("Cache-Control", "private, no-store");
+      c.header("Cache-Control", "private, max-age=31536000, immutable");
+      c.header("Vary", "Cookie");
       return c.body(createFileBody(filename));
     },
   );
