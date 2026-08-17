@@ -96,10 +96,10 @@ watch(
 <template>
   <main v-if="course">
     <section
-      class="grid grid-cols-[minmax(260px,390px)_minmax(0,1fr)] gap-[clamp(36px,6vw,92px)] bg-pine-deep bg-[radial-gradient(circle_at_83%_20%,rgb(196_147_63_/_16%),transparent_30%),repeating-linear-gradient(90deg,transparent_0_52px,rgb(255_255_255_/_2%)_52px_53px)] px-[max(4vw,calc((100vw-1380px)/2))] py-[clamp(52px,7vw,90px)] text-white max-[860px]:grid-cols-[minmax(180px,260px)_minmax(0,1fr)] max-[860px]:gap-[34px] max-[600px]:grid-cols-[105px_minmax(0,1fr)] max-[600px]:gap-5 max-[600px]:px-5 max-[600px]:pt-10 max-[600px]:pb-12"
+      class="grid grid-cols-[minmax(260px,390px)_minmax(0,1fr)] gap-[clamp(36px,6vw,92px)] bg-pine-deep bg-[radial-gradient(circle_at_83%_20%,rgb(196_147_63_/_16%),transparent_30%),repeating-linear-gradient(90deg,transparent_0_52px,rgb(255_255_255_/_2%)_52px_53px)] px-[max(4vw,calc((100vw-1380px)/2))] py-[clamp(52px,7vw,90px)] text-white max-[860px]:grid-cols-[minmax(180px,260px)_minmax(0,1fr)] max-[860px]:gap-[34px] max-[600px]:grid-cols-1 max-[600px]:gap-5 max-[600px]:px-5 max-[600px]:pt-10 max-[600px]:pb-12"
     >
       <div
-        class="aspect-[4/5] self-center overflow-hidden rounded-[10px] border border-white/18 bg-pine shadow-[0_28px_70px_rgb(0_0_0_/_32%)] max-[600px]:self-start"
+        class="aspect-[4/5] self-center overflow-hidden rounded-[10px] border border-white/18 bg-pine shadow-[0_28px_70px_rgb(0_0_0_/_32%)] max-[600px]:w-full max-[600px]:self-start"
       >
         <img
           v-if="course.coverUrl"
@@ -109,16 +109,8 @@ watch(
         />
         <CourseCoverPlaceholder v-else class="h-full w-full" :title="course.title" />
       </div>
-      <div class="max-w-[800px] self-center max-[600px]:contents">
-        <RouterLink
-          to="/library"
-          class="mb-[42px] inline-block text-[.78rem] font-bold text-white/68 hover:text-white max-[860px]:mb-[25px] max-[600px]:col-span-full max-[600px]:mb-0"
-        >
-          ← Library
-        </RouterLink>
-        <p
-          class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase max-[600px]:mb-[55px] max-[600px]:self-end"
-        >
+      <div class="max-w-[800px] self-center">
+        <p class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase">
           <template v-if="course.category !== 'Uncategorized'">{{ course.category }} · </template>
           {{ countText(course.lessonCount, "lesson") }} · {{ durationText(course.durationSeconds) }}
         </p>
