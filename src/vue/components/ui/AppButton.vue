@@ -62,8 +62,8 @@ const sizeClasses = computed(
   () =>
     ({
       icon: "h-10 w-10 p-0",
-      lg: "min-h-11 px-[18px] text-[.82rem]",
-      md: "min-h-10 px-5 text-[.78rem]",
+      lg: "h-10 px-[18px] text-[.82rem]",
+      md: "h-10 px-5 text-[.78rem]",
       sm: "min-h-9 px-4 text-[.75rem]",
     })[props.size],
 );

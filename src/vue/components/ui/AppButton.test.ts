@@ -40,4 +40,13 @@ describe("AppButton", () => {
     expect(wrapper.attributes("disabled")).toBeUndefined();
     expect(wrapper.attributes("aria-disabled")).toBe("true");
   });
+
+  it.each(["md", "lg"] as const)("uses the shared action height for %s buttons", (size) => {
+    const wrapper = mount(AppButton, {
+      props: { size },
+      slots: { default: "Continue" },
+    });
+
+    expect(wrapper.classes()).toContain("h-10");
+  });
 });

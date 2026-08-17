@@ -175,20 +175,18 @@ watch(
         <div class="flex flex-wrap gap-[10px] max-[600px]:col-span-full">
           <AppButton
             v-if="nextLesson"
-            class="h-10"
             :as="RouterLink"
             :to="{ name: 'player', params: { lessonId: nextLesson.id } }"
             variant="accent"
-            size="md"
+            size="lg"
           >
             <span aria-hidden="true">▶</span>
             {{ nextLesson.positionSeconds ? "Resume course" : "Start course" }}
           </AppButton>
           <AppButton
             v-if="hasStarted"
-            class="h-10"
             variant="outline-inverse"
-            size="md"
+            size="lg"
             :loading="resetAction.pending.value"
             loading-label="Resetting…"
             @click="resetProgress"
