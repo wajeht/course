@@ -46,4 +46,46 @@ describe("useScreenWakeLock", () => {
     await vi.waitFor(() => expect(release).toHaveBeenCalledOnce());
     wrapper.unmount();
   });
+
+  it("releases a wake lock that resolves after its component unmounts", async () => {
+    const release = vi.fn(async () => undefined);
+    let resolveRequest: ((sentinel: WakeLockSentinel) => void) | undefined;
+    const request = vi.fn(
+      () =>
+        new Promise<WakeLockSentinel>((resolve) => {
+          resolveRequest = resolve;
+        }),
+    );
+    Object.defineProperty(navigator, "wakeLock", {
+      configurable: true,
+      value: { request },
+    });
+    const wrapper = mount(
+      defineComponent({
+        template: "<video ref='video' />",
+        setup() {
+          const video = ref<HTMLVideoElement | null>(null);
+          useScreenWakeLock(video);
+          return { video };
+        },
+      }),
+    );
+    const video = wrapper.get("video").element as HTMLVideoElement;
+    Object.defineProperty(video, "paused", { configurable: true, value: false });
+
+    video.dispatchEvent(new Event("play"));
+    await vi.waitFor(() => expect(request).toHaveBeenCalledOnce());
+    wrapper.unmount();
+    resolveRequest?.({
+      addEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+      onrelease: null,
+      release,
+      released: false,
+      removeEventListener: vi.fn(),
+      type: "screen",
+    });
+
+    await vi.waitFor(() => expect(release).toHaveBeenCalledOnce());
+  });
 });
