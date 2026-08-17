@@ -71,6 +71,7 @@ describe("App", () => {
     const wrapper = await mountAt("/settings");
 
     expect(wrapper.findComponent(AuthGate).exists()).toBe(true);
+    expect(wrapper.text()).toContain("Please sign in to continue.");
     expect(wrapper.findComponent(NotFoundPage).exists()).toBe(false);
   });
 
