@@ -9,12 +9,23 @@ import { createToast, toastKey } from "@/composables/useToast.js";
 import { showFrontendError } from "@/frontend-error.js";
 import { router } from "@/router.js";
 
-try {
-  window.localStorage.removeItem("course:catalog-snapshot:v1");
-} catch {
-  // Browser storage may be unavailable.
+async function removeLegacyOfflineStorage(): Promise<void> {
+  try {
+    window.localStorage.removeItem("course:catalog-snapshot:v1");
+  } catch {
+    // Browser storage may be unavailable.
+  }
+  if ("caches" in window) {
+    const cacheNames = await window.caches.keys();
+    await Promise.all(cacheNames.map((cacheName) => window.caches.delete(cacheName)));
+  }
+  if ("serviceWorker" in navigator) {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(registrations.map((registration) => registration.unregister()));
+  }
 }
-if ("caches" in window) void window.caches.delete("course-covers");
+
+void removeLegacyOfflineStorage().catch(() => undefined);
 
 const app = createApp(App);
 const auth = createAuth();

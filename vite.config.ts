@@ -2,7 +2,6 @@ import { fileURLToPath, URL } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
 import vue from "@vitejs/plugin-vue";
-import { VitePWA } from "vite-plugin-pwa";
 import { defineConfig } from "vitest/config";
 
 import { configuration } from "./src/configuration.js";
@@ -12,87 +11,7 @@ const projectRoot = fileURLToPath(new URL(".", import.meta.url));
 export default defineConfig({
   root: "src/vue",
   publicDir: fileURLToPath(new URL("./public", import.meta.url)),
-  plugins: [
-    vue(),
-    tailwindcss(),
-    VitePWA({
-      registerType: "prompt",
-      useCredentials: true,
-      includeAssets: ["favicon.svg", "apple-touch-icon.png"],
-      manifest: {
-        id: "/",
-        name: "Course",
-        short_name: "Course",
-        description: "A private, opinionated, self-hosted video course library.",
-        theme_color: "#244d3b",
-        background_color: "#f5f6f2",
-        display: "standalone",
-        start_url: "/",
-        scope: "/",
-        categories: ["education", "productivity"],
-        shortcuts: [
-          {
-            name: "Open library",
-            short_name: "Library",
-            description: "Browse your video courses.",
-            url: "/library",
-          },
-          {
-            name: "Open settings",
-            short_name: "Settings",
-            description: "Manage Course settings.",
-            url: "/settings",
-          },
-        ],
-        screenshots: [
-          {
-            src: "/pwa-library-narrow.png",
-            sizes: "390x844",
-            type: "image/png",
-            form_factor: "narrow",
-            label: "Course sign-in on mobile",
-          },
-          {
-            src: "/pwa-library-wide.png",
-            sizes: "1440x900",
-            type: "image/png",
-            form_factor: "wide",
-            label: "Course sign-in on desktop",
-          },
-        ],
-        icons: [
-          {
-            src: "/pwa-192x192.png",
-            sizes: "192x192",
-            type: "image/png",
-          },
-          {
-            src: "/pwa-512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-          },
-          {
-            src: "/pwa-maskable-512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "maskable",
-          },
-        ],
-      },
-      workbox: {
-        cleanupOutdatedCaches: true,
-        globPatterns: ["**/*.{js,css,html}"],
-        navigateFallback: "/index.html",
-        navigateFallbackDenylist: [
-          /^\/api(?:\/|$)/,
-          /^\/covers(?:\/|$)/,
-          /^\/healthz$/,
-          /^\/hls(?:\/|$)/,
-          /^\/media(?:\/|$)/,
-        ],
-      },
-    }),
-  ],
+  plugins: [vue(), tailwindcss()],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src/vue", import.meta.url)),

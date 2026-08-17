@@ -4,7 +4,6 @@ import { RouterView, useRoute } from "vue-router";
 
 import AuthGate from "@/components/AuthGate.vue";
 import OfflineStatusBanner from "@/components/OfflineStatusBanner.vue";
-import PwaUpdatePrompt from "@/components/PwaUpdatePrompt.vue";
 import AppLogo from "@/components/ui/AppLogo.vue";
 import ConfirmDialog from "@/components/ui/ConfirmDialog.vue";
 import ToastViewport from "@/components/ui/ToastViewport.vue";
@@ -98,7 +97,6 @@ async function setup(
     @setup="setup"
     @retry="auth.initialize"
   />
-  <PwaUpdatePrompt v-if="!frontendError.visible" />
   <ConfirmDialog v-if="!frontendError.visible" />
   <ToastViewport v-if="!frontendError.visible" />
 </template>
