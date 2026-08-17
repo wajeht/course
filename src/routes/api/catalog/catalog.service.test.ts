@@ -238,4 +238,47 @@ describe("catalog service", () => {
       lessonIds[2],
     ]);
   });
+
+  it("returns ordered chapters only with the opened lesson", async () => {
+    const lessonId = "c".repeat(24);
+    await database.connection("lessons").insert({
+      id: lessonId,
+      course_id: "a".repeat(24),
+      path: "technology/lesson.mp4",
+      title: "Lesson",
+      sort_order: 0,
+      duration_seconds: 1_000,
+      size_bytes: 100,
+      container: "mp4",
+      video_codec: "h264",
+      browser_compatible: true,
+      modified_at: "2026-08-17T12:00:00.000Z",
+    });
+    await database.connection("chapters").insert([
+      {
+        id: "d".repeat(24),
+        lesson_id: lessonId,
+        title: "Second technique",
+        start_seconds: 416,
+        sort_order: 1,
+      },
+      {
+        id: "e".repeat(24),
+        lesson_id: lessonId,
+        title: "Introduction",
+        start_seconds: 0,
+        sort_order: 0,
+      },
+    ]);
+
+    await expect(createService().getLesson(lessonId)).resolves.toMatchObject({
+      lesson: {
+        title: "Lesson",
+        chapters: [
+          { title: "Introduction", startSeconds: 0 },
+          { title: "Second technique", startSeconds: 416 },
+        ],
+      },
+    });
+  });
 });

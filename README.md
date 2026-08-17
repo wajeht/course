@@ -70,7 +70,20 @@ Course metadata is optional:
   "cover": "cover.jpg",
   "category": "Technology",
   "instructors": ["Jane Smith"],
-  "tags": ["Docker", "Kubernetes", "DevOps"]
+  "tags": ["Docker", "Kubernetes", "DevOps"],
+  "source": {
+    "provider": "Course Provider",
+    "url": "https://example.com/course"
+  },
+  "lessons": [
+    {
+      "path": "Module 2/01 - Next lesson.mkv",
+      "chapters": [
+        { "title": "Introduction", "startSeconds": 0 },
+        { "title": "First technique", "startSeconds": 416 }
+      ]
+    }
+  ]
 }
 ```
 
@@ -78,7 +91,9 @@ Course metadata is optional:
 search. Each instructor also gets a page containing all of their courses.
 Courses without a category appear under **Uncategorized**. The cover must be a
 local JPG, PNG, or WebP. When it is omitted, Course creates a cover from the
-first valid video.
+first valid video. Lesson paths are relative to the course folder. Chapter start
+times use whole seconds, must be in increasing order, and must fall within the
+matching video.
 
 ## Docs
 

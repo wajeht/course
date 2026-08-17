@@ -3,9 +3,11 @@ import { hc } from "hono/client";
 import type { AppType } from "../app";
 import type { ScanStatus } from "../media/types";
 import type {
+  ChapterDto,
   CatalogFilters,
   CatalogService,
   CourseDetailDto,
+  LessonDetailDto,
   LessonDto,
 } from "../routes/api/catalog/catalog.service";
 import type { PlaybackResult } from "../routes/api/playback/playback.service";
@@ -22,9 +24,11 @@ export interface AuthStateDto {
 
 export type CatalogDto = Awaited<ReturnType<CatalogService["getCatalog"]>>;
 export type {
+  ChapterDto,
   CatalogFilters,
   CatalogPageSize,
   CourseDetailDto,
+  LessonDetailDto,
   LessonDto,
   PlaybackResult,
   ScanStatus,
@@ -116,7 +120,10 @@ export const api = {
     );
     return expectProtectedJson<CourseDetailDto>(response);
   },
-  async getLesson(lessonId: string): Promise<{ lesson: LessonDto; course: CourseDetailDto }> {
+  async getLesson(lessonId: string): Promise<{
+    lesson: LessonDetailDto;
+    course: CourseDetailDto;
+  }> {
     const response = await apiClient.api.catalog.lessons[":lessonId"].$get({
       param: { lessonId },
     });

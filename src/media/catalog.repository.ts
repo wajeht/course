@@ -35,6 +35,7 @@ export function createCatalogRepository(database: Knex): CatalogRepository {
       await database.transaction(async (transaction) => {
         await upsertSnapshot(transaction, snapshot);
 
+        await deleteMissingChapters(transaction, snapshot);
         await deleteMissing(transaction, "lessons", [
           ...snapshot.lessons.map((item) => item.id),
           ...snapshot.skippedLessonIds,
@@ -62,6 +63,8 @@ export function createCatalogRepository(database: Knex): CatalogRepository {
             .where({ id: course.id })
             .update({ sort_order: course.sortOrder });
         }
+
+        await deleteMissingChapters(transaction, snapshot);
 
         const retainedLessonIds = [
           ...snapshot.lessons.map((lesson) => lesson.id),
@@ -202,6 +205,31 @@ async function upsertSnapshot(
       .onConflict("id")
       .merge();
   }
+
+  for (const chapter of snapshot.chapters) {
+    await transaction("chapters")
+      .insert({
+        id: chapter.id,
+        lesson_id: chapter.lessonId,
+        title: chapter.title,
+        start_seconds: chapter.startSeconds,
+        sort_order: chapter.sortOrder,
+      })
+      .onConflict("id")
+      .merge();
+  }
+}
+
+async function deleteMissingChapters(
+  transaction: Knex.Transaction,
+  snapshot: CatalogSnapshot,
+): Promise<void> {
+  const lessonIds = snapshot.lessons.map((lesson) => lesson.id);
+  if (lessonIds.length === 0) return;
+  const retainedChapterIds = snapshot.chapters.map((chapter) => chapter.id);
+  const query = transaction("chapters").whereIn("lesson_id", lessonIds);
+  if (retainedChapterIds.length > 0) await query.whereNotIn("id", retainedChapterIds).delete();
+  else await query.delete();
 }
 
 async function deleteMissing(

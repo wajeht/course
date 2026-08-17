@@ -3,7 +3,14 @@ import { useQueryClient } from "@tanstack/vue-query";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
-import { api, isCatalogResourceNotFound, type CourseDetailDto, type LessonDto } from "@/api.js";
+import {
+  api,
+  isCatalogResourceNotFound,
+  type CourseDetailDto,
+  type LessonDetailDto,
+  type LessonDto,
+} from "@/api.js";
+import ChapterList from "@/components/ChapterList.vue";
 import LessonRow from "@/components/LessonRow.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppSelect from "@/components/ui/AppSelect.vue";
@@ -23,11 +30,13 @@ const route = useRoute();
 const router = useRouter();
 const queryClient = useQueryClient();
 const video = ref<HTMLVideoElement | null>(null);
-const lesson = ref<LessonDto | null>(null);
+const lesson = ref<LessonDetailDto | null>(null);
 const course = ref<CourseDetailDto | null>(null);
 const loading = ref(true);
 const ended = ref(false);
 const sidebarOpen = ref(false);
+const sidebarView = ref<"chapters" | "course">("course");
+const currentTime = ref(0);
 const playbackRate = ref(1);
 const confirmation = useConfirm();
 const toast = useToast();
@@ -119,6 +128,7 @@ async function loadPlayer(): Promise<void> {
   loading.value = true;
   error.value = "";
   ended.value = false;
+  currentTime.value = 0;
   sidebarOpen.value = false;
   try {
     const lessonId = String(route.params.lessonId);
@@ -128,6 +138,7 @@ async function loadPlayer(): Promise<void> {
     await invalidateCatalogCache();
     if (!videoPlayback.isCurrentRequest(requestId)) return;
     lesson.value = detail.lesson;
+    sidebarView.value = detail.lesson.chapters.length > 0 ? "chapters" : "course";
     setPageTitle(detail.lesson.title);
     playbackProgress.startSession(detail.lesson.id, detail.lesson.positionSeconds);
     course.value = detail.course;
@@ -161,13 +172,21 @@ function applyResume(): void {
       );
     }
     element.playbackRate = playbackRate.value;
+    currentTime.value = element.currentTime;
     playbackProgress.activateSession(element.currentTime);
   });
 }
 
 function saveOnTimeUpdate(): void {
+  currentTime.value = video.value?.currentTime ?? 0;
   playbackProgress.recordPosition(video.value?.currentTime);
   if (!ended.value) void playbackProgress.persistProgress();
+}
+
+function seekToChapter(startSeconds: number): void {
+  if (!video.value) return;
+  video.value.currentTime = startSeconds;
+  currentTime.value = startSeconds;
 }
 
 function saveOnPause(): void {
@@ -267,7 +286,7 @@ onBeforeUnmount(() => {
           variant="unstyled"
           @click="sidebarOpen = !sidebarOpen"
         >
-          Lessons
+          Contents
         </AppButton>
       </div>
       <div
@@ -401,22 +420,46 @@ onBeforeUnmount(() => {
       >
         <div>
           <p class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase">
-            Curriculum
+            {{ sidebarView === "chapters" ? "Technique index" : "Curriculum" }}
           </p>
           <h2 class="font-mono text-[.92rem] font-semibold">
-            Lesson {{ currentIndex + 1 }} of {{ allLessons.length }}
+            <template v-if="sidebarView === 'chapters'">
+              {{ lesson?.chapters.length ?? 0 }} chapters
+            </template>
+            <template v-else>Lesson {{ currentIndex + 1 }} of {{ allLessons.length }}</template>
           </h2>
         </div>
         <AppButton
           class="hidden h-9 w-9 place-items-center rounded-full border border-line bg-white text-[1.4rem] text-ink max-[860px]:grid"
           variant="unstyled"
-          aria-label="Close lessons"
+          aria-label="Close contents"
           @click="sidebarOpen = false"
         >
           ×
         </AppButton>
       </div>
-      <div class="flex-1 overflow-y-auto overscroll-contain">
+      <div class="grid grid-cols-2 border-b border-line bg-white p-1.5">
+        <AppButton
+          class="h-9 rounded-[5px] text-[.72rem] font-bold"
+          variant="unstyled"
+          :class="sidebarView === 'course' ? '!bg-pine !text-white' : '!text-muted hover:!bg-mist'"
+          @click="sidebarView = 'course'"
+        >
+          Course
+        </AppButton>
+        <AppButton
+          class="h-9 rounded-[5px] text-[.72rem] font-bold disabled:opacity-40"
+          variant="unstyled"
+          :disabled="!lesson?.chapters.length"
+          :class="
+            sidebarView === 'chapters' ? '!bg-pine !text-white' : '!text-muted hover:!bg-mist'
+          "
+          @click="sidebarView = 'chapters'"
+        >
+          Chapters
+        </AppButton>
+      </div>
+      <div v-if="sidebarView === 'course'" class="flex-1 overflow-y-auto overscroll-contain">
         <section v-for="section in course.sections" :key="section.id ?? 'direct'">
           <h3
             class="sticky top-0 z-[2] border-y border-pine/15 bg-mist font-display text-[.78rem] font-extrabold tracking-[.08em] text-pine-deep uppercase shadow-[inset_4px_0_0_#c4933f]"
@@ -454,6 +497,14 @@ onBeforeUnmount(() => {
             />
           </div>
         </section>
+      </div>
+      <div v-else class="flex-1 overflow-y-auto overscroll-contain">
+        <ChapterList
+          v-if="lesson?.chapters.length"
+          :chapters="lesson.chapters"
+          :current-time="currentTime"
+          @seek="seekToChapter"
+        />
       </div>
     </aside>
   </main>

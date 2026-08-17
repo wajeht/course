@@ -33,6 +33,15 @@ export const lessonResponseSchema = z.object({
   progressPercent: z.number().int().min(0).max(100),
 });
 
+export const chapterResponseSchema = z.object({
+  title: z.string(),
+  startSeconds: z.number().int().nonnegative(),
+});
+
+export const lessonWithChaptersResponseSchema = lessonResponseSchema.extend({
+  chapters: z.array(chapterResponseSchema),
+});
+
 export const courseResponseSchema = z.object({
   id: identifierSchema,
   title: z.string(),
@@ -87,6 +96,6 @@ export const catalogResponseSchema = z.object({
 });
 
 export const lessonDetailResponseSchema = z.object({
-  lesson: lessonResponseSchema,
+  lesson: lessonWithChaptersResponseSchema,
   course: courseDetailResponseSchema,
 });

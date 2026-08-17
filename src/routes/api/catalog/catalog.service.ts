@@ -1,5 +1,6 @@
 import type {
   CatalogRepository,
+  ChapterRow,
   CourseCountRow,
   CourseFilters,
   CourseRow,
@@ -18,6 +19,15 @@ export interface LessonDto {
   positionSeconds: number;
   completed: boolean;
   progressPercent: number;
+}
+
+export interface ChapterDto {
+  title: string;
+  startSeconds: number;
+}
+
+export interface LessonDetailDto extends LessonDto {
+  chapters: ChapterDto[];
 }
 
 export interface CourseDto {
@@ -69,7 +79,10 @@ export interface CatalogService {
     pagination: CatalogPaginationDto;
   }>;
   getCourse(courseId: string): Promise<CourseDetailDto | null>;
-  getLesson(lessonId: string): Promise<{ lesson: LessonDto; course: CourseDetailDto } | null>;
+  getLesson(lessonId: string): Promise<{
+    lesson: LessonDetailDto;
+    course: CourseDetailDto;
+  } | null>;
   findLessonRecord(lessonId: string): Promise<LessonRow | undefined>;
 }
 
@@ -121,6 +134,13 @@ function lessonDto(row: LessonRow): LessonDto {
     positionSeconds: position,
     completed: Boolean(row.completed),
     progressPercent: Math.min(100, Math.round((position / Number(row.duration_seconds)) * 100)),
+  };
+}
+
+function chapterDto(row: ChapterRow): ChapterDto {
+  return {
+    title: row.title,
+    startSeconds: Number(row.start_seconds),
   };
 }
 
@@ -182,9 +202,15 @@ export function createCatalogService(
     async getLesson(lessonId) {
       const row = await repository.findLesson(lessonId);
       if (!row) return null;
-      const courseDetail = await getCourse(row.course_id);
+      const [courseDetail, chapters] = await Promise.all([
+        getCourse(row.course_id),
+        repository.listLessonChapters(lessonId),
+      ]);
       if (!courseDetail) return null;
-      return { lesson: lessonDto(row), course: courseDetail };
+      return {
+        lesson: { ...lessonDto(row), chapters: chapters.map(chapterDto) },
+        course: courseDetail,
+      };
     },
     findLessonRecord: (lessonId) => repository.findLesson(lessonId),
   };
