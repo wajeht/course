@@ -82,20 +82,6 @@ export default defineConfig({
       workbox: {
         cleanupOutdatedCaches: true,
         globPatterns: ["**/*.{js,css,html}"],
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) => url.pathname.startsWith("/covers/"),
-            handler: "CacheFirst",
-            options: {
-              cacheName: "course-covers",
-              cacheableResponse: { statuses: [0, 200] },
-              expiration: {
-                maxAgeSeconds: 60 * 60 * 24 * 30,
-                maxEntries: 200,
-              },
-            },
-          },
-        ],
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [
           /^\/api(?:\/|$)/,
