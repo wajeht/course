@@ -46,7 +46,7 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <main class="min-h-screen bg-canvas lg:grid lg:grid-cols-2">
+  <main class="min-h-screen bg-canvas lg:grid lg:grid-cols-[1fr_2fr]">
     <aside
       class="hidden min-h-screen items-center justify-center overflow-hidden bg-pine-deep px-12 text-white lg:order-2 lg:flex"
       aria-label="Course lesson preview"
@@ -100,7 +100,7 @@ async function submit(): Promise<void> {
     </aside>
 
     <section
-      class="grid min-h-screen place-items-center px-5 py-12 lg:order-1 lg:border-r lg:border-pine/10 lg:px-[clamp(48px,7vw,120px)]"
+      class="grid min-h-screen place-items-center px-5 py-12 lg:order-1 lg:border-r lg:border-pine/10 lg:px-6 xl:px-[clamp(32px,3vw,56px)]"
     >
       <PanelCard class="w-full max-w-[430px] lg:max-w-[480px]" padding="none">
         <header class="bg-pine-deep px-8 py-7 text-white">
