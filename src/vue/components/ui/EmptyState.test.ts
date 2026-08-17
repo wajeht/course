@@ -4,6 +4,7 @@ import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
 
 import EmptyState from "./EmptyState.vue";
+import PanelCard from "./PanelCard.vue";
 
 describe("EmptyState", () => {
   it("renders its content and optional slots", () => {
@@ -16,5 +17,14 @@ describe("EmptyState", () => {
     expect(wrapper.text()).toContain("Add a course.");
     expect(wrapper.text()).toContain("Action");
     expect(wrapper.text()).toContain("Server folder: /videos");
+  });
+
+  it("can render an error state without an empty-state frame", () => {
+    const wrapper = mount(EmptyState, {
+      props: { title: "Page unavailable", framed: false },
+    });
+
+    expect(wrapper.get("section").classes()).not.toContain("border-dashed");
+    expect(wrapper.findComponent(PanelCard).exists()).toBe(false);
   });
 });

@@ -1,5 +1,6 @@
-import { createRouter, createWebHistory } from "vue-router";
+import { createRouter, createWebHistory, type RouteLocationRaw } from "vue-router";
 
+import { clearFrontendError, showFrontendError } from "@/frontend-error.js";
 import { setPageTitle } from "@/utils.js";
 
 declare module "vue-router" {
@@ -49,9 +50,25 @@ export const router = createRouter({
       component: () => import("@/pages/PlayerPage.vue"),
       meta: { navigation: "library", shell: "player", title: "Lesson" },
     },
-    { path: "/:pathMatch(.*)*", redirect: "/" },
+    {
+      path: "/:pathMatch(.*)*",
+      name: "not-found",
+      component: () => import("@/pages/NotFoundPage.vue"),
+      meta: { title: "Page not found" },
+    },
   ],
   scrollBehavior: (to, from) => (to.path === from.path ? false : { top: 0 }),
 });
 
-router.afterEach((route) => setPageTitle(route.meta.title));
+export function notFoundLocation(path: string): RouteLocationRaw {
+  return { name: "not-found", params: { pathMatch: path.split("/").filter(Boolean) } };
+}
+
+router.afterEach((route, _from, failure) => {
+  if (failure) return;
+  clearFrontendError();
+  setPageTitle(route.meta.title);
+});
+router.onError((error, route) => {
+  showFrontendError(error, route.fullPath, "route navigation");
+});

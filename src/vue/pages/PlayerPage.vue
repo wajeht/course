@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { RouterLink, useRoute } from "vue-router";
+import { RouterLink, useRoute, useRouter } from "vue-router";
 
-import { api, type CourseDetailDto, type LessonDto } from "@/api.js";
+import { api, isCatalogResourceNotFound, type CourseDetailDto, type LessonDto } from "@/api.js";
 import LessonRow from "@/components/LessonRow.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppSelect from "@/components/ui/AppSelect.vue";
@@ -12,9 +12,11 @@ import { useExpandableSections } from "@/composables/useExpandableSections.js";
 import { usePlaybackProgress } from "@/composables/usePlaybackProgress.js";
 import { useToast } from "@/composables/useToast.js";
 import { useVideoPlayback } from "@/composables/useVideoPlayback.js";
+import { notFoundLocation } from "@/router.js";
 import { setPageTitle } from "@/utils.js";
 
 const route = useRoute();
+const router = useRouter();
 const video = ref<HTMLVideoElement | null>(null);
 const lesson = ref<LessonDto | null>(null);
 const course = ref<CourseDetailDto | null>(null);
@@ -103,6 +105,10 @@ async function loadPlayer(): Promise<void> {
     await videoPlayback.preparePlayback(lessonId, requestId);
   } catch (caught) {
     if (!videoPlayback.isCurrentRequest(requestId)) return;
+    if (isCatalogResourceNotFound(caught)) {
+      await router.replace(notFoundLocation(route.path));
+      return;
+    }
     error.value = caught instanceof Error ? caught.message : "Could not load this lesson";
   } finally {
     if (videoPlayback.isCurrentRequest(requestId)) loading.value = false;

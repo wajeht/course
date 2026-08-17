@@ -18,6 +18,7 @@ const routes: RouteRecordRaw[] = [
     component: { template: "<div />" },
     meta: { navigation: "settings" },
   },
+  { path: "/missing", component: { template: "<div />" } },
 ];
 
 async function mountShell(path: string) {
@@ -52,5 +53,14 @@ describe("AppShell", () => {
 
     expect(mobileNavigation.get('a[href="/library"]').attributes("aria-current")).toBe("page");
     expect(mobileNavigation.get('a[href="/"]').attributes("aria-current")).toBeUndefined();
+  });
+
+  it("does not select a navigation item on an error page", async () => {
+    const wrapper = await mountShell("/missing");
+    const mobileNavigation = wrapper.get('nav[aria-label="Mobile navigation"]');
+
+    expect(
+      mobileNavigation.findAll("a").every((link) => link.attributes("aria-current") === undefined),
+    ).toBe(true);
   });
 });

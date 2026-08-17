@@ -5,7 +5,7 @@ import { RouterLink, useRoute } from "vue-router";
 import AppLogo from "@/components/ui/AppLogo.vue";
 
 const route = useRoute();
-const activeNavigation = computed(() => route.meta.navigation ?? "home");
+const activeNavigation = computed(() => route.meta.navigation);
 const isPlayer = computed(() => route.meta.shell === "player");
 </script>
 

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, watch } from "vue";
-import { RouterLink, useRoute } from "vue-router";
+import { RouterLink, useRoute, useRouter } from "vue-router";
 
-import { api } from "@/api.js";
+import { api, isCatalogResourceNotFound } from "@/api.js";
 import CourseCoverPlaceholder from "@/components/CourseCoverPlaceholder.vue";
 import LessonRow from "@/components/LessonRow.vue";
 import AppButton from "@/components/ui/AppButton.vue";
@@ -15,9 +15,11 @@ import { useAsyncData } from "@/composables/useAsyncData.js";
 import { useConfirm } from "@/composables/useConfirm.js";
 import { useExpandableSections } from "@/composables/useExpandableSections.js";
 import { useToast } from "@/composables/useToast.js";
+import { notFoundLocation } from "@/router.js";
 import { countText, durationText, setPageTitle } from "@/utils.js";
 
 const route = useRoute();
+const router = useRouter();
 const courseId = computed(() => String(route.params.courseId));
 const courseRequest = useAsyncData(({ signal }) => api.getCourse(courseId.value, signal), {
   immediate: false,
@@ -69,11 +71,21 @@ async function resetProgress(): Promise<void> {
   await resetAction.run(targetCourseId);
 }
 
+async function loadCourse(id: string): Promise<void> {
+  try {
+    await courseRequest.refresh();
+  } catch (caught) {
+    if (courseId.value === id && isCatalogResourceNotFound(caught)) {
+      await router.replace(notFoundLocation(route.path));
+    }
+  }
+}
+
 watch(
   courseId,
-  () => {
+  (id) => {
     courseRequest.data.value = null;
-    void courseRequest.refresh().catch(() => undefined);
+    void loadCourse(id);
   },
   { immediate: true },
 );
@@ -264,7 +276,13 @@ watch(
       class="h-[42px] w-[42px] animate-spin rounded-full border-[3px] border-mist border-t-belt"
       aria-label="Loading"
     />
-    <EmptyState v-else title="Course unavailable" :description="error" :heading-level="1">
+    <EmptyState
+      v-else
+      title="Course unavailable"
+      :description="error"
+      :heading-level="1"
+      :framed="false"
+    >
       <template #actions>
         <AppButton :as="RouterLink" to="/library" size="lg">Back to library</AppButton>
       </template>

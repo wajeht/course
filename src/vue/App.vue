@@ -9,7 +9,9 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog.vue";
 import ToastViewport from "@/components/ui/ToastViewport.vue";
 import { useAsyncAction } from "@/composables/useAsyncAction.js";
 import { useAuth } from "@/composables/useAuth.js";
+import { frontendError } from "@/frontend-error.js";
 import AppShell from "@/layouts/AppShell.vue";
+import UnexpectedErrorPage from "@/pages/UnexpectedErrorPage.vue";
 
 const auth = useAuth();
 const loginAction = useAsyncAction((password: string) => auth.login(password), {
@@ -68,7 +70,8 @@ async function setup(
     </div>
   </main>
   <AppShell v-else-if="auth.state.status === 'authenticated'">
-    <RouterView />
+    <UnexpectedErrorPage v-if="frontendError.visible" />
+    <RouterView v-else />
   </AppShell>
   <AuthGate
     v-else

@@ -4,16 +4,18 @@ import PanelCard from "./PanelCard.vue";
 withDefaults(
   defineProps<{
     description?: string;
+    framed?: boolean;
     headingLevel?: 1 | 2 | 3;
     title: string;
   }>(),
-  { description: "", headingLevel: 3 },
+  { description: "", framed: true, headingLevel: 3 },
 );
 </script>
 
 <template>
-  <PanelCard
-    variant="subtle"
+  <component
+    :is="framed ? PanelCard : 'section'"
+    v-bind="framed ? { variant: 'subtle' } : {}"
     class="grid min-h-80 place-items-center content-center p-10 text-center"
   >
     <div v-if="$slots.icon" class="mb-1.5 text-5xl text-belt" aria-hidden="true">
@@ -29,5 +31,5 @@ withDefaults(
     <div v-if="$slots.actions" class="mt-[22px] flex flex-wrap justify-center gap-2">
       <slot name="actions" />
     </div>
-  </PanelCard>
+  </component>
 </template>

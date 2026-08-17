@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, expectJson, expectProtectedJson } from "./api.js";
+import { ApiError, expectJson, expectProtectedJson, isCatalogResourceNotFound } from "./api.js";
 
 const unauthorized = vi.fn();
 
@@ -40,5 +40,11 @@ describe("API response handling", () => {
 
     await expect(expectProtectedJson(response)).rejects.toBeInstanceOf(ApiError);
     expect(unauthorized).toHaveBeenCalledOnce();
+  });
+
+  it("recognizes malformed and missing catalog resource responses as not found", () => {
+    expect(isCatalogResourceNotFound(new ApiError("Invalid identifier", 400))).toBe(true);
+    expect(isCatalogResourceNotFound(new ApiError("Course not found", 404))).toBe(true);
+    expect(isCatalogResourceNotFound(new ApiError("Server failed", 500))).toBe(false);
   });
 });
