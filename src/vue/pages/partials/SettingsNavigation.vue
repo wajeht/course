@@ -6,7 +6,7 @@ export type SettingsSection = "auth" | "data";
 
 const sections: ReadonlyArray<{ label: string; value: SettingsSection }> = [
   { label: "Library", value: "data" },
-  { label: "Password & access", value: "auth" },
+  { label: "Password", value: "auth" },
 ];
 
 defineProps<{

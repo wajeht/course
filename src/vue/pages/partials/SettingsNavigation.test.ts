@@ -10,7 +10,7 @@ describe("SettingsNavigation", () => {
     const wrapper = mount(SettingsNavigation, { props: { modelValue: "data" } });
     const sectionButtons = wrapper.findAll("button[aria-pressed]");
 
-    expect(sectionButtons.map((button) => button.text())).toEqual(["Library", "Password & access"]);
+    expect(sectionButtons.map((button) => button.text())).toEqual(["Library", "Password"]);
     expect(sectionButtons[0]?.attributes("aria-pressed")).toBe("true");
     expect(sectionButtons[1]?.attributes("aria-pressed")).toBe("false");
     expect(sectionButtons[0]?.classes()).toContain("bg-pine!");
