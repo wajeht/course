@@ -116,6 +116,15 @@ describe("application", () => {
     expect(apiNotFound.status).toBe(404);
     expect(await apiNotFound.json()).toEqual({ message: "Resource not found" });
 
+    for (const catalogPath of [
+      "/api/catalog/courses/not-an-id",
+      "/api/catalog/lessons/not-an-id",
+      `/api/catalog/courses/${"c".repeat(24)}`,
+      `/api/catalog/lessons/${"d".repeat(24)}`,
+    ]) {
+      expect((await app.request(catalogPath, { headers: { cookie: cookie! } })).status).toBe(404);
+    }
+
     const robots = await app.request("/robots.txt");
     expect(robots.status).toBe(200);
     expect(await robots.text()).toBe("User-agent: *\nDisallow: /\n");

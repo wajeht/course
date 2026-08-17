@@ -9,6 +9,7 @@ import EmptyState from "@/components/ui/EmptyState.vue";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import PaginationControls from "@/components/ui/PaginationControls.vue";
 import { useAsyncData } from "@/composables/useAsyncData.js";
+import { notFoundLocation } from "@/router.js";
 import { setPageTitle } from "@/utils.js";
 
 const route = useRoute();
@@ -59,6 +60,10 @@ function setPage(nextPage: number): void {
 
 watch(filters, () => void instructorRequest.refresh().catch(() => undefined), { immediate: true });
 watch(instructorRequest.data, (loadedCatalog) => {
+  if (loadedCatalog?.pagination.totalCourses === 0) {
+    void router.replace(notFoundLocation(route.path));
+    return;
+  }
   const loadedPage = loadedCatalog?.pagination.page;
   if (!loadedPage || loadedPage === page.value) return;
   void router.replace({ query: pageQuery(loadedPage) });
@@ -154,6 +159,7 @@ watch(instructorRequest.data, (loadedCatalog) => {
       title="Instructor unavailable"
       :description="error || `No courses list ${instructorName} as an instructor.`"
       :heading-level="1"
+      :framed="false"
     >
       <template #actions>
         <AppButton :as="RouterLink" to="/library" size="lg">Back to library</AppButton>

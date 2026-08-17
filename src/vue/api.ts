@@ -40,6 +40,10 @@ export class ApiError extends Error {
   }
 }
 
+export function isCatalogResourceNotFound(error: unknown): error is ApiError {
+  return error instanceof ApiError && (error.status === 400 || error.status === 404);
+}
+
 export async function expectJson<T>(response: Response, notifyUnauthorized = false): Promise<T> {
   const body = (await response.json()) as T | { message?: string };
   if (!response.ok) {
