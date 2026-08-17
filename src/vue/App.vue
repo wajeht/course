@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, defineAsyncComponent, onBeforeUnmount, ref, watch } from "vue";
 import { RouterView, useRoute } from "vue-router";
 
 import AuthGate from "@/components/AuthGate.vue";
@@ -12,9 +12,17 @@ import { useAuth } from "@/composables/useAuth.js";
 import { frontendError } from "@/frontend-error.js";
 import AppShell from "@/layouts/AppShell.vue";
 import UnexpectedErrorPage from "@/pages/UnexpectedErrorPage.vue";
+import { setPageTitle } from "@/utils.js";
 
 const auth = useAuth();
 const route = useRoute();
+const NotFoundPage = defineAsyncComponent(() => import("@/pages/NotFoundPage.vue"));
+const unauthenticatedNotFound = computed(
+  () =>
+    auth.state.status !== "loading" &&
+    auth.state.status !== "authenticated" &&
+    route.name !== "home",
+);
 const loginAction = useAsyncAction((password: string) => auth.login(password), {
   errorMessage: "Could not sign in",
 });
@@ -41,6 +49,11 @@ watch(
       }, 250);
     }
   },
+  { immediate: true },
+);
+watch(
+  [unauthenticatedNotFound, () => route.meta.title],
+  ([notFound, title]) => setPageTitle(notFound ? "Page not found" : title),
   { immediate: true },
 );
 onBeforeUnmount(() => clearTimeout(bootstrapTimer));
@@ -74,9 +87,7 @@ async function setup(
     <UnexpectedErrorPage v-if="frontendError.visible" />
     <RouterView v-else />
   </AppShell>
-  <RouterView v-else-if="route.name === 'not-found'" v-slot="{ Component }">
-    <component :is="Component" standalone />
-  </RouterView>
+  <NotFoundPage v-else-if="unauthenticatedNotFound" standalone />
   <AuthGate
     v-else
     :status="auth.state.status"
