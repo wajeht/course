@@ -21,6 +21,7 @@ describe("AuthGate", () => {
     const password = wrapper.get('input[autocomplete="current-password"]');
 
     expect(password.attributes("minlength")).toBeUndefined();
+    expect(wrapper.text()).toContain("Please sign in to continue.");
     expect(wrapper.text()).not.toContain("Use at least 15 characters.");
   });
 

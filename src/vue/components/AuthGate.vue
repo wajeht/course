@@ -75,7 +75,7 @@ async function submit(): Promise<void> {
             {{
               isSetup
                 ? "Create the password that protects your private course library."
-                : "Enter your password to continue learning."
+                : "Please sign in to continue."
             }}
           </p>
         </header>
