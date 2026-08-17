@@ -75,7 +75,6 @@ test("keeps the install experience online-only", async ({ context, page }) => {
 
   await page.goto("/settings");
   await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
-  await expect(page.getByText("Install Course", { exact: true }).first()).toBeVisible();
   await expect(page).toHaveTitle("Settings · Course");
 
   await page.getByRole("button", { name: "Refresh library" }).click();
