@@ -20,10 +20,10 @@ withDefaults(defineProps<{ standalone?: boolean }>(), {
       :heading-level="1"
       :framed="false"
     >
-      <template #icon>404</template>
+      <template #icon><span class="text-ink">404</span></template>
       <template #actions>
         <AppButton :as="RouterLink" to="/" size="lg">Go home</AppButton>
-        <AppButton :as="RouterLink" to="/library" variant="secondary" size="lg">
+        <AppButton v-if="!standalone" :as="RouterLink" to="/library" variant="secondary" size="lg">
           Browse library
         </AppButton>
       </template>

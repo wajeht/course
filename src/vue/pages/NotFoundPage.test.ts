@@ -13,6 +13,7 @@ describe("NotFoundPage", () => {
 
     expect(wrapper.get("h1").text()).toBe("Page not found");
     expect(wrapper.text()).toContain("404");
+    expect(wrapper.get(".text-ink").text()).toBe("404");
     expect(wrapper.findAllComponents(RouterLinkStub).map((link) => link.props("to"))).toEqual([
       "/",
       "/library",
@@ -27,5 +28,8 @@ describe("NotFoundPage", () => {
     });
 
     expect(wrapper.get("main").classes()).toContain("min-h-screen");
+    expect(wrapper.findAllComponents(RouterLinkStub).map((link) => link.props("to"))).toEqual([
+      "/",
+    ]);
   });
 });
