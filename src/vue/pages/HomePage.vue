@@ -31,24 +31,24 @@ const error = computed(() => {
 
       <div
         v-if="catalogRequest.loading.value"
-        class="grid auto-cols-[minmax(300px,420px)] grid-flow-col gap-4 overflow-hidden"
+        class="grid grid-cols-4 gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[600px]:grid-cols-1"
         aria-label="Loading courses"
       >
         <div
-          v-for="index in 3"
+          v-for="index in 4"
           :key="index"
           class="min-h-[230px] animate-pulse rounded-[10px] bg-[#e9ece8]"
         />
       </div>
       <div
         v-else-if="continueWatching.length"
-        class="-mx-1 grid auto-cols-[minmax(300px,420px)] grid-flow-col gap-4 overflow-x-auto px-1 pt-1 pb-[18px] [scroll-snap-type:x_proximity] max-[600px]:auto-cols-[86vw]"
+        class="grid grid-cols-4 gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[600px]:grid-cols-1"
       >
         <RouterLink
           v-for="lesson in continueWatching"
           :key="lesson.id"
           :to="{ name: 'player', params: { lessonId: lesson.id } }"
-          class="group relative min-h-[230px] overflow-hidden rounded-[10px] bg-pine text-white shadow-course [scroll-snap-align:start]"
+          class="group relative min-h-[230px] min-w-0 overflow-hidden rounded-[10px] bg-pine text-white shadow-course"
         >
           <img
             v-if="lesson.courseCoverUrl"
