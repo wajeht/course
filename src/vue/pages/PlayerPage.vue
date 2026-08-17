@@ -117,6 +117,22 @@ function destroyPlayback(): void {
   videoPlayback.clearSource();
 }
 
+function queryTimestamp(): number | null {
+  const value = Array.isArray(route.query.t) ? route.query.t[0] : route.query.t;
+  if (typeof value !== "string" || value.trim() === "") return null;
+  const seconds = Number(value);
+  return Number.isFinite(seconds) && seconds >= 0 ? seconds : null;
+}
+
+function seekVideo(startSeconds: number): void {
+  if (!video.value) return;
+  const duration = video.value.duration;
+  video.value.currentTime = Number.isFinite(duration)
+    ? Math.min(startSeconds, Math.max(0, duration - 1))
+    : startSeconds;
+  currentTime.value = video.value.currentTime;
+}
+
 async function loadPlayer(): Promise<void> {
   const requestId = videoPlayback.startRequest();
   if (ended.value) playbackProgress.stopSession();
@@ -163,7 +179,10 @@ async function loadPlayer(): Promise<void> {
 function applyResume(): void {
   videoPlayback.applyMetadata((element) => {
     if (!lesson.value || !playbackProgress.isSessionFor(lesson.value.id)) return;
-    if (!lesson.value.completed && lesson.value.positionSeconds > 0) {
+    const timestamp = queryTimestamp();
+    if (timestamp !== null) {
+      element.currentTime = Math.min(timestamp, Math.max(0, element.duration - 1));
+    } else if (!lesson.value.completed && lesson.value.positionSeconds > 0) {
       element.currentTime = Math.min(
         lesson.value.positionSeconds,
         Math.max(0, element.duration - 1),
@@ -182,9 +201,8 @@ function saveOnTimeUpdate(): void {
 }
 
 function seekToChapter(startSeconds: number): void {
-  if (!video.value) return;
-  video.value.currentTime = startSeconds;
-  currentTime.value = startSeconds;
+  seekVideo(startSeconds);
+  void router.replace({ query: { ...route.query, t: String(startSeconds) } });
 }
 
 function saveOnPause(): void {
@@ -250,6 +268,13 @@ watch(
   () => route.params.lessonId,
   () => void loadPlayer(),
   { immediate: true },
+);
+watch(
+  () => route.query.t,
+  () => {
+    const timestamp = queryTimestamp();
+    if (timestamp !== null && video.value?.readyState) seekVideo(timestamp);
+  },
 );
 window.addEventListener("pagehide", saveOnExit);
 document.addEventListener("visibilitychange", handleVisibility);
