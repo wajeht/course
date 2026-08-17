@@ -34,8 +34,18 @@ async function mountAt(path: string, auth = createUnauthenticatedAuth()) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
-      { path: "/settings", name: "settings", component: { template: "<div />" } },
-      { path: "/:pathMatch(.*)*", name: "not-found", component: NotFoundPage },
+      {
+        path: "/settings",
+        name: "settings",
+        component: { template: "<div />" },
+        meta: { title: "Settings" },
+      },
+      {
+        path: "/:pathMatch(.*)*",
+        name: "not-found",
+        component: NotFoundPage,
+        meta: { title: "Page not found" },
+      },
     ],
   });
   await router.push(path);
@@ -95,7 +105,11 @@ describe("App", () => {
     const wrapper = await mountAt("/settings", auth);
 
     expect(wrapper.findComponent(OfflinePage).exists()).toBe(true);
-    expect(wrapper.get("h1").text()).toBe("Course is offline");
+    expect(wrapper.get("h1").text()).toBe("Course can’t connect");
+    expect(wrapper.text()).toContain(
+      "Make sure this device is online and your Course server is running, then try again.",
+    );
+    expect(document.title).toBe("Connection unavailable · Course");
     expect(wrapper.findComponent(AuthGate).exists()).toBe(false);
   });
 });

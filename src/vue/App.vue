@@ -14,6 +14,7 @@ import { frontendError } from "@/frontend-error.js";
 import AppShell from "@/layouts/AppShell.vue";
 import OfflinePage from "@/pages/OfflinePage.vue";
 import UnexpectedErrorPage from "@/pages/UnexpectedErrorPage.vue";
+import { setPageTitle } from "@/utils.js";
 
 const auth = useAuth();
 const route = useRoute();
@@ -49,6 +50,22 @@ watch(
 watch(online, (isOnline) => {
   if (isOnline && auth.state.status === "error") void auth.initialize();
 });
+watch(
+  [() => auth.state.status, () => route.name, () => route.meta.title, () => frontendError.visible],
+  ([status, routeName, routeTitle, hasFrontendError]) => {
+    if (hasFrontendError) return;
+    if (routeName === "not-found") {
+      setPageTitle(routeTitle);
+      return;
+    }
+    if (status === "error") {
+      setPageTitle("Connection unavailable");
+      return;
+    }
+    if (status !== "loading") setPageTitle(routeTitle);
+  },
+  { immediate: true },
+);
 onBeforeUnmount(() => clearTimeout(bootstrapTimer));
 
 async function login(password: string): Promise<void> {

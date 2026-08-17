@@ -10,8 +10,8 @@ const appVersion = __APP_VERSION__;
       href="https://github.com/wajeht/course"
       target="_blank"
       rel="noreferrer"
-      aria-label="GitHub profile (opens in a new tab)"
-      >github</a
+      aria-label="Course repository on GitHub (opens in a new tab)"
+      >GitHub</a
     >
     · v{{ appVersion }}
   </footer>

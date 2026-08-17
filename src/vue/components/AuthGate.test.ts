@@ -31,9 +31,9 @@ describe("AuthGate", () => {
     });
     const githubLink = wrapper.get('a[href="https://github.com/wajeht/course"]');
 
-    expect(githubLink.text()).toBe("github");
+    expect(githubLink.text()).toBe("GitHub");
     expect(githubLink.attributes("rel")).toBe("noreferrer");
-    expect(wrapper.text()).toContain("© 2026 · github · v0.1.0");
+    expect(wrapper.text()).toContain("© 2026 · GitHub · v0.1.0");
   });
 
   it("requires 15 characters when creating a password", () => {

@@ -19,7 +19,7 @@ async function install(): Promise<void> {
   <PanelCard v-if="!pwaInstall.state.installed" padding="none" data-pwa-install-card>
     <PanelCardHeader
       title="Install Course"
-      description="Open your library from your home screen in its own app window."
+      description="Open your library in its own app window."
     />
     <div
       class="grid grid-cols-[112px_minmax(0,1fr)_auto] items-center gap-7 p-[clamp(22px,4vw,34px)] max-[700px]:grid-cols-[88px_minmax(0,1fr)] max-[600px]:gap-5"
@@ -40,7 +40,7 @@ async function install(): Promise<void> {
             Open this page in Safari, tap Share, then choose Add to Home Screen.
           </template>
           <template v-else-if="pwaInstall.state.canInstall">
-            Keep your course library one tap away without browser controls.
+            Keep your course library easy to open without browser controls.
           </template>
           <template v-else>
             Use your browser menu and choose Install app or Add to Home Screen.

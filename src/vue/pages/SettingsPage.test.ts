@@ -118,7 +118,7 @@ describe("SettingsPage", () => {
       ]),
     );
     const footer = wrapper.get("footer");
-    expect(footer.text()).toContain("© 2026 · github · v0.1.0");
+    expect(footer.text()).toContain("© 2026 · GitHub · v0.1.0");
     expect(footer.classes()).toEqual(
       expect.arrayContaining(["mt-12", "min-[601px]:mt-auto", "min-[601px]:pt-12"]),
     );
