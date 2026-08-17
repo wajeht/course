@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useQuery } from "@tanstack/vue-query";
 import { computed, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
@@ -8,7 +9,7 @@ import AppButton from "@/components/ui/AppButton.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import PaginationControls from "@/components/ui/PaginationControls.vue";
-import { useAsyncData } from "@/composables/useAsyncData.js";
+import { catalogQueryOptions } from "@/queries.js";
 import { notFoundLocation } from "@/router.js";
 import { setPageTitle } from "@/utils.js";
 
@@ -24,13 +25,13 @@ const filters = computed<CatalogFilters>(() => ({
   instructor: instructorName.value,
   page: page.value,
 }));
-const instructorRequest = useAsyncData(({ signal }) => api.getCatalog(filters.value, signal), {
-  immediate: false,
-});
+const instructorRequest = useQuery(computed(() => catalogQueryOptions(filters.value, api)));
 const catalog = computed(() => instructorRequest.data.value);
 const courses = computed(() => catalog.value?.courses ?? []);
-const loading = computed(() => instructorRequest.loading.value && catalog.value === null);
-const refreshing = computed(() => instructorRequest.loading.value && catalog.value !== null);
+const loading = computed(() => instructorRequest.isPending.value);
+const refreshing = computed(
+  () => instructorRequest.isFetching.value && !instructorRequest.isPending.value,
+);
 const error = computed(() => {
   const caught = instructorRequest.error.value;
   return caught instanceof Error ? caught.message : caught ? "Could not load this instructor" : "";
@@ -58,7 +59,6 @@ function setPage(nextPage: number): void {
   void router.push({ query: pageQuery(Math.max(1, nextPage)) });
 }
 
-watch(filters, () => void instructorRequest.refresh().catch(() => undefined), { immediate: true });
 watch(instructorRequest.data, (loadedCatalog) => {
   if (loadedCatalog?.pagination.totalCourses === 0) {
     void router.replace(notFoundLocation(route.path));

@@ -1,10 +1,10 @@
 import { computed } from "vue";
 
-import type { CatalogClient } from "./useCatalogData.js";
+import type { CatalogQueryClient } from "@/queries.js";
 import { useCatalogData } from "./useCatalogData.js";
 import { useCatalogRouteState } from "./useCatalogRouteState.js";
 
-export function useCatalogFilters(client: CatalogClient, debounceMilliseconds = 150) {
+export function useCatalogFilters(client: CatalogQueryClient, debounceMilliseconds = 150) {
   const routeState = useCatalogRouteState(debounceMilliseconds);
   const dataState = useCatalogData(routeState.filters, client, routeState.normalizePage);
   const libraryTitle = computed(() => {

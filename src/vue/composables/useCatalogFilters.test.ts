@@ -1,3 +1,4 @@
+import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { createApp, effectScope } from "vue";
 import { createMemoryHistory, createRouter } from "vue-router";
 import { describe, expect, it, vi } from "vitest";
@@ -56,13 +57,22 @@ async function setup(
   });
   await router.push(path);
   const app = createApp({});
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  app.use(VueQueryPlugin, { queryClient });
   app.use(router);
   const scope = effectScope();
   const filters = app.runWithContext(() =>
     scope.run(() => useCatalogFilters(client, debounceMilliseconds)),
   );
   if (!filters) throw new Error("Composable did not initialize");
-  return { filters, router, stop: () => scope.stop() };
+  return {
+    filters,
+    router,
+    stop: () => {
+      scope.stop();
+      queryClient.clear();
+    },
+  };
 }
 
 describe("useCatalogFilters", () => {

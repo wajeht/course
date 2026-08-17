@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises, mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
@@ -28,8 +29,10 @@ vi.mock("@/api.js", () => ({
 }));
 
 function mountSettings() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return mount(SettingsPage, {
     global: {
+      plugins: [[VueQueryPlugin, { queryClient }]],
       provide: {
         [authKey as symbol]: {
           changePassword: vi.fn(),

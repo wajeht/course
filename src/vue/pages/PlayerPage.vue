@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useQueryClient } from "@tanstack/vue-query";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
@@ -14,11 +15,13 @@ import { usePlaybackProgress } from "@/composables/usePlaybackProgress.js";
 import { useScreenWakeLock } from "@/composables/useScreenWakeLock.js";
 import { useToast } from "@/composables/useToast.js";
 import { useVideoPlayback } from "@/composables/useVideoPlayback.js";
+import { queryKeys } from "@/queries.js";
 import { notFoundLocation } from "@/router.js";
 import { setPageTitle } from "@/utils.js";
 
 const route = useRoute();
 const router = useRouter();
+const queryClient = useQueryClient();
 const video = ref<HTMLVideoElement | null>(null);
 const lesson = ref<LessonDto | null>(null);
 const course = ref<CourseDetailDto | null>(null);
@@ -57,8 +60,10 @@ const resetAction = useAsyncAction(
     onError: (caught) => {
       error.value = caught instanceof Error ? caught.message : "Could not reset this lesson";
     },
-    onSuccess: (reset) => {
-      if (reset) toast.success("Lesson progress reset");
+    onSuccess: async (reset) => {
+      if (!reset) return;
+      await invalidateCatalogCache();
+      toast.success("Lesson progress reset");
     },
   },
 );
@@ -84,6 +89,10 @@ const mediaMetadata = computed(() => {
     artwork: course.value.coverUrl,
   };
 });
+
+function invalidateCatalogCache(): Promise<void> {
+  return queryClient.invalidateQueries({ queryKey: queryKeys.catalog, refetchType: "none" });
+}
 
 function openLessonFromMediaSession(target: LessonDto | undefined): void {
   if (target) void router.push({ name: "player", params: { lessonId: target.id } });
@@ -116,6 +125,7 @@ async function loadPlayer(): Promise<void> {
     const detail = await api.getLesson(lessonId);
     if (!videoPlayback.isCurrentRequest(requestId)) return;
     await api.openLesson(lessonId);
+    await invalidateCatalogCache();
     if (!videoPlayback.isCurrentRequest(requestId)) return;
     lesson.value = detail.lesson;
     setPageTitle(detail.lesson.title);
@@ -181,6 +191,7 @@ async function markComplete(): Promise<void> {
   if (!lesson.value) return;
   try {
     await api.completeLesson(lesson.value.id);
+    await invalidateCatalogCache();
     ended.value = true;
     playbackProgress.stopSession();
     lesson.value.completed = true;

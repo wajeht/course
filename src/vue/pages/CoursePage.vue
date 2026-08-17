@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import { computed, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
@@ -11,27 +12,26 @@ import PageHeader from "@/components/ui/PageHeader.vue";
 import PanelCard from "@/components/ui/PanelCard.vue";
 import ProgressBar from "@/components/ui/ProgressBar.vue";
 import { useAsyncAction } from "@/composables/useAsyncAction.js";
-import { useAsyncData } from "@/composables/useAsyncData.js";
 import { useConfirm } from "@/composables/useConfirm.js";
 import { useExpandableSections } from "@/composables/useExpandableSections.js";
 import { useToast } from "@/composables/useToast.js";
+import { courseQueryOptions, queryKeys } from "@/queries.js";
 import { notFoundLocation } from "@/router.js";
 import { countText, durationText, setPageTitle } from "@/utils.js";
 
 const route = useRoute();
 const router = useRouter();
+const queryClient = useQueryClient();
 const courseId = computed(() => String(route.params.courseId));
-const courseRequest = useAsyncData(({ signal }) => api.getCourse(courseId.value, signal), {
-  immediate: false,
-});
+const courseRequest = useQuery(computed(() => courseQueryOptions(courseId.value)));
 const confirmation = useConfirm();
 const toast = useToast();
 const course = computed(() => courseRequest.data.value);
-const loading = computed(() => courseRequest.loading.value && course.value === null);
+const loading = computed(() => courseRequest.isPending.value);
 const resetAction = useAsyncAction(
   async (id: string) => {
     await api.resetCourse(id);
-    await courseRequest.refresh();
+    await queryClient.invalidateQueries({ queryKey: queryKeys.catalog });
   },
   {
     errorMessage: "Could not reset course progress",
@@ -71,21 +71,12 @@ async function resetProgress(): Promise<void> {
   await resetAction.run(targetCourseId);
 }
 
-async function loadCourse(id: string): Promise<void> {
-  try {
-    await courseRequest.refresh();
-  } catch (caught) {
-    if (courseId.value === id && isCatalogResourceNotFound(caught)) {
-      await router.replace(notFoundLocation(route.path));
-    }
-  }
-}
-
 watch(
-  courseId,
-  (id) => {
-    courseRequest.data.value = null;
-    void loadCourse(id);
+  [courseId, courseRequest.error],
+  ([id, caught]) => {
+    if (courseId.value === id && isCatalogResourceNotFound(caught)) {
+      void router.replace(notFoundLocation(route.path));
+    }
   },
   { immediate: true },
 );

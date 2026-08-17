@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import { computed, ref, watch } from "vue";
 
 import { api, type CatalogPageSize } from "@/api.js";
@@ -12,16 +13,17 @@ import PageHeader from "@/components/ui/PageHeader.vue";
 import PanelCard from "@/components/ui/PanelCard.vue";
 import PanelCardHeader from "@/components/ui/PanelCardHeader.vue";
 import { useAsyncAction } from "@/composables/useAsyncAction.js";
-import { useAsyncData } from "@/composables/useAsyncData.js";
 import { useAuth } from "@/composables/useAuth.js";
 import { useConfirm } from "@/composables/useConfirm.js";
 import { useToast } from "@/composables/useToast.js";
 import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
 import SettingsNavigation, { type SettingsSection } from "@/pages/partials/SettingsNavigation.vue";
+import { queryKeys, scanStatusQueryOptions, settingsQueryOptions } from "@/queries.js";
 import { countText } from "@/utils.js";
 
-const scanRequest = useAsyncData(({ signal }) => api.getScanStatus(signal));
-const settingsRequest = useAsyncData(({ signal }) => api.getSettings(signal));
+const queryClient = useQueryClient();
+const scanRequest = useQuery(scanStatusQueryOptions());
+const settingsRequest = useQuery(settingsQueryOptions());
 const auth = useAuth();
 const confirmation = useConfirm();
 const toast = useToast();
@@ -42,15 +44,17 @@ const lastRefreshText = computed(() => {
 });
 const rescanAction = useAsyncAction(() => api.rescanCatalog(), {
   errorMessage: "Could not refresh the library",
-  onSuccess: (status) => {
-    scanRequest.data.value = status;
+  onSuccess: async (status) => {
+    queryClient.setQueryData(queryKeys.scanStatus, status);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.catalog, refetchType: "none" });
     if (status.status === "complete") toast.success("Library refreshed");
   },
 });
 const settingsAction = useAsyncAction(() => api.updateSettings(catalogPageSize.value), {
   errorMessage: "Could not save library settings",
-  onSuccess: (settings) => {
-    settingsRequest.data.value = settings;
+  onSuccess: async (settings) => {
+    queryClient.setQueryData(queryKeys.settings, settings);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.catalog, refetchType: "none" });
     catalogPageSize.value = settings.catalogPageSize;
     toast.success("Library settings saved");
   },
@@ -274,7 +278,7 @@ async function logout(): Promise<void> {
                 v-model="catalogPageSize"
                 :aria-describedby="field.describedBy"
                 :disabled="
-                  settingsRequest.loading.value ||
+                  settingsRequest.isPending.value ||
                   !settingsRequest.data.value ||
                   settingsAction.pending.value
                 "
@@ -289,7 +293,7 @@ async function logout(): Promise<void> {
             <AppButton
               class="self-end max-[600px]:w-full"
               type="submit"
-              :disabled="settingsRequest.loading.value || !settingsRequest.data.value"
+              :disabled="settingsRequest.isPending.value || !settingsRequest.data.value"
               :loading="settingsAction.pending.value"
               loading-label="Saving…"
             >

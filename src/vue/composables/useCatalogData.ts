@@ -1,12 +1,8 @@
+import { useQuery } from "@tanstack/vue-query";
 import { computed, watch, type ComputedRef } from "vue";
 
-import type { CatalogDto, CatalogFilters, ScanStatus } from "@/api.js";
-import { useAsyncData } from "@/composables/useAsyncData.js";
-
-export interface CatalogClient {
-  getCatalog(filters?: CatalogFilters, signal?: AbortSignal): Promise<CatalogDto>;
-  getScanStatus(signal?: AbortSignal): Promise<ScanStatus>;
-}
+import type { CatalogDto, CatalogFilters } from "@/api.js";
+import { catalogQueryOptions, scanStatusQueryOptions, type CatalogQueryClient } from "@/queries.js";
 
 function emptyCatalog(): CatalogDto {
   return {
@@ -21,26 +17,21 @@ function emptyCatalog(): CatalogDto {
 
 export function useCatalogData(
   filters: ComputedRef<CatalogFilters>,
-  client: CatalogClient,
+  client: CatalogQueryClient,
   normalizePage: (page: number) => void,
 ) {
-  const catalogRequest = useAsyncData(({ signal }) => client.getCatalog(filters.value, signal), {
-    immediate: false,
-  });
-  const scanStatusRequest = useAsyncData(({ signal }) => client.getScanStatus(signal));
+  const catalogRequest = useQuery(computed(() => catalogQueryOptions(filters.value, client)));
+  const scanStatusRequest = useQuery(scanStatusQueryOptions(client));
 
-  watch(filters, () => void catalogRequest.refresh().catch(() => undefined), { immediate: true });
   watch(catalogRequest.data, (catalog) => {
     if (catalog) normalizePage(catalog.pagination.page);
   });
 
   const catalog = computed(() => catalogRequest.data.value ?? emptyCatalog());
   const scanStatus = computed(() => scanStatusRequest.data.value);
-  const loading = computed(
-    () => catalogRequest.loading.value && catalogRequest.data.value === null,
-  );
+  const loading = computed(() => catalogRequest.isPending.value);
   const refreshing = computed(
-    () => catalogRequest.loading.value && catalogRequest.data.value !== null,
+    () => catalogRequest.isFetching.value && !catalogRequest.isPending.value,
   );
   const error = computed(() => {
     const caught = catalogRequest.error.value ?? scanStatusRequest.error.value;
@@ -51,7 +42,7 @@ export function useCatalogData(
     catalog,
     error,
     loading,
-    refreshCatalog: catalogRequest.refresh,
+    refreshCatalog: catalogRequest.refetch,
     refreshing,
     scanStatus,
   };

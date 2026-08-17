@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useQuery } from "@tanstack/vue-query";
 import { computed } from "vue";
 import { RouterLink } from "vue-router";
 
@@ -9,10 +10,10 @@ import AppButton from "@/components/ui/AppButton.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import ProgressBar from "@/components/ui/ProgressBar.vue";
-import { useAsyncData } from "@/composables/useAsyncData.js";
 import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
+import { catalogQueryOptions } from "@/queries.js";
 
-const catalogRequest = useAsyncData(({ signal }) => api.getCatalog({}, signal));
+const catalogRequest = useQuery(catalogQueryOptions({}, api));
 const continueWatching = computed(() => catalogRequest.data.value?.continueWatching ?? []);
 const error = computed(() => {
   const caught = catalogRequest.error.value;
@@ -30,7 +31,7 @@ const error = computed(() => {
       <PageHeader class="mb-6" eyebrow="Home" title="Continue watching" :heading-level="1" />
 
       <div
-        v-if="catalogRequest.loading.value"
+        v-if="catalogRequest.isPending.value"
         class="grid grid-cols-4 gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[600px]:grid-cols-1"
         aria-label="Loading courses"
       >
