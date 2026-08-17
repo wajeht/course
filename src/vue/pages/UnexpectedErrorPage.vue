@@ -12,7 +12,7 @@ onMounted(() => setPageTitle("Unexpected error"));
 
 <template>
   <main
-    class="mx-auto grid min-h-[calc(100vh-66px)] w-[min(1380px,calc(100%-8vw))] place-items-center max-[860px]:w-[min(100%-40px,1380px)]"
+    class="mx-auto grid min-h-screen w-[min(1380px,calc(100%-8vw))] place-items-center max-[860px]:w-[min(100%-40px,1380px)]"
   >
     <EmptyState
       title="Something went wrong"

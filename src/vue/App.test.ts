@@ -2,12 +2,14 @@
 
 import { mount } from "@vue/test-utils";
 import { createMemoryHistory, createRouter } from "vue-router";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import App from "./App.vue";
 import AuthGate from "./components/AuthGate.vue";
 import { authKey, type AuthController } from "./composables/useAuth.js";
+import { clearFrontendError, showFrontendError } from "./frontend-error.js";
 import NotFoundPage from "./pages/NotFoundPage.vue";
+import UnexpectedErrorPage from "./pages/UnexpectedErrorPage.vue";
 
 function createUnauthenticatedAuth(): AuthController {
   return {
@@ -52,6 +54,11 @@ async function mountAt(path: string) {
 }
 
 describe("App", () => {
+  afterEach(() => {
+    clearFrontendError();
+    vi.restoreAllMocks();
+  });
+
   it("shows the standalone 404 page to unauthenticated visitors", async () => {
     const wrapper = await mountAt("/missing-page");
 
@@ -65,5 +72,19 @@ describe("App", () => {
 
     expect(wrapper.findComponent(AuthGate).exists()).toBe(true);
     expect(wrapper.findComponent(NotFoundPage).exists()).toBe(false);
+  });
+
+  it("shows frontend errors outside authentication and global overlays", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    showFrontendError(new Error("boom"), "/settings", "test");
+
+    const wrapper = await mountAt("/settings");
+
+    expect(wrapper.findComponent(UnexpectedErrorPage).exists()).toBe(true);
+    expect(wrapper.get("main").classes()).toContain("min-h-screen");
+    expect(wrapper.findComponent(AuthGate).exists()).toBe(false);
+    expect(wrapper.find("pwa-update-prompt-stub").exists()).toBe(false);
+    expect(wrapper.find("confirm-dialog-stub").exists()).toBe(false);
+    expect(wrapper.find("toast-viewport-stub").exists()).toBe(false);
   });
 });

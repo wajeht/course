@@ -61,8 +61,9 @@ async function setup(
 </script>
 
 <template>
+  <UnexpectedErrorPage v-if="frontendError.visible" />
   <main
-    v-if="auth.state.status === 'loading'"
+    v-else-if="auth.state.status === 'loading'"
     class="grid min-h-screen place-items-center bg-canvas px-5"
   >
     <div v-if="showBootstrap" class="text-center text-pine-deep" role="status">
@@ -71,8 +72,7 @@ async function setup(
     </div>
   </main>
   <AppShell v-else-if="auth.state.status === 'authenticated'">
-    <UnexpectedErrorPage v-if="frontendError.visible" />
-    <RouterView v-else />
+    <RouterView />
   </AppShell>
   <RouterView v-else-if="route.name === 'not-found'" v-slot="{ Component }">
     <component :is="Component" standalone />
@@ -89,7 +89,7 @@ async function setup(
     @setup="setup"
     @retry="auth.initialize"
   />
-  <PwaUpdatePrompt />
-  <ConfirmDialog />
-  <ToastViewport />
+  <PwaUpdatePrompt v-if="!frontendError.visible" />
+  <ConfirmDialog v-if="!frontendError.visible" />
+  <ToastViewport v-if="!frontendError.visible" />
 </template>
