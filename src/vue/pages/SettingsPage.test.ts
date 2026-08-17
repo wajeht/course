@@ -99,14 +99,29 @@ describe("SettingsPage", () => {
 
     const mobileSignOut = wrapper.get("[data-mobile-sign-out]");
     expect(mobileSignOut.text()).toBe("Sign out");
+    expect(mobileSignOut.classes()).toContain("h-10");
     expect(wrapper.get("[data-mobile-sign-out-container]").classes()).toEqual(
       expect.arrayContaining(["hidden", "max-[760px]:block"]),
     );
-    expect(wrapper.get("[data-desktop-sign-out]").text()).toBe("Sign out");
+    const desktopSignOut = wrapper.get("[data-desktop-sign-out]");
+    expect(desktopSignOut.text()).toBe("Sign out");
+    expect(desktopSignOut.classes()).toContain("h-10");
     expect(wrapper.get("[data-desktop-sign-out-container]").classes()).toContain(
       "max-[760px]:hidden",
     );
-    expect(wrapper.get("footer").text()).toContain("© 2026 · github · v0.1.0");
+    expect(wrapper.get("main").classes()).toEqual(
+      expect.arrayContaining([
+        "min-[601px]:flex",
+        "min-[601px]:min-h-[calc(100vh-66px)]",
+        "min-[601px]:flex-col",
+        "min-[601px]:pb-10",
+      ]),
+    );
+    const footer = wrapper.get("footer");
+    expect(footer.text()).toContain("© 2026 · github · v0.1.0");
+    expect(footer.classes()).toEqual(
+      expect.arrayContaining(["mt-12", "min-[601px]:mt-auto", "min-[601px]:pt-12"]),
+    );
 
     await wrapper.get("#settings-auth-tab").trigger("click");
     const authCard = wrapper.get("#settings-auth-panel > section");

@@ -121,7 +121,9 @@ async function logout(): Promise<void> {
 </script>
 
 <template>
-  <StandardPageLayout>
+  <StandardPageLayout
+    class="min-[601px]:flex min-[601px]:min-h-[calc(100vh-66px)] min-[601px]:flex-col min-[601px]:pb-10"
+  >
     <PageHeader eyebrow="Course settings" title="Settings" />
 
     <AlertMessage v-if="logoutAction.errorMessage.value" class="mt-8" size="lg">
@@ -136,9 +138,9 @@ async function logout(): Promise<void> {
         <SettingsNavigation v-model="activeSection" />
         <div class="max-[760px]:hidden" data-desktop-sign-out-container>
           <AppButton
-            class="min-h-12"
+            class="h-10"
             block
-            size="lg"
+            size="md"
             variant="danger"
             :loading="logoutAction.pending.value"
             loading-label="Signing out…"
@@ -385,9 +387,9 @@ async function logout(): Promise<void> {
 
       <div class="col-span-full hidden max-[760px]:block" data-mobile-sign-out-container>
         <AppButton
-          class="min-h-12"
+          class="h-10"
           block
-          size="lg"
+          size="md"
           variant="danger"
           :loading="logoutAction.pending.value"
           loading-label="Signing out…"
@@ -399,6 +401,6 @@ async function logout(): Promise<void> {
       </div>
     </div>
 
-    <AppFooter class="mt-12" />
+    <AppFooter class="mt-12 min-[601px]:mt-auto min-[601px]:pt-12" />
   </StandardPageLayout>
 </template>

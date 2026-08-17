@@ -26,7 +26,7 @@ const emit = defineEmits<{
         :id="`settings-${section.value}-tab`"
         :key="section.value"
         :class="[
-          'flex min-h-12 w-full items-center rounded-[7px] px-3.5 text-left text-[.82rem] font-bold transition-[background,color,box-shadow] duration-[160ms]',
+          'flex h-10 w-full items-center rounded-[7px] px-3.5 text-left text-[.82rem] font-bold transition-[background,color,box-shadow] duration-[160ms]',
           modelValue === section.value
             ? 'bg-pine! text-white! shadow-[0_7px_18px_rgb(21_51_38_/_16%)]'
             : 'bg-transparent! text-pine! hover:bg-porcelain!',
