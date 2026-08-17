@@ -57,11 +57,6 @@ export function createApp(context: AppContext) {
 
   if (context.configuration.app.env === "production") {
     const clientDirectory = context.configuration.app.clientDirectory;
-    routedApp.use("/sw.js", async (c, next) => {
-      c.header("Cache-Control", "no-cache");
-      c.header("Service-Worker-Allowed", "/");
-      await next();
-    });
     routedApp.use("/manifest.webmanifest", async (c, next) => {
       c.header("Cache-Control", "no-cache");
       await next();

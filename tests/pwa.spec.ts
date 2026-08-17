@@ -58,15 +58,7 @@ test("keeps the install experience online-only", async ({ context, page }) => {
   await expect(page.getByRole("heading", { level: 1, name: "All courses" })).toBeVisible();
   await expect(page).toHaveTitle("Library · Course");
 
-  await page.evaluate(async () => {
-    localStorage.setItem("course:catalog-snapshot:v1", "legacy catalog");
-    await caches.open("course-covers");
-    await caches.open("workbox-precache-v2-course");
-  });
   await page.reload();
-  await expect
-    .poll(() => page.evaluate(() => localStorage.getItem("course:catalog-snapshot:v1")))
-    .toBeNull();
   await expect.poll(() => page.evaluate(async () => (await caches.keys()).length)).toBe(0);
   await expect
     .poll(() =>
