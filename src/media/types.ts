@@ -34,10 +34,19 @@ export interface LessonRecord {
   modifiedAt: string;
 }
 
+export interface ChapterRecord {
+  id: string;
+  lessonId: string;
+  title: string;
+  startSeconds: number;
+  sortOrder: number;
+}
+
 export interface CatalogSnapshot {
   courses: CourseRecord[];
   sections: SectionRecord[];
   lessons: LessonRecord[];
+  chapters: ChapterRecord[];
   skippedLessonIds: string[];
 }
 

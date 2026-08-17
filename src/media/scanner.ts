@@ -7,12 +7,13 @@ import path from "node:path";
 import type { Configuration } from "../configuration.js";
 import type { Logger } from "../logger.js";
 import type { CatalogRepository, CourseOrder } from "./catalog.repository.js";
-import { readCourseMetadata } from "./course-metadata.js";
+import { readCourseMetadata, type LessonMetadata } from "./course-metadata.js";
 import { displayName, naturalOrder } from "./names.js";
 import { posixPath } from "./path.js";
 import { probeVideo, videoExtensions, type VideoProbe } from "./probe.js";
 import type {
   CatalogSnapshot,
+  ChapterRecord,
   CourseRecord,
   LessonRecord,
   ScanStatus,
@@ -334,6 +335,7 @@ async function buildCatalogSnapshot(
   const courses: CourseRecord[] = [];
   const sections: SectionRecord[] = [];
   const lessons: LessonRecord[] = [];
+  const chapters: ChapterRecord[] = [];
   const skippedLessonIds: string[] = [];
 
   for (const courseEntry of entriesToScan) {
@@ -342,6 +344,10 @@ async function buildCatalogSnapshot(
     const courseId = identifier(courseRelativePath);
     const { metadata, warning } = await readCourseMetadata(courseDirectory);
     if (warning) warnings.push({ path: `${courseRelativePath}/course.json`, message: warning });
+    const lessonMetadataByPath = new Map(
+      (metadata?.lessons ?? []).map((lesson) => [lesson.path, lesson]),
+    );
+    const matchedLessonMetadataPaths = new Set<string>();
     const entries = (await fs.readdir(courseDirectory, { withFileTypes: true })).sort(
       (left, right) => naturalOrder(left.name, right.name),
     );
@@ -376,11 +382,15 @@ async function buildCatalogSnapshot(
       courseId,
       sectionId: null,
       lessons,
+      chapters,
       skippedLessonIds,
       warnings,
       probe,
       existingLessonsByPath,
       ffprobePath: configuration.media.ffprobePath,
+      courseDirectory,
+      lessonMetadataByPath,
+      matchedLessonMetadataPaths,
     });
 
     const sectionEntries = entries.filter(isCatalogDirectory);
@@ -410,12 +420,25 @@ async function buildCatalogSnapshot(
         courseId,
         sectionId,
         lessons,
+        chapters,
         skippedLessonIds,
         warnings,
         probe,
         existingLessonsByPath,
         ffprobePath: configuration.media.ffprobePath,
+        courseDirectory,
+        lessonMetadataByPath,
+        matchedLessonMetadataPaths,
       });
+    }
+
+    for (const lessonPath of lessonMetadataByPath.keys()) {
+      if (!matchedLessonMetadataPaths.has(lessonPath)) {
+        warnings.push({
+          path: `${courseRelativePath}/course.json`,
+          message: `Chapter metadata references missing lesson: ${lessonPath}`,
+        });
+      }
     }
 
     if (courseVideoCount === 0) continue;
@@ -423,7 +446,7 @@ async function buildCatalogSnapshot(
   }
 
   return {
-    snapshot: { courses, sections, lessons, skippedLessonIds },
+    snapshot: { courses, sections, lessons, chapters, skippedLessonIds },
     courseOrder,
   };
 }
@@ -435,17 +458,24 @@ interface AppendLessonsOptions {
   courseId: string;
   sectionId: string | null;
   lessons: LessonRecord[];
+  chapters: ChapterRecord[];
   skippedLessonIds: string[];
   warnings: ScanWarning[];
   probe: (filename: string, ffprobePath: string) => Promise<VideoProbe>;
   existingLessonsByPath: Map<string, LessonRecord>;
   ffprobePath: string;
+  courseDirectory: string;
+  lessonMetadataByPath: Map<string, LessonMetadata>;
+  matchedLessonMetadataPaths: Set<string>;
 }
 
 async function appendLessons(options: AppendLessonsOptions): Promise<void> {
   for (const [index, file] of options.files.entries()) {
     const absolutePath = path.join(options.directory, file.name);
     const relativePath = posixPath(path.relative(options.root, absolutePath));
+    const metadataPath = posixPath(path.relative(options.courseDirectory, absolutePath));
+    const lessonMetadata = options.lessonMetadataByPath.get(metadataPath);
+    if (lessonMetadata) options.matchedLessonMetadataPaths.add(metadataPath);
     try {
       const metadata = await fs.stat(absolutePath);
       const modifiedAt = metadata.mtime.toISOString();
@@ -454,8 +484,9 @@ async function appendLessons(options: AppendLessonsOptions): Promise<void> {
         existing && existing.modifiedAt === modifiedAt && existing.sizeBytes === metadata.size
           ? existing
           : await options.probe(absolutePath, options.ffprobePath);
+      const lessonId = identifier(relativePath);
       options.lessons.push({
-        id: identifier(relativePath),
+        id: lessonId,
         courseId: options.courseId,
         sectionId: options.sectionId,
         path: relativePath,
@@ -469,6 +500,22 @@ async function appendLessons(options: AppendLessonsOptions): Promise<void> {
         browserCompatible: video.browserCompatible,
         modifiedAt,
       });
+      for (const [chapterIndex, chapter] of (lessonMetadata?.chapters ?? []).entries()) {
+        if (chapter.startSeconds >= video.durationSeconds) {
+          options.warnings.push({
+            path: `${posixPath(path.relative(options.root, options.courseDirectory))}/course.json`,
+            message: `Chapter “${chapter.title}” starts outside ${metadataPath}`,
+          });
+          continue;
+        }
+        options.chapters.push({
+          id: identifier(`${relativePath}\0${chapter.startSeconds}`),
+          lessonId,
+          title: chapter.title,
+          startSeconds: chapter.startSeconds,
+          sortOrder: chapterIndex,
+        });
+      }
     } catch (error) {
       options.skippedLessonIds.push(identifier(relativePath));
       options.warnings.push({

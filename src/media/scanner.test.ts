@@ -93,6 +93,19 @@ describe("media scanner", () => {
         category: "Martial Arts",
         instructors: ["Jane Smith"],
         tags: ["Guard", "Defense"],
+        lessons: [
+          {
+            path: "02 - Start.mp4",
+            chapters: [
+              { title: "Introduction", startSeconds: 0 },
+              { title: "Frames", startSeconds: 30 },
+            ],
+          },
+          {
+            path: "02 - Escapes/01 - Bridge.mkv",
+            chapters: [{ title: "Bridge mechanics", startSeconds: 5 }],
+          },
+        ],
       }),
     );
     await fs.writeFile(path.join(courseDirectory, "cover.jpg"), "cover");
@@ -142,6 +155,12 @@ describe("media scanner", () => {
       .orderByRaw("section_id IS NOT NULL")
       .orderBy("sort_order")
       .select("title");
+    const chapters = await database
+      .connection("chapters")
+      .join("lessons", "lessons.id", "chapters.lesson_id")
+      .orderBy("lessons.title")
+      .orderBy("chapters.sort_order")
+      .select("lessons.title as lesson", "chapters.title", "chapters.start_seconds");
 
     expect(status).toMatchObject({ status: "complete", courseCount: 1, lessonCount: 3 });
     expect(status.warnings).toEqual([
@@ -162,6 +181,11 @@ describe("media scanner", () => {
     ]);
     expect(sections).toEqual([{ title: "Escapes" }]);
     expect(lessons).toEqual([{ title: "Start" }, { title: "Finish" }, { title: "Bridge" }]);
+    expect(chapters).toEqual([
+      { lesson: "Bridge", title: "Bridge mechanics", start_seconds: 5 },
+      { lesson: "Start", title: "Introduction", start_seconds: 0 },
+      { lesson: "Start", title: "Frames", start_seconds: 30 },
+    ]);
 
     const existingLesson = await database.connection("lessons").where({ title: "Start" }).first();
     const convertedLesson = await database.connection("lessons").where({ title: "Finish" }).first();

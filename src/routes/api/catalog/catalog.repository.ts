@@ -51,6 +51,14 @@ export interface LessonRow {
   section_sort_order: number | null;
 }
 
+export interface ChapterRow {
+  id: string;
+  lesson_id: string;
+  title: string;
+  start_seconds: number;
+  sort_order: number;
+}
+
 export interface CatalogRepository {
   listCourses(filters?: CourseFilters, pagination?: CoursePagination): Promise<CourseRow[]>;
   countCourses(filters?: CourseFilters): Promise<number>;
@@ -61,6 +69,7 @@ export interface CatalogRepository {
   findCourse(courseId: string): Promise<CourseRow | undefined>;
   listCourseLessons(courseId: string): Promise<LessonRow[]>;
   findLesson(lessonId: string): Promise<LessonRow | undefined>;
+  listLessonChapters(lessonId: string): Promise<ChapterRow[]>;
 }
 
 const lessonSelect = [
@@ -233,6 +242,13 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
 
     findLesson(lessonId) {
       return createLessonsQuery().where("lessons.id", lessonId).first();
+    },
+
+    listLessonChapters(lessonId) {
+      return database<ChapterRow>("chapters")
+        .where({ lesson_id: lessonId })
+        .orderBy("sort_order")
+        .select();
     },
   };
 }

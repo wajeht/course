@@ -24,6 +24,7 @@ describe("database schema", () => {
       "auth_credentials",
       "auth_login_attempts",
       "auth_sessions",
+      "chapters",
       "conversions",
       "courses",
       "lessons",
