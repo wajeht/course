@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { fileURLToPath, URL } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
@@ -7,10 +8,17 @@ import { defineConfig } from "vitest/config";
 import { configuration } from "./src/configuration.js";
 
 const projectRoot = fileURLToPath(new URL(".", import.meta.url));
+const { version } = JSON.parse(
+  readFileSync(new URL("./package.json", import.meta.url), "utf8"),
+) as { version: string };
+const appVersion = (process.env.APP_VERSION?.trim() || version).replace(/^v/, "");
 
 export default defineConfig({
   root: "src/vue",
   publicDir: fileURLToPath(new URL("./public", import.meta.url)),
+  define: {
+    __APP_VERSION__: JSON.stringify(appVersion),
+  },
   plugins: [vue(), tailwindcss()],
   resolve: {
     alias: {
