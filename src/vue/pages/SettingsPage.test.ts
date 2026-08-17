@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { api } from "@/api.js";
 import { authKey } from "@/composables/useAuth.js";
 import { confirmationKey } from "@/composables/useConfirm.js";
+import { pwaInstallKey } from "@/composables/usePwaInstall.js";
 import { toastKey } from "@/composables/useToast.js";
 
 import SettingsPage from "./SettingsPage.vue";
@@ -43,6 +44,17 @@ function mountSettings() {
           clear: vi.fn(),
           request: vi.fn(),
         },
+        [pwaInstallKey as symbol]: {
+          dispose: vi.fn(),
+          initialize: vi.fn(),
+          install: vi.fn(async () => true),
+          state: {
+            canInstall: true,
+            installed: false,
+            installing: false,
+            iosInstructions: false,
+          },
+        },
         [toastKey as symbol]: {
           success: vi.fn(),
         },
@@ -79,6 +91,7 @@ describe("SettingsPage", () => {
     expect(lastScan.classes()).not.toContain("text-pine");
     expect(lastScan.text()).not.toBe("");
     expect(wrapper.get("#settings-data-panel").text()).toContain("Courses per page");
+    expect(wrapper.get("[data-pwa-install-card]").text()).toContain("Install Course");
     expect(wrapper.get("[data-settings-layout]").classes()).toContain("gap-[clamp(18px,2vw,30px)]");
     expect(wrapper.get("#settings-data-panel").classes()).toEqual(
       expect.arrayContaining(["grid", "gap-[clamp(18px,2vw,30px)]"]),

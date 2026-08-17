@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed, watch } from "vue";
 import { RouterLink } from "vue-router";
 
 import { api } from "@/api.js";
@@ -10,6 +11,7 @@ import EmptyState from "@/components/ui/EmptyState.vue";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import PaginationControls from "@/components/ui/PaginationControls.vue";
 import { useCatalogFilters } from "@/composables/useCatalogFilters.js";
+import { useNetworkStatus } from "@/composables/useNetworkStatus.js";
 import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
 import { countText } from "@/utils.js";
 
@@ -20,6 +22,7 @@ const {
   loading,
   page,
   query,
+  refreshCatalog,
   refreshing,
   scanStatus,
   selectedCategory,
@@ -28,10 +31,25 @@ const {
   selectedTag,
   setPage,
 } = useCatalogFilters(api);
+const { online } = useNetworkStatus();
+const offlineSavedText = computed(() => {
+  const savedAt = catalog.value.offline?.savedAt;
+  if (!savedAt) return "";
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(savedAt));
+});
+watch(online, (isOnline) => {
+  if (isOnline && catalog.value.offline) void refreshCatalog().catch(() => undefined);
+});
 </script>
 
 <template>
   <StandardPageLayout>
+    <AlertMessage v-if="offlineSavedText" class="mb-7" size="lg" variant="info">
+      You’re offline. Showing your library saved {{ offlineSavedText }}.
+    </AlertMessage>
     <AlertMessage v-if="error" class="mb-7" size="lg">
       {{ error }}
     </AlertMessage>
