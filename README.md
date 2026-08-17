@@ -6,6 +6,9 @@
 
 A private, opinionated, self-hosted video course library.
 
+> [!WARNING]
+> This project is unfinished and heavily work in progress.
+
 ## Usage
 
 Use it at [course.jaw.dev](https://course.jaw.dev), or run it locally:
