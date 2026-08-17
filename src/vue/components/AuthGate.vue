@@ -48,7 +48,7 @@ async function submit(): Promise<void> {
 <template>
   <main class="min-h-screen bg-canvas lg:grid lg:grid-cols-2">
     <aside
-      class="hidden min-h-screen items-center justify-center overflow-hidden bg-pine-deep px-12 text-white lg:flex"
+      class="hidden min-h-screen items-center justify-center overflow-hidden bg-pine-deep px-12 text-white lg:order-2 lg:flex"
       aria-label="Course"
     >
       <div class="text-center">
@@ -60,7 +60,7 @@ async function submit(): Promise<void> {
     </aside>
 
     <section
-      class="grid min-h-screen place-items-center px-5 py-12 lg:border-l lg:border-white/10 lg:bg-white lg:px-[clamp(48px,7vw,120px)]"
+      class="grid min-h-screen place-items-center px-5 py-12 lg:order-1 lg:border-r lg:border-pine/10 lg:px-[clamp(48px,7vw,120px)]"
     >
       <PanelCard
         class="w-full max-w-[430px] lg:max-w-[480px] lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none"
@@ -100,6 +100,13 @@ async function submit(): Promise<void> {
           <h1 class="font-display text-2xl font-extrabold lg:text-[2rem]">
             {{ isSetup ? "Set up your library" : "Welcome back" }}
           </h1>
+          <p class="mt-2 hidden text-sm leading-6 text-muted lg:block">
+            {{
+              isSetup
+                ? "Create the password that protects your private course library."
+                : "Enter your password to continue learning."
+            }}
+          </p>
           <input
             class="sr-only"
             name="username"
