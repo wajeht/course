@@ -70,11 +70,11 @@ describe("SettingsPage", () => {
     expect(dataCard.get("[data-library-status] > p").classes()).toEqual(
       expect.arrayContaining(labelClasses),
     );
-    expect(dataCard.get("[data-last-scan] > p").classes()).toEqual(
+    expect(dataCard.get("[data-last-refresh] > p").classes()).toEqual(
       expect.arrayContaining(labelClasses),
     );
     const lastScan = dataCard.get('time[datetime="2026-08-12T00:00:00.000Z"]');
-    expect(lastScan.element.parentElement?.textContent).toContain("Last scan");
+    expect(lastScan.element.parentElement?.textContent).toContain("Last refreshed");
     expect(lastScan.classes()).toEqual(expect.arrayContaining(["text-sm", "text-muted"]));
     expect(lastScan.classes()).not.toContain("text-pine");
     expect(lastScan.text()).not.toBe("");
@@ -121,7 +121,7 @@ describe("SettingsPage", () => {
     expect(issues.text()).toContain("Cover file is missing");
   });
 
-  it("shows a failed scan with its useful error", async () => {
+  it("shows a failed refresh without exposing its technical error or stale counts", async () => {
     vi.mocked(api.getScanStatus).mockResolvedValueOnce({
       completedAt: "2026-08-12T00:00:00.000Z",
       courseCount: 12,
@@ -134,7 +134,14 @@ describe("SettingsPage", () => {
     const wrapper = mountSettings();
     await flushPromises();
 
-    expect(wrapper.get("#settings-data-panel").text()).toContain("Video folder is unavailable");
+    const dataPanel = wrapper.get("#settings-data-panel");
+    expect(dataPanel.text()).toContain("Refresh failed");
+    expect(dataPanel.text()).toContain(
+      "The library could not be refreshed. Check that your video folder is available, then try again.",
+    );
+    expect(dataPanel.text()).toContain("Last refresh attempt");
+    expect(dataPanel.text()).not.toContain("Video folder is unavailable");
+    expect(dataPanel.text()).not.toContain("12 courses · 215 lessons");
   });
 
   it("disables library settings when their saved value cannot be loaded", async () => {

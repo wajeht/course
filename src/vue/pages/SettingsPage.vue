@@ -31,7 +31,7 @@ const confirmPassword = ref("");
 const catalogPageSize = ref<CatalogPageSize>(24);
 const validationError = ref("");
 const scanStatus = computed(() => scanRequest.data.value);
-const lastScanText = computed(() => {
+const lastRefreshText = computed(() => {
   const completedAt = scanStatus.value?.completedAt;
   if (!completedAt) return "";
   return new Intl.DateTimeFormat(undefined, {
@@ -71,7 +71,9 @@ const logoutAction = useAsyncAction(() => auth.logout(), {
 });
 const scanError = computed(() => {
   if (rescanAction.errorMessage.value) return rescanAction.errorMessage.value;
-  if (scanStatus.value?.error) return scanStatus.value.error;
+  if (scanStatus.value?.status === "failed") {
+    return "The library could not be refreshed. Check that your video folder is available, then try again.";
+  }
   const caught = scanRequest.error.value;
   return caught instanceof Error ? caught.message : caught ? "Could not load library status" : "";
 });
@@ -176,9 +178,16 @@ async function logout(): Promise<void> {
                   </p>
                   <p
                     class="mt-2 text-sm"
-                    :class="scanStatus?.warnings.length ? 'font-semibold text-belt' : 'text-muted'"
+                    :class="
+                      scanStatus?.status === 'failed'
+                        ? 'font-semibold text-clay'
+                        : scanStatus?.warnings.length
+                          ? 'font-semibold text-belt'
+                          : 'text-muted'
+                    "
                   >
-                    <template v-if="scanStatus?.completedAt">
+                    <template v-if="scanStatus?.status === 'failed'">Refresh failed</template>
+                    <template v-else-if="scanStatus?.completedAt">
                       <template v-if="scanStatus.warnings.length">
                         {{ countText(scanStatus.warnings.length, "library issue") }}
                       </template>
@@ -190,7 +199,11 @@ async function logout(): Promise<void> {
                     <template v-else>Library status is loading…</template>
                   </p>
                   <p
-                    v-if="scanStatus?.completedAt && scanStatus.warnings.length"
+                    v-if="
+                      scanStatus?.status !== 'failed' &&
+                      scanStatus?.completedAt &&
+                      scanStatus.warnings.length
+                    "
                     class="mt-1.5 text-xs leading-5 text-muted"
                   >
                     {{ countText(scanStatus.courseCount, "course") }} ·
@@ -198,10 +211,12 @@ async function logout(): Promise<void> {
                   </p>
                 </div>
 
-                <div v-if="scanStatus?.completedAt" data-last-scan>
-                  <p class="text-xs font-bold tracking-[.08em] text-pine uppercase">Last scan</p>
+                <div v-if="scanStatus?.completedAt" data-last-refresh>
+                  <p class="text-xs font-bold tracking-[.08em] text-pine uppercase">
+                    {{ scanStatus.status === "failed" ? "Last refresh attempt" : "Last refreshed" }}
+                  </p>
                   <time class="mt-2 block text-sm text-muted" :datetime="scanStatus.completedAt">
-                    {{ lastScanText }}
+                    {{ lastRefreshText }}
                   </time>
                 </div>
               </div>
