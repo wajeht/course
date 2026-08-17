@@ -4,19 +4,41 @@ export function useScreenWakeLock(video: Ref<HTMLVideoElement | null>): void {
   if (typeof navigator === "undefined" || !("wakeLock" in navigator)) return;
   let attachedVideo: HTMLVideoElement | null = null;
   let sentinel: WakeLockSentinel | null = null;
+  let disposed = false;
   let requesting = false;
 
   function shouldStayAwake(): boolean {
-    return Boolean(video.value && !video.value.paused && document.visibilityState === "visible");
+    return Boolean(
+      !disposed && video.value && !video.value.paused && document.visibilityState === "visible",
+    );
+  }
+
+  async function releaseSentinel(active: WakeLockSentinel): Promise<void> {
+    try {
+      if (!active.released) await active.release();
+    } catch {
+      // Wake lock cleanup is best-effort because the browser may release it first.
+    }
   }
 
   async function request(): Promise<void> {
-    if (!shouldStayAwake() || sentinel || requesting) return;
+    if (!shouldStayAwake() || (sentinel && !sentinel.released) || requesting) return;
+    sentinel = null;
     requesting = true;
     try {
       const acquired = await navigator.wakeLock.request("screen");
-      if (shouldStayAwake()) sentinel = acquired;
-      else await acquired.release();
+      if (!shouldStayAwake()) {
+        await releaseSentinel(acquired);
+        return;
+      }
+      sentinel = acquired;
+      acquired.addEventListener(
+        "release",
+        () => {
+          if (sentinel === acquired) sentinel = null;
+        },
+        { once: true },
+      );
     } catch {
       // Wake lock is optional and may be refused by the browser or operating system.
     } finally {
@@ -27,7 +49,7 @@ export function useScreenWakeLock(video: Ref<HTMLVideoElement | null>): void {
   async function release(): Promise<void> {
     const active = sentinel;
     sentinel = null;
-    if (active && !active.released) await active.release();
+    if (active) await releaseSentinel(active);
   }
 
   function update(): void {
@@ -59,6 +81,7 @@ export function useScreenWakeLock(video: Ref<HTMLVideoElement | null>): void {
   document.addEventListener("visibilitychange", update);
 
   onScopeDispose(() => {
+    disposed = true;
     detachVideo();
     document.removeEventListener("visibilitychange", update);
     void release();
