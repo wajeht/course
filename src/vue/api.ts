@@ -1,11 +1,6 @@
 import { hc } from "hono/client";
 
 import type { AppType } from "../app";
-import {
-  isDefaultCatalogRequest,
-  readCatalogSnapshot,
-  writeCatalogSnapshot,
-} from "./catalog-cache.js";
 import type { ScanStatus } from "../media/types";
 import type {
   CatalogFilters,
@@ -25,9 +20,7 @@ export interface AuthStateDto {
   setupTokenRequired: boolean;
 }
 
-export type CatalogDto = Awaited<ReturnType<CatalogService["getCatalog"]>> & {
-  offline?: { savedAt: string };
-};
+export type CatalogDto = Awaited<ReturnType<CatalogService["getCatalog"]>>;
 export type {
   CatalogFilters,
   CatalogPageSize,
@@ -104,34 +97,17 @@ export const api = {
     );
   },
   async getCatalog(filters: CatalogFilters = {}, signal?: AbortSignal): Promise<CatalogDto> {
-    try {
-      const response = await apiClient.api.catalog.$get(
-        {
-          query: {
-            ...filters,
-            page: filters.page === undefined ? undefined : String(filters.page),
-            pageSize: filters.pageSize === undefined ? undefined : String(filters.pageSize),
-          },
+    const response = await apiClient.api.catalog.$get(
+      {
+        query: {
+          ...filters,
+          page: filters.page === undefined ? undefined : String(filters.page),
+          pageSize: filters.pageSize === undefined ? undefined : String(filters.pageSize),
         },
-        { init: { signal } },
-      );
-      const catalog = await expectProtectedJson<CatalogDto>(response);
-      if (isDefaultCatalogRequest(filters)) writeCatalogSnapshot(catalog);
-      return catalog;
-    } catch (caught) {
-      if (
-        typeof navigator !== "undefined" &&
-        !navigator.onLine &&
-        isDefaultCatalogRequest(filters)
-      ) {
-        const snapshot = readCatalogSnapshot();
-        if (snapshot) {
-          return { ...snapshot.catalog, offline: { savedAt: snapshot.savedAt } };
-        }
-        throw new ApiError("You’re offline. Reconnect to load your library.", 0);
-      }
-      throw caught;
-    }
+      },
+      { init: { signal } },
+    );
+    return expectProtectedJson<CatalogDto>(response);
   },
   async getCourse(courseId: string, signal?: AbortSignal): Promise<CourseDetailDto> {
     const response = await apiClient.api.catalog.courses[":courseId"].$get(

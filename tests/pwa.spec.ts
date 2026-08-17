@@ -69,7 +69,15 @@ test("registers, serves deep links offline, and prompts for updates", async ({ c
   await expect(page.getByRole("heading", { level: 1, name: "All courses" })).toBeVisible();
   await expect(page).toHaveTitle("Library · Course");
 
+  await page.evaluate(async () => {
+    localStorage.setItem("course:catalog-snapshot:v1", "legacy catalog");
+    await caches.open("course-covers");
+  });
   await page.reload();
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("course:catalog-snapshot:v1")))
+    .toBeNull();
+  await expect.poll(() => page.evaluate(() => caches.has("course-covers"))).toBe(false);
   await expect
     .poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller)))
     .toBe(true);
@@ -79,8 +87,6 @@ test("registers, serves deep links offline, and prompts for updates", async ({ c
     const response = await page.goto("/settings");
     expect(response?.status()).toBe(200);
     await expect(page.getByRole("heading", { level: 1, name: "Course is offline" })).toBeVisible();
-    await expect(page.getByText("Saved library", { exact: true })).toBeVisible();
-    await expect(page.getByText("0 courses")).toBeVisible();
   } finally {
     await context.setOffline(false);
   }

@@ -9,6 +9,13 @@ import { createToast, toastKey } from "@/composables/useToast.js";
 import { showFrontendError } from "@/frontend-error.js";
 import { router } from "@/router.js";
 
+try {
+  window.localStorage.removeItem("course:catalog-snapshot:v1");
+} catch {
+  // Browser storage may be unavailable.
+}
+if ("caches" in window) void window.caches.delete("course-covers");
+
 const app = createApp(App);
 const auth = createAuth();
 const pwaInstall = createPwaInstall();
