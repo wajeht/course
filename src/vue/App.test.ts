@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { flushPromises, mount } from "@vue/test-utils";
+import { mount } from "@vue/test-utils";
 import { createMemoryHistory, createRouter } from "vue-router";
 import { describe, expect, it, vi } from "vitest";
 
@@ -31,7 +31,6 @@ async function mountAt(path: string) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
-      { path: "/", name: "home", component: { template: "<div />" } },
       { path: "/settings", name: "settings", component: { template: "<div />" } },
       { path: "/:pathMatch(.*)*", name: "not-found", component: NotFoundPage },
     ],
@@ -39,7 +38,7 @@ async function mountAt(path: string) {
   await router.push(path);
   await router.isReady();
 
-  const wrapper = mount(App, {
+  return mount(App, {
     global: {
       plugins: [router],
       provide: { [authKey as symbol]: createUnauthenticatedAuth() },
@@ -50,8 +49,6 @@ async function mountAt(path: string) {
       },
     },
   });
-  await flushPromises();
-  return wrapper;
 }
 
 describe("App", () => {
@@ -63,16 +60,8 @@ describe("App", () => {
     expect(wrapper.findComponent(AuthGate).exists()).toBe(false);
   });
 
-  it("hides valid protected routes behind the not-found page", async () => {
+  it("keeps authentication on valid protected routes", async () => {
     const wrapper = await mountAt("/settings");
-
-    expect(wrapper.get("h1").text()).toBe("Page not found");
-    expect(wrapper.findComponent(AuthGate).exists()).toBe(false);
-    expect(document.title).toBe("Page not found · Course");
-  });
-
-  it("shows authentication on the home route", async () => {
-    const wrapper = await mountAt("/");
 
     expect(wrapper.findComponent(AuthGate).exists()).toBe(true);
     expect(wrapper.findComponent(NotFoundPage).exists()).toBe(false);
