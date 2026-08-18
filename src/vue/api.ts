@@ -10,7 +10,7 @@ import type {
   LessonDetailDto,
   LessonDto,
 } from "../catalog/catalog.service";
-import type { PlaybackResult } from "../routes/api/playback/playback.service";
+import type { PlaybackResult } from "../playback/playback.service";
 import type { CatalogPageSize, SettingsDto } from "../routes/api/settings/settings.service";
 
 const apiClient = hc<AppType>("/");
