@@ -13,7 +13,7 @@ fs.mkdirSync(dataDirectory, { recursive: true });
 fs.mkdirSync(videosDirectory, { recursive: true });
 
 export default defineConfig({
-  testDir: "tests",
+  testDir: "src/vue/test",
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 2 : 0,

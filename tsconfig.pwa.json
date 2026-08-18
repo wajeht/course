@@ -6,5 +6,5 @@
     "moduleResolution": "Bundler",
     "types": ["node", "@playwright/test"]
   },
-  "include": ["playwright.config.ts", "tests/**/*.spec.ts"]
+  "include": ["playwright.config.ts", "src/vue/test/**/*.spec.ts"]
 }
