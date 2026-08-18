@@ -1,4 +1,4 @@
-import type { CatalogRepository } from "../../../catalog/catalog.repository.js";
+import type { CatalogRepository } from "../catalog/catalog.repository.js";
 import type { ProgressRepository } from "./progress.repository.js";
 
 export interface ProgressService {

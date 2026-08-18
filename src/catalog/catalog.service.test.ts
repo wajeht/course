@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createConfiguration } from "../configuration.js";
 import { createDatabase, type Database } from "../db/db.js";
 import { createLogger } from "../logger.js";
-import { createProgressRepository } from "../routes/api/progress/progress.repository.js";
-import { createProgressService } from "../routes/api/progress/progress.service.js";
+import { createProgressRepository } from "../progress/progress.repository.js";
+import { createProgressService } from "../progress/progress.service.js";
 import { createCatalogApiRepository } from "./catalog.repository.js";
 import { createCatalogService } from "./catalog.service.js";
 

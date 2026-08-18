@@ -4,7 +4,7 @@ import type { AppContext } from "../../context.js";
 import { createAuthRouter, createRequireAuth } from "../../auth/auth.routes.js";
 import { createCatalogRouter } from "../../catalog/catalog.routes.js";
 import { createPlaybackRouter } from "../../playback/playback.routes.js";
-import { createProgressRouter } from "./progress/progress.js";
+import { createProgressRouter } from "../../progress/progress.routes.js";
 import { createScanRouter } from "./scan/scan.js";
 import { createSettingsRouter } from "./settings/settings.js";
 
