@@ -4,7 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { createCatalogApiRepository } from "../catalog/catalog.repository.js";
-import { createConfiguration } from "../configuration.js";
+import { createConfiguration } from "../config.js";
 import type { Database } from "../db/db.js";
 import { createLogger } from "../logger.js";
 import { createTemporaryDirectory, createTestDatabase } from "../test/resources.js";

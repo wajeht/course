@@ -4,7 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { createApp } from "./app.js";
-import { createConfiguration } from "./configuration.js";
+import { createConfiguration } from "./config.js";
 import { createTemporaryDirectory, createTestContext } from "./test/resources.js";
 
 describe("application", () => {

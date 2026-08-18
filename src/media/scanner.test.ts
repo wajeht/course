@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createConfiguration } from "../configuration.js";
+import { createConfiguration } from "../config.js";
 import { createLogger } from "../logger.js";
 import { createTemporaryDirectory, createTestDatabase } from "../test/resources.js";
 import { createCatalogRepository } from "./catalog.repository.js";

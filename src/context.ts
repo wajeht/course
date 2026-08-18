@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 
 import { createAuthRepository } from "./auth/auth.repository.js";
 import { createAuthService, type AuthService } from "./auth/auth.service.js";
-import { configuration as defaultConfiguration, type Configuration } from "./configuration.js";
+import { configuration as defaultConfiguration, type Configuration } from "./config.js";
 import { createDatabase, type Database } from "./db/db.js";
 import {
   createCatalogRepository,

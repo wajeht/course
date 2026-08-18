@@ -2,7 +2,7 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { createConfiguration } from "./configuration.js";
+import { createConfiguration } from "./config.js";
 
 describe("createConfiguration", () => {
   it("uses opinionated local defaults", () => {

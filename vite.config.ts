@@ -5,7 +5,7 @@ import tailwindcss from "@tailwindcss/vite";
 import vue from "@vitejs/plugin-vue";
 import { defineConfig } from "vitest/config";
 
-import { configuration } from "./src/configuration.js";
+import { configuration } from "./src/config.js";
 
 const projectRoot = fileURLToPath(new URL(".", import.meta.url));
 const { version } = JSON.parse(

@@ -7,7 +7,7 @@ import { bodyLimit } from "hono/body-limit";
 import { deleteCookie, getSignedCookie, setSignedCookie } from "hono/cookie";
 import { z } from "zod";
 
-import type { Configuration } from "../configuration.js";
+import type { Configuration } from "../config.js";
 import type { AppContext } from "../context.js";
 import { MIN_PASSWORD_LENGTH } from "./auth.service.js";
 
