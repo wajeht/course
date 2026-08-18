@@ -9,7 +9,7 @@ import type {
   CourseDetailDto,
   LessonDetailDto,
   LessonDto,
-} from "../routes/api/catalog/catalog.service";
+} from "../catalog/catalog.service";
 import type { PlaybackResult } from "../routes/api/playback/playback.service";
 import type { CatalogPageSize, SettingsDto } from "../routes/api/settings/settings.service";
 

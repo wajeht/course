@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 
-import type { CatalogService } from "../catalog/catalog.service.js";
+import type { CatalogService } from "../../../catalog/catalog.service.js";
 import type { ConversionManager, ConversionRecord } from "../../../media/conversion.js";
 
 export interface PlaybackService {

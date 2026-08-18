@@ -14,8 +14,8 @@ import { createScanner, type Scanner } from "./media/scanner.js";
 import {
   createCatalogApiRepository,
   type CatalogRepository,
-} from "./routes/api/catalog/catalog.repository.js";
-import { createCatalogService, type CatalogService } from "./routes/api/catalog/catalog.service.js";
+} from "./catalog/catalog.repository.js";
+import { createCatalogService, type CatalogService } from "./catalog/catalog.service.js";
 import {
   createPlaybackService,
   type PlaybackService,

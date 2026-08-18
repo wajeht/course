@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import type { Configuration } from "../configuration.js";
-import type { CatalogRepository, LessonRow } from "../routes/api/catalog/catalog.repository.js";
+import type { CatalogRepository, LessonRow } from "../catalog/catalog.repository.js";
 import type { Logger } from "../logger.js";
 import type { ConversionRepository, StoredConversion } from "./conversion.repository.js";
 import { resolveContainedPath } from "./path.js";

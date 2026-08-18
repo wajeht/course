@@ -2,7 +2,7 @@ import { Hono } from "hono";
 
 import type { AppContext } from "../../context.js";
 import { createAuthRouter, createRequireAuth } from "../../auth/auth.routes.js";
-import { createCatalogRouter } from "./catalog/catalog.js";
+import { createCatalogRouter } from "../../catalog/catalog.routes.js";
 import { createPlaybackRouter } from "./playback/playback.js";
 import { createProgressRouter } from "./progress/progress.js";
 import { createScanRouter } from "./scan/scan.js";
