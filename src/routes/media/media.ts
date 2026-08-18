@@ -10,7 +10,7 @@ import { z } from "zod";
 import type { AppContext } from "../../context.js";
 import { resolveContainedPath } from "../../media/path.js";
 import { createRequireAuth } from "../../auth/auth.routes.js";
-import { lessonParametersSchema } from "../api/catalog/catalog.schema.js";
+import { lessonParametersSchema } from "../../catalog/catalog.schema.js";
 import { parseByteRange } from "./range.js";
 
 const hlsParametersSchema = z.object({
