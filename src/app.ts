@@ -11,7 +11,7 @@ import { trimTrailingSlash } from "hono/trailing-slash";
 
 import type { AppContext } from "./context.js";
 import { createApiRouter } from "./routes/api/api.js";
-import { createMediaRouter } from "./routes/media/media.js";
+import { createMediaRouter } from "./media/media.routes.js";
 import { createMiddleware } from "./routes/middleware.js";
 
 const servicePrefixes = ["/api", "/media", "/covers", "/hls", "/healthz"];
