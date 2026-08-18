@@ -1,17 +1,16 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
-import { createConfiguration } from "../configuration.js";
-import { createDatabase, type Database } from "../db/db.js";
-import { createLogger } from "../logger.js";
+import type { Database } from "../db/db.js";
 import { createProgressRepository } from "../progress/progress.repository.js";
 import { createProgressService } from "../progress/progress.service.js";
+import { createTestDatabase } from "../test/resources.js";
 import { createCatalogApiRepository } from "./catalog.repository.js";
 import { createCatalogService } from "./catalog.service.js";
 
 let database: Database;
 
 beforeEach(async () => {
-  database = await createDatabase(createConfiguration({ APP_ENV: "testing" }), createLogger());
+  database = await createTestDatabase();
   await database.connection("courses").insert([
     {
       id: "a".repeat(24),
@@ -35,8 +34,6 @@ beforeEach(async () => {
     },
   ]);
 });
-
-afterEach(async () => database.close());
 
 function createService(pageSize = 24) {
   return createCatalogService(createCatalogApiRepository(database.connection), {

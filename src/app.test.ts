@@ -1,27 +1,15 @@
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { createApp } from "./app.js";
 import { createConfiguration } from "./configuration.js";
-import { createContext, type AppContext } from "./context.js";
-
-const contexts: AppContext[] = [];
-const temporaryDirectories: string[] = [];
-
-afterEach(async () => {
-  await Promise.all(contexts.splice(0).map((context) => context.database.close()));
-  await Promise.all(
-    temporaryDirectories.splice(0).map((directory) => fs.rm(directory, { recursive: true })),
-  );
-});
+import { createTemporaryDirectory, createTestContext } from "./test/resources.js";
 
 describe("application", () => {
   it("serves health, byte ranges, and production routes", async () => {
-    const directory = await fs.mkdtemp(path.join(os.tmpdir(), "course-app-"));
-    temporaryDirectories.push(directory);
+    const directory = await createTemporaryDirectory("course-app-");
     const videos = path.join(directory, "videos");
     const course = path.join(videos, "course");
     await fs.mkdir(course, { recursive: true });
@@ -34,8 +22,7 @@ describe("application", () => {
       AUTH_SETUP_TOKEN: "course-app-test-setup-token",
     });
     configuration.app.env = "production";
-    const context = await createContext(configuration);
-    contexts.push(context);
+    const context = await createTestContext(configuration);
     const clientDirectory = path.join(directory, "client");
     await fs.mkdir(clientDirectory);
     await fs.writeFile(path.join(clientDirectory, "index.html"), "SPA");

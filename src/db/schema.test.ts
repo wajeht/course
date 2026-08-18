@@ -1,19 +1,10 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { createConfiguration } from "../configuration.js";
-import { createDatabase, type Database } from "./db.js";
-import { createLogger } from "../logger.js";
-
-let database: Database | null = null;
-
-afterEach(async () => {
-  await database?.close();
-  database = null;
-});
+import { createTestDatabase } from "../test/resources.js";
 
 describe("database schema", () => {
   it("creates only the application tables", async () => {
-    database = await createDatabase(createConfiguration({ APP_ENV: "testing" }), createLogger());
+    const database = await createTestDatabase();
 
     const tables = (
       await database.connection("sqlite_master").where({ type: "table" }).pluck("name")

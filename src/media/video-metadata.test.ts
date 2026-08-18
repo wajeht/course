@@ -1,22 +1,13 @@
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
+import { createTemporaryDirectory } from "../test/resources.js";
 import { readVideoMetadata } from "./video-metadata.js";
 
-const temporaryDirectories: string[] = [];
-
-afterEach(async () => {
-  await Promise.all(
-    temporaryDirectories.splice(0).map((directory) => fs.rm(directory, { recursive: true })),
-  );
-});
-
 async function videoFilename(): Promise<string> {
-  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "video-metadata-"));
-  temporaryDirectories.push(directory);
+  const directory = await createTemporaryDirectory("video-metadata-");
   return path.join(directory, "01 - Lesson.mp4");
 }
 

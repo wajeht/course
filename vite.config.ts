@@ -59,6 +59,7 @@ export default defineConfig({
           environment: "node",
           include: ["src/**/*.test.ts"],
           exclude: ["src/vue/**/*.test.ts"],
+          setupFiles: ["src/test/setup.ts"],
         },
       },
       {
