@@ -37,6 +37,15 @@ export async function up(knex: Knex): Promise<void> {
     table.text("modified_at").notNullable();
   });
 
+  await knex.schema.createTable("chapters", (table) => {
+    table.text("id").primary();
+    table.text("lesson_id").notNullable().references("id").inTable("lessons").onDelete("CASCADE");
+    table.text("title").notNullable();
+    table.integer("start_seconds").notNullable();
+    table.integer("sort_order").notNullable();
+    table.unique(["lesson_id", "start_seconds"]);
+  });
+
   await knex.schema.createTable("progress", (table) => {
     table.text("lesson_id").primary().references("id").inTable("lessons").onDelete("CASCADE");
     table.float("position_seconds").notNullable().defaultTo(0);
@@ -84,6 +93,7 @@ export async function up(knex: Knex): Promise<void> {
   await knex.schema.raw("CREATE INDEX courses_category_idx ON courses(category)");
   await knex.schema.raw("CREATE INDEX sections_course_sort_idx ON sections(course_id, sort_order)");
   await knex.schema.raw("CREATE INDEX lessons_course_sort_idx ON lessons(course_id, sort_order)");
+  await knex.schema.raw("CREATE INDEX chapters_lesson_sort_idx ON chapters(lesson_id, sort_order)");
   await knex.schema.raw("CREATE INDEX progress_updated_idx ON progress(updated_at)");
   await knex.schema.raw("CREATE INDEX conversions_status_idx ON conversions(status)");
   await knex.schema.raw("CREATE INDEX auth_sessions_created_at_idx ON auth_sessions(created_at)");
@@ -100,6 +110,7 @@ export async function down(knex: Knex): Promise<void> {
   await knex.schema.dropTableIfExists("settings");
   await knex.schema.dropTableIfExists("conversions");
   await knex.schema.dropTableIfExists("progress");
+  await knex.schema.dropTableIfExists("chapters");
   await knex.schema.dropTableIfExists("lessons");
   await knex.schema.dropTableIfExists("sections");
   await knex.schema.dropTableIfExists("courses");
