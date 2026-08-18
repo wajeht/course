@@ -7,8 +7,8 @@
     "outDir": "dist/server",
     "rootDir": ".",
     "sourceMap": true,
-    "types": ["node", "vitest/globals"]
+    "types": ["node"]
   },
-  "include": ["src/**/*.ts", "vite.config.ts"],
-  "exclude": ["src/vue/**/*", "dist", "node_modules"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts", "src/test/**/*", "src/vue/**/*", "dist", "node_modules"]
 }

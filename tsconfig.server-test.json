@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.server.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node", "vitest/globals"]
+  },
+  "include": ["src/**/*.test.ts", "src/test/**/*.ts", "vite.config.ts"],
+  "exclude": ["src/vue/**/*", "dist", "node_modules"]
+}
