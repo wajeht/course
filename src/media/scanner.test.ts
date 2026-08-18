@@ -1,33 +1,35 @@
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createConfiguration } from "../configuration.js";
-import { createDatabase, type Database } from "../db/db.js";
 import { createLogger } from "../logger.js";
+import { createTemporaryDirectory, createTestDatabase } from "../test/resources.js";
 import { createCatalogRepository } from "./catalog.repository.js";
 import { createScanner } from "./scanner.js";
 import type { VideoProbe } from "./probe.js";
 
-const temporaryDirectories: string[] = [];
-const databases: Database[] = [];
 const monitorStops: Array<() => void> = [];
 
-afterEach(async () => {
+afterEach(() => {
   for (const stop of monitorStops.splice(0)) stop();
-  await Promise.all(databases.splice(0).map((database) => database.close()));
-  await Promise.all(
-    temporaryDirectories.splice(0).map((directory) => fs.rm(directory, { recursive: true })),
-  );
 });
+
+async function createScannerDirectories(): Promise<{
+  root: string;
+  dataDirectory: string;
+}> {
+  const [root, dataDirectory] = await Promise.all([
+    createTemporaryDirectory("course-scanner-"),
+    createTemporaryDirectory("course-scanner-data-"),
+  ]);
+  return { root, dataDirectory };
+}
 
 describe("media scanner", () => {
   it("ignores system metadata and empty directories", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
-    const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-data-"));
-    temporaryDirectories.push(root, dataDirectory);
+    const { root, dataDirectory } = await createScannerDirectories();
     await fs.mkdir(path.join(root, "@eaDir", "metadata"), { recursive: true });
     await fs.writeFile(path.join(root, "@eaDir", "metadata", "thumbnail.mp4"), "video");
     await fs.mkdir(path.join(root, "#recycle", "Deleted Course"), { recursive: true });
@@ -49,8 +51,7 @@ describe("media scanner", () => {
       VIDEOS_DIR: root,
       DATA_DIR: dataDirectory,
     });
-    const database = await createDatabase(configuration, createLogger());
-    databases.push(database);
+    const database = await createTestDatabase(configuration);
     const scanner = createScanner({
       configuration,
       repository: createCatalogRepository(database.connection),
@@ -77,9 +78,7 @@ describe("media scanner", () => {
   });
 
   it("indexes course metadata, sections, natural order, and warnings", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
-    const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-data-"));
-    temporaryDirectories.push(root, dataDirectory);
+    const { root, dataDirectory } = await createScannerDirectories();
     const courseDirectory = path.join(root, "Course 1");
     const sectionDirectory = path.join(courseDirectory, "02 - Escapes");
     await fs.mkdir(sectionDirectory, { recursive: true });
@@ -130,8 +129,7 @@ describe("media scanner", () => {
       VIDEOS_DIR: root,
       DATA_DIR: dataDirectory,
     });
-    const database = await createDatabase(configuration, createLogger());
-    databases.push(database);
+    const database = await createTestDatabase(configuration);
     let failExistingLesson = false;
     const probeCalls = new Map<string, number>();
     const fakeProbe = async (filename: string): Promise<VideoProbe> => {
@@ -241,9 +239,7 @@ describe("media scanner", () => {
   });
 
   it("reconciles added, removed, and renamed courses without re-inspecting other videos", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
-    const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-data-"));
-    temporaryDirectories.push(root, dataDirectory);
+    const { root, dataDirectory } = await createScannerDirectories();
     const existingCourse = path.join(root, "Existing Course");
     await fs.mkdir(existingCourse);
     await fs.writeFile(path.join(existingCourse, "01 - Existing.mp4"), "existing video");
@@ -253,8 +249,7 @@ describe("media scanner", () => {
       VIDEOS_DIR: root,
       DATA_DIR: dataDirectory,
     });
-    const database = await createDatabase(configuration, createLogger());
-    databases.push(database);
+    const database = await createTestDatabase(configuration);
     const probeCalls: string[] = [];
     let emitWatchEvent = (_filename: string): void => {
       throw new Error("Library monitoring has not started");
@@ -322,9 +317,7 @@ describe("media scanner", () => {
   });
 
   it("rebuilds chapters when a sidecar changes without re-inspecting the video", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
-    const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-data-"));
-    temporaryDirectories.push(root, dataDirectory);
+    const { root, dataDirectory } = await createScannerDirectories();
     const courseDirectory = path.join(root, "Example Course");
     await fs.mkdir(courseDirectory);
     const video = path.join(courseDirectory, "01 - Lesson.mp4");
@@ -343,8 +336,7 @@ describe("media scanner", () => {
       VIDEOS_DIR: root,
       DATA_DIR: dataDirectory,
     });
-    const database = await createDatabase(configuration, createLogger());
-    databases.push(database);
+    const database = await createTestDatabase(configuration);
     let emitWatchEvent = (_filename: string): void => {
       throw new Error("Library monitoring has not started");
     };
@@ -403,9 +395,7 @@ describe("media scanner", () => {
   });
 
   it("keeps warnings for courses that were not rescanned", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
-    const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-data-"));
-    temporaryDirectories.push(root, dataDirectory);
+    const { root, dataDirectory } = await createScannerDirectories();
     const brokenCourse = path.join(root, "Broken Course");
     const healthyCourse = path.join(root, "Healthy Course");
     await Promise.all([fs.mkdir(brokenCourse), fs.mkdir(healthyCourse)]);
@@ -421,8 +411,7 @@ describe("media scanner", () => {
       VIDEOS_DIR: root,
       DATA_DIR: dataDirectory,
     });
-    const database = await createDatabase(configuration, createLogger());
-    databases.push(database);
+    const database = await createTestDatabase(configuration);
     let emitWatchEvent = (_filename: string): void => {
       throw new Error("Library monitoring has not started");
     };
@@ -491,9 +480,7 @@ describe("media scanner", () => {
   });
 
   it("clears a resolved cover warning after an incremental scan", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
-    const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-data-"));
-    temporaryDirectories.push(root, dataDirectory);
+    const { root, dataDirectory } = await createScannerDirectories();
     const courseDirectory = path.join(root, "Example Course");
     await fs.mkdir(courseDirectory);
     await fs.writeFile(
@@ -507,8 +494,7 @@ describe("media scanner", () => {
       VIDEOS_DIR: root,
       DATA_DIR: dataDirectory,
     });
-    const database = await createDatabase(configuration, createLogger());
-    databases.push(database);
+    const database = await createTestDatabase(configuration);
     let emitWatchEvent = (_filename: string): void => {
       throw new Error("Library monitoring has not started");
     };
@@ -554,16 +540,13 @@ describe("media scanner", () => {
   });
 
   it("fails when library monitoring cannot start", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
-    const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-data-"));
-    temporaryDirectories.push(root, dataDirectory);
+    const { root, dataDirectory } = await createScannerDirectories();
     const configuration = createConfiguration({
       APP_ENV: "testing",
       VIDEOS_DIR: root,
       DATA_DIR: dataDirectory,
     });
-    const database = await createDatabase(configuration, createLogger());
-    databases.push(database);
+    const database = await createTestDatabase(configuration);
     const scanner = createScanner({
       configuration,
       repository: createCatalogRepository(database.connection),
@@ -577,16 +560,13 @@ describe("media scanner", () => {
   });
 
   it("falls back to scheduled scans when an active watcher fails", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
-    const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-data-"));
-    temporaryDirectories.push(root, dataDirectory);
+    const { root, dataDirectory } = await createScannerDirectories();
     const configuration = createConfiguration({
       APP_ENV: "testing",
       VIDEOS_DIR: root,
       DATA_DIR: dataDirectory,
     });
-    const database = await createDatabase(configuration, createLogger());
-    databases.push(database);
+    const database = await createTestDatabase(configuration);
     const close = vi.fn();
     let failWatcher: ((error: Error) => void) | undefined;
     const logger = { ...createLogger(), warn: vi.fn() };

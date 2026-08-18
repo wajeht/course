@@ -1,16 +1,15 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
-import { createConfiguration } from "../configuration.js";
-import { createDatabase, type Database } from "../db/db.js";
-import { createLogger } from "../logger.js";
 import { createCatalogApiRepository } from "../catalog/catalog.repository.js";
+import type { Database } from "../db/db.js";
+import { createTestDatabase } from "../test/resources.js";
 import { createProgressRepository } from "./progress.repository.js";
 import { createProgressService } from "./progress.service.js";
 
 let database: Database;
 
 beforeEach(async () => {
-  database = await createDatabase(createConfiguration({ APP_ENV: "testing" }), createLogger());
+  database = await createTestDatabase();
   const now = new Date().toISOString();
   await database.connection("courses").insert({
     id: "a".repeat(24),
@@ -34,8 +33,6 @@ beforeEach(async () => {
     modified_at: now,
   });
 });
-
-afterEach(async () => database.close());
 
 describe("progress service", () => {
   it("marks an in-progress lesson as most recently opened", async () => {

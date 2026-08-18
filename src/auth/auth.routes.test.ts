@@ -1,23 +1,16 @@
-import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 
 import bcrypt from "bcryptjs";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { createApp } from "../app.js";
 import { createConfiguration } from "../configuration.js";
-import { createContext, type AppContext } from "../context.js";
-
-const contexts: AppContext[] = [];
-const temporaryDirectories: string[] = [];
-
-afterEach(async () => {
-  await Promise.all(contexts.splice(0).map((context) => context.database.close()));
-  await Promise.all(
-    temporaryDirectories.splice(0).map((directory) => fs.rm(directory, { recursive: true })),
-  );
-});
+import type { AppContext } from "../context.js";
+import {
+  closeTestDatabase,
+  createTemporaryDirectory,
+  createTestContext,
+} from "../test/resources.js";
 
 async function testApp(
   options: { maxAttempts?: number; idleTimeoutMs?: number; dataDirectory?: string } = {},
@@ -33,15 +26,12 @@ async function testApp(
         database: { filename: path.join(options.dataDirectory, "course.sqlite") },
       }
     : baseConfiguration;
-  const context = await createContext(configuration);
-  contexts.push(context);
+  const context = await createTestContext(configuration);
   return { app: createApp(context), context };
 }
 
 async function closeContext(context: AppContext): Promise<void> {
-  const index = contexts.indexOf(context);
-  if (index >= 0) contexts.splice(index, 1);
-  await context.database.close();
+  await closeTestDatabase(context.database);
 }
 
 function jsonRequest(method: string, body: object, cookie?: string): RequestInit {
@@ -203,8 +193,7 @@ describe("password authentication", () => {
   });
 
   it("preserves blocked logins across application restarts", async () => {
-    const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-auth-test-"));
-    temporaryDirectories.push(dataDirectory);
+    const dataDirectory = await createTemporaryDirectory("course-auth-test-");
     const first = await testApp({ maxAttempts: 2, dataDirectory });
     await first.context.auth.setupPassword("test-course-password");
 
@@ -230,8 +219,7 @@ describe("password authentication", () => {
   });
 
   it("preserves active sessions across application restarts", async () => {
-    const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-session-test-"));
-    temporaryDirectories.push(dataDirectory);
+    const dataDirectory = await createTemporaryDirectory("course-session-test-");
     const first = await testApp({ dataDirectory });
     await first.context.auth.setupPassword("test-course-password");
     const login = await first.app.request(

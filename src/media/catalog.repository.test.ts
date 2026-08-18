@@ -1,18 +1,15 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
-import { createConfiguration } from "../configuration.js";
-import { createDatabase, type Database } from "../db/db.js";
-import { createLogger } from "../logger.js";
+import type { Database } from "../db/db.js";
+import { createTestDatabase } from "../test/resources.js";
 import { createCatalogRepository } from "./catalog.repository.js";
 import type { CatalogSnapshot, LessonRecord } from "./types.js";
 
 let database: Database;
 
 beforeEach(async () => {
-  database = await createDatabase(createConfiguration({ APP_ENV: "testing" }), createLogger());
+  database = await createTestDatabase();
 });
-
-afterEach(async () => database.close());
 
 function lesson(id: string, sortOrder: number): LessonRecord {
   return {

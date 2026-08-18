@@ -1,28 +1,18 @@
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
+import { createTemporaryDirectory } from "../test/resources.js";
 import { readCourseMetadata } from "./course-metadata.js";
 
-const temporaryDirectories: string[] = [];
-
-afterEach(async () => {
-  await Promise.all(
-    temporaryDirectories.splice(0).map((directory) => fs.rm(directory, { recursive: true })),
-  );
-});
-
-async function createTemporaryDirectory(): Promise<string> {
-  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "course-metadata-"));
-  temporaryDirectories.push(directory);
-  return directory;
+async function createCourseDirectory(): Promise<string> {
+  return createTemporaryDirectory("course-metadata-");
 }
 
 describe("course metadata", () => {
   it("accepts versioned metadata", async () => {
-    const directory = await createTemporaryDirectory();
+    const directory = await createCourseDirectory();
     await fs.writeFile(
       path.join(directory, "course.json"),
       JSON.stringify({
@@ -53,7 +43,7 @@ describe("course metadata", () => {
   });
 
   it("rejects video metadata in course.json", async () => {
-    const directory = await createTemporaryDirectory();
+    const directory = await createCourseDirectory();
     await fs.writeFile(
       path.join(directory, "course.json"),
       JSON.stringify({
@@ -75,7 +65,7 @@ describe("course metadata", () => {
   });
 
   it("warns and falls back for invalid JSON", async () => {
-    const directory = await createTemporaryDirectory();
+    const directory = await createCourseDirectory();
     await fs.writeFile(path.join(directory, "course.json"), "not-json");
 
     const result = await readCourseMetadata(directory);

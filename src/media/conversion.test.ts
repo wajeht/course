@@ -1,29 +1,18 @@
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { createConfiguration } from "../configuration.js";
-import { createDatabase, type Database } from "../db/db.js";
 import { createCatalogApiRepository } from "../catalog/catalog.repository.js";
+import { createConfiguration } from "../configuration.js";
+import type { Database } from "../db/db.js";
 import { createLogger } from "../logger.js";
+import { createTemporaryDirectory, createTestDatabase } from "../test/resources.js";
 import { createConversionManager, type ConversionExecutor } from "./conversion.js";
 import { createConversionRepository } from "./conversion.repository.js";
 
-const databases: Database[] = [];
-const temporaryDirectories: string[] = [];
-
-afterEach(async () => {
-  await Promise.all(databases.splice(0).map((database) => database.close()));
-  await Promise.all(
-    temporaryDirectories.splice(0).map((directory) => fs.rm(directory, { recursive: true })),
-  );
-});
-
 async function createFixture(executor: ConversionExecutor) {
-  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "course-conversion-"));
-  temporaryDirectories.push(directory);
+  const directory = await createTemporaryDirectory("course-conversion-");
   const dataDirectory = path.join(directory, "data");
   const videosDirectory = path.join(directory, "videos");
   await Promise.all([
@@ -35,8 +24,7 @@ async function createFixture(executor: ConversionExecutor) {
     DATA_DIR: dataDirectory,
     VIDEOS_DIR: videosDirectory,
   });
-  const database = await createDatabase(configuration, createLogger());
-  databases.push(database);
+  const database = await createTestDatabase(configuration);
   const now = new Date().toISOString();
   await database.connection("courses").insert({
     id: "a".repeat(24),
