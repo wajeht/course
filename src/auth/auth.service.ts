@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 
 import bcrypt from "bcryptjs";
 
-import type { Configuration } from "../configuration.js";
+import type { Configuration } from "../config.js";
 import type { AuthRepository, LoginAttempt } from "./auth.repository.js";
 
 export const MIN_PASSWORD_LENGTH = 15;

@@ -1,4 +1,4 @@
-import { configuration } from "../configuration.js";
+import { configuration } from "../config.js";
 import { createLogger } from "../logger.js";
 import { createDatabase } from "./db.js";
 

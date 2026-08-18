@@ -4,7 +4,7 @@ import type { Dirent } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import type { Configuration } from "../configuration.js";
+import type { Configuration } from "../config.js";
 import type { Logger } from "../logger.js";
 import type { CatalogRepository, CourseOrder } from "./catalog.repository.js";
 import { readCourseMetadata } from "./course-metadata.js";

@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import type BetterSqlite3 from "better-sqlite3";
 import type { Knex } from "knex";
 
-import type { Configuration } from "../configuration.js";
+import type { Configuration } from "../config.js";
 import { createMigrationSource } from "./migration-source.js";
 
 export function createKnexConfig(configuration: Configuration): Knex.Config {

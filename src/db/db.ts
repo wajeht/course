@@ -3,7 +3,7 @@ import path from "node:path";
 
 import knex, { type Knex } from "knex";
 
-import type { Configuration } from "../configuration.js";
+import type { Configuration } from "../config.js";
 import type { Logger } from "../logger.js";
 import { createKnexConfig } from "./knexfile.js";
 

@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import { describe, expect, it } from "vitest";
 
 import { createApp } from "../app.js";
-import { createConfiguration } from "../configuration.js";
+import { createConfiguration } from "../config.js";
 import type { AppContext } from "../context.js";
 import {
   closeTestDatabase,

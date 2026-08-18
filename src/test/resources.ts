@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-import { createConfiguration, type Configuration } from "../configuration.js";
+import { createConfiguration, type Configuration } from "../config.js";
 import { createContext, type AppContext } from "../context.js";
 import { createDatabase, type Database } from "../db/db.js";
 import { createLogger } from "../logger.js";
