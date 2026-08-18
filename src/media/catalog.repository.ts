@@ -224,12 +224,19 @@ async function deleteMissingChapters(
   transaction: Knex.Transaction,
   snapshot: CatalogSnapshot,
 ): Promise<void> {
-  const lessonIds = snapshot.lessons.map((lesson) => lesson.id);
-  if (lessonIds.length === 0) return;
-  const retainedChapterIds = snapshot.chapters.map((chapter) => chapter.id);
-  const query = transaction("chapters").whereIn("lesson_id", lessonIds);
-  if (retainedChapterIds.length > 0) await query.whereNotIn("id", retainedChapterIds).delete();
-  else await query.delete();
+  const chapterIdsByLesson = new Map<string, string[]>();
+  for (const chapter of snapshot.chapters) {
+    const chapterIds = chapterIdsByLesson.get(chapter.lessonId) ?? [];
+    chapterIds.push(chapter.id);
+    chapterIdsByLesson.set(chapter.lessonId, chapterIds);
+  }
+
+  for (const lesson of snapshot.lessons) {
+    const retainedChapterIds = chapterIdsByLesson.get(lesson.id) ?? [];
+    const query = transaction("chapters").where({ lesson_id: lesson.id });
+    if (retainedChapterIds.length > 0) await query.whereNotIn("id", retainedChapterIds).delete();
+    else await query.delete();
+  }
 }
 
 async function deleteMissing(
