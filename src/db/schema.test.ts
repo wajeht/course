@@ -32,6 +32,9 @@ describe("database schema", () => {
       "sections",
       "settings",
     ]);
+    await expect(database.connection("knex_migrations").pluck("name")).resolves.toEqual([
+      "202608160001_create_schema.js",
+    ]);
 
     await expect(database.connection("courses").columnInfo()).resolves.not.toHaveProperty(
       "created_at",

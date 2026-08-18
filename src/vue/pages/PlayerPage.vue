@@ -118,18 +118,20 @@ function destroyPlayback(): void {
 }
 
 function queryTimestamp(): number | null {
-  const value = Array.isArray(route.query.t) ? route.query.t[0] : route.query.t;
-  if (typeof value !== "string" || value.trim() === "") return null;
-  const seconds = Number(value);
+  if (typeof route.query.t !== "string" || route.query.t.trim() === "") return null;
+  const seconds = Number(route.query.t);
   return Number.isFinite(seconds) && seconds >= 0 ? seconds : null;
+}
+
+function normalizedSeekTime(element: HTMLVideoElement, startSeconds: number): number {
+  return Number.isFinite(element.duration)
+    ? Math.min(startSeconds, Math.max(0, element.duration - 0.001))
+    : startSeconds;
 }
 
 function seekVideo(startSeconds: number): void {
   if (!video.value) return;
-  const duration = video.value.duration;
-  video.value.currentTime = Number.isFinite(duration)
-    ? Math.min(startSeconds, Math.max(0, duration - 1))
-    : startSeconds;
+  video.value.currentTime = normalizedSeekTime(video.value, startSeconds);
   currentTime.value = video.value.currentTime;
 }
 
@@ -181,7 +183,7 @@ function applyResume(): void {
     if (!lesson.value || !playbackProgress.isSessionFor(lesson.value.id)) return;
     const timestamp = queryTimestamp();
     if (timestamp !== null) {
-      element.currentTime = Math.min(timestamp, Math.max(0, element.duration - 1));
+      element.currentTime = normalizedSeekTime(element, timestamp);
     } else if (!lesson.value.completed && lesson.value.positionSeconds > 0) {
       element.currentTime = Math.min(
         lesson.value.positionSeconds,

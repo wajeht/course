@@ -321,6 +321,87 @@ describe("media scanner", () => {
     expect(probeCalls).toEqual(["01 - Existing.mp4", "01 - Added.mp4", "01 - Existing.mp4"]);
   });
 
+  it("rebuilds chapters when a sidecar changes without re-inspecting the video", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
+    const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-data-"));
+    temporaryDirectories.push(root, dataDirectory);
+    const courseDirectory = path.join(root, "Example Course");
+    await fs.mkdir(courseDirectory);
+    const video = path.join(courseDirectory, "01 - Lesson.mp4");
+    const sidecar = `${video}.json`;
+    await fs.writeFile(video, "video");
+    await fs.writeFile(
+      sidecar,
+      JSON.stringify({
+        version: 1,
+        chapters: [{ title: "Introduction", startSeconds: 0 }],
+      }),
+    );
+
+    const configuration = createConfiguration({
+      APP_ENV: "testing",
+      VIDEOS_DIR: root,
+      DATA_DIR: dataDirectory,
+    });
+    const database = await createDatabase(configuration, createLogger());
+    databases.push(database);
+    let emitWatchEvent = (_filename: string): void => {
+      throw new Error("Library monitoring has not started");
+    };
+    let probeCount = 0;
+    const scanner = createScanner({
+      configuration,
+      repository: createCatalogRepository(database.connection),
+      logger: createLogger(),
+      watchDirectory: (_directory, _options, listener) => {
+        emitWatchEvent = (filename) => listener("change", filename);
+        return {
+          on() {
+            return this;
+          },
+          close() {},
+        };
+      },
+      probe: async (filename): Promise<VideoProbe> => {
+        probeCount += 1;
+        return {
+          durationSeconds: 60,
+          sizeBytes: (await fs.stat(filename)).size,
+          container: "mp4",
+          videoCodec: "h264",
+          audioCodec: "aac",
+          browserCompatible: true,
+        };
+      },
+    });
+
+    await scanner.scanCatalog();
+    expect(await database.connection("chapters").pluck("title")).toEqual(["Introduction"]);
+    monitorStops.push(scanner.startMonitoring());
+
+    await fs.writeFile(
+      sidecar,
+      JSON.stringify({
+        version: 1,
+        chapters: [{ title: "Updated chapter", startSeconds: 5 }],
+      }),
+    );
+    emitWatchEvent("Example Course/01 - Lesson.mp4.json");
+    await waitUntil(async () => {
+      const titles = await database.connection("chapters").pluck("title");
+      return titles.length === 1 && titles[0] === "Updated chapter";
+    });
+    expect(probeCount).toBe(1);
+
+    await fs.rm(sidecar);
+    emitWatchEvent("Example Course/01 - Lesson.mp4.json");
+    await waitUntil(
+      async () =>
+        Number((await database.connection("chapters").count({ count: "id" }).first())?.count) === 0,
+    );
+    expect(probeCount).toBe(1);
+  });
+
   it("keeps warnings for courses that were not rescanned", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-"));
     const dataDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "course-scanner-data-"));

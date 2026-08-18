@@ -248,7 +248,7 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
       return database<ChapterRow>("chapters")
         .where({ lesson_id: lessonId })
         .orderBy("sort_order")
-        .select();
+        .select("id", "lesson_id", "title", "start_seconds", "sort_order");
     },
   };
 }

@@ -2,12 +2,13 @@
 import { computed } from "vue";
 
 import type { ChapterDto } from "@/api.js";
+import AppButton from "@/components/ui/AppButton.vue";
 
 const props = defineProps<{ chapters: ChapterDto[]; currentTime: number }>();
 const emit = defineEmits<{ seek: [startSeconds: number] }>();
 
 const activeIndex = computed(() => {
-  let active = 0;
+  let active = -1;
   for (const [index, chapter] of props.chapters.entries()) {
     if (chapter.startSeconds > props.currentTime) break;
     active = index;
@@ -28,8 +29,8 @@ function timestampText(seconds: number): string {
 <template>
   <ol aria-label="Video chapters">
     <li v-for="(chapter, index) in chapters" :key="chapter.startSeconds">
-      <button
-        type="button"
+      <AppButton
+        variant="unstyled"
         class="group grid min-h-[62px] w-full cursor-pointer grid-cols-[52px_20px_minmax(0,1fr)] items-center gap-2 border-b border-line px-3 text-left transition-colors last:border-b-0 hover:bg-mist focus-visible:z-[1] focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-belt"
         :class="index === activeIndex && 'bg-[#eef3ef] shadow-[inset_4px_0_#c4933f]'"
         :aria-current="index === activeIndex ? 'true' : undefined"
@@ -61,7 +62,7 @@ function timestampText(seconds: number): string {
         >
           {{ chapter.title }}
         </span>
-      </button>
+      </AppButton>
     </li>
   </ol>
 </template>
