@@ -45,8 +45,10 @@ password invalidates every other active session.
     course.json
     cover.jpg
     01 - Introduction.mp4
+    01 - Introduction.mp4.json
     Module 2/
       01 - Next lesson.mkv
+      01 - Next lesson.mkv.json
 ```
 
 Videos may be directly inside a course or one folder deeper. Direct videos
@@ -74,16 +76,7 @@ Course metadata is optional:
   "source": {
     "provider": "Course Provider",
     "url": "https://example.com/course"
-  },
-  "lessons": [
-    {
-      "path": "Module 2/01 - Next lesson.mkv",
-      "chapters": [
-        { "title": "Introduction", "startSeconds": 0 },
-        { "title": "First technique", "startSeconds": 416 }
-      ]
-    }
-  ]
+  }
 }
 ```
 
@@ -91,9 +84,24 @@ Course metadata is optional:
 search. Each instructor also gets a page containing all of their courses.
 Courses without a category appear under **Uncategorized**. The cover must be a
 local JPG, PNG, or WebP. When it is omitted, Course creates a cover from the
-first valid video. Lesson paths are relative to the course folder. Chapter start
-times use whole seconds, must be in increasing order, and must fall within the
-matching video.
+first valid video.
+
+Video chapters are optional. Place them in a JSON sidecar whose name is the
+video's complete filename plus `.json`. For `01 - Next lesson.mkv`, use
+`01 - Next lesson.mkv.json`:
+
+```json
+{
+  "version": 1,
+  "chapters": [
+    { "title": "Introduction", "startSeconds": 0 },
+    { "title": "First technique", "startSeconds": 416 }
+  ]
+}
+```
+
+Chapter start times use whole seconds, must be in increasing order, and must
+fall within the matching video.
 
 ## Docs
 

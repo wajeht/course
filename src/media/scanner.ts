@@ -7,10 +7,11 @@ import path from "node:path";
 import type { Configuration } from "../configuration.js";
 import type { Logger } from "../logger.js";
 import type { CatalogRepository, CourseOrder } from "./catalog.repository.js";
-import { readCourseMetadata, type LessonMetadata } from "./course-metadata.js";
+import { readCourseMetadata } from "./course-metadata.js";
 import { displayName, naturalOrder } from "./names.js";
 import { posixPath } from "./path.js";
 import { probeVideo, videoExtensions, type VideoProbe } from "./probe.js";
+import { readVideoMetadata } from "./video-metadata.js";
 import type {
   CatalogSnapshot,
   ChapterRecord,
@@ -344,10 +345,6 @@ async function buildCatalogSnapshot(
     const courseId = identifier(courseRelativePath);
     const { metadata, warning } = await readCourseMetadata(courseDirectory);
     if (warning) warnings.push({ path: `${courseRelativePath}/course.json`, message: warning });
-    const lessonMetadataByPath = new Map(
-      (metadata?.lessons ?? []).map((lesson) => [lesson.path, lesson]),
-    );
-    const matchedLessonMetadataPaths = new Set<string>();
     const entries = (await fs.readdir(courseDirectory, { withFileTypes: true })).sort(
       (left, right) => naturalOrder(left.name, right.name),
     );
@@ -388,9 +385,6 @@ async function buildCatalogSnapshot(
       probe,
       existingLessonsByPath,
       ffprobePath: configuration.media.ffprobePath,
-      courseDirectory,
-      lessonMetadataByPath,
-      matchedLessonMetadataPaths,
     });
 
     const sectionEntries = entries.filter(isCatalogDirectory);
@@ -426,19 +420,7 @@ async function buildCatalogSnapshot(
         probe,
         existingLessonsByPath,
         ffprobePath: configuration.media.ffprobePath,
-        courseDirectory,
-        lessonMetadataByPath,
-        matchedLessonMetadataPaths,
       });
-    }
-
-    for (const lessonPath of lessonMetadataByPath.keys()) {
-      if (!matchedLessonMetadataPaths.has(lessonPath)) {
-        warnings.push({
-          path: `${courseRelativePath}/course.json`,
-          message: `Chapter metadata references missing lesson: ${lessonPath}`,
-        });
-      }
     }
 
     if (courseVideoCount === 0) continue;
@@ -464,24 +446,21 @@ interface AppendLessonsOptions {
   probe: (filename: string, ffprobePath: string) => Promise<VideoProbe>;
   existingLessonsByPath: Map<string, LessonRecord>;
   ffprobePath: string;
-  courseDirectory: string;
-  lessonMetadataByPath: Map<string, LessonMetadata>;
-  matchedLessonMetadataPaths: Set<string>;
 }
 
 async function appendLessons(options: AppendLessonsOptions): Promise<void> {
   for (const [index, file] of options.files.entries()) {
     const absolutePath = path.join(options.directory, file.name);
     const relativePath = posixPath(path.relative(options.root, absolutePath));
-    const metadataPath = posixPath(path.relative(options.courseDirectory, absolutePath));
-    const lessonMetadata = options.lessonMetadataByPath.get(metadataPath);
-    if (lessonMetadata) options.matchedLessonMetadataPaths.add(metadataPath);
+    const sidecarPath = `${relativePath}.json`;
+    const { metadata: videoMetadata, warning } = await readVideoMetadata(absolutePath);
+    if (warning) options.warnings.push({ path: sidecarPath, message: warning });
     try {
-      const metadata = await fs.stat(absolutePath);
-      const modifiedAt = metadata.mtime.toISOString();
+      const fileStats = await fs.stat(absolutePath);
+      const modifiedAt = fileStats.mtime.toISOString();
       const existing = options.existingLessonsByPath.get(relativePath);
       const video =
-        existing && existing.modifiedAt === modifiedAt && existing.sizeBytes === metadata.size
+        existing && existing.modifiedAt === modifiedAt && existing.sizeBytes === fileStats.size
           ? existing
           : await options.probe(absolutePath, options.ffprobePath);
       const lessonId = identifier(relativePath);
@@ -500,11 +479,11 @@ async function appendLessons(options: AppendLessonsOptions): Promise<void> {
         browserCompatible: video.browserCompatible,
         modifiedAt,
       });
-      for (const [chapterIndex, chapter] of (lessonMetadata?.chapters ?? []).entries()) {
+      for (const [chapterIndex, chapter] of (videoMetadata?.chapters ?? []).entries()) {
         if (chapter.startSeconds >= video.durationSeconds) {
           options.warnings.push({
-            path: `${posixPath(path.relative(options.root, options.courseDirectory))}/course.json`,
-            message: `Chapter “${chapter.title}” starts outside ${metadataPath}`,
+            path: sidecarPath,
+            message: `Chapter “${chapter.title}” starts outside ${file.name}`,
           });
           continue;
         }

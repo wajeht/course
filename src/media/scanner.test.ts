@@ -93,19 +93,6 @@ describe("media scanner", () => {
         category: "Martial Arts",
         instructors: ["Jane Smith"],
         tags: ["Guard", "Defense"],
-        lessons: [
-          {
-            path: "02 - Start.mp4",
-            chapters: [
-              { title: "Introduction", startSeconds: 0 },
-              { title: "Frames", startSeconds: 30 },
-            ],
-          },
-          {
-            path: "02 - Escapes/01 - Bridge.mkv",
-            chapters: [{ title: "Bridge mechanics", startSeconds: 5 }],
-          },
-        ],
       }),
     );
     await fs.writeFile(path.join(courseDirectory, "cover.jpg"), "cover");
@@ -113,6 +100,30 @@ describe("media scanner", () => {
     await fs.writeFile(path.join(courseDirectory, "02 - Start.mp4"), "video");
     await fs.writeFile(path.join(courseDirectory, "03 - Broken.mp4"), "video");
     await fs.writeFile(path.join(sectionDirectory, "01 - Bridge.mkv"), "video");
+    await fs.writeFile(
+      path.join(courseDirectory, "02 - Start.mp4.json"),
+      JSON.stringify({
+        version: 1,
+        chapters: [
+          { title: "Introduction", startSeconds: 0 },
+          { title: "Frames", startSeconds: 30 },
+        ],
+      }),
+    );
+    await fs.writeFile(
+      path.join(sectionDirectory, "01 - Bridge.mkv.json"),
+      JSON.stringify({
+        version: 1,
+        chapters: [{ title: "Bridge mechanics", startSeconds: 5 }],
+      }),
+    );
+    await fs.writeFile(
+      path.join(courseDirectory, "10 - Finish.mp4.json"),
+      JSON.stringify({
+        version: 1,
+        chapters: [{ title: "Outside video", startSeconds: 70 }],
+      }),
+    );
 
     const configuration = createConfiguration({
       APP_ENV: "testing",
@@ -164,10 +175,14 @@ describe("media scanner", () => {
 
     expect(status).toMatchObject({ status: "complete", courseCount: 1, lessonCount: 3 });
     expect(status.warnings).toEqual([
-      expect.objectContaining({
+      {
         path: "Course 1/03 - Broken.mp4",
         message: "File is still copying",
-      }),
+      },
+      {
+        path: "Course 1/10 - Finish.mp4.json",
+        message: "Chapter “Outside video” starts outside 10 - Finish.mp4",
+      },
     ]);
     expect(courses).toEqual([
       {
