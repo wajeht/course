@@ -2,10 +2,12 @@ import fs from "node:fs/promises";
 
 import { z } from "zod";
 
-const chapterSchema = z.object({
-  title: z.string().trim().min(1).max(300),
-  startSeconds: z.number().int().nonnegative(),
-});
+const chapterSchema = z
+  .object({
+    title: z.string().trim().min(1).max(300),
+    startSeconds: z.number().int().nonnegative(),
+  })
+  .strict();
 
 const videoMetadataSchema = z
   .object({

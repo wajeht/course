@@ -20,6 +20,16 @@ describe("ChapterList", () => {
     expect(buttons[1]?.attributes("aria-current")).toBe("true");
   });
 
+  it("does not mark a future chapter as current", () => {
+    const wrapper = mount(ChapterList, {
+      props: { chapters: chapters.slice(1), currentTime: 100 },
+    });
+
+    expect(wrapper.findAll("button").every((button) => !button.attributes("aria-current"))).toBe(
+      true,
+    );
+  });
+
   it("emits the selected chapter time", async () => {
     const wrapper = mount(ChapterList, { props: { chapters, currentTime: 0 } });
 
