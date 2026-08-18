@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 
-import type { AppContext } from "../../../context.js";
+import type { AppContext } from "../context.js";
 
 export function createScanRouter(context: AppContext) {
   return new Hono()

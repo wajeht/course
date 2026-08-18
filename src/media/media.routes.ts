@@ -7,10 +7,10 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { z } from "zod";
 
-import type { AppContext } from "../../context.js";
-import { resolveContainedPath } from "../../media/path.js";
-import { createRequireAuth } from "../../auth/auth.routes.js";
-import { lessonParametersSchema } from "../../catalog/catalog.schema.js";
+import type { AppContext } from "../context.js";
+import { createRequireAuth } from "../auth/auth.routes.js";
+import { lessonParametersSchema } from "../catalog/catalog.schema.js";
+import { resolveContainedPath } from "./path.js";
 import { parseByteRange } from "./range.js";
 
 const hlsParametersSchema = z.object({
