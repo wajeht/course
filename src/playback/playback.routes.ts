@@ -2,7 +2,7 @@ import { zValidator } from "@hono/zod-validator";
 import type { MiddlewareHandler } from "hono";
 import { Hono } from "hono";
 
-import type { AppContext } from "../../../context.js";
+import type { AppContext } from "../context.js";
 import { playbackParametersSchema, playbackResponseSchema } from "./playback.schema.js";
 
 const requireSameOrigin: MiddlewareHandler = async (c, next) => {

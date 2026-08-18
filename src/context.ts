@@ -16,10 +16,7 @@ import {
   type CatalogRepository,
 } from "./catalog/catalog.repository.js";
 import { createCatalogService, type CatalogService } from "./catalog/catalog.service.js";
-import {
-  createPlaybackService,
-  type PlaybackService,
-} from "./routes/api/playback/playback.service.js";
+import { createPlaybackService, type PlaybackService } from "./playback/playback.service.js";
 import { createProgressRepository } from "./routes/api/progress/progress.repository.js";
 import {
   createProgressService,

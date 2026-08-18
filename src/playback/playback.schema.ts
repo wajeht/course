@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { identifierSchema } from "../../../catalog/catalog.schema.js";
+import { identifierSchema } from "../catalog/catalog.schema.js";
 
 export const playbackParametersSchema = z.object({ lessonId: identifierSchema });
 
