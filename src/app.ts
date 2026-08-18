@@ -9,10 +9,10 @@ import { proxy } from "hono/proxy";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
 
+import { createApiRouter } from "./api.js";
 import type { AppContext } from "./context.js";
-import { createApiRouter } from "./routes/api/api.js";
 import { createMediaRouter } from "./media/media.routes.js";
-import { createMiddleware } from "./routes/middleware.js";
+import { createMiddleware } from "./middleware.js";
 
 const servicePrefixes = ["/api", "/media", "/covers", "/hls", "/healthz"];
 
