@@ -11,7 +11,7 @@ RUN apt-get update \
 COPY package.json package-lock.json ./
 RUN npm ci
 
-COPY tsconfig.base.json tsconfig.json tsconfig.server.json tsconfig.client.json tsconfig.pwa.json vite.config.ts ./
+COPY tsconfig.base.json tsconfig.json tsconfig.server.json tsconfig.server-test.json tsconfig.client.json tsconfig.pwa.json vite.config.ts ./
 COPY src ./src
 COPY public ./public
 RUN npm run build \
