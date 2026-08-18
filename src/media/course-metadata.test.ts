@@ -34,15 +34,6 @@ describe("course metadata", () => {
         instructors: ["Jane Smith", "jane smith", "John Doe"],
         tags: ["Guard", "Gi"],
         source: { provider: "BJJ Fanatics", url: "https://bjjfanatics.com/example" },
-        lessons: [
-          {
-            path: "Volume 1/01 - Introduction.mp4",
-            chapters: [
-              { title: "Introduction", startSeconds: 0 },
-              { title: "Core movement", startSeconds: 416 },
-            ],
-          },
-        ],
       }),
     );
 
@@ -56,21 +47,12 @@ describe("course metadata", () => {
         instructors: ["Jane Smith", "John Doe"],
         tags: ["Guard", "Gi"],
         source: { provider: "BJJ Fanatics", url: "https://bjjfanatics.com/example" },
-        lessons: [
-          {
-            path: "Volume 1/01 - Introduction.mp4",
-            chapters: [
-              { title: "Introduction", startSeconds: 0 },
-              { title: "Core movement", startSeconds: 416 },
-            ],
-          },
-        ],
       },
       warning: null,
     });
   });
 
-  it("keeps course metadata when chapter metadata is invalid", async () => {
+  it("rejects video metadata in course.json", async () => {
     const directory = await createTemporaryDirectory();
     await fs.writeFile(
       path.join(directory, "course.json"),
@@ -80,10 +62,7 @@ describe("course metadata", () => {
         lessons: [
           {
             path: "01 - Lesson.mp4",
-            chapters: [
-              { title: "Later", startSeconds: 20 },
-              { title: "Earlier", startSeconds: 10 },
-            ],
+            chapters: [{ title: "Introduction", startSeconds: 0 }],
           },
         ],
       }),
@@ -91,8 +70,8 @@ describe("course metadata", () => {
 
     const result = await readCourseMetadata(directory);
 
-    expect(result.metadata).toEqual({ version: 1, title: "Guard Retention", lessons: [] });
-    expect(result.warning).toContain("strictly increasing");
+    expect(result.metadata).toBeNull();
+    expect(result.warning).toContain("lessons");
   });
 
   it("warns and falls back for invalid JSON", async () => {
