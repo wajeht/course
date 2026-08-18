@@ -2,8 +2,8 @@ import type { ErrorHandler, MiddlewareHandler, NotFoundHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { ZodError } from "zod";
 
-import type { AppEnvironment } from "../configuration.js";
-import type { Logger } from "../logger.js";
+import type { AppEnvironment } from "./configuration.js";
+import type { Logger } from "./logger.js";
 
 export function createMiddleware(
   logger: Logger,
