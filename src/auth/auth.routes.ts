@@ -7,9 +7,9 @@ import { bodyLimit } from "hono/body-limit";
 import { deleteCookie, getSignedCookie, setSignedCookie } from "hono/cookie";
 import { z } from "zod";
 
-import type { Configuration } from "../../../configuration.js";
-import type { AppContext } from "../../../context.js";
-import { MIN_PASSWORD_LENGTH } from "../../../auth/auth.service.js";
+import type { Configuration } from "../configuration.js";
+import type { AppContext } from "../context.js";
+import { MIN_PASSWORD_LENGTH } from "./auth.service.js";
 
 const authBodyLimit = bodyLimit({
   maxSize: 4 * 1024,

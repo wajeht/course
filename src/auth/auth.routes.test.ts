@@ -5,9 +5,9 @@ import path from "node:path";
 import bcrypt from "bcryptjs";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { createApp } from "../../../app.js";
-import { createConfiguration } from "../../../configuration.js";
-import { createContext, type AppContext } from "../../../context.js";
+import { createApp } from "../app.js";
+import { createConfiguration } from "../configuration.js";
+import { createContext, type AppContext } from "../context.js";
 
 const contexts: AppContext[] = [];
 const temporaryDirectories: string[] = [];
