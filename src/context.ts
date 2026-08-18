@@ -19,11 +19,8 @@ import { createCatalogService, type CatalogService } from "./catalog/catalog.ser
 import { createPlaybackService, type PlaybackService } from "./playback/playback.service.js";
 import { createProgressRepository } from "./progress/progress.repository.js";
 import { createProgressService, type ProgressService } from "./progress/progress.service.js";
-import { createSettingsRepository } from "./routes/api/settings/settings.repository.js";
-import {
-  createSettingsService,
-  type SettingsService,
-} from "./routes/api/settings/settings.service.js";
+import { createSettingsRepository } from "./settings/settings.repository.js";
+import { createSettingsService, type SettingsService } from "./settings/settings.service.js";
 import { createLogger, type Logger } from "./logger.js";
 
 export interface AppContext {
