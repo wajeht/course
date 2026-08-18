@@ -9,6 +9,6 @@
     "sourceMap": true,
     "types": ["node", "vitest/globals"]
   },
-  "include": ["src/**/*.ts", "tests/**/*.test.ts", "vite.config.ts"],
+  "include": ["src/**/*.ts", "vite.config.ts"],
   "exclude": ["src/vue/**/*", "dist", "node_modules"]
 }

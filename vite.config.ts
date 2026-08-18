@@ -48,10 +48,28 @@ export default defineConfig({
   },
   test: {
     root: projectRoot,
-    environment: "node",
-    include: ["src/**/*.test.ts", "tests/**/*.test.ts"],
     coverage: {
       reporter: ["text", "json", "html"],
     },
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "server",
+          environment: "node",
+          include: ["src/**/*.test.ts"],
+          exclude: ["src/vue/**/*.test.ts"],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "client",
+          environment: "happy-dom",
+          include: ["src/vue/**/*.test.ts"],
+          setupFiles: ["src/vue/test/setup.ts"],
+        },
+      },
+    ],
   },
 });
