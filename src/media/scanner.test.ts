@@ -567,19 +567,22 @@ describe("media scanner", () => {
       DATA_DIR: dataDirectory,
     });
     const database = await createTestDatabase(configuration);
-    const close = vi.fn();
+    let closeCount = 0;
     let failWatcher: ((error: Error) => void) | undefined;
-    const logger = { ...createLogger(), warn: vi.fn() };
+    const logger = createLogger();
+    const warn = vi.spyOn(logger, "warn");
     const scanner = createScanner({
       configuration,
       repository: createCatalogRepository(database.connection),
       logger,
       watchDirectory: () => ({
-        on: (_event, listener) => {
+        on(_event, listener) {
           failWatcher = listener;
-          return { on: vi.fn(), close };
+          return this;
         },
-        close,
+        close: () => {
+          closeCount += 1;
+        },
       }),
     });
 
@@ -587,8 +590,8 @@ describe("media scanner", () => {
     failWatcher?.(new Error("Library watcher unavailable"));
     stop();
 
-    expect(close).toHaveBeenCalledTimes(1);
-    expect(logger.warn).toHaveBeenCalledWith(
+    expect(closeCount).toBe(1);
+    expect(warn).toHaveBeenCalledWith(
       "Library watcher unavailable; scheduled scans will continue",
       expect.objectContaining({ error: expect.any(Error) }),
     );
