@@ -11,7 +11,7 @@ import type {
   LessonDto,
 } from "../catalog/catalog.service";
 import type { PlaybackResult } from "../playback/playback.service";
-import type { CatalogPageSize, SettingsDto } from "../routes/api/settings/settings.service";
+import type { CatalogPageSize, SettingsDto } from "../settings/settings.service";
 
 const apiClient = hc<AppType>("/");
 

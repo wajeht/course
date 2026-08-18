@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { createConfiguration } from "../../../configuration.js";
-import { createDatabase, type Database } from "../../../db/db.js";
-import { createLogger } from "../../../logger.js";
+import { createConfiguration } from "../configuration.js";
+import { createDatabase, type Database } from "../db/db.js";
+import { createLogger } from "../logger.js";
 import { createSettingsRepository } from "./settings.repository.js";
 import { createSettingsService } from "./settings.service.js";
 
