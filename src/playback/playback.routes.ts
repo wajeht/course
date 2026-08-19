@@ -30,9 +30,10 @@ export function createPlaybackRouter(context: AppContext) {
         context.playback.preparePlayback(lessonId),
         context.progress.openLesson(lessonId),
       ]);
-      return detail && playback && opened
-        ? c.json(playerBootstrapResponseSchema.parse({ ...detail, playback }))
-        : c.json({ message: "Lesson not found" }, 404);
+      if (!detail || !playback || !opened) {
+        return c.json({ message: "Lesson not found" }, 404);
+      }
+      return c.json(playerBootstrapResponseSchema.parse({ ...detail, playback }));
     })
     .get(
       "/:lessonId",
