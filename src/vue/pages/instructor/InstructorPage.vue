@@ -36,11 +36,11 @@ const catalog = computed(() =>
 );
 const courses = computed(() => catalog.value?.courses ?? []);
 const loading = computed(
-  () => instructorRequest.isPending.value || loadedInstructorName.value !== instructorName.value,
+  () =>
+    instructorRequest.isPending.value ||
+    (instructorRequest.isFetching.value && loadedInstructorName.value !== instructorName.value),
 );
-const refreshing = computed(
-  () => instructorRequest.isFetching.value && !instructorRequest.isPending.value,
-);
+const refreshing = computed(() => instructorRequest.isFetching.value && !loading.value);
 const error = computed(() => {
   const caught = instructorRequest.error.value;
   return caught instanceof Error ? caught.message : caught ? "Could not load this instructor" : "";
@@ -73,9 +73,9 @@ function prefetchPage(nextPage: number): void {
 }
 
 watch(
-  [instructorRequest.data, instructorRequest.isPlaceholderData],
-  ([loadedCatalog, placeholder]) => {
-    if (!loadedCatalog || placeholder) return;
+  [instructorRequest.data, instructorRequest.isPlaceholderData, instructorRequest.isSuccess],
+  ([loadedCatalog, placeholder, success]) => {
+    if (!success || !loadedCatalog || placeholder) return;
     loadedInstructorName.value = instructorName.value;
     if (loadedCatalog.pagination.totalCourses === 0) {
       void router.replace(notFoundLocation(route.path));
@@ -85,6 +85,7 @@ watch(
     if (!loadedPage || loadedPage === page.value) return;
     void router.replace({ query: pageQuery(loadedPage) });
   },
+  { immediate: true },
 );
 </script>
 
