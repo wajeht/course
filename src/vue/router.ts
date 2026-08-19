@@ -1,16 +1,15 @@
 import { createRouter, createWebHistory, type RouteLocationRaw } from "vue-router";
 
 import { clearFrontendError, showFrontendError } from "@/frontend-error.js";
-import {
-  loadCoursePage,
-  loadHomePage,
-  loadInstructorPage,
-  loadLibraryPage,
-  loadNotFoundPage,
-  loadPlayerPage,
-  loadSettingsPage,
-} from "@/route-components.js";
 import { setPageTitle } from "@/utils.js";
+
+export const loadHomePage = () => import("@/pages/HomePage.vue");
+export const loadLibraryPage = () => import("@/pages/LibraryPage.vue");
+export const loadSettingsPage = () => import("@/pages/SettingsPage.vue");
+export const loadCoursePage = () => import("@/pages/CoursePage.vue");
+export const loadInstructorPage = () => import("@/pages/InstructorPage.vue");
+export const loadPlayerPage = () => import("@/pages/PlayerPage.vue");
+const loadNotFoundPage = () => import("@/pages/NotFoundPage.vue");
 
 declare module "vue-router" {
   interface RouteMeta {

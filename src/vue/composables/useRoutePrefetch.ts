@@ -14,7 +14,7 @@ import {
   loadLibraryPage,
   loadPlayerPage,
   loadSettingsPage,
-} from "@/route-components.js";
+} from "@/router.js";
 
 export function useRoutePrefetch() {
   const queryClient = useQueryClient();
