@@ -116,6 +116,20 @@ describe("useCatalogFilters", () => {
     stop();
   });
 
+  it("does not rewrite pagination when search state comes from navigation", async () => {
+    const client = {
+      getCatalog: vi.fn(async () => catalog()),
+      getScanStatus: vi.fn(async () => scanStatus()),
+    };
+    const { filters, router, stop } = await setup(client);
+
+    await router.push({ query: { q: "guard", page: "2" } });
+    await vi.waitFor(() => expect(filters.query.value).toBe("guard"));
+
+    expect(router.currentRoute.value.query).toEqual({ q: "guard", page: "2" });
+    stop();
+  });
+
   it("keeps the previous results visible while a new search loads", async () => {
     let resolveSearch: ((value: CatalogDto) => void) | undefined;
     const searchResult = new Promise<CatalogDto>((resolve) => {

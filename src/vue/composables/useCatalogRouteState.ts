@@ -66,6 +66,7 @@ export function useCatalogRouteState(debounceMilliseconds = 150) {
   let searchTimer: ReturnType<typeof setTimeout> | undefined;
   watch(query, (value) => {
     clearTimeout(searchTimer);
+    if (value === searchQuery.value) return;
     const updateUrl = () =>
       void router.replace({
         query: routeQuery({ q: value.trim() || undefined, page: undefined }),
