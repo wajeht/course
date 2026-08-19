@@ -25,12 +25,11 @@ export function createPlaybackRouter(context: AppContext) {
   return new Hono()
     .post("/:lessonId", zValidator("param", playbackParametersSchema), async (c) => {
       const lessonId = c.req.valid("param").lessonId;
-      const [detail, playback, opened] = await Promise.all([
+      const [detail, playback] = await Promise.all([
         context.catalog.getLesson(lessonId),
         context.playback.preparePlayback(lessonId),
-        context.progress.openLesson(lessonId),
       ]);
-      if (!detail || !playback || !opened) {
+      if (!detail || !playback) {
         return c.json({ message: "Lesson not found" }, 404);
       }
       return c.json(playerBootstrapResponseSchema.parse({ ...detail, playback }));

@@ -117,7 +117,7 @@ describe("application", () => {
       course: { id: "a".repeat(24), title: "Course" },
       playback: { kind: "direct", url: `/media/${"b".repeat(24)}` },
     });
-    expect(openLesson).toHaveBeenCalledOnce();
+    expect(openLesson).not.toHaveBeenCalled();
 
     const apiNotFound = await app.request("/api/does-not-exist", {
       headers: { cookie: cookie! },

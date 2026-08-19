@@ -160,6 +160,8 @@ async function loadPlayer(): Promise<void> {
   try {
     const lessonId = String(route.params.lessonId);
     const detail = await api.openPlayer(lessonId);
+    if (!videoPlayback.isCurrentRequest(requestId)) return;
+    await api.openLesson(lessonId);
     await invalidateCatalogCache();
     if (!videoPlayback.isCurrentRequest(requestId)) return;
     lesson.value = detail.lesson;
