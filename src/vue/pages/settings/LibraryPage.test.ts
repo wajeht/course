@@ -34,6 +34,7 @@ function mountLibraryPage() {
       provide: {
         [toastKey as symbol]: { success: vi.fn() },
       },
+      stubs: { SettingsLayout: { template: "<slot />" } },
     },
   });
 }

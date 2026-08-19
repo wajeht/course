@@ -11,8 +11,16 @@ describe("SettingsNavigation", () => {
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
-        { path: "/settings/library", component: { template: "<div />" } },
-        { path: "/settings/access", component: { template: "<div />" } },
+        {
+          path: "/settings/library",
+          name: "settings-library",
+          component: { template: "<div />" },
+        },
+        {
+          path: "/settings/access",
+          name: "settings-access",
+          component: { template: "<div />" },
+        },
       ],
     });
     await router.push("/settings/library");

@@ -27,22 +27,16 @@ export const router = createRouter({
       meta: { navigation: "library", title: "Library" },
     },
     {
-      path: "/settings",
-      component: () => import("@/pages/partials/SettingsLayout.vue"),
-      redirect: { name: "settings-library" },
+      path: "/settings/library",
+      name: "settings-library",
+      component: () => import("@/pages/settings/LibraryPage.vue"),
       meta: { navigation: "settings", title: "Settings" },
-      children: [
-        {
-          path: "library",
-          name: "settings-library",
-          component: () => import("@/pages/settings/LibraryPage.vue"),
-        },
-        {
-          path: "access",
-          name: "settings-access",
-          component: () => import("@/pages/settings/AccessPage.vue"),
-        },
-      ],
+    },
+    {
+      path: "/settings/access",
+      name: "settings-access",
+      component: () => import("@/pages/settings/AccessPage.vue"),
+      meta: { navigation: "settings", title: "Settings" },
     },
     {
       path: "/courses/:courseId",

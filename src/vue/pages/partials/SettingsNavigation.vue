@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { useRoute } from "vue-router";
+
 import PanelCard from "@/components/ui/PanelCard.vue";
 
+const route = useRoute();
 const sections = [
-  { label: "Library", route: "/settings/library", value: "library" },
-  { label: "Access", route: "/settings/access", value: "access" },
+  { label: "Library", routeName: "settings-library", value: "library" },
+  { label: "Access", routeName: "settings-access", value: "access" },
 ] as const;
 </script>
 
@@ -12,26 +15,20 @@ const sections = [
     <div class="grid gap-1 max-[760px]:grid-cols-2">
       <RouterLink
         v-for="section in sections"
+        :id="`settings-${section.value}-link`"
         :key="section.value"
-        v-slot="link"
-        :to="section.route"
-        custom
+        :to="{ name: section.routeName }"
+        :class="[
+          'flex h-10 w-full items-center rounded-[7px] px-3.5 text-left text-[.82rem] font-bold transition-[background,color,box-shadow] duration-[160ms]',
+          {
+            'bg-pine! text-white! shadow-[0_7px_18px_rgb(21_51_38_/_16%)]':
+              route.name === section.routeName,
+            'bg-transparent! text-pine! hover:bg-porcelain!': route.name !== section.routeName,
+          },
+        ]"
+        :aria-controls="`settings-${section.value}-panel`"
       >
-        <a
-          :id="`settings-${section.value}-link`"
-          :href="link.href"
-          :class="[
-            'flex h-10 w-full items-center rounded-[7px] px-3.5 text-left text-[.82rem] font-bold transition-[background,color,box-shadow] duration-[160ms]',
-            link.isExactActive
-              ? 'bg-pine! text-white! shadow-[0_7px_18px_rgb(21_51_38_/_16%)]'
-              : 'bg-transparent! text-pine! hover:bg-porcelain!',
-          ]"
-          :aria-controls="`settings-${section.value}-panel`"
-          :aria-current="link.isExactActive ? 'page' : undefined"
-          @click="link.navigate"
-        >
-          <span>{{ section.label }}</span>
-        </a>
+        <span>{{ section.label }}</span>
       </RouterLink>
     </div>
   </PanelCard>
