@@ -4,7 +4,7 @@ import { computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { api, type CatalogFilters } from "@/api.js";
-import CourseCardGrid from "@/components/catalog/CourseCardGrid.vue";
+import CourseCardGrid from "@/pages/catalog/partials/CourseCardGrid.vue";
 import InstructorHero from "@/pages/instructor/partials/InstructorHero.vue";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import AppButton from "@/components/ui/AppButton.vue";
