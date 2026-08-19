@@ -13,6 +13,14 @@ const appVersion = __APP_VERSION__;
       aria-label="Course repository on GitHub (opens in a new tab)"
       >GitHub</a
     >
-    · v{{ appVersion }}
+    ·
+    <a
+      class="font-semibold text-pine underline-offset-4 hover:underline"
+      :href="`https://github.com/wajeht/course/releases/tag/v${appVersion}`"
+      target="_blank"
+      rel="noreferrer"
+      aria-label="Course repository on GitHub (opens in a new tab)"
+      >v{{ appVersion }}
+    </a>
   </footer>
 </template>
