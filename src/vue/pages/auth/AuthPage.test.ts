@@ -29,9 +29,9 @@ describe("AuthPage", () => {
     const wrapper = mount(AuthPage, {
       props: { ...baseProps, passwordConfigured: true },
     });
-    const githubLink = wrapper.get('a[href="https://github.com/wajeht/course"]');
+    const githubLink = wrapper.get('a[href="https://github.com/wajeht"]');
 
-    expect(githubLink.text()).toBe("GitHub");
+    expect(githubLink.text()).toBe("@wajeht");
     expect(githubLink.attributes("rel")).toBe("noreferrer");
     expect(wrapper.text()).toContain("© 2026 · Made with ❤️ by @wajeht . v0.1.0");
   });
