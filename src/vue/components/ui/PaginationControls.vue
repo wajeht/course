@@ -1,13 +1,20 @@
 <script setup lang="ts">
+import { useIntentPrefetch } from "@/composables/useIntentPrefetch.js";
 import AppButton from "./AppButton.vue";
 
-defineProps<{
+const props = defineProps<{
   disabled?: boolean;
   page: number;
   totalPages: number;
 }>();
 
-defineEmits<{ change: [page: number] }>();
+const emit = defineEmits<{ change: [page: number]; prefetch: [page: number] }>();
+const previousIntent = useIntentPrefetch(() => {
+  if (!props.disabled && props.page > 1) emit("prefetch", props.page - 1);
+});
+const nextIntent = useIntentPrefetch(() => {
+  if (!props.disabled && props.page < props.totalPages) emit("prefetch", props.page + 1);
+});
 </script>
 
 <template>
@@ -15,6 +22,10 @@ defineEmits<{ change: [page: number] }>();
     <AppButton
       variant="secondary"
       :disabled="page <= 1 || disabled"
+      @pointerenter="previousIntent.schedule"
+      @pointerleave="previousIntent.cancel"
+      @focus="previousIntent.run"
+      @pointerdown="previousIntent.run"
       @click="$emit('change', page - 1)"
     >
       Previous
@@ -23,6 +34,10 @@ defineEmits<{ change: [page: number] }>();
     <AppButton
       variant="secondary"
       :disabled="page >= totalPages || disabled"
+      @pointerenter="nextIntent.schedule"
+      @pointerleave="nextIntent.cancel"
+      @focus="nextIntent.run"
+      @pointerdown="nextIntent.run"
       @click="$emit('change', page + 1)"
     >
       Next

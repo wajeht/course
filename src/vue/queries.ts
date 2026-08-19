@@ -17,7 +17,8 @@ export interface CatalogQueryClient {
 export const queryKeys = {
   catalog: ["catalog"] as const,
   catalogList: (filters: CatalogFilters) => ["catalog", "list", filters] as const,
-  course: (courseId: string) => ["catalog", "course", courseId] as const,
+  courses: ["courses"] as const,
+  course: (courseId: string) => ["courses", courseId] as const,
   scanStatus: ["scan-status"] as const,
   settings: ["settings"] as const,
 };
@@ -27,7 +28,7 @@ export function createCourseQueryClient(): QueryClient {
     defaultOptions: {
       queries: {
         staleTime: 60_000,
-        gcTime: 15 * 60_000,
+        gcTime: 30 * 60_000,
         refetchOnWindowFocus: false,
         retry: 1,
       },
@@ -44,6 +45,7 @@ export function catalogQueryOptions(
     queryKey: queryKeys.catalogList(normalizedFilters),
     queryFn: ({ signal }) => client.getCatalog(normalizedFilters, signal),
     placeholderData: keepPreviousData,
+    staleTime: 5 * 60_000,
   });
 }
 
@@ -51,6 +53,7 @@ export function courseQueryOptions(courseId: string) {
   return queryOptions({
     queryKey: queryKeys.course(courseId),
     queryFn: ({ signal }): Promise<CourseDetailDto> => api.getCourse(courseId, signal),
+    staleTime: 5 * 60_000,
   });
 }
 
@@ -65,5 +68,6 @@ export function settingsQueryOptions() {
   return queryOptions({
     queryKey: queryKeys.settings,
     queryFn: ({ signal }): Promise<SettingsDto> => api.getSettings(signal),
+    staleTime: Infinity,
   });
 }

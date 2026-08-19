@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { mount } from "@vue/test-utils";
 import { createMemoryHistory, createRouter, type RouteRecordRaw } from "vue-router";
 import { describe, expect, it } from "vitest";
@@ -23,9 +24,12 @@ const routes: RouteRecordRaw[] = [
 
 async function mountShell(path: string) {
   const router = createRouter({ history: createMemoryHistory(), routes });
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   await router.push(path);
   await router.isReady();
-  return mount(AppShell, { global: { plugins: [router] } });
+  return mount(AppShell, {
+    global: { plugins: [[VueQueryPlugin, { queryClient }], router] },
+  });
 }
 
 describe("AppShell", () => {

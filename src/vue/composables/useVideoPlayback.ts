@@ -3,7 +3,6 @@ import { nextTick, ref, type Ref } from "vue";
 import type { PlaybackResult } from "@/api.js";
 
 interface PlaybackClient {
-  preparePlayback(lessonId: string): Promise<PlaybackResult>;
   getConversionStatus(lessonId: string): Promise<PlaybackResult>;
   retryConversion(lessonId: string): Promise<PlaybackResult>;
 }
@@ -105,11 +104,6 @@ export function useVideoPlayback(
     }, pollMilliseconds);
   }
 
-  async function preparePlayback(lessonId: string, requestId: number): Promise<void> {
-    const preparedPlayback = await client.preparePlayback(lessonId);
-    await applyPlayback(preparedPlayback, lessonId, requestId);
-  }
-
   async function retryPlayback(lessonId: string): Promise<void> {
     error.value = "";
     const requestId = requestSequence;
@@ -124,13 +118,13 @@ export function useVideoPlayback(
   }
 
   return {
+    applyPlayback,
     applyMetadata,
     clearSource,
     disposePlayback,
     error,
     isCurrentRequest,
     playback,
-    preparePlayback,
     retryPlayback,
     startRequest,
   };

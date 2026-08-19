@@ -35,6 +35,12 @@ export type {
   SettingsDto,
 };
 
+export interface PlayerBootstrapDto {
+  lesson: LessonDetailDto;
+  course: CourseDetailDto;
+  playback: PlaybackResult;
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -120,24 +126,9 @@ export const api = {
     );
     return expectProtectedJson<CourseDetailDto>(response);
   },
-  async getLesson(lessonId: string): Promise<{
-    lesson: LessonDetailDto;
-    course: CourseDetailDto;
-  }> {
-    const response = await apiClient.api.catalog.lessons[":lessonId"].$get({
-      param: { lessonId },
-    });
-    return expectProtectedJson(response);
-  },
-  async openLesson(lessonId: string): Promise<void> {
-    const response = await apiClient.api.progress.lessons[":lessonId"].open.$post({
-      param: { lessonId },
-    });
-    await expectProtectedJson(response);
-  },
-  async preparePlayback(lessonId: string): Promise<PlaybackResult> {
+  async openPlayer(lessonId: string): Promise<PlayerBootstrapDto> {
     const response = await apiClient.api.playback[":lessonId"].$post({ param: { lessonId } });
-    return expectProtectedJson<PlaybackResult>(response);
+    return expectProtectedJson<PlayerBootstrapDto>(response);
   },
   async getConversionStatus(lessonId: string): Promise<PlaybackResult> {
     const response = await apiClient.api.playback[":lessonId"].conversion.$get({

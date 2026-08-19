@@ -1,21 +1,22 @@
 <script setup lang="ts">
-import { RouterLink } from "vue-router";
-
 import { api } from "@/api.js";
 import CourseCard from "@/components/CourseCard.vue";
 import CourseFilterSelect from "@/components/CourseFilterSelect.vue";
+import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import AlertMessage from "@/components/ui/AlertMessage.vue";
 import AppInput from "@/components/ui/AppInput.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import PaginationControls from "@/components/ui/PaginationControls.vue";
 import { useCatalogFilters } from "@/composables/useCatalogFilters.js";
+import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
 import { countText } from "@/utils.js";
 
 const {
   catalog,
   error,
+  filters,
   libraryTitle,
   loading,
   page,
@@ -28,6 +29,11 @@ const {
   selectedTag,
   setPage,
 } = useCatalogFilters(api);
+const prefetch = useRoutePrefetch();
+
+function prefetchPage(page: number): void {
+  void prefetch.catalog({ ...filters.value, page });
+}
 </script>
 
 <template>
@@ -47,13 +53,14 @@ const {
       >
         <template #aside>
           <template v-if="scanStatus?.completedAt">
-            <RouterLink
+            <IntentRouterLink
               v-if="scanStatus.warnings.length"
               to="/settings"
+              :prefetch="prefetch.settings"
               class="text-[.78rem] font-semibold text-belt underline decoration-belt/30 underline-offset-4 hover:decoration-belt"
             >
               {{ countText(scanStatus.warnings.length, "library issue") }}
-            </RouterLink>
+            </IntentRouterLink>
             <span v-else class="text-[.78rem] font-semibold text-muted">Library up to date</span>
           </template>
         </template>
@@ -170,6 +177,7 @@ const {
         :page="page"
         :total-pages="catalog.pagination.totalPages"
         @change="setPage"
+        @prefetch="prefetchPage"
       />
     </section>
   </StandardPageLayout>

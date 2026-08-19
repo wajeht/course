@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import { computed, watch } from "vue";
-import { RouterLink, useRoute, useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 import { api, isCatalogResourceNotFound } from "@/api.js";
 import CourseCoverPlaceholder from "@/components/CourseCoverPlaceholder.vue";
+import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import LessonRow from "@/components/LessonRow.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
@@ -14,6 +15,7 @@ import ProgressBar from "@/components/ui/ProgressBar.vue";
 import { useAsyncAction } from "@/composables/useAsyncAction.js";
 import { useConfirm } from "@/composables/useConfirm.js";
 import { useExpandableSections } from "@/composables/useExpandableSections.js";
+import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import { useToast } from "@/composables/useToast.js";
 import { courseQueryOptions, queryKeys } from "@/queries.js";
 import { notFoundLocation } from "@/router.js";
@@ -22,6 +24,7 @@ import { countText, durationText, setPageTitle } from "@/utils.js";
 const route = useRoute();
 const router = useRouter();
 const queryClient = useQueryClient();
+const prefetch = useRoutePrefetch();
 const courseId = computed(() => String(route.params.courseId));
 const courseRequest = useQuery(computed(() => courseQueryOptions(courseId.value)));
 const confirmation = useConfirm();
@@ -31,7 +34,10 @@ const loading = computed(() => courseRequest.isPending.value);
 const resetAction = useAsyncAction(
   async (id: string) => {
     await api.resetCourse(id);
-    await queryClient.invalidateQueries({ queryKey: queryKeys.catalog });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.catalog }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.course(id) }),
+    ]);
   },
   {
     errorMessage: "Could not reset course progress",
@@ -129,12 +135,13 @@ watch(
           Taught by
           <template v-for="(instructor, index) in course.instructors" :key="instructor">
             <span v-if="index" aria-hidden="true">, </span>
-            <RouterLink
+            <IntentRouterLink
               :to="{ name: 'instructor', params: { instructorName: instructor } }"
+              :prefetch="() => prefetch.instructor(instructor)"
               class="underline decoration-belt-light/35 underline-offset-4 hover:decoration-belt-light"
             >
               {{ instructor }}
-            </RouterLink>
+            </IntentRouterLink>
           </template>
         </p>
         <p
@@ -166,8 +173,9 @@ watch(
         <div class="flex flex-wrap gap-[10px] max-[600px]:col-span-full">
           <AppButton
             v-if="nextLesson"
-            :as="RouterLink"
+            :as="IntentRouterLink"
             :to="{ name: 'player', params: { lessonId: nextLesson.id } }"
+            :prefetch="prefetch.player"
             variant="accent"
             size="lg"
           >
@@ -275,7 +283,9 @@ watch(
       :framed="false"
     >
       <template #actions>
-        <AppButton :as="RouterLink" to="/library" size="lg">Back to library</AppButton>
+        <AppButton :as="IntentRouterLink" to="/library" :prefetch="prefetch.library" size="lg">
+          Back to library
+        </AppButton>
       </template>
     </EmptyState>
   </main>

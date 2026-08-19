@@ -1,6 +1,15 @@
 import { createRouter, createWebHistory, type RouteLocationRaw } from "vue-router";
 
 import { clearFrontendError, showFrontendError } from "@/frontend-error.js";
+import {
+  loadCoursePage,
+  loadHomePage,
+  loadInstructorPage,
+  loadLibraryPage,
+  loadNotFoundPage,
+  loadPlayerPage,
+  loadSettingsPage,
+} from "@/route-components.js";
 import { setPageTitle } from "@/utils.js";
 
 declare module "vue-router" {
@@ -17,43 +26,43 @@ export const router = createRouter({
     {
       path: "/",
       name: "home",
-      component: () => import("@/pages/HomePage.vue"),
+      component: loadHomePage,
       meta: { navigation: "home" },
     },
     {
       path: "/library",
       name: "library",
-      component: () => import("@/pages/LibraryPage.vue"),
+      component: loadLibraryPage,
       meta: { navigation: "library", title: "Library" },
     },
     {
       path: "/settings",
       name: "settings",
-      component: () => import("@/pages/SettingsPage.vue"),
+      component: loadSettingsPage,
       meta: { navigation: "settings", title: "Settings" },
     },
     {
       path: "/courses/:courseId",
       name: "course",
-      component: () => import("@/pages/CoursePage.vue"),
+      component: loadCoursePage,
       meta: { navigation: "library", title: "Course details" },
     },
     {
       path: "/instructors/:instructorName",
       name: "instructor",
-      component: () => import("@/pages/InstructorPage.vue"),
+      component: loadInstructorPage,
       meta: { navigation: "library", title: "Instructor" },
     },
     {
       path: "/lessons/:lessonId",
       name: "player",
-      component: () => import("@/pages/PlayerPage.vue"),
+      component: loadPlayerPage,
       meta: { navigation: "library", shell: "player", title: "Lesson" },
     },
     {
       path: "/:pathMatch(.*)*",
       name: "not-found",
-      component: () => import("@/pages/NotFoundPage.vue"),
+      component: loadNotFoundPage,
       meta: { title: "Page not found" },
     },
   ],

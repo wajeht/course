@@ -1,20 +1,23 @@
 <script setup lang="ts">
 import { useQuery } from "@tanstack/vue-query";
 import { computed, watch } from "vue";
-import { RouterLink, useRoute, useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 import { api, type CatalogFilters } from "@/api.js";
 import CourseCard from "@/components/CourseCard.vue";
+import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import PaginationControls from "@/components/ui/PaginationControls.vue";
+import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import { catalogQueryOptions } from "@/queries.js";
 import { notFoundLocation } from "@/router.js";
 import { setPageTitle } from "@/utils.js";
 
 const route = useRoute();
 const router = useRouter();
+const prefetch = useRoutePrefetch();
 
 const instructorName = computed(() => String(route.params.instructorName));
 const page = computed(() => {
@@ -59,6 +62,10 @@ function setPage(nextPage: number): void {
   void router.push({ query: pageQuery(Math.max(1, nextPage)) });
 }
 
+function prefetchPage(nextPage: number): void {
+  void prefetch.catalog({ ...filters.value, page: nextPage });
+}
+
 watch(instructorRequest.data, (loadedCatalog) => {
   if (loadedCatalog?.pagination.totalCourses === 0) {
     void router.replace(notFoundLocation(route.path));
@@ -75,12 +82,13 @@ watch(instructorRequest.data, (loadedCatalog) => {
     <section
       class="border-b border-pine/15 bg-mist bg-[repeating-linear-gradient(0deg,transparent_0_47px,rgb(36_77_59_/_5%)_47px_48px)] px-[max(4vw,calc((100vw-1380px)/2))] py-[clamp(48px,7vw,88px)]"
     >
-      <RouterLink
+      <IntentRouterLink
         to="/library"
+        :prefetch="prefetch.library"
         class="mb-[38px] inline-block text-[.78rem] font-bold text-pine/70 hover:text-pine-deep"
       >
         ← Library
-      </RouterLink>
+      </IntentRouterLink>
       <div
         class="grid grid-cols-[minmax(210px,300px)_minmax(0,1fr)] items-center gap-[clamp(36px,7vw,100px)] max-[700px]:grid-cols-[110px_minmax(0,1fr)] max-[700px]:gap-6"
       >
@@ -141,6 +149,7 @@ watch(instructorRequest.data, (loadedCatalog) => {
         :page="page"
         :total-pages="catalog?.pagination.totalPages ?? 0"
         @change="setPage"
+        @prefetch="prefetchPage"
       />
     </section>
   </main>
@@ -162,7 +171,9 @@ watch(instructorRequest.data, (loadedCatalog) => {
       :framed="false"
     >
       <template #actions>
-        <AppButton :as="RouterLink" to="/library" size="lg">Back to library</AppButton>
+        <AppButton :as="IntentRouterLink" to="/library" :prefetch="prefetch.library" size="lg">
+          Back to library
+        </AppButton>
       </template>
     </EmptyState>
   </main>

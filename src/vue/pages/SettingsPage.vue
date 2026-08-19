@@ -46,7 +46,10 @@ const rescanAction = useAsyncAction(() => api.rescanCatalog(), {
   errorMessage: "Could not refresh the library",
   onSuccess: async (status) => {
     queryClient.setQueryData(queryKeys.scanStatus, status);
-    await queryClient.invalidateQueries({ queryKey: queryKeys.catalog, refetchType: "none" });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.catalog, refetchType: "none" }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.courses, refetchType: "none" }),
+    ]);
     if (status.status === "complete") toast.success("Library refreshed");
   },
 });

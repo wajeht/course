@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { RouterLink, useRoute } from "vue-router";
+import { useRoute } from "vue-router";
 
+import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import AppLogo from "@/components/ui/AppLogo.vue";
+import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 
 const route = useRoute();
+const prefetch = useRoutePrefetch();
 const activeNavigation = computed(() => route.meta.navigation);
 const isPlayer = computed(() => route.meta.shell === "player");
 </script>
@@ -20,16 +23,18 @@ const isPlayer = computed(() => route.meta.shell === "player");
         isPlayer ? 'relative bg-[#111714]' : 'sticky top-0 bg-pine-deep/[.96] backdrop-blur-[14px]'
       "
     >
-      <RouterLink
+      <IntentRouterLink
         to="/"
+        :prefetch="prefetch.home"
         class="flex items-center gap-3 font-display text-2xl font-extrabold tracking-[.04em] uppercase"
         aria-label="Course home"
       >
         <AppLogo />
-      </RouterLink>
+      </IntentRouterLink>
       <nav class="flex items-center gap-6 max-[600px]:hidden" aria-label="Main navigation">
-        <RouterLink
+        <IntentRouterLink
           to="/"
+          :prefetch="prefetch.home"
           class="border-b-2 px-0 py-2 text-[.76rem] font-bold tracking-[.14em] uppercase"
           :class="
             activeNavigation === 'home'
@@ -38,9 +43,10 @@ const isPlayer = computed(() => route.meta.shell === "player");
           "
         >
           Home
-        </RouterLink>
-        <RouterLink
+        </IntentRouterLink>
+        <IntentRouterLink
           to="/library"
+          :prefetch="prefetch.library"
           class="border-b-2 px-0 py-2 text-[.76rem] font-bold tracking-[.14em] uppercase"
           :class="
             activeNavigation === 'library'
@@ -49,9 +55,10 @@ const isPlayer = computed(() => route.meta.shell === "player");
           "
         >
           Library
-        </RouterLink>
-        <RouterLink
+        </IntentRouterLink>
+        <IntentRouterLink
           to="/settings"
+          :prefetch="prefetch.settings"
           class="border-b-2 px-0 py-2 text-[.76rem] font-bold tracking-[.14em] uppercase"
           :class="
             activeNavigation === 'settings'
@@ -60,7 +67,7 @@ const isPlayer = computed(() => route.meta.shell === "player");
           "
         >
           Settings
-        </RouterLink>
+        </IntentRouterLink>
       </nav>
     </header>
     <slot />
@@ -68,8 +75,9 @@ const isPlayer = computed(() => route.meta.shell === "player");
       class="fixed right-0 bottom-0 left-0 z-50 hidden border-t border-white/12 bg-pine-deep/[.98] px-3 pt-1.5 pb-[max(6px,env(safe-area-inset-bottom))] text-white shadow-[0_-12px_35px_rgb(10_25_18_/_18%)] backdrop-blur-[14px] max-[600px]:grid max-[600px]:grid-cols-3"
       aria-label="Mobile navigation"
     >
-      <RouterLink
+      <IntentRouterLink
         to="/"
+        :prefetch="prefetch.home"
         class="relative flex min-h-[52px] items-center justify-center rounded-[8px] text-[.7rem] font-bold tracking-[.1em] uppercase"
         :class="activeNavigation === 'home' ? 'text-belt-light' : 'text-white/55'"
         :aria-current="activeNavigation === 'home' ? 'page' : undefined"
@@ -80,9 +88,10 @@ const isPlayer = computed(() => route.meta.shell === "player");
           aria-hidden="true"
         />
         Home
-      </RouterLink>
-      <RouterLink
+      </IntentRouterLink>
+      <IntentRouterLink
         to="/library"
+        :prefetch="prefetch.library"
         class="relative flex min-h-[52px] items-center justify-center rounded-[8px] text-[.7rem] font-bold tracking-[.1em] uppercase"
         :class="activeNavigation === 'library' ? 'text-belt-light' : 'text-white/55'"
         :aria-current="activeNavigation === 'library' ? 'page' : undefined"
@@ -93,9 +102,10 @@ const isPlayer = computed(() => route.meta.shell === "player");
           aria-hidden="true"
         />
         Library
-      </RouterLink>
-      <RouterLink
+      </IntentRouterLink>
+      <IntentRouterLink
         to="/settings"
+        :prefetch="prefetch.settings"
         class="relative flex min-h-[52px] items-center justify-center rounded-[8px] text-[.7rem] font-bold tracking-[.1em] uppercase"
         :class="activeNavigation === 'settings' ? 'text-belt-light' : 'text-white/55'"
         :aria-current="activeNavigation === 'settings' ? 'page' : undefined"
@@ -106,7 +116,7 @@ const isPlayer = computed(() => route.meta.shell === "player");
           aria-hidden="true"
         />
         Settings
-      </RouterLink>
+      </IntentRouterLink>
     </nav>
   </div>
 </template>
