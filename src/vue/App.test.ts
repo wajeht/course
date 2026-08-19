@@ -5,7 +5,7 @@ import { createMemoryHistory, createRouter } from "vue-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import App from "./App.vue";
-import AuthGate from "./components/AuthGate.vue";
+import AuthPage from "./pages/auth/AuthPage.vue";
 import { authKey, type AuthController } from "./composables/useAuth.js";
 import { clearFrontendError, showFrontendError } from "./frontend-error.js";
 import NotFoundPage from "./pages/NotFoundPage.vue";
@@ -74,13 +74,13 @@ describe("App", () => {
 
     expect(wrapper.get("h1").text()).toBe("Page not found");
     expect(wrapper.get("main").classes()).toContain("min-h-screen");
-    expect(wrapper.findComponent(AuthGate).exists()).toBe(false);
+    expect(wrapper.findComponent(AuthPage).exists()).toBe(false);
   });
 
   it("keeps authentication on valid protected routes", async () => {
     const wrapper = await mountAt("/settings/library");
 
-    expect(wrapper.findComponent(AuthGate).exists()).toBe(true);
+    expect(wrapper.findComponent(AuthPage).exists()).toBe(true);
     expect(wrapper.text()).toContain("Please sign in to continue.");
     expect(wrapper.findComponent(NotFoundPage).exists()).toBe(false);
   });
@@ -93,7 +93,7 @@ describe("App", () => {
 
     expect(wrapper.findComponent(UnexpectedErrorPage).exists()).toBe(true);
     expect(wrapper.get("main").classes()).toContain("min-h-screen");
-    expect(wrapper.findComponent(AuthGate).exists()).toBe(false);
+    expect(wrapper.findComponent(AuthPage).exists()).toBe(false);
     expect(wrapper.find("confirm-dialog-stub").exists()).toBe(false);
     expect(wrapper.find("toast-viewport-stub").exists()).toBe(false);
   });
@@ -110,6 +110,6 @@ describe("App", () => {
       "Make sure this device is online and your Course server is running, then try again.",
     );
     expect(document.title).toBe("Connection unavailable · Course");
-    expect(wrapper.findComponent(AuthGate).exists()).toBe(false);
+    expect(wrapper.findComponent(AuthPage).exists()).toBe(false);
   });
 });

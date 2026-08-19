@@ -3,7 +3,7 @@
 import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
 
-import AuthGate from "./AuthGate.vue";
+import AuthPage from "./AuthPage.vue";
 
 const baseProps = {
   busy: false,
@@ -13,9 +13,9 @@ const baseProps = {
   status: "unauthenticated" as const,
 };
 
-describe("AuthGate", () => {
+describe("AuthPage", () => {
   it("does not show password setup guidance when signing in", () => {
-    const wrapper = mount(AuthGate, {
+    const wrapper = mount(AuthPage, {
       props: { ...baseProps, passwordConfigured: true },
     });
     const password = wrapper.get('input[autocomplete="current-password"]');
@@ -26,7 +26,7 @@ describe("AuthGate", () => {
   });
 
   it("shows the project link and current app version", () => {
-    const wrapper = mount(AuthGate, {
+    const wrapper = mount(AuthPage, {
       props: { ...baseProps, passwordConfigured: true },
     });
     const githubLink = wrapper.get('a[href="https://github.com/wajeht/course"]');
@@ -37,7 +37,7 @@ describe("AuthGate", () => {
   });
 
   it("requires 15 characters when creating a password", () => {
-    const wrapper = mount(AuthGate, {
+    const wrapper = mount(AuthPage, {
       props: { ...baseProps, passwordConfigured: false },
     });
 
@@ -47,7 +47,7 @@ describe("AuthGate", () => {
   });
 
   it("explains the setup token", () => {
-    const wrapper = mount(AuthGate, {
+    const wrapper = mount(AuthPage, {
       props: { ...baseProps, passwordConfigured: false, setupTokenRequired: true },
     });
 
