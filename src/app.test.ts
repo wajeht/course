@@ -27,6 +27,7 @@ describe("application", () => {
     await fs.mkdir(clientDirectory);
     await fs.writeFile(path.join(clientDirectory, "index.html"), "SPA");
     await fs.writeFile(path.join(clientDirectory, "robots.txt"), "User-agent: *\nDisallow: /\n");
+    await fs.writeFile(path.join(clientDirectory, "favicon.ico"), "ico");
     await fs.writeFile(path.join(clientDirectory, "favicon.svg"), "<svg></svg>");
     await fs.writeFile(path.join(clientDirectory, "manifest.webmanifest"), "{}");
     context.configuration.app.clientDirectory = clientDirectory;
@@ -138,9 +139,13 @@ describe("application", () => {
     expect(robots.status).toBe(200);
     expect(await robots.text()).toBe("User-agent: *\nDisallow: /\n");
 
-    const favicon = await app.request("/favicon.svg");
-    expect(favicon.status).toBe(200);
-    expect(favicon.headers.get("content-type")).toContain("image/svg+xml");
+    const faviconIco = await app.request("/favicon.ico");
+    expect(faviconIco.status).toBe(200);
+    expect(faviconIco.headers.get("content-type")).toContain("image/x-icon");
+
+    const faviconSvg = await app.request("/favicon.svg");
+    expect(faviconSvg.status).toBe(200);
+    expect(faviconSvg.headers.get("content-type")).toContain("image/svg+xml");
 
     const manifest = await app.request("/manifest.webmanifest");
     expect(manifest.status).toBe(200);
