@@ -2,7 +2,6 @@
 import { computed, onBeforeUnmount, shallowRef, watch } from "vue";
 import { RouterView, useRoute } from "vue-router";
 
-import AuthGate from "@/components/AuthGate.vue";
 import OfflineStatusBanner from "@/components/OfflineStatusBanner.vue";
 import AppLogo from "@/components/ui/AppLogo.vue";
 import ConfirmDialog from "@/components/ui/ConfirmDialog.vue";
@@ -12,6 +11,7 @@ import { useAuth } from "@/composables/useAuth.js";
 import { useNetworkStatus } from "@/composables/useNetworkStatus.js";
 import { frontendError } from "@/frontend-error.js";
 import AppShell from "@/layouts/AppShell.vue";
+import AuthPage from "@/pages/auth/AuthPage.vue";
 import OfflinePage from "@/pages/OfflinePage.vue";
 import UnexpectedErrorPage from "@/pages/UnexpectedErrorPage.vue";
 import { setPageTitle } from "@/utils.js";
@@ -102,7 +102,7 @@ async function setup(
     <component :is="Component" standalone />
   </RouterView>
   <OfflinePage v-else-if="auth.state.status === 'error'" @retry="auth.initialize" />
-  <AuthGate
+  <AuthPage
     v-else
     :status="auth.state.status"
     :password-configured="auth.state.passwordConfigured"

@@ -2,11 +2,11 @@
 import { computed } from "vue";
 
 import type { AuthStatus } from "@/composables/useAuth.js";
-import AuthForm from "@/components/auth/AuthForm.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppFooter from "@/components/ui/AppFooter.vue";
 import AppLogo from "@/components/ui/AppLogo.vue";
 import PanelCard from "@/components/ui/PanelCard.vue";
+import AuthForm from "@/pages/auth/partials/AuthForm.vue";
 
 const props = defineProps<{
   status: AuthStatus;
