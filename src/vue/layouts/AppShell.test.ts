@@ -15,7 +15,7 @@ const routes: RouteRecordRaw[] = [
     meta: { navigation: "library" },
   },
   {
-    path: "/settings",
+    path: "/settings/library",
     component: { template: "<div />" },
     meta: { navigation: "settings" },
   },
@@ -34,7 +34,7 @@ async function mountShell(path: string) {
 
 describe("AppShell", () => {
   it("renders desktop and mobile primary navigation with the current tab selected", async () => {
-    const wrapper = await mountShell("/settings");
+    const wrapper = await mountShell("/settings/library");
     const desktopNavigation = wrapper.get('nav[aria-label="Main navigation"]');
     const mobileNavigation = wrapper.get('nav[aria-label="Mobile navigation"]');
 
@@ -46,7 +46,9 @@ describe("AppShell", () => {
     );
     expect(mobileNavigation.findAll("svg")).toHaveLength(0);
     expect(mobileNavigation.findAll("a")).toHaveLength(3);
-    expect(mobileNavigation.get('a[href="/settings"]').attributes("aria-current")).toBe("page");
+    expect(mobileNavigation.get('a[href="/settings/library"]').attributes("aria-current")).toBe(
+      "page",
+    );
     expect(mobileNavigation.get('a[href="/"]').attributes("aria-current")).toBeUndefined();
     expect(mobileNavigation.get('a[href="/library"]').attributes("aria-current")).toBeUndefined();
   });
