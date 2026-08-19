@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { RouterView } from "vue-router";
-
 import AlertMessage from "@/components/ui/AlertMessage.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppFooter from "@/components/ui/AppFooter.vue";
@@ -60,7 +58,7 @@ async function logout(): Promise<void> {
         </div>
       </div>
 
-      <RouterView />
+      <slot />
 
       <div class="col-span-full hidden max-[760px]:block" data-mobile-sign-out-container>
         <AppButton

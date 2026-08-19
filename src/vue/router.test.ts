@@ -15,11 +15,11 @@ describe("router error pages", () => {
     expect(access.meta.navigation).toBe("settings");
   });
 
-  it("redirects the old settings entry point to Library settings", async () => {
-    await router.push("/settings");
+  it("does not retain the old combined settings route", () => {
+    const route = router.resolve("/settings");
 
-    expect(router.currentRoute.value.path).toBe("/settings/library");
-    expect(router.currentRoute.value.redirectedFrom?.path).toBe("/settings");
+    expect(route.name).toBe("not-found");
+    expect(route.redirectedFrom).toBeUndefined();
   });
 
   it("resolves unknown frontend URLs to the not-found page", () => {

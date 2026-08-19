@@ -15,6 +15,7 @@ function mountAccessPage() {
         [authKey as symbol]: { changePassword: vi.fn() },
         [toastKey as symbol]: { success: vi.fn() },
       },
+      stubs: { SettingsLayout: { template: "<slot />" } },
     },
   });
 }
