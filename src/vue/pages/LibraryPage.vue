@@ -55,7 +55,7 @@ function prefetchPage(page: number): void {
           <template v-if="scanStatus?.completedAt">
             <IntentRouterLink
               v-if="scanStatus.warnings.length"
-              to="/settings"
+              to="/settings/library"
               :prefetch="prefetch.settings"
               class="text-[.78rem] font-semibold text-belt underline decoration-belt/30 underline-offset-4 hover:decoration-belt"
             >

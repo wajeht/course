@@ -57,7 +57,7 @@ const isPlayer = computed(() => route.meta.shell === "player");
           Library
         </IntentRouterLink>
         <IntentRouterLink
-          to="/settings"
+          to="/settings/library"
           :prefetch="prefetch.settings"
           class="border-b-2 px-0 py-2 text-[.76rem] font-bold tracking-[.14em] uppercase"
           :class="
@@ -104,7 +104,7 @@ const isPlayer = computed(() => route.meta.shell === "player");
         Library
       </IntentRouterLink>
       <IntentRouterLink
-        to="/settings"
+        to="/settings/library"
         :prefetch="prefetch.settings"
         class="relative flex min-h-[52px] items-center justify-center rounded-[8px] text-[.7rem] font-bold tracking-[.1em] uppercase"
         :class="activeNavigation === 'settings' ? 'text-belt-light' : 'text-white/55'"
