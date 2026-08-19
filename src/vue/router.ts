@@ -28,9 +28,21 @@ export const router = createRouter({
     },
     {
       path: "/settings",
-      name: "settings",
-      component: () => import("@/pages/SettingsPage.vue"),
+      component: () => import("@/layouts/SettingsLayout.vue"),
+      redirect: { name: "settings-library" },
       meta: { navigation: "settings", title: "Settings" },
+      children: [
+        {
+          path: "library",
+          name: "settings-library",
+          component: () => import("@/pages/settings/LibraryPage.vue"),
+        },
+        {
+          path: "access",
+          name: "settings-access",
+          component: () => import("@/pages/settings/AccessPage.vue"),
+        },
+      ],
     },
     {
       path: "/courses/:courseId",

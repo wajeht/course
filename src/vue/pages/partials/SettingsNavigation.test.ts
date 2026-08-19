@@ -1,27 +1,39 @@
 // @vitest-environment happy-dom
 
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
+import { createMemoryHistory, createRouter } from "vue-router";
 import { describe, expect, it } from "vitest";
 
 import SettingsNavigation from "./SettingsNavigation.vue";
 
 describe("SettingsNavigation", () => {
-  it("selects settings panels", async () => {
-    const wrapper = mount(SettingsNavigation, { props: { modelValue: "data" } });
-    const sectionButtons = wrapper.findAll("button[aria-pressed]");
+  it("links to each settings route and marks the active section", async () => {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: "/settings/library", component: { template: "<div />" } },
+        { path: "/settings/access", component: { template: "<div />" } },
+      ],
+    });
+    await router.push("/settings/library");
+    const wrapper = mount(SettingsNavigation, { global: { plugins: [router] } });
+    const sectionLinks = wrapper.findAll("a");
 
-    expect(sectionButtons.map((button) => button.text())).toEqual(["Library", "Access"]);
-    expect(sectionButtons[0]?.attributes("aria-pressed")).toBe("true");
-    expect(sectionButtons[1]?.attributes("aria-pressed")).toBe("false");
-    expect(sectionButtons[0]?.classes()).toContain("bg-pine!");
-    expect(sectionButtons[0]?.classes()).toContain("h-10");
-    expect(sectionButtons[0]?.classes()).not.toContain("min-h-12");
-    expect(wrapper.findAll("button")).toHaveLength(2);
+    expect(sectionLinks.map((link) => link.text())).toEqual(["Library", "Access"]);
+    expect(sectionLinks.map((link) => link.attributes("href"))).toEqual([
+      "/settings/library",
+      "/settings/access",
+    ]);
+    expect(sectionLinks[0]?.attributes("aria-current")).toBe("page");
+    expect(sectionLinks[1]?.attributes("aria-current")).toBeUndefined();
+    expect(sectionLinks[0]?.classes()).toContain("bg-pine!");
+    expect(sectionLinks[0]?.classes()).toContain("h-10");
+    expect(sectionLinks[0]?.classes()).not.toContain("min-h-12");
 
-    await sectionButtons[1]?.trigger("click");
-    expect(wrapper.emitted("update:modelValue")).toEqual([["auth"]]);
-
-    await wrapper.setProps({ modelValue: "auth" });
-    expect(sectionButtons[1]?.classes()).toContain("bg-pine!");
+    await router.push("/settings/access");
+    await flushPromises();
+    expect(sectionLinks[0]?.attributes("aria-current")).toBeUndefined();
+    expect(sectionLinks[1]?.attributes("aria-current")).toBe("page");
+    expect(sectionLinks[1]?.classes()).toContain("bg-pine!");
   });
 });
