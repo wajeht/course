@@ -6,6 +6,7 @@ import { createMemoryHistory, createRouter } from "vue-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { api, type CatalogDto } from "@/api.js";
+import { queryKeys } from "@/queries.js";
 import InstructorPage from "./InstructorPage.vue";
 
 function catalog(title: string): CatalogDto {
@@ -35,6 +36,55 @@ function catalog(title: string): CatalogDto {
 
 describe("InstructorPage", () => {
   afterEach(() => vi.restoreAllMocks());
+
+  it("renders prefetched instructor data on initial mount", async () => {
+    const request = vi.spyOn(api, "getCatalog");
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: "/library", component: { template: "<div />" } },
+        { path: "/courses/:courseId", name: "course", component: { template: "<div />" } },
+        { path: "/instructors/:instructorName", name: "instructor", component: InstructorPage },
+      ],
+    });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    queryClient.setQueryData(
+      queryKeys.catalogList({ instructor: "Alpha", page: 1 }),
+      catalog("Cached course"),
+    );
+    await router.push("/instructors/Alpha");
+    const wrapper = mount(InstructorPage, {
+      global: { plugins: [[VueQueryPlugin, { queryClient }], router] },
+    });
+
+    expect(wrapper.text()).toContain("Cached course");
+    expect(wrapper.find('[aria-label="Loading"]').exists()).toBe(false);
+    expect(request).not.toHaveBeenCalled();
+    wrapper.unmount();
+    queryClient.clear();
+  });
+
+  it("shows a request error instead of loading forever", async () => {
+    vi.spyOn(api, "getCatalog").mockRejectedValueOnce(new Error("Could not load instructor"));
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: "/library", component: { template: "<div />" } },
+        { path: "/courses/:courseId", name: "course", component: { template: "<div />" } },
+        { path: "/instructors/:instructorName", name: "instructor", component: InstructorPage },
+      ],
+    });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await router.push("/instructors/Alpha");
+    const wrapper = mount(InstructorPage, {
+      global: { plugins: [[VueQueryPlugin, { queryClient }], router] },
+    });
+
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Could not load instructor"));
+    expect(wrapper.find('[aria-label="Loading"]').exists()).toBe(false);
+    wrapper.unmount();
+    queryClient.clear();
+  });
 
   it("hides the previous instructor while a new route param loads", async () => {
     let resolveNext: ((value: CatalogDto) => void) | undefined;
