@@ -28,7 +28,7 @@ export const router = createRouter({
     },
     {
       path: "/settings",
-      component: () => import("@/layouts/SettingsLayout.vue"),
+      component: () => import("@/pages/partials/SettingsLayout.vue"),
       redirect: { name: "settings-library" },
       meta: { navigation: "settings", title: "Settings" },
       children: [
