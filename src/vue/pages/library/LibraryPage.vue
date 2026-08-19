@@ -2,7 +2,7 @@
 import { api } from "@/api.js";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import CatalogFiltersToolbar from "@/pages/library/partials/CatalogFiltersToolbar.vue";
-import CourseCardGrid from "@/components/catalog/CourseCardGrid.vue";
+import CourseCardGrid from "@/pages/catalog/partials/CourseCardGrid.vue";
 import AlertMessage from "@/components/ui/AlertMessage.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
 import PageHeader from "@/components/ui/PageHeader.vue";
