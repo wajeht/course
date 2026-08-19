@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from "vue";
+import { nextTick, onBeforeUnmount, onMounted, useId, useTemplateRef, watch } from "vue";
 
 import { useModalStack } from "@/composables/useModalStack.js";
 import AppButton from "./AppButton.vue";
@@ -15,7 +15,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{ close: [] }>();
-const dialog = ref<HTMLDialogElement | null>(null);
+const dialog = useTemplateRef<HTMLDialogElement>("dialog");
 const titleId = `modal-title-${useId()}`;
 const modalStack = useModalStack();
 let stackToken: symbol | null = null;

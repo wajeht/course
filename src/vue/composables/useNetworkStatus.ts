@@ -1,7 +1,7 @@
-import { onBeforeUnmount, onMounted, readonly, ref } from "vue";
+import { onBeforeUnmount, onMounted, readonly, shallowRef } from "vue";
 
 export function useNetworkStatus() {
-  const online = ref(typeof navigator === "undefined" || navigator.onLine);
+  const online = shallowRef(typeof navigator === "undefined" || navigator.onLine);
 
   function update(): void {
     online.value = navigator.onLine;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, onBeforeUnmount, shallowRef, watch } from "vue";
 import { RouterView, useRoute } from "vue-router";
 
 import AuthGate from "@/components/AuthGate.vue";
@@ -31,7 +31,7 @@ const authBusy = computed(() => loginAction.pending.value || setupAction.pending
 const actionError = computed(
   () => loginAction.errorMessage.value || setupAction.errorMessage.value,
 );
-const showBootstrap = ref(false);
+const showBootstrap = shallowRef(false);
 let bootstrapTimer: ReturnType<typeof setTimeout> | undefined;
 
 watch(

@@ -1,11 +1,11 @@
-import { ref } from "vue";
+import { shallowRef } from "vue";
 
 interface SectionIdentity {
   id: string | null;
 }
 
 export function useExpandableSections(panelPrefix: string) {
-  const expandedSectionKeys = ref<Set<string>>(new Set());
+  const expandedSectionKeys = shallowRef<Set<string>>(new Set());
 
   function sectionKey(section: SectionIdentity): string {
     return section.id ?? "direct";

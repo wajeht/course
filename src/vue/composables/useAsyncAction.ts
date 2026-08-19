@@ -1,4 +1,4 @@
-import { computed, ref, shallowRef } from "vue";
+import { computed, shallowRef } from "vue";
 
 interface AsyncActionOptions<TResult> {
   errorMessage?: string;
@@ -10,7 +10,7 @@ export function useAsyncAction<TArguments extends unknown[], TResult>(
   action: (...arguments_: TArguments) => Promise<TResult>,
   options: AsyncActionOptions<TResult> = {},
 ) {
-  const pending = ref(false);
+  const pending = shallowRef(false);
   const error = shallowRef<unknown>(null);
   const errorMessage = computed(() => {
     if (!error.value) return "";
