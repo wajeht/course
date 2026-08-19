@@ -63,7 +63,10 @@ export const router = createRouter({
       meta: { title: "Page not found" },
     },
   ],
-  scrollBehavior: (to, from) => (to.path === from.path ? false : { top: 0 }),
+  scrollBehavior: (to, from, savedPosition) => {
+    if (savedPosition) return savedPosition;
+    return to.path === from.path ? false : { top: 0 };
+  },
 });
 
 export function notFoundLocation(path: string): RouteLocationRaw {
