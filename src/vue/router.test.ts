@@ -5,6 +5,23 @@ import { describe, expect, it } from "vitest";
 import { notFoundLocation, router } from "./router.js";
 
 describe("router error pages", () => {
+  it("provides separate Library and Access settings routes", () => {
+    const library = router.resolve("/settings/library");
+    const access = router.resolve("/settings/access");
+
+    expect(library.name).toBe("settings-library");
+    expect(library.meta.navigation).toBe("settings");
+    expect(access.name).toBe("settings-access");
+    expect(access.meta.navigation).toBe("settings");
+  });
+
+  it("redirects the old settings entry point to Library settings", async () => {
+    await router.push("/settings");
+
+    expect(router.currentRoute.value.path).toBe("/settings/library");
+    expect(router.currentRoute.value.redirectedFrom?.path).toBe("/settings");
+  });
+
   it("resolves unknown frontend URLs to the not-found page", () => {
     const route = router.resolve("/missing/course/page");
 

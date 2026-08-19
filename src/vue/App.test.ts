@@ -35,8 +35,8 @@ async function mountAt(path: string, auth = createUnauthenticatedAuth()) {
     history: createMemoryHistory(),
     routes: [
       {
-        path: "/settings",
-        name: "settings",
+        path: "/settings/library",
+        name: "settings-library",
         component: { template: "<div />" },
         meta: { title: "Settings" },
       },
@@ -78,7 +78,7 @@ describe("App", () => {
   });
 
   it("keeps authentication on valid protected routes", async () => {
-    const wrapper = await mountAt("/settings");
+    const wrapper = await mountAt("/settings/library");
 
     expect(wrapper.findComponent(AuthGate).exists()).toBe(true);
     expect(wrapper.text()).toContain("Please sign in to continue.");
@@ -87,9 +87,9 @@ describe("App", () => {
 
   it("shows frontend errors outside authentication and global overlays", async () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
-    showFrontendError(new Error("boom"), "/settings", "test");
+    showFrontendError(new Error("boom"), "/settings/library", "test");
 
-    const wrapper = await mountAt("/settings");
+    const wrapper = await mountAt("/settings/library");
 
     expect(wrapper.findComponent(UnexpectedErrorPage).exists()).toBe(true);
     expect(wrapper.get("main").classes()).toContain("min-h-screen");
@@ -102,7 +102,7 @@ describe("App", () => {
     const auth = createUnauthenticatedAuth();
     Object.assign(auth.state, { error: "Failed to fetch", status: "error" });
 
-    const wrapper = await mountAt("/settings", auth);
+    const wrapper = await mountAt("/settings/library", auth);
 
     expect(wrapper.findComponent(OfflinePage).exists()).toBe(true);
     expect(wrapper.get("h1").text()).toBe("Course can’t connect");
