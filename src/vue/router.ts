@@ -23,7 +23,7 @@ export const router = createRouter({
     {
       path: "/library",
       name: "library",
-      component: () => import("@/pages/LibraryPage.vue"),
+      component: () => import("@/pages/library/LibraryPage.vue"),
       meta: { navigation: "library", title: "Library" },
     },
     {
@@ -47,7 +47,7 @@ export const router = createRouter({
     {
       path: "/instructors/:instructorName",
       name: "instructor",
-      component: () => import("@/pages/InstructorPage.vue"),
+      component: () => import("@/pages/instructor/InstructorPage.vue"),
       meta: { navigation: "library", title: "Instructor" },
     },
     {
