@@ -41,7 +41,7 @@ export const router = createRouter({
     {
       path: "/courses/:courseId",
       name: "course",
-      component: () => import("@/pages/CoursePage.vue"),
+      component: () => import("@/pages/course/CoursePage.vue"),
       meta: { navigation: "library", title: "Course details" },
     },
     {
