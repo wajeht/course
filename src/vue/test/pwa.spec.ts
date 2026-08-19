@@ -48,7 +48,10 @@ test("keeps the install experience online-only", async ({ context, page }) => {
     screenshots: Array<{ form_factor: string; src: string }>;
     shortcuts: Array<{ url: string }>;
   };
-  expect(manifest.shortcuts.map((shortcut) => shortcut.url)).toEqual(["/library", "/settings"]);
+  expect(manifest.shortcuts.map((shortcut) => shortcut.url)).toEqual([
+    "/library",
+    "/settings/library",
+  ]);
   expect(manifest.screenshots.map((screenshot) => screenshot.form_factor)).toEqual([
     "narrow",
     "wide",
@@ -73,9 +76,16 @@ test("keeps the install experience online-only", async ({ context, page }) => {
     await context.setOffline(false);
   }
 
-  await page.goto("/settings");
+  await page.goto("/settings/library");
   await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
   await expect(page).toHaveTitle("Settings · Course");
+
+  const settingsNavigation = page.getByRole("navigation", { name: "Settings sections" });
+  await settingsNavigation.getByRole("link", { name: "Access", exact: true }).click();
+  await expect(page).toHaveURL(/\/settings\/access$/);
+  await expect(page.getByRole("heading", { level: 2, name: "Access" })).toBeVisible();
+  await settingsNavigation.getByRole("link", { name: "Library", exact: true }).click();
+  await expect(page).toHaveURL(/\/settings\/library$/);
 
   await page.getByRole("button", { name: "Refresh library" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Library refreshed" })).toBeVisible();

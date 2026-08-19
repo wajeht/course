@@ -20,7 +20,7 @@
       "name": "Open settings",
       "short_name": "Settings",
       "description": "Manage Course settings.",
-      "url": "/settings"
+      "url": "/settings/library"
     }
   ],
   "screenshots": [
