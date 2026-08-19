@@ -7,14 +7,6 @@ import {
   scanStatusQueryOptions,
   settingsQueryOptions,
 } from "@/queries.js";
-import {
-  loadCoursePage,
-  loadHomePage,
-  loadInstructorPage,
-  loadLibraryPage,
-  loadPlayerPage,
-  loadSettingsPage,
-} from "@/router.js";
 
 export function useRoutePrefetch() {
   const queryClient = useQueryClient();
@@ -25,21 +17,12 @@ export function useRoutePrefetch() {
 
   return {
     catalog,
-    course: (courseId: string) =>
-      Promise.all([loadCoursePage(), queryClient.prefetchQuery(courseQueryOptions(courseId))]),
-    home: () => Promise.all([loadHomePage(), catalog({})]),
-    instructor: (instructor: string) =>
-      Promise.all([loadInstructorPage(), catalog({ instructor, page: 1 })]),
-    library: () =>
-      Promise.all([
-        loadLibraryPage(),
-        catalog({}),
-        queryClient.prefetchQuery(scanStatusQueryOptions()),
-      ]),
-    player: loadPlayerPage,
+    course: (courseId: string) => queryClient.prefetchQuery(courseQueryOptions(courseId)),
+    home: () => catalog({}),
+    instructor: (instructor: string) => catalog({ instructor, page: 1 }),
+    library: () => Promise.all([catalog({}), queryClient.prefetchQuery(scanStatusQueryOptions())]),
     settings: () =>
       Promise.all([
-        loadSettingsPage(),
         queryClient.prefetchQuery(scanStatusQueryOptions()),
         queryClient.prefetchQuery(settingsQueryOptions()),
       ]),

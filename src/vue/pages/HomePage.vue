@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useQuery } from "@tanstack/vue-query";
 import { computed } from "vue";
+import { RouterLink } from "vue-router";
 
 import { api } from "@/api.js";
 import CourseCoverPlaceholder from "@/components/CourseCoverPlaceholder.vue";
@@ -47,11 +48,10 @@ const error = computed(() => {
         v-else-if="continueWatching.length"
         class="grid grid-cols-4 gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[600px]:grid-cols-1"
       >
-        <IntentRouterLink
+        <RouterLink
           v-for="lesson in continueWatching"
           :key="lesson.id"
           :to="{ name: 'player', params: { lessonId: lesson.id } }"
-          :prefetch="prefetch.player"
           class="group relative min-h-[230px] min-w-0 overflow-hidden rounded-[10px] bg-pine text-white shadow-course"
         >
           <img
@@ -83,7 +83,7 @@ const error = computed(() => {
           >
             ▶
           </span>
-        </IntentRouterLink>
+        </RouterLink>
       </div>
       <EmptyState
         v-else

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import { computed, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { RouterLink, useRoute, useRouter } from "vue-router";
 
 import { api, isCatalogResourceNotFound } from "@/api.js";
 import CourseCoverPlaceholder from "@/components/CourseCoverPlaceholder.vue";
@@ -173,9 +173,8 @@ watch(
         <div class="flex flex-wrap gap-[10px] max-[600px]:col-span-full">
           <AppButton
             v-if="nextLesson"
-            :as="IntentRouterLink"
+            :as="RouterLink"
             :to="{ name: 'player', params: { lessonId: nextLesson.id } }"
-            :prefetch="prefetch.player"
             variant="accent"
             size="lg"
           >

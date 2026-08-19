@@ -3,14 +3,6 @@ import { createRouter, createWebHistory, type RouteLocationRaw } from "vue-route
 import { clearFrontendError, showFrontendError } from "@/frontend-error.js";
 import { setPageTitle } from "@/utils.js";
 
-export const loadHomePage = () => import("@/pages/HomePage.vue");
-export const loadLibraryPage = () => import("@/pages/LibraryPage.vue");
-export const loadSettingsPage = () => import("@/pages/SettingsPage.vue");
-export const loadCoursePage = () => import("@/pages/CoursePage.vue");
-export const loadInstructorPage = () => import("@/pages/InstructorPage.vue");
-export const loadPlayerPage = () => import("@/pages/PlayerPage.vue");
-const loadNotFoundPage = () => import("@/pages/NotFoundPage.vue");
-
 declare module "vue-router" {
   interface RouteMeta {
     navigation?: "home" | "library" | "settings";
@@ -25,43 +17,43 @@ export const router = createRouter({
     {
       path: "/",
       name: "home",
-      component: loadHomePage,
+      component: () => import("@/pages/HomePage.vue"),
       meta: { navigation: "home" },
     },
     {
       path: "/library",
       name: "library",
-      component: loadLibraryPage,
+      component: () => import("@/pages/LibraryPage.vue"),
       meta: { navigation: "library", title: "Library" },
     },
     {
       path: "/settings",
       name: "settings",
-      component: loadSettingsPage,
+      component: () => import("@/pages/SettingsPage.vue"),
       meta: { navigation: "settings", title: "Settings" },
     },
     {
       path: "/courses/:courseId",
       name: "course",
-      component: loadCoursePage,
+      component: () => import("@/pages/CoursePage.vue"),
       meta: { navigation: "library", title: "Course details" },
     },
     {
       path: "/instructors/:instructorName",
       name: "instructor",
-      component: loadInstructorPage,
+      component: () => import("@/pages/InstructorPage.vue"),
       meta: { navigation: "library", title: "Instructor" },
     },
     {
       path: "/lessons/:lessonId",
       name: "player",
-      component: loadPlayerPage,
+      component: () => import("@/pages/PlayerPage.vue"),
       meta: { navigation: "library", shell: "player", title: "Lesson" },
     },
     {
       path: "/:pathMatch(.*)*",
       name: "not-found",
-      component: loadNotFoundPage,
+      component: () => import("@/pages/NotFoundPage.vue"),
       meta: { title: "Page not found" },
     },
   ],
