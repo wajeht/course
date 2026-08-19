@@ -1,0 +1,145 @@
+<script setup lang="ts">
+import { useQuery, useQueryClient } from "@tanstack/vue-query";
+import { computed } from "vue";
+
+import { api } from "@/api.js";
+import AlertMessage from "@/components/ui/AlertMessage.vue";
+import AppButton from "@/components/ui/AppButton.vue";
+import PanelCard from "@/components/ui/PanelCard.vue";
+import PanelCardHeader from "@/components/ui/PanelCardHeader.vue";
+import { useAsyncAction } from "@/composables/useAsyncAction.js";
+import { useToast } from "@/composables/useToast.js";
+import { queryKeys, scanStatusQueryOptions } from "@/queries.js";
+import { countText } from "@/utils.js";
+
+const queryClient = useQueryClient();
+const scanRequest = useQuery(scanStatusQueryOptions());
+const toast = useToast();
+const scanStatus = computed(() => scanRequest.data.value);
+const lastRefreshText = computed(() => {
+  const completedAt = scanStatus.value?.completedAt;
+  if (!completedAt) return "";
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(completedAt));
+});
+const rescanAction = useAsyncAction(() => api.rescanCatalog(), {
+  errorMessage: "Could not refresh the library",
+  onSuccess: async (status) => {
+    queryClient.setQueryData(queryKeys.scanStatus, status);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.catalog, refetchType: "none" }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.courses, refetchType: "none" }),
+    ]);
+    if (status.status === "complete") toast.success("Library refreshed");
+  },
+});
+const scanError = computed(() => {
+  if (rescanAction.errorMessage.value) return rescanAction.errorMessage.value;
+  if (scanStatus.value?.status === "failed") {
+    return "The library could not be refreshed. Check that your video folder is available, then try again.";
+  }
+  const caught = scanRequest.error.value;
+  if (!caught) return "";
+  if (caught instanceof Error) return caught.message;
+  return "Could not load library status";
+});
+
+async function rescanCatalog(): Promise<void> {
+  await rescanAction.run();
+}
+</script>
+
+<template>
+  <AlertMessage v-if="scanError" size="lg">
+    {{ scanError }}
+  </AlertMessage>
+
+  <PanelCard class="min-h-[260px]" padding="none">
+    <PanelCardHeader
+      title="Refresh library"
+      description="Check your video folders now for new or changed courses."
+    />
+    <div
+      class="flex min-h-[180px] flex-col items-start justify-between gap-8 p-[clamp(22px,4vw,34px)]"
+      data-scan-controls
+    >
+      <div class="min-w-0">
+        <div class="grid gap-6" aria-live="polite">
+          <div data-library-status>
+            <p class="text-xs font-bold tracking-[.08em] text-pine uppercase">Library status</p>
+            <p
+              class="mt-2 text-sm"
+              :class="{
+                'font-semibold text-clay': scanStatus?.status === 'failed',
+                'font-semibold text-belt':
+                  scanStatus?.status !== 'failed' && Boolean(scanStatus?.warnings.length),
+                'text-muted': scanStatus?.status !== 'failed' && !scanStatus?.warnings.length,
+              }"
+            >
+              <template v-if="scanStatus?.status === 'failed'">Refresh failed</template>
+              <template v-else-if="scanStatus?.completedAt">
+                <template v-if="scanStatus.warnings.length">
+                  {{ countText(scanStatus.warnings.length, "library issue") }}
+                </template>
+                <template v-else>
+                  {{ countText(scanStatus.courseCount, "course") }} ·
+                  {{ countText(scanStatus.lessonCount, "lesson") }}
+                </template>
+              </template>
+              <template v-else>Library status is loading…</template>
+            </p>
+            <p
+              v-if="
+                scanStatus?.status !== 'failed' &&
+                scanStatus?.completedAt &&
+                scanStatus.warnings.length
+              "
+              class="mt-1.5 text-xs leading-5 text-muted"
+            >
+              {{ countText(scanStatus.courseCount, "course") }} ·
+              {{ countText(scanStatus.lessonCount, "lesson") }}
+            </p>
+          </div>
+
+          <div v-if="scanStatus?.completedAt" data-last-refresh>
+            <p class="text-xs font-bold tracking-[.08em] text-pine uppercase">
+              <template v-if="scanStatus.status === 'failed'">Last refresh attempt</template>
+              <template v-else>Last refreshed</template>
+            </p>
+            <time class="mt-2 block text-sm text-muted" :datetime="scanStatus.completedAt">
+              {{ lastRefreshText }}
+            </time>
+          </div>
+        </div>
+        <div
+          v-if="scanStatus?.warnings.length"
+          class="mt-5 rounded-[7px] border border-belt/25 bg-[#fffaf0] p-4"
+        >
+          <p class="text-[.78rem] leading-5 text-muted">
+            Review these files, correct each listed problem, then refresh the library.
+          </p>
+          <ul class="mt-3 grid gap-3" aria-label="Library issues">
+            <li
+              v-for="warning in scanStatus.warnings"
+              :key="`${warning.path}:${warning.message}`"
+              class="grid gap-1 text-[.78rem] leading-5"
+            >
+              <code class="break-all font-semibold text-pine-deep">{{ warning.path }}</code>
+              <span class="text-muted">{{ warning.message }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <AppButton
+        class="self-end max-[600px]:w-full"
+        :loading="rescanAction.pending.value"
+        loading-label="Refreshing…"
+        @click="rescanCatalog"
+      >
+        Refresh library
+      </AppButton>
+    </div>
+  </PanelCard>
+</template>
