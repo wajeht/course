@@ -6,13 +6,12 @@ import { useIntentPrefetch } from "@/composables/useIntentPrefetch.js";
 defineOptions({ inheritAttrs: false });
 
 const props = defineProps<{
-  prefetch: () => Promise<unknown> | undefined;
+  prefetch: () => Promise<unknown>;
   to: RouteLocationRaw;
 }>();
 
 const intent = useIntentPrefetch(() => {
-  const request = props.prefetch();
-  if (request) void request.catch(() => undefined);
+  void props.prefetch().catch(() => undefined);
 });
 </script>
 

@@ -11,7 +11,6 @@ import {
   type LessonDto,
 } from "@/api.js";
 import ChapterList from "@/components/ChapterList.vue";
-import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import LessonRow from "@/components/LessonRow.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppSelect from "@/components/ui/AppSelect.vue";
@@ -20,7 +19,6 @@ import { useConfirm } from "@/composables/useConfirm.js";
 import { useExpandableSections } from "@/composables/useExpandableSections.js";
 import { useMediaSession } from "@/composables/useMediaSession.js";
 import { usePlaybackProgress } from "@/composables/usePlaybackProgress.js";
-import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import { useScreenWakeLock } from "@/composables/useScreenWakeLock.js";
 import { useToast } from "@/composables/useToast.js";
 import { useVideoPlayback } from "@/composables/useVideoPlayback.js";
@@ -31,7 +29,6 @@ import { setPageTitle } from "@/utils.js";
 const route = useRoute();
 const router = useRouter();
 const queryClient = useQueryClient();
-const prefetch = useRoutePrefetch();
 const video = ref<HTMLVideoElement | null>(null);
 const lesson = ref<LessonDetailDto | null>(null);
 const course = ref<CourseDetailDto | null>(null);
@@ -117,11 +114,6 @@ async function invalidateProgressCaches(courseId: string | undefined): Promise<v
 
 function openLessonFromMediaSession(target: LessonDto | undefined): void {
   if (target) void router.push({ name: "player", params: { lessonId: target.id } });
-}
-
-function prefetchCourse(): Promise<unknown> | undefined {
-  if (!course.value) return;
-  return prefetch.course(course.value.id);
 }
 
 useMediaSession(video, mediaMetadata, {
@@ -316,14 +308,13 @@ onBeforeUnmount(() => {
       class="min-w-0 px-[clamp(20px,3vw,50px)] pt-6 pb-10 text-white max-[860px]:min-h-[calc(100vh-66px)] max-[600px]:px-3 max-[600px]:pt-[18px] max-[600px]:pb-[30px]"
     >
       <div class="flex min-h-[34px] items-center justify-between">
-        <IntentRouterLink
+        <RouterLink
           v-if="course"
           :to="{ name: 'course', params: { courseId: course.id } }"
-          :prefetch="prefetchCourse"
           class="mb-0 inline-block max-w-[75%] overflow-hidden text-[.78rem] font-bold text-ellipsis whitespace-nowrap text-white/68 hover:text-white"
         >
           ← {{ course.title }}
-        </IntentRouterLink>
+        </RouterLink>
         <AppButton
           class="hidden rounded-[5px] border border-white/25 bg-transparent px-[11px] py-[7px] text-white max-[860px]:inline-flex"
           variant="unstyled"
