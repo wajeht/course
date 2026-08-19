@@ -7,7 +7,7 @@ import { useAsyncAction } from "@/composables/useAsyncAction.js";
 import { useAuth } from "@/composables/useAuth.js";
 import { useConfirm } from "@/composables/useConfirm.js";
 import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
-import SettingsNavigation from "@/pages/partials/SettingsNavigation.vue";
+import SettingsNavigation from "@/pages/settings/partials/SettingsNavigation.vue";
 
 defineSlots<{
   default(): unknown;

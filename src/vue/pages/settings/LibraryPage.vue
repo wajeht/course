@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import SettingsLayout from "@/pages/partials/SettingsLayout.vue";
-import SettingsLibraryDisplayPanel from "@/pages/partials/SettingsLibraryDisplayPanel.vue";
-import SettingsLibraryRefreshPanel from "@/pages/partials/SettingsLibraryRefreshPanel.vue";
+import SettingsLayout from "@/pages/settings/partials/SettingsLayout.vue";
+import SettingsLibraryDisplayPanel from "@/pages/settings/partials/SettingsLibraryDisplayPanel.vue";
+import SettingsLibraryRefreshPanel from "@/pages/settings/partials/SettingsLibraryRefreshPanel.vue";
 </script>
 
 <template>

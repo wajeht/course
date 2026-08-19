@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import SettingsAccessPanel from "@/pages/partials/SettingsAccessPanel.vue";
-import SettingsLayout from "@/pages/partials/SettingsLayout.vue";
+import SettingsAccessPanel from "@/pages/settings/partials/SettingsAccessPanel.vue";
+import SettingsLayout from "@/pages/settings/partials/SettingsLayout.vue";
 </script>
 
 <template>
