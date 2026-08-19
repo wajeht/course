@@ -1,4 +1,4 @@
-import { nextTick, ref, type Ref } from "vue";
+import { nextTick, shallowRef, type Ref } from "vue";
 
 import type { PlaybackResult } from "@/api.js";
 
@@ -12,8 +12,8 @@ export function useVideoPlayback(
   client: PlaybackClient,
   pollMilliseconds = 2_000,
 ) {
-  const playback = ref<PlaybackResult | null>(null);
-  const error = ref("");
+  const playback = shallowRef<PlaybackResult | null>(null);
+  const error = shallowRef("");
   let hls: import("hls.js").default | null = null;
   let pollTimer: ReturnType<typeof setTimeout> | undefined;
   let metadataApplied = false;

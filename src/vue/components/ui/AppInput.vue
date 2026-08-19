@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, shallowRef, useTemplateRef } from "vue";
 
 defineOptions({ inheritAttrs: false });
 
@@ -21,8 +21,8 @@ const props = withDefaults(
 );
 
 const model = defineModel<string>({ default: "" });
-const input = ref<HTMLInputElement | null>(null);
-const revealed = ref(false);
+const input = useTemplateRef<HTMLInputElement>("input");
+const revealed = shallowRef(false);
 const actualType = computed(() =>
   props.type === "password" && revealed.value ? "text" : props.type,
 );

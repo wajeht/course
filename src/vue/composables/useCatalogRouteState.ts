@@ -1,4 +1,4 @@
-import { computed, onScopeDispose, ref, watch } from "vue";
+import { computed, onScopeDispose, shallowRef, watch } from "vue";
 import { useRoute, useRouter, type LocationQueryRaw } from "vue-router";
 
 import type { CatalogFilters } from "@/api.js";
@@ -21,7 +21,7 @@ export function useCatalogRouteState(debounceMilliseconds = 150) {
   const route = useRoute();
   const router = useRouter();
   const searchQuery = computed(() => queryString(route.query.q));
-  const query = ref(searchQuery.value);
+  const query = shallowRef(searchQuery.value);
   const page = computed(() => queryPage(route.query.page));
 
   function routeQuery(changes: LocationQueryRaw): LocationQueryRaw {
