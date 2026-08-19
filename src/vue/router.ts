@@ -53,7 +53,7 @@ export const router = createRouter({
     {
       path: "/lessons/:lessonId",
       name: "player",
-      component: () => import("@/pages/PlayerPage.vue"),
+      component: () => import("@/pages/player/PlayerPage.vue"),
       meta: { navigation: "library", shell: "player", title: "Lesson" },
     },
     {
