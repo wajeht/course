@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useQueryClient } from "@tanstack/vue-query";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { RouterLink, useRoute, useRouter } from "vue-router";
 
 import {
   api,
@@ -107,19 +107,21 @@ function invalidateCatalogCache(): Promise<void> {
 }
 
 async function invalidateProgressCaches(courseId: string | undefined): Promise<void> {
-  await Promise.all([
-    invalidateCatalogCache(),
-    courseId
-      ? queryClient.invalidateQueries({
-          queryKey: queryKeys.course(courseId),
-          refetchType: "none",
-        })
-      : Promise.resolve(),
-  ]);
+  await invalidateCatalogCache();
+  if (!courseId) return;
+  await queryClient.invalidateQueries({
+    queryKey: queryKeys.course(courseId),
+    refetchType: "none",
+  });
 }
 
 function openLessonFromMediaSession(target: LessonDto | undefined): void {
   if (target) void router.push({ name: "player", params: { lessonId: target.id } });
+}
+
+function prefetchCourse(): Promise<unknown> | undefined {
+  if (!course.value) return;
+  return prefetch.course(course.value.id);
 }
 
 useMediaSession(video, mediaMetadata, {
@@ -317,7 +319,7 @@ onBeforeUnmount(() => {
         <IntentRouterLink
           v-if="course"
           :to="{ name: 'course', params: { courseId: course.id } }"
-          :prefetch="() => prefetch.course(course!.id)"
+          :prefetch="prefetchCourse"
           class="mb-0 inline-block max-w-[75%] overflow-hidden text-[.78rem] font-bold text-ellipsis whitespace-nowrap text-white/68 hover:text-white"
         >
           ← {{ course.title }}
@@ -399,9 +401,8 @@ onBeforeUnmount(() => {
           </h2>
           <AppButton
             v-if="nextLesson"
-            :as="IntentRouterLink"
+            :as="RouterLink"
             :to="{ name: 'player', params: { lessonId: nextLesson.id } }"
-            :prefetch="prefetch.player"
             class="mt-[18px]"
             variant="inverse"
             size="lg"
