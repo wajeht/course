@@ -1,19 +1,21 @@
 <script setup lang="ts">
 import { useQuery } from "@tanstack/vue-query";
 import { computed } from "vue";
-import { RouterLink } from "vue-router";
 
 import { api } from "@/api.js";
 import CourseCoverPlaceholder from "@/components/CourseCoverPlaceholder.vue";
+import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import AlertMessage from "@/components/ui/AlertMessage.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import ProgressBar from "@/components/ui/ProgressBar.vue";
+import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
 import { catalogQueryOptions } from "@/queries.js";
 
 const catalogRequest = useQuery(catalogQueryOptions({}, api));
+const prefetch = useRoutePrefetch();
 const continueWatching = computed(() => catalogRequest.data.value?.continueWatching ?? []);
 const error = computed(() => {
   const caught = catalogRequest.error.value;
@@ -45,10 +47,11 @@ const error = computed(() => {
         v-else-if="continueWatching.length"
         class="grid grid-cols-4 gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[600px]:grid-cols-1"
       >
-        <RouterLink
+        <IntentRouterLink
           v-for="lesson in continueWatching"
           :key="lesson.id"
           :to="{ name: 'player', params: { lessonId: lesson.id } }"
+          :prefetch="prefetch.player"
           class="group relative min-h-[230px] min-w-0 overflow-hidden rounded-[10px] bg-pine text-white shadow-course"
         >
           <img
@@ -80,7 +83,7 @@ const error = computed(() => {
           >
             ▶
           </span>
-        </RouterLink>
+        </IntentRouterLink>
       </div>
       <EmptyState
         v-else
@@ -90,7 +93,9 @@ const error = computed(() => {
       >
         <template #icon>▶</template>
         <template #actions>
-          <AppButton :as="RouterLink" to="/library" size="lg">Browse library</AppButton>
+          <AppButton :as="IntentRouterLink" to="/library" :prefetch="prefetch.library" size="lg">
+            Browse library
+          </AppButton>
         </template>
       </EmptyState>
     </section>

@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { createApp } from "./app.js";
 import { createConfiguration } from "./config.js";
@@ -105,6 +105,19 @@ describe("application", () => {
     expect(cover.headers.get("cache-control")).toBe("private, max-age=31536000, immutable");
     expect(cover.headers.get("vary")).toBe("Cookie");
     expect(await cover.text()).toBe("cover");
+
+    const openLesson = vi.spyOn(context.progress, "openLesson");
+    const player = await app.request(`/api/playback/${"b".repeat(24)}`, {
+      method: "POST",
+      headers: { cookie: cookie!, origin: "http://localhost" },
+    });
+    expect(player.status).toBe(200);
+    expect(await player.json()).toMatchObject({
+      lesson: { id: "b".repeat(24), title: "Lesson" },
+      course: { id: "a".repeat(24), title: "Course" },
+      playback: { kind: "direct", url: `/media/${"b".repeat(24)}` },
+    });
+    expect(openLesson).toHaveBeenCalledOnce();
 
     const apiNotFound = await app.request("/api/does-not-exist", {
       headers: { cookie: cookie! },

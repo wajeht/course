@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { identifierSchema } from "../catalog/catalog.schema.js";
+import { identifierSchema, lessonDetailResponseSchema } from "../catalog/catalog.schema.js";
 
 export const playbackParametersSchema = z.object({ lessonId: identifierSchema });
 
@@ -19,3 +19,7 @@ export const playbackResponseSchema = z.discriminatedUnion("kind", [
   }),
   z.object({ kind: z.literal("error"), message: z.string() }),
 ]);
+
+export const playerBootstrapResponseSchema = lessonDetailResponseSchema.extend({
+  playback: playbackResponseSchema,
+});

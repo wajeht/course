@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useQueryClient } from "@tanstack/vue-query";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { RouterLink, useRoute, useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 import {
   api,
@@ -11,6 +11,7 @@ import {
   type LessonDto,
 } from "@/api.js";
 import ChapterList from "@/components/ChapterList.vue";
+import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import LessonRow from "@/components/LessonRow.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppSelect from "@/components/ui/AppSelect.vue";
@@ -19,6 +20,7 @@ import { useConfirm } from "@/composables/useConfirm.js";
 import { useExpandableSections } from "@/composables/useExpandableSections.js";
 import { useMediaSession } from "@/composables/useMediaSession.js";
 import { usePlaybackProgress } from "@/composables/usePlaybackProgress.js";
+import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import { useScreenWakeLock } from "@/composables/useScreenWakeLock.js";
 import { useToast } from "@/composables/useToast.js";
 import { useVideoPlayback } from "@/composables/useVideoPlayback.js";
@@ -29,6 +31,7 @@ import { setPageTitle } from "@/utils.js";
 const route = useRoute();
 const router = useRouter();
 const queryClient = useQueryClient();
+const prefetch = useRoutePrefetch();
 const video = ref<HTMLVideoElement | null>(null);
 const lesson = ref<LessonDetailDto | null>(null);
 const course = ref<CourseDetailDto | null>(null);
@@ -41,9 +44,10 @@ const confirmation = useConfirm();
 const toast = useToast();
 const { expandSection, isSectionExpanded, replaceExpandedSections, sectionPanelId, toggleSection } =
   useExpandableSections("sidebar-section");
-const playbackProgress = usePlaybackProgress((lessonId, positionSeconds) =>
-  api.saveProgress(lessonId, positionSeconds),
-);
+const playbackProgress = usePlaybackProgress(async (lessonId, positionSeconds) => {
+  await api.saveProgress(lessonId, positionSeconds);
+  await invalidateProgressCaches(course.value?.id);
+});
 const videoPlayback = useVideoPlayback(video, api);
 const { error, playback } = videoPlayback;
 const retryAction = useAsyncAction(async (lessonId: string) => {
@@ -70,7 +74,7 @@ const resetAction = useAsyncAction(
     },
     onSuccess: async (reset) => {
       if (!reset) return;
-      await invalidateCatalogCache();
+      await invalidateProgressCaches(course.value?.id);
       toast.success("Lesson progress reset");
     },
   },
@@ -100,6 +104,18 @@ const mediaMetadata = computed(() => {
 
 function invalidateCatalogCache(): Promise<void> {
   return queryClient.invalidateQueries({ queryKey: queryKeys.catalog, refetchType: "none" });
+}
+
+async function invalidateProgressCaches(courseId: string | undefined): Promise<void> {
+  await Promise.all([
+    invalidateCatalogCache(),
+    courseId
+      ? queryClient.invalidateQueries({
+          queryKey: queryKeys.course(courseId),
+          refetchType: "none",
+        })
+      : Promise.resolve(),
+  ]);
 }
 
 function openLessonFromMediaSession(target: LessonDto | undefined): void {
@@ -149,15 +165,14 @@ async function loadPlayer(): Promise<void> {
   sidebarOpen.value = false;
   try {
     const lessonId = String(route.params.lessonId);
-    const detail = await api.getLesson(lessonId);
-    if (!videoPlayback.isCurrentRequest(requestId)) return;
-    await api.openLesson(lessonId);
+    const detail = await api.openPlayer(lessonId);
     await invalidateCatalogCache();
     if (!videoPlayback.isCurrentRequest(requestId)) return;
     lesson.value = detail.lesson;
     setPageTitle(detail.lesson.title);
     playbackProgress.startSession(detail.lesson.id, detail.lesson.positionSeconds);
     course.value = detail.course;
+    queryClient.setQueryData(queryKeys.course(detail.course.id), detail.course);
     const activeSection = detail.course.sections.find((section) =>
       section.lessons.some((item) => item.id === detail.lesson.id),
     );
@@ -165,7 +180,7 @@ async function loadPlayer(): Promise<void> {
       if (previousCourseId === detail.course.id) expandSection(activeSection);
       else replaceExpandedSections([activeSection]);
     }
-    await videoPlayback.preparePlayback(lessonId, requestId);
+    await videoPlayback.applyPlayback(detail.playback, lessonId, requestId);
   } catch (caught) {
     if (!videoPlayback.isCurrentRequest(requestId)) return;
     if (isCatalogResourceNotFound(caught)) {
@@ -228,7 +243,7 @@ async function markComplete(): Promise<void> {
   if (!lesson.value) return;
   try {
     await api.completeLesson(lesson.value.id);
-    await invalidateCatalogCache();
+    await invalidateProgressCaches(course.value?.id);
     ended.value = true;
     playbackProgress.stopSession();
     lesson.value.completed = true;
@@ -299,13 +314,14 @@ onBeforeUnmount(() => {
       class="min-w-0 px-[clamp(20px,3vw,50px)] pt-6 pb-10 text-white max-[860px]:min-h-[calc(100vh-66px)] max-[600px]:px-3 max-[600px]:pt-[18px] max-[600px]:pb-[30px]"
     >
       <div class="flex min-h-[34px] items-center justify-between">
-        <RouterLink
+        <IntentRouterLink
           v-if="course"
           :to="{ name: 'course', params: { courseId: course.id } }"
+          :prefetch="() => prefetch.course(course!.id)"
           class="mb-0 inline-block max-w-[75%] overflow-hidden text-[.78rem] font-bold text-ellipsis whitespace-nowrap text-white/68 hover:text-white"
         >
           ← {{ course.title }}
-        </RouterLink>
+        </IntentRouterLink>
         <AppButton
           class="hidden rounded-[5px] border border-white/25 bg-transparent px-[11px] py-[7px] text-white max-[860px]:inline-flex"
           variant="unstyled"
@@ -383,8 +399,9 @@ onBeforeUnmount(() => {
           </h2>
           <AppButton
             v-if="nextLesson"
-            :as="RouterLink"
+            :as="IntentRouterLink"
             :to="{ name: 'player', params: { lessonId: nextLesson.id } }"
+            :prefetch="prefetch.player"
             class="mt-[18px]"
             variant="inverse"
             size="lg"
