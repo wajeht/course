@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import type { CatalogDto } from "@/api.js";
 import {
@@ -21,12 +21,18 @@ function catalog(): CatalogDto {
 
 describe("course query client", () => {
   it("reuses fresh catalog data instead of fetching it again", async () => {
-    const client = { getCatalog: vi.fn(async () => catalog()) };
+    let requests = 0;
+    const client = {
+      async getCatalog() {
+        requests++;
+        return catalog();
+      },
+    };
     const queryClient = createCourseQueryClient();
     await queryClient.fetchQuery(catalogQueryOptions({}, client));
     await queryClient.fetchQuery(catalogQueryOptions({ page: 1 }, client));
 
-    expect(client.getCatalog).toHaveBeenCalledTimes(1);
+    expect(requests).toBe(1);
     queryClient.clear();
   });
 
