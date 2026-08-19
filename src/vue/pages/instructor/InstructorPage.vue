@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useQuery } from "@tanstack/vue-query";
-import { computed, watch } from "vue";
+import { computed, shallowRef, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { api, type CatalogFilters } from "@/api.js";
@@ -30,9 +30,14 @@ const filters = computed<CatalogFilters>(() => ({
   page: page.value,
 }));
 const instructorRequest = useQuery(computed(() => catalogQueryOptions(filters.value, api)));
-const catalog = computed(() => instructorRequest.data.value);
+const loadedInstructorName = shallowRef("");
+const catalog = computed(() =>
+  loadedInstructorName.value === instructorName.value ? instructorRequest.data.value : undefined,
+);
 const courses = computed(() => catalog.value?.courses ?? []);
-const loading = computed(() => instructorRequest.isPending.value);
+const loading = computed(
+  () => instructorRequest.isPending.value || loadedInstructorName.value !== instructorName.value,
+);
 const refreshing = computed(
   () => instructorRequest.isFetching.value && !instructorRequest.isPending.value,
 );
@@ -67,15 +72,20 @@ function prefetchPage(nextPage: number): void {
   void prefetch.catalog({ ...filters.value, page: nextPage });
 }
 
-watch(instructorRequest.data, (loadedCatalog) => {
-  if (loadedCatalog?.pagination.totalCourses === 0) {
-    void router.replace(notFoundLocation(route.path));
-    return;
-  }
-  const loadedPage = loadedCatalog?.pagination.page;
-  if (!loadedPage || loadedPage === page.value) return;
-  void router.replace({ query: pageQuery(loadedPage) });
-});
+watch(
+  [instructorRequest.data, instructorRequest.isPlaceholderData],
+  ([loadedCatalog, placeholder]) => {
+    if (!loadedCatalog || placeholder) return;
+    loadedInstructorName.value = instructorName.value;
+    if (loadedCatalog.pagination.totalCourses === 0) {
+      void router.replace(notFoundLocation(route.path));
+      return;
+    }
+    const loadedPage = loadedCatalog.pagination.page;
+    if (!loadedPage || loadedPage === page.value) return;
+    void router.replace({ query: pageQuery(loadedPage) });
+  },
+);
 </script>
 
 <template>
