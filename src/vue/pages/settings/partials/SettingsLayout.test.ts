@@ -59,7 +59,9 @@ describe("SettingsLayout", () => {
     expect(wrapper.get("[data-settings-page]").element.tagName).toBe("SECTION");
     expect(wrapper.get("[data-mobile-sign-out]").text()).toBe("Sign out");
     expect(wrapper.get("[data-desktop-sign-out]").text()).toBe("Sign out");
-    expect(wrapper.get("footer").text()).toContain("© 2026 · GitHub · v0.1.0");
+    expect(wrapper.get("footer").text()).toContain(
+      "© 2026 · Made with ❤️ by @wajeht . GitHub · v0.1.0",
+    );
 
     await wrapper.get("[data-desktop-sign-out]").trigger("click");
     expect(request).toHaveBeenCalledOnce();

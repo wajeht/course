@@ -15,6 +15,6 @@ describe("AppFooter", () => {
       "Course repository on GitHub (opens in a new tab)",
     );
     expect(githubLink.attributes("rel")).toBe("noreferrer");
-    expect(wrapper.text()).toContain("© 2026 · GitHub · v0.1.0");
+    expect(wrapper.text()).toContain("© 2026 · Made with ❤️ by @wajeht . GitHub · v0.1.0");
   });
 });
