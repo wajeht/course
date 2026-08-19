@@ -9,6 +9,10 @@ import { useConfirm } from "@/composables/useConfirm.js";
 import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
 import SettingsNavigation from "@/pages/partials/SettingsNavigation.vue";
 
+defineSlots<{
+  default(): unknown;
+}>();
+
 const auth = useAuth();
 const confirmation = useConfirm();
 const logoutAction = useAsyncAction(() => auth.logout(), {

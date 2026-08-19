@@ -1,13 +1,28 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { useRoute } from "vue-router";
 
 import PanelCard from "@/components/ui/PanelCard.vue";
 
 const route = useRoute();
-const sections = [
+const settingsSections = [
   { label: "Library", routeName: "settings-library", value: "library" },
   { label: "Access", routeName: "settings-access", value: "access" },
 ] as const;
+const sections = computed(() =>
+  settingsSections.map((section) => {
+    if (route.name === section.routeName) {
+      return {
+        ...section,
+        stateClasses: "bg-pine! text-white! shadow-[0_7px_18px_rgb(21_51_38_/_16%)]",
+      };
+    }
+    return {
+      ...section,
+      stateClasses: "bg-transparent! text-pine! hover:bg-porcelain!",
+    };
+  }),
+);
 </script>
 
 <template>
@@ -20,11 +35,7 @@ const sections = [
         :to="{ name: section.routeName }"
         :class="[
           'flex h-10 w-full items-center rounded-[7px] px-3.5 text-left text-[.82rem] font-bold transition-[background,color,box-shadow] duration-[160ms]',
-          {
-            'bg-pine! text-white! shadow-[0_7px_18px_rgb(21_51_38_/_16%)]':
-              route.name === section.routeName,
-            'bg-transparent! text-pine! hover:bg-porcelain!': route.name !== section.routeName,
-          },
+          section.stateClasses,
         ]"
         :aria-controls="`settings-${section.value}-panel`"
       >
