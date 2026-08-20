@@ -14,7 +14,7 @@ const isPlayer = computed(() => route.meta.shell === "player");
 
 <template>
   <div
-    class="min-h-screen max-[600px]:pb-[calc(64px+env(safe-area-inset-bottom))]"
+    class="min-h-screen max-[600px]:pb-[calc(68px+env(safe-area-inset-bottom))]"
     :class="isPlayer ? 'max-[600px]:bg-[#111714]' : ''"
   >
     <header
@@ -78,7 +78,7 @@ const isPlayer = computed(() => route.meta.shell === "player");
       <IntentRouterLink
         to="/"
         :prefetch="prefetch.home"
-        class="relative flex min-h-[52px] items-center justify-center rounded-[8px] text-[.7rem] font-bold tracking-[.1em] uppercase"
+        class="relative flex min-h-[56px] items-center justify-center rounded-[8px] text-[.7rem] font-bold tracking-[.1em] uppercase"
         :class="activeNavigation === 'home' ? 'text-belt-light' : 'text-white/55'"
         :aria-current="activeNavigation === 'home' ? 'page' : undefined"
       >
@@ -92,7 +92,7 @@ const isPlayer = computed(() => route.meta.shell === "player");
       <IntentRouterLink
         to="/library"
         :prefetch="prefetch.library"
-        class="relative flex min-h-[52px] items-center justify-center rounded-[8px] text-[.7rem] font-bold tracking-[.1em] uppercase"
+        class="relative flex min-h-[56px] items-center justify-center rounded-[8px] text-[.7rem] font-bold tracking-[.1em] uppercase"
         :class="activeNavigation === 'library' ? 'text-belt-light' : 'text-white/55'"
         :aria-current="activeNavigation === 'library' ? 'page' : undefined"
       >
@@ -106,7 +106,7 @@ const isPlayer = computed(() => route.meta.shell === "player");
       <IntentRouterLink
         to="/settings/library"
         :prefetch="prefetch.settings"
-        class="relative flex min-h-[52px] items-center justify-center rounded-[8px] text-[.7rem] font-bold tracking-[.1em] uppercase"
+        class="relative flex min-h-[56px] items-center justify-center rounded-[8px] text-[.7rem] font-bold tracking-[.1em] uppercase"
         :class="activeNavigation === 'settings' ? 'text-belt-light' : 'text-white/55'"
         :aria-current="activeNavigation === 'settings' ? 'page' : undefined"
       >
