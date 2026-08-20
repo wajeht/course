@@ -34,6 +34,7 @@ const { dialog, handleBackdrop, handleCancel } = useModalDialog(() => props.open
     >
       <section
         v-if="open"
+        data-testid="app-drawer-surface"
         class="absolute inset-x-5 bottom-0 max-h-[72dvh] overflow-hidden rounded-t-[12px] border border-b-0 border-line bg-white shadow-[0_-18px_70px_rgb(10_25_18_/_24%)]"
         @click.stop
       >
