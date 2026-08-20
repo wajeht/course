@@ -29,10 +29,20 @@ const mobileFilterButtons = computed(() => [
 const mobilePanel = computed(() => {
   const panel = activeMobilePanel.value;
   if (panel === "category") {
-    return { allLabel: "All categories", options: props.categories, title: "Categories", type: panel };
+    return {
+      allLabel: "All categories",
+      options: props.categories,
+      title: "Categories",
+      type: panel,
+    };
   }
   if (panel === "instructor") {
-    return { allLabel: "All instructors", options: props.instructors, title: "Instructors", type: panel };
+    return {
+      allLabel: "All instructors",
+      options: props.instructors,
+      title: "Instructors",
+      type: panel,
+    };
   }
   if (panel === "tag") {
     return { allLabel: "All tags", options: props.tags, title: "Tags", type: panel };

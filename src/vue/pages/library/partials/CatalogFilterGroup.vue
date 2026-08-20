@@ -26,7 +26,11 @@ const visibleOptions = computed(() => {
 <template>
   <fieldset>
     <legend
-      :class="hideLabel ? 'sr-only' : 'mb-3 text-[.72rem] font-extrabold uppercase tracking-[.08em] text-muted'"
+      :class="
+        hideLabel
+          ? 'sr-only'
+          : 'mb-3 text-[.72rem] font-extrabold uppercase tracking-[.08em] text-muted'
+      "
     >
       {{ label }}
     </legend>

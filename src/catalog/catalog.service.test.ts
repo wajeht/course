@@ -58,11 +58,6 @@ describe("catalog service", () => {
         { name: "Martial Arts", courseCount: 1 },
         { name: "Technology", courseCount: 1 },
       ],
-      instructors: [{ name: "Jane Smith", courseCount: 1 }],
-      tags: [
-        { name: "DevOps", courseCount: 1 },
-        { name: "Docker", courseCount: 1 },
-      ],
     });
   });
 

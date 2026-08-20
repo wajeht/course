@@ -20,7 +20,7 @@ export function useRoutePrefetch() {
     course: (courseId: string) => queryClient.prefetchQuery(courseQueryOptions(courseId)),
     home: () => catalog({}),
     instructor: (instructor: string) => catalog({ instructor: [instructor], page: 1 }),
-    library: () => Promise.all([catalog({}), queryClient.prefetchQuery(scanStatusQueryOptions())]),
+    library: () => catalog({}),
     settings: () =>
       Promise.all([
         queryClient.prefetchQuery(scanStatusQueryOptions()),

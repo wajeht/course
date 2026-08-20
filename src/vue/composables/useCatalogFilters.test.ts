@@ -3,7 +3,7 @@ import { createApp, effectScope } from "vue";
 import { createMemoryHistory, createRouter } from "vue-router";
 import { describe, expect, it, vi } from "vitest";
 
-import type { CatalogDto, CatalogFilters, ScanStatus } from "@/api.js";
+import type { CatalogDto, CatalogFilters } from "@/api.js";
 import { useCatalogFilters } from "./useCatalogFilters.js";
 
 function catalog(title = "Course", page = 1): CatalogDto {
@@ -31,22 +31,9 @@ function catalog(title = "Course", page = 1): CatalogDto {
   };
 }
 
-function scanStatus(): ScanStatus {
-  return {
-    startedAt: "2026-08-11T00:00:00.000Z",
-    completedAt: "2026-08-11T00:00:01.000Z",
-    status: "complete",
-    courseCount: 30,
-    lessonCount: 30,
-    warnings: [],
-    error: null,
-  };
-}
-
 async function setup(
   client: {
     getCatalog(filters?: CatalogFilters, signal?: AbortSignal): Promise<CatalogDto>;
-    getScanStatus(signal?: AbortSignal): Promise<ScanStatus>;
   },
   path = "/",
   debounceMilliseconds = 0,
@@ -79,7 +66,6 @@ describe("useCatalogFilters", () => {
   it("loads catalog state from a shareable URL", async () => {
     const client = {
       getCatalog: vi.fn(async () => catalog()),
-      getScanStatus: vi.fn(async () => scanStatus()),
     };
     const { filters, stop } = await setup(
       client,
@@ -98,14 +84,12 @@ describe("useCatalogFilters", () => {
       },
       expect.any(AbortSignal),
     );
-    expect(filters.scanStatus.value?.status).toBe("complete");
     stop();
   });
 
   it("debounces search into the URL", async () => {
     const client = {
       getCatalog: vi.fn(async () => catalog()),
-      getScanStatus: vi.fn(async () => scanStatus()),
     };
     const { filters, router, stop } = await setup(client, "/?page=2", 10);
     filters.query.value = "guard";
@@ -119,7 +103,6 @@ describe("useCatalogFilters", () => {
   it("does not rewrite pagination when search state comes from navigation", async () => {
     const client = {
       getCatalog: vi.fn(async () => catalog()),
-      getScanStatus: vi.fn(async () => scanStatus()),
     };
     const { filters, router, stop } = await setup(client);
 
@@ -140,7 +123,6 @@ describe("useCatalogFilters", () => {
         .fn()
         .mockResolvedValueOnce(catalog("Old result"))
         .mockReturnValueOnce(searchResult),
-      getScanStatus: vi.fn(async () => scanStatus()),
     };
     const { filters, stop } = await setup(client);
     await vi.waitFor(() => expect(filters.catalog.value.courses[0]?.title).toBe("Old result"));
@@ -159,7 +141,6 @@ describe("useCatalogFilters", () => {
   it("stores pagination changes in the URL", async () => {
     const client = {
       getCatalog: vi.fn(async (filters?: CatalogFilters) => catalog("Course", filters?.page)),
-      getScanStatus: vi.fn(async () => scanStatus()),
     };
     const { filters, router, stop } = await setup(client);
     await vi.waitFor(() => expect(filters.catalog.value.pagination.totalPages).toBe(2));
@@ -172,7 +153,6 @@ describe("useCatalogFilters", () => {
   it("uses a page size from the URL when provided", async () => {
     const client = {
       getCatalog: vi.fn(async () => catalog()),
-      getScanStatus: vi.fn(async () => scanStatus()),
     };
     const { stop } = await setup(client, "/?pageSize=48");
 
@@ -188,7 +168,6 @@ describe("useCatalogFilters", () => {
   it("normalizes a page beyond the available results", async () => {
     const client = {
       getCatalog: vi.fn(async () => catalog("Course", 2)),
-      getScanStatus: vi.fn(async () => scanStatus()),
     };
     const { router, stop } = await setup(client, "/?page=99");
 
