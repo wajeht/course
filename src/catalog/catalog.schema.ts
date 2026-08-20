@@ -2,11 +2,18 @@ import { z } from "zod";
 
 export const identifierSchema = z.string().regex(/^[a-f0-9]{24}$/);
 
+const catalogFilterSchema = z
+  .union([
+    z.string().trim().min(1).max(200),
+    z.array(z.string().trim().min(1).max(200)).min(1).max(50),
+  ])
+  .transform((value) => [...new Set(Array.isArray(value) ? value : [value])]);
+
 export const catalogQuerySchema = z.object({
   query: z.string().trim().max(200).optional(),
-  category: z.string().trim().min(1).max(200).optional(),
-  instructor: z.string().trim().min(1).max(200).optional(),
-  tag: z.string().trim().min(1).max(200).optional(),
+  category: catalogFilterSchema.optional(),
+  instructor: catalogFilterSchema.optional(),
+  tag: catalogFilterSchema.optional(),
   page: z.coerce.number().int().min(1).optional(),
   pageSize: z.coerce.number().int().min(1).max(100).optional(),
 });

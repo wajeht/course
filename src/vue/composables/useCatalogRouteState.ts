@@ -7,6 +7,12 @@ function queryString(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
+function queryStrings(value: unknown): string[] {
+  if (typeof value === "string") return value ? [value] : [];
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === "string" && Boolean(item));
+}
+
 function queryPage(value: unknown): number {
   const page = Number.parseInt(queryString(value), 10);
   return Number.isInteger(page) && page > 0 ? page : 1;
@@ -32,33 +38,36 @@ export function useCatalogRouteState(debounceMilliseconds = 150) {
     return next;
   }
 
-  function selectFilter(name: "category" | "instructor" | "tag", value: string): void {
-    void router.push({ query: routeQuery({ [name]: value || undefined, page: undefined }) });
+  function selectFilters(name: "category" | "instructor" | "tag", values: string[]): void {
+    const selected = [...new Set(values)].sort((left, right) => left.localeCompare(right));
+    void router.push({
+      query: routeQuery({ [name]: selected.length ? selected : undefined, page: undefined }),
+    });
   }
 
   const selectedCategory = computed({
-    get: () => queryString(route.query.category),
-    set: (value: string) => selectFilter("category", value),
+    get: () => queryStrings(route.query.category),
+    set: (values: string[]) => selectFilters("category", values),
   });
   const selectedInstructor = computed({
-    get: () => queryString(route.query.instructor),
-    set: (value: string) => selectFilter("instructor", value),
+    get: () => queryStrings(route.query.instructor),
+    set: (values: string[]) => selectFilters("instructor", values),
   });
   const selectedTag = computed({
-    get: () => queryString(route.query.tag),
-    set: (value: string) => selectFilter("tag", value),
+    get: () => queryStrings(route.query.tag),
+    set: (values: string[]) => selectFilters("tag", values),
   });
   const selectedFilters = computed(() =>
-    [selectedCategory.value, selectedInstructor.value, selectedTag.value].filter(Boolean),
+    [...selectedCategory.value, ...selectedInstructor.value, ...selectedTag.value].filter(Boolean),
   );
   const hasActiveFilters = computed(() =>
-    Boolean(searchQuery.value || selectedFilters.value.length),
+    Boolean(query.value || selectedFilters.value.length),
   );
   const filters = computed<CatalogFilters>(() => ({
     query: searchQuery.value || undefined,
-    category: selectedCategory.value || undefined,
-    instructor: selectedInstructor.value || undefined,
-    tag: selectedTag.value || undefined,
+    category: selectedCategory.value.length ? selectedCategory.value : undefined,
+    instructor: selectedInstructor.value.length ? selectedInstructor.value : undefined,
+    tag: selectedTag.value.length ? selectedTag.value : undefined,
     page: page.value,
     pageSize: queryPageSize(route.query.pageSize),
   }));

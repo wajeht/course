@@ -14,16 +14,16 @@ const props = defineProps<{
   tags: CatalogDto["tags"];
 }>();
 
-const category = defineModel<string>("category", { required: true });
-const instructor = defineModel<string>("instructor", { required: true });
+const category = defineModel<string[]>("category", { required: true });
+const instructor = defineModel<string[]>("instructor", { required: true });
 const query = defineModel<string>("query", { required: true });
-const tag = defineModel<string>("tag", { required: true });
+const tag = defineModel<string[]>("tag", { required: true });
 
 const activeMobilePanel = shallowRef<FilterType | null>(null);
 const mobileFilterButtons = computed(() => [
-  { label: "Categories", type: "category" as const, value: category.value },
-  { label: "Instructors", type: "instructor" as const, value: instructor.value },
-  { label: "Tags", type: "tag" as const, value: tag.value },
+  { label: "Categories", type: "category" as const, values: category.value },
+  { label: "Instructors", type: "instructor" as const, values: instructor.value },
+  { label: "Tags", type: "tag" as const, values: tag.value },
 ]);
 
 const mobilePanel = computed(() => {
@@ -45,12 +45,12 @@ const mobilePanelValue = computed({
     if (activeMobilePanel.value === "category") return category.value;
     if (activeMobilePanel.value === "instructor") return instructor.value;
     if (activeMobilePanel.value === "tag") return tag.value;
-    return "";
+    return [];
   },
-  set: (value: string) => {
-    if (activeMobilePanel.value === "category") category.value = value;
-    if (activeMobilePanel.value === "instructor") instructor.value = value;
-    if (activeMobilePanel.value === "tag") tag.value = value;
+  set: (values: string[]) => {
+    if (activeMobilePanel.value === "category") category.value = values;
+    if (activeMobilePanel.value === "instructor") instructor.value = values;
+    if (activeMobilePanel.value === "tag") tag.value = values;
   },
 });
 
@@ -106,12 +106,18 @@ function togglePanel(panel: FilterType): void {
           :key="button.type"
           size="sm"
           variant="secondary"
-          :class="button.value ? 'border-pine! bg-porcelain!' : ''"
+          :class="button.values.length ? 'border-pine! bg-porcelain!' : ''"
           :aria-pressed="activeMobilePanel === button.type"
           :data-mobile-filter="button.type"
           @click="togglePanel(button.type)"
         >
-          {{ button.value ? `${button.label}: ${button.value}` : button.label }}
+          {{
+            button.values.length === 1
+              ? `${button.label}: ${button.values[0]}`
+              : button.values.length > 1
+                ? `${button.label} (${button.values.length})`
+                : button.label
+          }}
         </AppButton>
       </div>
 

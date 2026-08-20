@@ -184,9 +184,9 @@ export function createCatalogService(
 
       const [courses, categories, instructors, tags, continuing] = await Promise.all([
         repository.listCourses(courseFilters, { limit: pageSize, offset: (page - 1) * pageSize }),
-        repository.listCategories({ ...courseFilters, category: undefined }),
-        repository.listInstructors({ ...courseFilters, instructor: undefined }),
-        repository.listTags({ ...courseFilters, tag: undefined }),
+        repository.listCategories(),
+        repository.listInstructors(),
+        repository.listTags(),
         repository.listContinueWatching(),
       ]);
       return {

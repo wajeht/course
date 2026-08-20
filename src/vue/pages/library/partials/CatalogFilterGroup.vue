@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { computed } from "vue";
+
 import type { CatalogDto } from "@/api.js";
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     allLabel: string;
     hideLabel?: boolean;
@@ -12,7 +14,13 @@ withDefaults(
   { hideLabel: false },
 );
 
-const selected = defineModel<string>({ required: true });
+const selected = defineModel<string[]>({ required: true });
+const visibleOptions = computed(() => {
+  const missingSelections = selected.value
+    .filter((name) => !props.options.some((option) => option.name === name))
+    .map((name) => ({ name, courseCount: 0 }));
+  return [...missingSelections, ...props.options];
+});
 </script>
 
 <template>
@@ -22,27 +30,16 @@ const selected = defineModel<string>({ required: true });
     >
       {{ label }}
     </legend>
-    <ul class="space-y-2 text-[.86rem]">
-      <li>
+    <p v-if="!visibleOptions.length" class="text-[.82rem] text-muted">{{ allLabel }}</p>
+    <ul v-else class="space-y-2 text-[.86rem]">
+      <li v-for="option in visibleOptions" :key="option.name">
         <label class="flex cursor-pointer items-center gap-2.5 text-pine-deep">
           <input
             v-model="selected"
-            type="radio"
-            :name="name"
-            value=""
-            class="h-4 w-4 cursor-pointer border border-line bg-white text-pine focus-visible:ring-2 focus-visible:ring-pine"
-          />
-          <span>{{ allLabel }}</span>
-        </label>
-      </li>
-      <li v-for="option in options" :key="option.name">
-        <label class="flex cursor-pointer items-center gap-2.5 text-pine-deep">
-          <input
-            v-model="selected"
-            type="radio"
+            type="checkbox"
             :name="name"
             :value="option.name"
-            class="h-4 w-4 cursor-pointer border border-line bg-white text-pine focus-visible:ring-2 focus-visible:ring-pine"
+            class="h-4 w-4 cursor-pointer rounded-[3px] border border-line bg-white text-pine focus-visible:ring-2 focus-visible:ring-pine"
           />
           <span>{{ option.name }} ({{ option.courseCount }})</span>
         </label>

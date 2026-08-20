@@ -83,16 +83,16 @@ describe("useCatalogFilters", () => {
     };
     const { filters, stop } = await setup(
       client,
-      "/?q=guard&category=Martial+Arts&instructor=John+Danaher&tag=BJJ&page=2",
+      "/?q=guard&category=Martial+Arts&category=Technology&instructor=John+Danaher&tag=BJJ&page=2",
     );
 
     await vi.waitFor(() => expect(filters.catalog.value.courses[0]?.title).toBe("Course"));
     expect(client.getCatalog).toHaveBeenCalledWith(
       {
         query: "guard",
-        category: "Martial Arts",
-        instructor: "John Danaher",
-        tag: "BJJ",
+        category: ["Martial Arts", "Technology"],
+        instructor: ["John Danaher"],
+        tag: ["BJJ"],
         page: 2,
         pageSize: undefined,
       },
