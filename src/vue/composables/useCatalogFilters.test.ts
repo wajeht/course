@@ -69,7 +69,7 @@ describe("useCatalogFilters", () => {
     };
     const { filters, stop } = await setup(
       client,
-      "/?q=guard&category=Martial+Arts&category=Technology&instructor=John+Danaher&tag=BJJ&page=2",
+      "/?q=guard&category=Technology&category=Martial+Arts&category=Technology&instructor=John+Danaher&tag=BJJ&page=2",
     );
 
     await vi.waitFor(() => expect(filters.catalog.value.courses[0]?.title).toBe("Course"));

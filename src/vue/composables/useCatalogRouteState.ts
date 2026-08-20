@@ -8,9 +8,15 @@ function queryString(value: unknown): string {
 }
 
 function queryStrings(value: unknown): string[] {
-  if (typeof value === "string") return value ? [value] : [];
-  if (!Array.isArray(value)) return [];
-  return value.filter((item): item is string => typeof item === "string" && Boolean(item));
+  const values = typeof value === "string" ? [value] : Array.isArray(value) ? value : [];
+  return [
+    ...new Set(
+      values
+        .filter((item): item is string => typeof item === "string")
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
 }
 
 function queryPage(value: unknown): number {
