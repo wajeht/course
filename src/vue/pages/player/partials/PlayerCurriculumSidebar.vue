@@ -41,11 +41,11 @@ watch(
 <template>
   <aside
     v-if="course"
-    class="sticky top-0 flex h-[calc(100vh-66px)] flex-col border-l border-[#2d3732] bg-[#f8f9f6] max-[860px]:fixed max-[860px]:inset-y-0 max-[860px]:right-0 max-[860px]:z-[70] max-[860px]:h-screen max-[860px]:w-[min(390px,92vw)] max-[860px]:border-l-0 max-[860px]:shadow-[-20px_0_60px_rgb(0_0_0_/_35%)] max-[860px]:transition-transform max-[860px]:duration-[220ms]"
+    class="sticky top-0 flex h-[calc(100vh-66px)] flex-col border-l border-[#2d3732] bg-[#f8f9f6] max-[860px]:fixed max-[860px]:inset-y-0 max-[860px]:right-0 max-[860px]:z-[70] max-[860px]:h-dvh max-[860px]:w-[min(390px,92vw)] max-[860px]:border-l-0 max-[860px]:shadow-[-20px_0_60px_rgb(0_0_0_/_35%)] max-[860px]:transition-transform max-[860px]:duration-[220ms]"
     :class="open ? 'max-[860px]:translate-x-0' : 'max-[860px]:translate-x-[105%]'"
   >
     <div
-      class="flex items-center justify-between border-b border-line px-[22px] pt-[22px] pb-[18px]"
+      class="flex items-center justify-between border-b border-line px-[22px] pt-[22px] pb-[18px] max-[860px]:pt-[calc(22px+env(safe-area-inset-top))]"
     >
       <div>
         <p class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase">
