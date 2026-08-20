@@ -20,7 +20,7 @@ function requestClose(): void {
   emit("close");
 }
 
-const { dialog, handleBackdrop, handleCancel } = useModalDialog(() => props.open, requestClose);
+const { handleBackdrop, handleCancel } = useModalDialog(() => props.open, requestClose);
 </script>
 
 <template>

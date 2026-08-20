@@ -152,4 +152,3 @@ function togglePanel(panel: FilterType): void {
     </AppDrawer>
   </div>
 </template>
-
