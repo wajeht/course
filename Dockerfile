@@ -1,7 +1,5 @@
 FROM node:24-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03 AS build
 
-ARG APP_VERSION
-
 WORKDIR /app
 
 RUN apt-get update \
@@ -14,6 +12,7 @@ RUN npm ci
 COPY tsconfig.base.json tsconfig.json tsconfig.server.json tsconfig.server-test.json tsconfig.client.json tsconfig.pwa.json vite.config.ts ./
 COPY src ./src
 COPY public ./public
+ARG APP_VERSION
 RUN npm run build \
   && npm prune --omit=dev
 
