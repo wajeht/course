@@ -77,8 +77,13 @@ export function useCatalogRouteState(debounceMilliseconds = 150) {
   }));
 
   let searchTimer: ReturnType<typeof setTimeout> | undefined;
+  let ignoreNextSearchUpdate = false;
   watch(query, (value) => {
     clearTimeout(searchTimer);
+    if (ignoreNextSearchUpdate) {
+      ignoreNextSearchUpdate = false;
+      return;
+    }
     if (value === searchQuery.value) return;
     const updateUrl = () =>
       void router.replace({
@@ -98,6 +103,23 @@ export function useCatalogRouteState(debounceMilliseconds = 150) {
     });
   }
 
+  function clearFilters(): void {
+    clearTimeout(searchTimer);
+    if (query.value) {
+      ignoreNextSearchUpdate = true;
+      query.value = "";
+    }
+    void router.push({
+      query: routeQuery({
+        category: undefined,
+        instructor: undefined,
+        page: undefined,
+        q: undefined,
+        tag: undefined,
+      }),
+    });
+  }
+
   function normalizePage(loadedPage: number): void {
     if (loadedPage === page.value) return;
     void router.replace({
@@ -108,6 +130,7 @@ export function useCatalogRouteState(debounceMilliseconds = 150) {
   onScopeDispose(() => clearTimeout(searchTimer));
 
   return {
+    clearFilters,
     filters,
     hasActiveFilters,
     normalizePage,

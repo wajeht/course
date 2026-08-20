@@ -37,7 +37,7 @@ const prefetch = useRoutePrefetch();
     <div class="flex flex-1 flex-col p-[18px]">
       <p
         v-if="course.category !== 'Uncategorized'"
-        class="mb-2 text-[.64rem] font-extrabold tracking-[.13em] text-belt uppercase"
+        class="mb-2 text-[.64rem] font-extrabold tracking-[.13em] text-belt-ink uppercase"
       >
         {{ course.category }}
       </p>

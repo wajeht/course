@@ -1,20 +1,30 @@
 <script setup lang="ts">
+import { computed } from "vue";
+
 import type { CatalogDto } from "@/api.js";
 import CourseCard from "@/components/CourseCard.vue";
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     courses: CatalogDto["courses"];
+    layout?: "page" | "sidebar";
     loading?: boolean;
   }>(),
-  { loading: false },
+  { layout: "page", loading: false },
+);
+
+const columnClasses = computed(() =>
+  props.layout === "sidebar"
+    ? "grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))]"
+    : "grid-cols-4 max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[600px]:grid-cols-1",
 );
 </script>
 
 <template>
   <div
     v-if="loading"
-    class="grid grid-cols-4 gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[600px]:grid-cols-1"
+    class="grid gap-[clamp(18px,2vw,30px)]"
+    :class="columnClasses"
     aria-label="Loading courses"
   >
     <div
@@ -23,10 +33,7 @@ withDefaults(
       class="min-h-[420px] animate-pulse rounded-[10px] bg-[#e9ece8]"
     />
   </div>
-  <div
-    v-else
-    class="grid grid-cols-4 gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[600px]:grid-cols-1"
-  >
+  <div v-else class="grid gap-[clamp(18px,2vw,30px)]" :class="columnClasses">
     <CourseCard v-for="course in courses" :key="course.id" :course="course" />
   </div>
 </template>

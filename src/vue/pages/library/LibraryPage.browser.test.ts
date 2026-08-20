@@ -27,6 +27,7 @@ test("filters through the API and uses the responsive mobile sheet", async ({ pa
 
   const categoryButton = page.locator('[data-mobile-filter="category"]');
   await expect(categoryButton).toBeVisible();
+  expect((await categoryButton.boundingBox())!.height).toBeGreaterThanOrEqual(40);
   await categoryButton.click();
 
   const drawer = page.getByRole("dialog", { name: "Categories" });
@@ -44,6 +45,9 @@ test("filters through the API and uses the responsive mobile sheet", async ({ pa
   expect(surfaceBox!.width).toBe(350);
   expect(Math.round(surfaceBox!.y + surfaceBox!.height)).toBe(844);
 
+  const categoryRow = drawer.locator("label").filter({ hasText: "Martial Arts" });
+  expect((await categoryRow.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+
   await page.mouse.click(5, 5);
   await expect(drawer).toHaveCount(0);
   await expect(categoryButton).toBeFocused();
@@ -53,9 +57,19 @@ test("filters through the API and uses the responsive mobile sheet", async ({ pa
   await expect(drawer).toHaveCount(0);
   await expect(categoryButton).toBeFocused();
 
+  const clearFilters = page.locator('[data-clear-filters="mobile"]');
+  await expect(clearFilters).toBeVisible();
+  await clearFilters.click();
+  await expect(categoryButton).toHaveText("Categories");
+  await expect(page).not.toHaveURL(/category=/);
+
+  await page.setViewportSize({ width: 800, height: 900 });
+  const filterColumn = page.getByTestId("catalog-filter-column");
+  const courseColumn = page.getByTestId("catalog-course-column");
+  expect((await filterColumn.boundingBox())!.width).toBe(260);
+  expect((await courseColumn.boundingBox())!.width).toBeGreaterThan(440);
+
   await page.setViewportSize({ width: 1280, height: 720 });
   await expect(categoryButton).toBeHidden();
-  await expect(
-    page.locator('input[name="catalog-desktop-category"][value="Technology"]'),
-  ).toBeVisible();
+  await expect(page.getByRole("group", { name: "Categories" })).toBeVisible();
 });

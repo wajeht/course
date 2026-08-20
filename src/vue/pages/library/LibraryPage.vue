@@ -12,6 +12,7 @@ import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
 
 const {
   catalog,
+  clearFilters,
   error,
   filters,
   hasActiveFilters,
@@ -42,23 +43,27 @@ function prefetchPage(page: number): void {
       <PageHeader eyebrow="Your library" :title="libraryTitle" :heading-level="1" />
 
       <div
-        class="mt-6 grid grid-cols-4 items-start gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[760px]:grid-cols-1"
+        data-testid="catalog-layout"
+        class="mt-6 grid grid-cols-1 items-start gap-[clamp(18px,2vw,30px)] min-[761px]:grid-cols-[260px_minmax(0,1fr)]"
       >
-        <div>
+        <div data-testid="catalog-filter-column">
           <CatalogFiltersToolbar
             v-model:category="selectedCategory"
             v-model:instructor="selectedInstructor"
             v-model:query="query"
             v-model:tag="selectedTag"
             :categories="catalog.categories"
+            :has-active-filters="hasActiveFilters"
             :instructors="catalog.instructors"
             :tags="catalog.tags"
+            @clear="clearFilters"
           />
         </div>
-        <div class="col-span-3 min-w-0 max-[1120px]:col-span-2 max-[860px]:col-span-1">
+        <div data-testid="catalog-course-column" class="min-w-0">
           <CourseCardGrid
             v-if="loading || catalog.courses.length"
             :courses="catalog.courses"
+            layout="sidebar"
             :loading
           />
           <EmptyState

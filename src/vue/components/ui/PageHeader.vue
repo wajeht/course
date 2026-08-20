@@ -17,7 +17,7 @@ withDefaults(
     <div>
       <p
         v-if="eyebrow"
-        class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase"
+        class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt-ink uppercase"
       >
         {{ eyebrow }}
       </p>
