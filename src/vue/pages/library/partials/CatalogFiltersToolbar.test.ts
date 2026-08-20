@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
-import { mount } from "@vue/test-utils";
-import { describe, expect, it } from "vitest";
+import { DOMWrapper, mount, type VueWrapper } from "@vue/test-utils";
+import { afterEach, describe, expect, it } from "vitest";
 
 import CatalogFiltersToolbar from "./CatalogFiltersToolbar.vue";
 
@@ -14,8 +14,16 @@ const catalogOptions = {
   tags: [{ name: "Beginner", courseCount: 5 }],
 };
 
+const wrappers: VueWrapper[] = [];
+
+afterEach(() => {
+  for (const wrapper of wrappers) wrapper.unmount();
+  wrappers.length = 0;
+});
+
 function mountToolbar() {
-  return mount(CatalogFiltersToolbar, {
+  const wrapper = mount(CatalogFiltersToolbar, {
+    attachTo: document.body,
     props: {
       ...catalogOptions,
       category: [],
@@ -24,6 +32,8 @@ function mountToolbar() {
       tag: [],
     },
   });
+  wrappers.push(wrapper);
+  return wrapper;
 }
 
 describe("CatalogFiltersToolbar", () => {
@@ -40,18 +50,31 @@ describe("CatalogFiltersToolbar", () => {
     expect(wrapper.emitted("update:category")?.at(-1)).toEqual([["Technology", "Martial Arts"]]);
   });
 
-  it("shows mobile filters inline and exposes the active selection", async () => {
+  it("opens mobile filters in a modal drawer and exposes the active selection", async () => {
     const wrapper = mountToolbar();
     const categoryButton = wrapper.get('[data-mobile-filter="category"]');
+    categoryButton.element.focus();
 
     await categoryButton.trigger("click");
-    expect(wrapper.find("[data-mobile-filter-panel]").exists()).toBe(true);
-    expect(wrapper.find('[role="dialog"]').exists()).toBe(false);
+    const drawer = document.body.querySelector("dialog[open]");
+    expect(drawer).not.toBeNull();
 
-    await wrapper.get('input[name="catalog-mobile-category"][value="Technology"]').setValue(true);
+    const technology = drawer?.querySelector<HTMLInputElement>(
+      'input[name="catalog-mobile-category"][value="Technology"]',
+    );
+    expect(technology).not.toBeNull();
+    await new DOMWrapper(technology!).setValue(true);
     expect(wrapper.emitted("update:category")?.at(-1)).toEqual([["Technology"]]);
 
     await wrapper.setProps({ category: ["Technology"] });
     expect(categoryButton.text()).toBe("Categories: Technology");
+
+    const closeButton = drawer?.querySelector<HTMLButtonElement>(
+      '[aria-label="Close categories filters"]',
+    );
+    expect(closeButton).not.toBeNull();
+    await new DOMWrapper(closeButton!).trigger("click");
+    expect(document.body.querySelector("dialog[open]")).toBeNull();
+    expect(document.activeElement).toBe(categoryButton.element);
   });
 });
