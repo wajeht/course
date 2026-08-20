@@ -13,7 +13,8 @@ fs.mkdirSync(dataDirectory, { recursive: true });
 fs.mkdirSync(videosDirectory, { recursive: true });
 
 export default defineConfig({
-  testDir: "src/vue/test",
+  testDir: "src/vue",
+  testMatch: "**/*.browser.test.ts",
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 2 : 0,
