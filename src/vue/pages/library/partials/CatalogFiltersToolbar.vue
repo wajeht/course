@@ -11,9 +11,12 @@ type FilterType = "category" | "instructor" | "tag";
 
 const props = defineProps<{
   categories: CatalogDto["categories"];
+  hasActiveFilters: boolean;
   instructors: CatalogDto["instructors"];
   tags: CatalogDto["tags"];
 }>();
+
+const emit = defineEmits<{ clear: [] }>();
 
 const category = defineModel<string[]>("category", { required: true });
 const instructor = defineModel<string[]>("instructor", { required: true });
@@ -74,7 +77,19 @@ function togglePanel(panel: FilterType): void {
   <div>
     <aside class="hidden min-[761px]:block">
       <div class="grid gap-[clamp(18px,2vw,30px)]">
-        <CatalogSearchInput v-model="query" />
+        <div>
+          <CatalogSearchInput v-model="query" />
+          <div v-if="props.hasActiveFilters" class="mt-2 flex justify-end">
+            <AppButton
+              data-clear-filters="desktop"
+              variant="unstyled"
+              class="inline-flex min-h-10 items-center text-[.75rem] font-bold text-pine underline decoration-pine/25 underline-offset-[3px] hover:decoration-pine"
+              @click="emit('clear')"
+            >
+              Clear filters
+            </AppButton>
+          </div>
+        </div>
 
         <PanelCard padding="compact">
           <CatalogFilterGroup
@@ -100,6 +115,7 @@ function togglePanel(panel: FilterType): void {
           <CatalogFilterGroup
             v-model="tag"
             all-label="All tags"
+            :collapsed-limit="10"
             label="Tags"
             name="catalog-desktop-tag"
             :options="props.tags"
@@ -117,7 +133,7 @@ function togglePanel(panel: FilterType): void {
           :key="button.type"
           size="sm"
           variant="secondary"
-          :class="button.values.length ? 'border-pine! bg-porcelain!' : ''"
+          :class="['min-h-10!', button.values.length ? 'border-pine! bg-porcelain!' : '']"
           :aria-expanded="activeMobilePanel === button.type"
           :aria-pressed="activeMobilePanel === button.type"
           :data-mobile-filter="button.type"
@@ -130,6 +146,15 @@ function togglePanel(panel: FilterType): void {
                 ? `${button.label} (${button.values.length})`
                 : button.label
           }}
+        </AppButton>
+        <AppButton
+          v-if="props.hasActiveFilters"
+          data-clear-filters="mobile"
+          variant="unstyled"
+          class="inline-flex min-h-10 items-center text-[.75rem] font-bold text-pine underline decoration-pine/25 underline-offset-[3px] hover:decoration-pine"
+          @click="emit('clear')"
+        >
+          Clear filters
         </AppButton>
       </div>
     </div>

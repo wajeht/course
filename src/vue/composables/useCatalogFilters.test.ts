@@ -100,6 +100,24 @@ describe("useCatalogFilters", () => {
     stop();
   });
 
+  it("clears search and facet filters with one route update", async () => {
+    const client = {
+      getCatalog: vi.fn(async (filters?: CatalogFilters) => catalog("Course", filters?.page)),
+    };
+    const { filters, router, stop } = await setup(
+      client,
+      "/?q=guard&category=Technology&instructor=Instructor&tag=Tag&page=2&pageSize=48",
+      10,
+    );
+
+    filters.clearFilters();
+
+    await vi.waitFor(() => expect(router.currentRoute.value.query).toEqual({ pageSize: "48" }));
+    expect(filters.query.value).toBe("");
+    expect(filters.hasActiveFilters.value).toBe(false);
+    stop();
+  });
+
   it("does not rewrite pagination when search state comes from navigation", async () => {
     const client = {
       getCatalog: vi.fn(async () => catalog()),
