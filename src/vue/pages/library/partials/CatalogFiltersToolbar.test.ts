@@ -47,6 +47,15 @@ function mountToolbar(overrides: Partial<ToolbarProps> = {}) {
 }
 
 describe("CatalogFiltersToolbar", () => {
+  it("uses the strong pine color for desktop filter headings", () => {
+    const wrapper = mountToolbar();
+    const headings = wrapper.findAll("legend").filter((legend) => !legend.classes("sr-only"));
+
+    expect(headings).toHaveLength(3);
+    expect(headings.every((heading) => heading.classes("text-pine"))).toBe(true);
+    expect(headings.every((heading) => !heading.classes("text-muted"))).toBe(true);
+  });
+
   it("emits multiple desktop filter selections", async () => {
     const wrapper = mountToolbar();
 

@@ -47,7 +47,7 @@ const visibleOptions = computed(() => {
       :class="
         hideLabel
           ? 'sr-only'
-          : 'mb-3 text-[.72rem] font-extrabold uppercase tracking-[.08em] text-muted'
+          : 'mb-3 text-[.72rem] font-extrabold uppercase tracking-[.08em] text-pine'
       "
     >
       {{ label }}
