@@ -117,6 +117,7 @@ function togglePanel(panel: FilterType): void {
           size="sm"
           variant="secondary"
           :class="button.values.length ? 'border-pine! bg-porcelain!' : ''"
+          :aria-expanded="activeMobilePanel === button.type"
           :aria-pressed="activeMobilePanel === button.type"
           :data-mobile-filter="button.type"
           @click="togglePanel(button.type)"
@@ -130,30 +131,87 @@ function togglePanel(panel: FilterType): void {
           }}
         </AppButton>
       </div>
+    </div>
 
-      <PanelCard v-if="mobilePanel" class="mt-4" padding="compact" data-mobile-filter-panel>
-        <div class="mb-3 flex items-center justify-between">
-          <h2 class="text-[.76rem] font-extrabold uppercase tracking-[.08em] text-muted">
-            {{ mobilePanel.title }}
-          </h2>
-          <AppButton
-            variant="unstyled"
-            class="grid h-8 w-8 place-items-center text-xl leading-none text-muted hover:text-ink"
+    <Teleport to="body">
+      <Transition name="filter-drawer">
+        <div
+          v-if="mobilePanel"
+          class="fixed inset-0 z-50 flex items-end min-[761px]:hidden"
+          data-mobile-filter-panel
+        >
+          <button
+            type="button"
+            class="absolute inset-0 bg-ink/45"
             :aria-label="`Close ${mobilePanel.title.toLowerCase()} filters`"
             @click="activeMobilePanel = null"
+          />
+
+          <PanelCard
+            class="filter-drawer__panel relative max-h-[72dvh] w-full overflow-y-auto rounded-b-none!"
+            padding="compact"
+            role="dialog"
+            aria-modal="true"
+            :aria-labelledby="`catalog-mobile-${mobilePanel.type}-title`"
           >
-            ×
-          </AppButton>
+            <div class="mb-3 flex items-center justify-between">
+              <h2
+                :id="`catalog-mobile-${mobilePanel.type}-title`"
+                class="text-[.76rem] font-extrabold uppercase tracking-[.08em] text-muted"
+              >
+                {{ mobilePanel.title }}
+              </h2>
+              <AppButton
+                variant="unstyled"
+                class="grid h-8 w-8 place-items-center text-xl leading-none text-muted hover:text-ink"
+                :aria-label="`Close ${mobilePanel.title.toLowerCase()} filters`"
+                @click="activeMobilePanel = null"
+              >
+                ×
+              </AppButton>
+            </div>
+            <CatalogFilterGroup
+              v-model="mobilePanelValue"
+              :all-label="mobilePanel.allLabel"
+              hide-label
+              :label="mobilePanel.title"
+              :name="`catalog-mobile-${mobilePanel.type}`"
+              :options="mobilePanel.options"
+            />
+          </PanelCard>
         </div>
-        <CatalogFilterGroup
-          v-model="mobilePanelValue"
-          :all-label="mobilePanel.allLabel"
-          hide-label
-          :label="mobilePanel.title"
-          :name="`catalog-mobile-${mobilePanel.type}`"
-          :options="mobilePanel.options"
-        />
-      </PanelCard>
-    </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
+
+<style scoped>
+.filter-drawer-enter-active,
+.filter-drawer-leave-active {
+  transition: opacity 160ms ease;
+}
+
+.filter-drawer-enter-active .filter-drawer__panel,
+.filter-drawer-leave-active .filter-drawer__panel {
+  transition: transform 200ms ease;
+}
+
+.filter-drawer-enter-from,
+.filter-drawer-leave-to {
+  opacity: 0;
+}
+
+.filter-drawer-enter-from .filter-drawer__panel,
+.filter-drawer-leave-to .filter-drawer__panel {
+  transform: translateY(100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-drawer-enter-active,
+  .filter-drawer-leave-active,
+  .filter-drawer-enter-active .filter-drawer__panel,
+  .filter-drawer-leave-active .filter-drawer__panel {
+    transition: none;
+  }
+}
+</style>
