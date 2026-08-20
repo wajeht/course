@@ -18,7 +18,7 @@ const isPlayer = computed(() => route.meta.shell === "player");
     :class="isPlayer ? 'max-[600px]:bg-[#111714]' : ''"
   >
     <header
-      class="z-40 flex h-[66px] items-center justify-between border-b border-white/12 px-[4vw] text-white max-[860px]:px-[22px]"
+      class="z-40 flex h-[calc(66px+env(safe-area-inset-top))] items-center justify-between border-b border-white/12 px-[4vw] pt-[env(safe-area-inset-top)] text-white max-[860px]:px-[22px]"
       :class="
         isPlayer ? 'relative bg-[#111714]' : 'sticky top-0 bg-pine-deep/[.96] backdrop-blur-[14px]'
       "
