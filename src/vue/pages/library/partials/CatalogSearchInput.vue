@@ -23,7 +23,7 @@ const inputId = `catalog-search-${useId()}`;
     <AppInput
       :id="inputId"
       v-model="query"
-      class="w-full min-w-0 border-0 bg-transparent p-0 text-[.85rem] text-ink outline-0 placeholder:text-[#89918d]"
+      class="w-full min-w-0 border-0 bg-transparent p-0 text-[.85rem] text-ink outline-0 placeholder:text-[#89918d] [&::-webkit-search-cancel-button]:hidden"
       variant="bare"
       type="search"
       placeholder="Search courses and lessons"
