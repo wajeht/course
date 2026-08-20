@@ -68,6 +68,7 @@ export default defineConfig({
           name: "client",
           environment: "happy-dom",
           include: ["src/vue/**/*.test.ts"],
+          exclude: ["src/vue/**/*.browser.test.ts"],
           setupFiles: ["src/vue/test/setup.ts"],
         },
       },
