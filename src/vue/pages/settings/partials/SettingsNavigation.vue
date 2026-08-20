@@ -26,15 +26,16 @@ const sections = computed(() =>
 </script>
 
 <template>
-  <PanelCard as="nav" class="p-8" padding="none" aria-label="Settings sections">
-    <div class="grid gap-1 max-[760px]:grid-cols-2">
+  <PanelCard as="nav" class="p-8 max-[760px]:p-0" padding="none" aria-label="Settings sections">
+    <div class="grid gap-1 max-[760px]:grid-cols-2 max-[760px]:gap-0">
       <RouterLink
         v-for="section in sections"
         :id="`settings-${section.value}-link`"
         :key="section.value"
         :to="{ name: section.routeName }"
         :class="[
-          'flex h-10 w-full items-center rounded-[7px] px-3.5 text-left text-[.82rem] font-bold transition-[background,color,box-shadow] duration-[160ms]',
+          'flex h-10 w-full items-center rounded-[7px] px-3.5 text-left text-[.82rem] font-bold transition-[background,color,box-shadow] duration-[160ms] max-[760px]:justify-center max-[760px]:rounded-none max-[760px]:px-0 max-[760px]:shadow-none!',
+          section.value === 'access' ? 'max-[760px]:border-l max-[760px]:border-line' : '',
           section.stateClasses,
         ]"
         :aria-controls="`settings-${section.value}-panel`"
