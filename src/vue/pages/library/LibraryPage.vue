@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { api } from "@/api.js";
-import { watch } from "vue";
 import CatalogFiltersToolbar from "@/pages/library/partials/CatalogFiltersToolbar.vue";
 import CourseCardGrid from "@/pages/catalog/partials/CourseCardGrid.vue";
 import AlertMessage from "@/components/ui/AlertMessage.vue";
@@ -10,7 +9,6 @@ import PageHeader from "@/components/ui/PageHeader.vue";
 import { useCatalogFilters } from "@/composables/useCatalogFilters.js";
 import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
-import { setPageTitle } from "@/utils.js";
 
 const {
   catalog,
@@ -28,8 +26,6 @@ const {
   setPage,
 } = useCatalogFilters(api);
 const prefetch = useRoutePrefetch();
-
-watch(libraryTitle, (title) => setPageTitle(title), { immediate: true });
 
 function prefetchPage(page: number): void {
   void prefetch.catalog({ ...filters.value, page });

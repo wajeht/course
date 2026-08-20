@@ -59,7 +59,7 @@ test("keeps the install experience online-only", async ({ context, page }) => {
 
   await page.goto("/library");
   await expect(page.getByRole("heading", { level: 1, name: "All courses" })).toBeVisible();
-  await expect(page).toHaveTitle("All courses · Course");
+  await expect(page).toHaveTitle("Library · Course");
 
   await page.reload();
   await expect.poll(() => page.evaluate(async () => (await caches.keys()).length)).toBe(0);
