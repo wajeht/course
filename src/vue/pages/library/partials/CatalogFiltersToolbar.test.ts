@@ -53,7 +53,7 @@ describe("CatalogFiltersToolbar", () => {
   it("opens mobile filters in a modal drawer and exposes the active selection", async () => {
     const wrapper = mountToolbar();
     const categoryButton = wrapper.get('[data-mobile-filter="category"]');
-    categoryButton.element.focus();
+    (categoryButton.element as HTMLElement).focus();
 
     await categoryButton.trigger("click");
     const drawer = document.body.querySelector("dialog[open]");
