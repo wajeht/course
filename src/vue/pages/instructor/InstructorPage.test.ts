@@ -49,7 +49,7 @@ describe("InstructorPage", () => {
     });
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     queryClient.setQueryData(
-      queryKeys.catalogList({ instructor: "Alpha", page: 1 }),
+      queryKeys.catalogList({ instructor: ["Alpha"], page: 1 }),
       catalog("Cached course"),
     );
     await router.push("/instructors/Alpha");

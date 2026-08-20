@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { api } from "@/api.js";
 import { watch } from "vue";
-import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import CatalogFiltersToolbar from "@/pages/library/partials/CatalogFiltersToolbar.vue";
 import CourseCardGrid from "@/pages/catalog/partials/CourseCardGrid.vue";
 import AlertMessage from "@/components/ui/AlertMessage.vue";
@@ -11,18 +10,18 @@ import PageHeader from "@/components/ui/PageHeader.vue";
 import { useCatalogFilters } from "@/composables/useCatalogFilters.js";
 import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
-import { countText, setPageTitle } from "@/utils.js";
+import { setPageTitle } from "@/utils.js";
 
 const {
   catalog,
   error,
   filters,
+  hasActiveFilters,
   libraryTitle,
   loading,
   page,
   query,
   refreshing,
-  scanStatus,
   selectedCategory,
   selectedInstructor,
   selectedTag,
@@ -48,21 +47,7 @@ function prefetchPage(page: number): void {
     </AlertMessage>
 
     <section id="catalog-results" :aria-busy="refreshing">
-      <PageHeader eyebrow="Your library" :title="libraryTitle" :heading-level="1">
-        <template #aside>
-          <p v-if="scanStatus?.completedAt" class="text-[.78rem] font-semibold text-muted">
-            <IntentRouterLink
-              v-if="scanStatus.warnings.length"
-              :to="{ path: '/settings/library', hash: '#settings-library-panel' }"
-              :prefetch="prefetch.settings"
-              class="text-belt underline decoration-belt/30 underline-offset-4 transition hover:decoration-belt"
-            >
-              {{ countText(scanStatus.warnings.length, "library issue") }}
-            </IntentRouterLink>
-            <span v-else>Library up to date</span>
-          </p>
-        </template>
-      </PageHeader>
+      <PageHeader eyebrow="Your library" :title="libraryTitle" :heading-level="1" />
 
       <div
         class="mt-6 grid grid-cols-4 items-start gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[760px]:grid-cols-1"
@@ -83,21 +68,16 @@ function prefetchPage(page: number): void {
           <EmptyState
             v-else
             :title="
-              query || selectedCategory || selectedInstructor || selectedTag
-                ? 'No courses match these filters'
-                : 'No courses found'
+              hasActiveFilters ? 'No courses match these filters' : 'No courses found'
             "
             :description="
-              query || selectedCategory || selectedInstructor || selectedTag
+              hasActiveFilters
                 ? 'Try another category, instructor, tag, or search term.'
                 : 'Add a course to your video folder, then refresh the library.'
             "
           >
             <template #icon>⌁</template>
-            <template
-              v-if="!query && !selectedCategory && !selectedInstructor && !selectedTag"
-              #details
-            >
+            <template v-if="!hasActiveFilters" #details>
               Server folder: <code>/videos</code>
             </template>
           </EmptyState>

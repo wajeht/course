@@ -20,9 +20,9 @@ export interface CourseCountRow {
 
 export interface CourseFilters {
   query?: string;
-  category?: string;
-  instructor?: string;
-  tag?: string;
+  category?: string[];
+  instructor?: string[];
+  tag?: string[];
 }
 
 export interface CoursePagination {
@@ -127,17 +127,19 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
     queryBuilder: Knex.QueryBuilder,
     { query, category, instructor, tag }: CourseFilters = {},
   ): void {
-    if (category) queryBuilder.where("courses.category", category);
-    if (instructor) {
+    if (category?.length) queryBuilder.whereIn("courses.category", category);
+    if (instructor?.length) {
+      const placeholders = instructor.map(() => "?").join(", ");
       queryBuilder.whereRaw(
-        "EXISTS (SELECT 1 FROM json_each(courses.instructors_json) WHERE value = ? COLLATE NOCASE)",
-        [instructor],
+        `EXISTS (SELECT 1 FROM json_each(courses.instructors_json) WHERE value COLLATE NOCASE IN (${placeholders}))`,
+        instructor,
       );
     }
-    if (tag) {
+    if (tag?.length) {
+      const placeholders = tag.map(() => "?").join(", ");
       queryBuilder.whereRaw(
-        "EXISTS (SELECT 1 FROM json_each(courses.tags_json) WHERE value = ? COLLATE NOCASE)",
-        [tag],
+        `EXISTS (SELECT 1 FROM json_each(courses.tags_json) WHERE value COLLATE NOCASE IN (${placeholders}))`,
+        tag,
       );
     }
     if (query) {

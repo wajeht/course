@@ -26,7 +26,7 @@ const page = computed(() => {
   return Number.isInteger(value) && value > 0 ? value : 1;
 });
 const filters = computed<CatalogFilters>(() => ({
-  instructor: instructorName.value,
+  instructor: [instructorName.value],
   page: page.value,
 }));
 const instructorRequest = useQuery(computed(() => catalogQueryOptions(filters.value, api)));

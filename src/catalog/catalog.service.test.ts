@@ -45,7 +45,7 @@ describe("catalog service", () => {
   it("filters courses by category and lists category counts", async () => {
     const service = createService();
 
-    await expect(service.getCatalog({ category: "Technology" })).resolves.toMatchObject({
+    await expect(service.getCatalog({ category: ["Technology"] })).resolves.toMatchObject({
       courses: [
         {
           title: "Container Fundamentals",
@@ -66,15 +66,19 @@ describe("catalog service", () => {
     });
   });
 
-  it("limits the other dropdown choices to the selected category", async () => {
+  it("keeps every filter option available while courses are filtered", async () => {
     const service = createService();
 
-    await expect(service.getCatalog({ category: "Martial Arts" })).resolves.toMatchObject({
+    await expect(service.getCatalog({ category: ["Martial Arts"] })).resolves.toMatchObject({
       instructors: [
-        { name: "jane smith", courseCount: 1 },
+        { name: "Jane Smith", courseCount: 2 },
         { name: "John Doe", courseCount: 1 },
       ],
-      tags: [{ name: "Guard", courseCount: 1 }],
+      tags: [
+        { name: "DevOps", courseCount: 1 },
+        { name: "Docker", courseCount: 1 },
+        { name: "Guard", courseCount: 1 },
+      ],
     });
   });
 
@@ -96,7 +100,7 @@ describe("catalog service", () => {
   it("filters by an exact instructor and lists instructor counts", async () => {
     const service = createService();
 
-    await expect(service.getCatalog({ instructor: "Jane Smith" })).resolves.toMatchObject({
+    await expect(service.getCatalog({ instructor: ["Jane Smith"] })).resolves.toMatchObject({
       courses: [{ title: "Container Fundamentals" }, { title: "Guard Retention" }],
       instructors: [
         { name: "Jane Smith", courseCount: 2 },
@@ -104,7 +108,7 @@ describe("catalog service", () => {
       ],
     });
 
-    await expect(service.getCatalog({ instructor: "Jane" })).resolves.toMatchObject({
+    await expect(service.getCatalog({ instructor: ["Jane"] })).resolves.toMatchObject({
       courses: [],
     });
   });
@@ -112,7 +116,7 @@ describe("catalog service", () => {
   it("filters by an exact tag and lists tag counts", async () => {
     const service = createService();
 
-    await expect(service.getCatalog({ tag: "Guard" })).resolves.toMatchObject({
+    await expect(service.getCatalog({ tag: ["Guard"] })).resolves.toMatchObject({
       courses: [{ title: "Guard Retention" }],
       tags: [
         { name: "DevOps", courseCount: 1 },
@@ -121,7 +125,23 @@ describe("catalog service", () => {
       ],
     });
 
-    await expect(service.getCatalog({ tag: "Gua" })).resolves.toMatchObject({ courses: [] });
+    await expect(service.getCatalog({ tag: ["Gua"] })).resolves.toMatchObject({ courses: [] });
+  });
+
+  it("matches any selection within a filter and combines different filters", async () => {
+    const service = createService();
+
+    const tags = await service.getCatalog({ tag: ["Docker", "Guard"] });
+    expect(tags.courses.map((course) => course.title)).toEqual([
+      "Container Fundamentals",
+      "Guard Retention",
+    ]);
+
+    const combined = await service.getCatalog({
+      category: ["Technology", "Martial Arts"],
+      tag: ["Docker"],
+    });
+    expect(combined.courses.map((course) => course.title)).toEqual(["Container Fundamentals"]);
   });
 
   it("paginates filtered courses and reports the result total", async () => {
