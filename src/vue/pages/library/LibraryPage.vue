@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { api } from "@/api.js";
-import { computed, watch } from "vue";
+import { watch } from "vue";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import CatalogFiltersToolbar from "@/pages/library/partials/CatalogFiltersToolbar.vue";
 import CourseCardGrid from "@/pages/catalog/partials/CourseCardGrid.vue";
@@ -24,16 +24,14 @@ const {
   refreshing,
   scanStatus,
   selectedCategory,
-  selectedFilters,
   selectedInstructor,
   selectedTag,
   setPage,
 } = useCatalogFilters(api);
 const prefetch = useRoutePrefetch();
-const headerTitle = computed(() => libraryTitle.value);
 
 watch(
-  headerTitle,
+  libraryTitle,
   (title) => setPageTitle(title),
   { immediate: true },
 );
@@ -50,7 +48,7 @@ function prefetchPage(page: number): void {
     </AlertMessage>
 
     <section id="catalog-results" :aria-busy="refreshing">
-      <PageHeader class="mb-7" eyebrow="Your library" :title="headerTitle" :heading-level="1">
+      <PageHeader eyebrow="Your library" :title="libraryTitle" :heading-level="1">
         <template #aside>
           <p v-if="scanStatus?.completedAt" class="text-[.78rem] font-semibold text-muted">
             <IntentRouterLink
@@ -69,7 +67,7 @@ function prefetchPage(page: number): void {
       <div
         class="mt-6 grid grid-cols-4 items-start gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[760px]:grid-cols-1"
       >
-        <div class="md:col-span-1 max-[1120px]:col-span-1 max-[860px]:col-span-1 md:flex-shrink-0">
+        <div>
           <CatalogFiltersToolbar
             v-model:category="selectedCategory"
             v-model:instructor="selectedInstructor"
@@ -80,7 +78,7 @@ function prefetchPage(page: number): void {
             :tags="catalog.tags"
           />
         </div>
-        <div class="col-span-3 md:min-w-0 max-[1120px]:col-span-2 max-[860px]:col-span-1">
+        <div class="col-span-3 min-w-0 max-[1120px]:col-span-2 max-[860px]:col-span-1">
           <CourseCardGrid v-if="loading || catalog.courses.length" :courses="catalog.courses" :loading />
           <EmptyState
             v-else
