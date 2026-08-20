@@ -34,10 +34,10 @@ describe("CatalogFiltersToolbar", () => {
     expect(wrapper.emitted("update:category")?.at(-1)).toEqual([["Technology"]]);
 
     await wrapper.setProps({ category: ["Technology"] });
-    await wrapper.get('input[name="catalog-desktop-category"][value="Martial Arts"]').setValue(true);
-    expect(wrapper.emitted("update:category")?.at(-1)).toEqual([
-      ["Technology", "Martial Arts"],
-    ]);
+    await wrapper
+      .get('input[name="catalog-desktop-category"][value="Martial Arts"]')
+      .setValue(true);
+    expect(wrapper.emitted("update:category")?.at(-1)).toEqual([["Technology", "Martial Arts"]]);
   });
 
   it("shows mobile filters inline and exposes the active selection", async () => {
@@ -45,7 +45,7 @@ describe("CatalogFiltersToolbar", () => {
     const categoryButton = wrapper.get('[data-mobile-filter="category"]');
 
     await categoryButton.trigger("click");
-    expect(wrapper.find('[data-mobile-filter-panel]').exists()).toBe(true);
+    expect(wrapper.find("[data-mobile-filter-panel]").exists()).toBe(true);
     expect(wrapper.find('[role="dialog"]').exists()).toBe(false);
 
     await wrapper.get('input[name="catalog-mobile-category"][value="Technology"]').setValue(true);

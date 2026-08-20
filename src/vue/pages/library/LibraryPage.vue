@@ -29,11 +29,7 @@ const {
 } = useCatalogFilters(api);
 const prefetch = useRoutePrefetch();
 
-watch(
-  libraryTitle,
-  (title) => setPageTitle(title),
-  { immediate: true },
-);
+watch(libraryTitle, (title) => setPageTitle(title), { immediate: true });
 
 function prefetchPage(page: number): void {
   void prefetch.catalog({ ...filters.value, page });
@@ -64,12 +60,14 @@ function prefetchPage(page: number): void {
           />
         </div>
         <div class="col-span-3 min-w-0 max-[1120px]:col-span-2 max-[860px]:col-span-1">
-          <CourseCardGrid v-if="loading || catalog.courses.length" :courses="catalog.courses" :loading />
+          <CourseCardGrid
+            v-if="loading || catalog.courses.length"
+            :courses="catalog.courses"
+            :loading
+          />
           <EmptyState
             v-else
-            :title="
-              hasActiveFilters ? 'No courses match these filters' : 'No courses found'
-            "
+            :title="hasActiveFilters ? 'No courses match these filters' : 'No courses found'"
             :description="
               hasActiveFilters
                 ? 'Try another category, instructor, tag, or search term.'

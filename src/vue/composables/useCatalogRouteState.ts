@@ -60,9 +60,7 @@ export function useCatalogRouteState(debounceMilliseconds = 150) {
   const selectedFilters = computed(() =>
     [...selectedCategory.value, ...selectedInstructor.value, ...selectedTag.value].filter(Boolean),
   );
-  const hasActiveFilters = computed(() =>
-    Boolean(query.value || selectedFilters.value.length),
-  );
+  const hasActiveFilters = computed(() => Boolean(query.value || selectedFilters.value.length));
   const filters = computed<CatalogFilters>(() => ({
     query: searchQuery.value || undefined,
     category: selectedCategory.value.length ? selectedCategory.value : undefined,

@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/vue-query";
 import { computed, watch, type ComputedRef } from "vue";
 
 import type { CatalogDto, CatalogFilters } from "@/api.js";
-import { catalogQueryOptions, scanStatusQueryOptions, type CatalogQueryClient } from "@/queries.js";
+import { catalogQueryOptions, type CatalogQueryClient } from "@/queries.js";
 
 function emptyCatalog(): CatalogDto {
   return {
@@ -17,24 +17,22 @@ function emptyCatalog(): CatalogDto {
 
 export function useCatalogData(
   filters: ComputedRef<CatalogFilters>,
-  client: CatalogQueryClient,
+  client: Pick<CatalogQueryClient, "getCatalog">,
   normalizePage: (page: number) => void,
 ) {
   const catalogRequest = useQuery(computed(() => catalogQueryOptions(filters.value, client)));
-  const scanStatusRequest = useQuery(scanStatusQueryOptions(client));
 
   watch(catalogRequest.data, (catalog) => {
     if (catalog) normalizePage(catalog.pagination.page);
   });
 
   const catalog = computed(() => catalogRequest.data.value ?? emptyCatalog());
-  const scanStatus = computed(() => scanStatusRequest.data.value);
   const loading = computed(() => catalogRequest.isPending.value);
   const refreshing = computed(
     () => catalogRequest.isFetching.value && !catalogRequest.isPending.value,
   );
   const error = computed(() => {
-    const caught = catalogRequest.error.value ?? scanStatusRequest.error.value;
+    const caught = catalogRequest.error.value;
     return caught instanceof Error ? caught.message : caught ? "Could not load your library" : "";
   });
 
@@ -44,6 +42,5 @@ export function useCatalogData(
     loading,
     refreshCatalog: catalogRequest.refetch,
     refreshing,
-    scanStatus,
   };
 }

@@ -4,7 +4,10 @@ import type { CatalogQueryClient } from "@/queries.js";
 import { useCatalogData } from "./useCatalogData.js";
 import { useCatalogRouteState } from "./useCatalogRouteState.js";
 
-export function useCatalogFilters(client: CatalogQueryClient, debounceMilliseconds = 150) {
+export function useCatalogFilters(
+  client: Pick<CatalogQueryClient, "getCatalog">,
+  debounceMilliseconds = 150,
+) {
   const routeState = useCatalogRouteState(debounceMilliseconds);
   const dataState = useCatalogData(routeState.filters, client, routeState.normalizePage);
   const libraryTitle = computed(() => {
