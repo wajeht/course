@@ -29,19 +29,19 @@ const player = useVideoPlayer(media);
           :loading="player.loading.value"
           :next-video="player.nextVideo.value"
           :playback="player.playback.value"
-          :playlist="player.playlist.value"
           :retrying="player.retrying.value"
           @ended="player.markComplete"
           @loaded-metadata="player.applyResume"
-          @open-playlist="player.toggleSidebar"
           @pause="player.onPause"
           @retry="player.retryConversion"
           @time-update="player.onTimeUpdate"
         />
         <PlayerVideoDetails
           :current-time="player.currentTime.value"
+          :playlist="player.playlist.value"
           :video="player.video.value"
           :resetting="player.resetting.value"
+          @open-playlist="player.toggleSidebar"
           @reset="player.resetProgress"
           @seek="player.seekToChapter"
         />

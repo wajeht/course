@@ -1,12 +1,17 @@
 <script setup lang="ts">
-import type { VideoDetailDto } from "@/api.js";
+import type { PlaylistDetailDto, VideoDetailDto } from "@/api.js";
 import AuthorLinks from "@/components/AuthorLinks.vue";
 import ChapterList from "@/components/ChapterList.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import { countText } from "@/utils.js";
 
-defineProps<{ currentTime: number; video: VideoDetailDto | null; resetting: boolean }>();
-defineEmits<{ reset: []; seek: [startSeconds: number] }>();
+defineProps<{
+  currentTime: number;
+  playlist: PlaylistDetailDto | null;
+  video: VideoDetailDto | null;
+  resetting: boolean;
+}>();
+defineEmits<{ openPlaylist: []; reset: []; seek: [startSeconds: number] }>();
 </script>
 
 <template>
@@ -21,6 +26,15 @@ defineEmits<{ reset: []; seek: [startSeconds: number] }>();
       <h1 class="max-w-[800px] font-display text-[clamp(1.5rem,2.6vw,2.5rem)] leading-[1.05]">
         {{ video.title }}
       </h1>
+      <AppButton
+        v-if="playlist"
+        class="mt-3 hidden max-[860px]:inline-flex"
+        variant="outline-inverse"
+        size="sm"
+        :aria-label="`Open playlist ${playlist.title}`"
+        @click="$emit('openPlaylist')"
+        >Playlist</AppButton
+      >
       <AuthorLinks
         v-if="video.authors.length"
         class="mt-3 block text-sm text-white/58"
