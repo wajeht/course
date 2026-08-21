@@ -6,26 +6,27 @@ import path from "node:path";
 
 import type { Configuration } from "../config.js";
 import type { Logger } from "../logger.js";
-import type { CatalogRepository, CourseOrder } from "./catalog.repository.js";
-import { readCourseMetadata } from "./course-metadata.js";
+import type { LibraryRepository, RootEntryOrder } from "./library.repository.js";
+import { normalizeMetadataName } from "./metadata.js";
 import { displayName, naturalOrder } from "./names.js";
 import { posixPath } from "./path.js";
+import { readPlaylistMetadata } from "./playlist-metadata.js";
 import { probeVideo, videoExtensions, type VideoProbe } from "./probe.js";
-import { readVideoMetadata } from "./video-metadata.js";
 import type {
-  CatalogSnapshot,
-  ChapterRecord,
-  CourseRecord,
-  LessonRecord,
+  AuthorRecord,
+  LibrarySnapshot,
+  PlaylistAuthorRecord,
   ScanStatus,
   ScanWarning,
-  SectionRecord,
+  VideoAuthorRecord,
+  VideoRecord,
 } from "./types.js";
+import { readVideoMetadata } from "./video-metadata.js";
 
 const coverExtensions = new Set([".jpg", ".jpeg", ".png", ".webp"]);
 const ignoredDirectoryNames = new Set(["@eadir", "#recycle"]);
 
-function isCatalogDirectory(entry: Dirent): boolean {
+function isLibraryDirectory(entry: Dirent): boolean {
   return (
     entry.isDirectory() &&
     !entry.name.startsWith(".") &&
@@ -33,15 +34,19 @@ function isCatalogDirectory(entry: Dirent): boolean {
   );
 }
 
+function isVideoFile(entry: Dirent): boolean {
+  return entry.isFile() && videoExtensions.has(path.extname(entry.name).toLowerCase());
+}
+
 export interface Scanner {
-  scanCatalog(): Promise<ScanStatus>;
+  scanLibrary(): Promise<ScanStatus>;
   scanStatus(): ScanStatus;
   startMonitoring(): () => void;
 }
 
 export interface ScannerDependencies {
   configuration: Configuration;
-  repository: CatalogRepository;
+  repository: LibraryRepository;
   logger: Logger;
   probe?: (filename: string, ffprobePath: string) => Promise<VideoProbe>;
   watchDirectory?: WatchDirectory;
@@ -58,6 +63,19 @@ type WatchDirectory = (
   listener: (event: string, filename: string | Buffer | null) => void,
 ) => DirectoryWatcher;
 
+interface LibraryEntry {
+  entry: Dirent;
+  id: string;
+  kind: "playlist" | "video";
+  path: string;
+  sortOrder: number;
+}
+
+interface BuiltLibrarySnapshot {
+  snapshot: LibrarySnapshot;
+  rootOrder: RootEntryOrder[];
+}
+
 function identifier(value: string): string {
   return createHash("sha256").update(value).digest("hex").slice(0, 24);
 }
@@ -72,125 +90,106 @@ export function createScanner({
   let activeSynchronization: Promise<void> | null = null;
   let fullScanInProgress = false;
   let fullScanRequested = false;
-  const requestedCourses = new Set<string>();
-  const courseWarnings = new Map<string, ScanWarning[]>();
+  const requestedEntries = new Set<string>();
+  const entryWarnings = new Map<string, ScanWarning[]>();
   let currentScanStatus: ScanStatus = {
     status: "idle",
     startedAt: null,
     completedAt: null,
-    courseCount: 0,
-    lessonCount: 0,
+    playlistCount: 0,
+    videoCount: 0,
     warnings: [],
     error: null,
   };
 
   function currentWarnings(): ScanWarning[] {
-    const warnings: ScanWarning[] = [];
-    for (const courseWarning of courseWarnings.values()) {
-      for (const warning of courseWarning) warnings.push(warning);
-    }
-    return warnings;
+    return [...entryWarnings.values()].flat();
   }
 
-  function replaceCourseWarnings(
-    courseNames: Iterable<string> | null,
+  function replaceEntryWarnings(
+    entryPaths: Iterable<string> | null,
     warnings: ScanWarning[],
   ): void {
-    if (courseNames === null) courseWarnings.clear();
-    else for (const courseName of courseNames) courseWarnings.delete(courseName);
+    if (entryPaths === null) entryWarnings.clear();
+    else for (const entryPath of entryPaths) entryWarnings.delete(entryPath);
 
     for (const warning of warnings) {
-      const courseName = warning.path.split("/")[0];
-      if (!courseName) continue;
-      const warningsForCourse = courseWarnings.get(courseName) ?? [];
-      warningsForCourse.push(warning);
-      courseWarnings.set(courseName, warningsForCourse);
+      const owner = warningOwner(warning.path);
+      if (!owner) continue;
+      const ownedWarnings = entryWarnings.get(owner) ?? [];
+      ownedWarnings.push(warning);
+      entryWarnings.set(owner, ownedWarnings);
     }
   }
 
-  async function scanOnce(courseNames?: string[]): Promise<ScanStatus> {
+  async function scanOnce(entryPaths?: string[]): Promise<ScanStatus> {
     const startedAt = new Date().toISOString();
     const scanWarnings: ScanWarning[] = [];
     const scanning: ScanStatus = {
       status: "scanning",
       startedAt,
       completedAt: null,
-      courseCount: currentScanStatus.courseCount,
-      lessonCount: currentScanStatus.lessonCount,
+      playlistCount: currentScanStatus.playlistCount,
+      videoCount: currentScanStatus.videoCount,
       warnings: currentWarnings(),
       error: null,
     };
     currentScanStatus = scanning;
 
     try {
-      if (courseNames) {
-        const courseEntries = await readCourseEntries(configuration);
-        const storedCourses = await repository.getCourses();
-        const currentCoursePaths = new Set<string>();
-        for (const entry of courseEntries) currentCoursePaths.add(posixPath(entry.name));
-        const storedCoursePaths = new Set<string>();
-        for (const course of storedCourses) storedCoursePaths.add(course.path);
-        const requestedCourseNames = new Set(courseNames);
-        const courseNamesToScan: string[] = [];
-        const courseIdsToScan: string[] = [];
-        for (const entry of courseEntries) {
-          if (
-            requestedCourseNames.has(entry.name) ||
-            !storedCoursePaths.has(posixPath(entry.name))
-          ) {
-            courseNamesToScan.push(entry.name);
-            courseIdsToScan.push(identifier(entry.name));
-          }
+      const [entries, existingVideos] = await Promise.all([
+        readLibraryEntries(configuration),
+        repository.getVideos(),
+      ]);
+      if (entryPaths) {
+        const storedEntries = await repository.getRootEntries();
+        const currentPaths = new Set(entries.map((entry) => entry.path));
+        const storedPaths = new Set(storedEntries.map((entry) => entry.path));
+        const synchronizedPaths = new Set(entryPaths);
+        for (const entry of entries) {
+          if (!storedPaths.has(entry.path)) synchronizedPaths.add(entry.path);
         }
-        const removedCourseIds: string[] = [];
-        const synchronizedCourseNames = new Set(courseNamesToScan);
-        for (const course of storedCourses) {
-          if (currentCoursePaths.has(course.path)) continue;
-          removedCourseIds.push(course.id);
-          synchronizedCourseNames.add(course.path);
+        for (const entry of storedEntries) {
+          if (!currentPaths.has(entry.path)) synchronizedPaths.add(entry.path);
         }
-        const existingLessons = await repository.getLessons(courseIdsToScan);
-        const { snapshot, courseOrder } = await buildCatalogSnapshot(
+        const built = await buildLibrarySnapshot(
           configuration,
           scanWarnings,
           probe,
-          existingLessons,
-          courseEntries,
-          courseNamesToScan,
+          existingVideos,
+          entries,
+          synchronizedPaths,
         );
-        await repository.synchronizeCourses(
-          snapshot,
-          [...courseIdsToScan, ...removedCourseIds],
-          courseOrder,
+        await repository.synchronizeEntries(
+          built.snapshot,
+          [...synchronizedPaths].map(identifier),
+          built.rootOrder,
         );
-        replaceCourseWarnings(synchronizedCourseNames, scanWarnings);
+        replaceEntryWarnings(synchronizedPaths, scanWarnings);
       } else {
-        const [courseEntries, existingLessons] = await Promise.all([
-          readCourseEntries(configuration),
-          repository.getLessons(),
-        ]);
-        const { snapshot } = await buildCatalogSnapshot(
+        const built = await buildLibrarySnapshot(
           configuration,
           scanWarnings,
           probe,
-          existingLessons,
-          courseEntries,
+          existingVideos,
+          entries,
         );
-        await repository.synchronizeCatalog(snapshot);
-        replaceCourseWarnings(null, scanWarnings);
+        await repository.synchronizeLibrary(built.snapshot);
+        replaceEntryWarnings(null, scanWarnings);
       }
-      const counts = await repository.getCatalogCounts();
+
+      const counts = await repository.getLibraryCounts();
       const complete: ScanStatus = {
         ...scanning,
+        ...counts,
         status: "complete",
         completedAt: new Date().toISOString(),
         warnings: currentWarnings(),
-        ...counts,
       };
       currentScanStatus = complete;
       logger.info("Media scan complete", {
-        courses: complete.courseCount,
-        lessons: complete.lessonCount,
+        playlists: complete.playlistCount,
+        videos: complete.videoCount,
         warnings: complete.warnings.length,
       });
       return complete;
@@ -209,10 +208,10 @@ export function createScanner({
   }
 
   async function drainRequests(): Promise<void> {
-    while (fullScanRequested || requestedCourses.size > 0) {
+    while (fullScanRequested || requestedEntries.size > 0) {
       if (fullScanRequested) {
         fullScanRequested = false;
-        requestedCourses.clear();
+        requestedEntries.clear();
         fullScanInProgress = true;
         try {
           await scanOnce();
@@ -221,9 +220,9 @@ export function createScanner({
         }
         continue;
       }
-      const courseNames = [...requestedCourses];
-      requestedCourses.clear();
-      await scanOnce(courseNames);
+      const entryPaths = [...requestedEntries];
+      requestedEntries.clear();
+      await scanOnce(entryPaths);
     }
   }
 
@@ -231,7 +230,7 @@ export function createScanner({
     if (!activeSynchronization) {
       activeSynchronization = drainRequests().finally(() => {
         activeSynchronization = null;
-        if (fullScanRequested || requestedCourses.size > 0) void ensureSynchronization();
+        if (fullScanRequested || requestedEntries.size > 0) void ensureSynchronization();
       });
     }
     return activeSynchronization;
@@ -240,57 +239,49 @@ export function createScanner({
   async function waitForSynchronization(): Promise<ScanStatus> {
     do {
       await ensureSynchronization();
-    } while (activeSynchronization || fullScanRequested || requestedCourses.size > 0);
+    } while (activeSynchronization || fullScanRequested || requestedEntries.size > 0);
     return currentScanStatus;
   }
 
-  function requestCourseSynchronization(courseNames: Iterable<string>): void {
+  function requestEntrySynchronization(entryPaths: Iterable<string>): void {
     if (!fullScanRequested) {
-      for (const courseName of courseNames) requestedCourses.add(courseName);
+      for (const entryPath of entryPaths) requestedEntries.add(entryPath);
     }
     void ensureSynchronization();
   }
 
   const scanner: Scanner = {
-    scanCatalog() {
+    scanLibrary() {
       if (!fullScanInProgress) {
         fullScanRequested = true;
-        requestedCourses.clear();
+        requestedEntries.clear();
       }
       return waitForSynchronization();
     },
     scanStatus: () => currentScanStatus,
     startMonitoring() {
       let debounce: NodeJS.Timeout | null = null;
-      const changedCourses = new Set<string>();
+      const changedEntries = new Set<string>();
       const watcher = watchDirectory(
         configuration.media.videosDirectory,
         { recursive: true },
         (_event, filename) => {
-          if (!filename) {
-            fullScanRequested = true;
-          } else {
-            const courseName = posixPath(String(filename)).split("/")[0];
-            if (
-              courseName &&
-              !courseName.startsWith(".") &&
-              !ignoredDirectoryNames.has(courseName.toLowerCase())
-            ) {
-              changedCourses.add(courseName);
-            }
-          }
+          const changedEntry = filename ? watchedEntryPath(posixPath(String(filename))) : null;
+          if (changedEntry) changedEntries.add(changedEntry);
+          else fullScanRequested = true;
+
           if (debounce) clearTimeout(debounce);
           debounce = setTimeout(() => {
             debounce = null;
             if (fullScanRequested) void ensureSynchronization();
-            else requestCourseSynchronization(changedCourses);
-            changedCourses.clear();
+            else requestEntrySynchronization(changedEntries);
+            changedEntries.clear();
           }, 750);
           debounce.unref();
         },
       );
       const schedule = setInterval(
-        () => void scanner.scanCatalog(),
+        () => void scanner.scanLibrary(),
         configuration.media.scanIntervalMs,
       );
       schedule.unref();
@@ -313,233 +304,339 @@ export function createScanner({
   return scanner;
 }
 
-interface BuiltCatalogSnapshot {
-  snapshot: CatalogSnapshot;
-  courseOrder: CourseOrder[];
-}
-
-async function readCourseEntries(configuration: Configuration): Promise<Dirent[]> {
-  const directoryEntries = await fs.readdir(configuration.media.videosDirectory, {
-    withFileTypes: true,
-  });
-  const courseEntries: Dirent[] = [];
-  for (const entry of directoryEntries) {
-    if (isCatalogDirectory(entry)) courseEntries.push(entry);
+function watchedEntryPath(filename: string): string | null {
+  const [rootEntry, nested] = filename.split("/");
+  if (!rootEntry || rootEntry.startsWith(".")) return null;
+  if (ignoredDirectoryNames.has(rootEntry.toLowerCase())) return null;
+  if (nested) return rootEntry;
+  if (videoExtensions.has(path.extname(rootEntry).toLowerCase())) return rootEntry;
+  if (rootEntry.endsWith(".json")) {
+    const videoName = rootEntry.slice(0, -".json".length);
+    if (videoExtensions.has(path.extname(videoName).toLowerCase())) return videoName;
   }
-  return courseEntries.sort((left, right) => naturalOrder(left.name, right.name));
+  return null;
 }
 
-async function buildCatalogSnapshot(
+function warningOwner(warningPath: string): string | null {
+  const [rootEntry] = warningPath.split("/");
+  if (!rootEntry) return null;
+  if (rootEntry.endsWith(".json")) {
+    const videoName = rootEntry.slice(0, -".json".length);
+    if (videoExtensions.has(path.extname(videoName).toLowerCase())) return videoName;
+  }
+  return rootEntry;
+}
+
+async function readLibraryEntries(configuration: Configuration): Promise<LibraryEntry[]> {
+  const directoryEntries = (
+    await fs.readdir(configuration.media.videosDirectory, { withFileTypes: true })
+  )
+    .filter((entry) => isLibraryDirectory(entry) || isVideoFile(entry))
+    .sort((left, right) => naturalOrder(left.name, right.name));
+
+  return directoryEntries.map((entry, sortOrder) => {
+    const relativePath = posixPath(entry.name);
+    return {
+      entry,
+      id: identifier(relativePath),
+      kind: entry.isDirectory() ? "playlist" : "video",
+      path: relativePath,
+      sortOrder,
+    };
+  });
+}
+
+async function buildLibrarySnapshot(
   configuration: Configuration,
   warnings: ScanWarning[],
   probe: (filename: string, ffprobePath: string) => Promise<VideoProbe>,
-  existingLessons: LessonRecord[],
-  courseEntries: Dirent[],
-  requestedCourseNames?: string[],
-): Promise<BuiltCatalogSnapshot> {
+  existingVideos: VideoRecord[],
+  entries: LibraryEntry[],
+  requestedPaths?: Set<string>,
+): Promise<BuiltLibrarySnapshot> {
   const root = configuration.media.videosDirectory;
-  const requestedNames = requestedCourseNames ? new Set(requestedCourseNames) : null;
-  const entriesToScan: Array<{ entry: Dirent; sortOrder: number }> = [];
-  const courseOrder: CourseOrder[] = [];
-  for (const [sortOrder, entry] of courseEntries.entries()) {
-    courseOrder.push({ id: identifier(posixPath(entry.name)), sortOrder });
-    if (!requestedNames || requestedNames.has(entry.name)) entriesToScan.push({ entry, sortOrder });
-  }
-  const existingLessonsByPath = new Map<string, LessonRecord>();
-  for (const lesson of existingLessons) existingLessonsByPath.set(lesson.path, lesson);
-  const courses: CourseRecord[] = [];
-  const sections: SectionRecord[] = [];
-  const lessons: LessonRecord[] = [];
-  const chapters: ChapterRecord[] = [];
-  const skippedLessonIds: string[] = [];
+  const existingVideosByPath = new Map(existingVideos.map((video) => [video.path, video]));
+  const snapshot: LibrarySnapshot = {
+    playlists: [],
+    playlistSections: [],
+    videos: [],
+    authors: [],
+    playlistAuthors: [],
+    videoAuthors: [],
+    chapters: [],
+    skippedVideoIds: [],
+  };
+  const authorsByName = new Map<string, AuthorRecord>();
+  const rootOrder = entries.map(({ id, kind, sortOrder }) => ({ id, kind, sortOrder }));
 
-  for (const { entry: courseEntry, sortOrder } of entriesToScan) {
-    const courseDirectory = path.join(root, courseEntry.name);
-    const courseRelativePath = posixPath(path.relative(root, courseDirectory));
-    const courseId = identifier(courseRelativePath);
-    const { metadata, warning } = await readCourseMetadata(courseDirectory);
-    if (warning) warnings.push({ path: `${courseRelativePath}/course.json`, message: warning });
-    const entries = (await fs.readdir(courseDirectory, { withFileTypes: true })).sort(
-      (left, right) => naturalOrder(left.name, right.name),
-    );
-    const localCover = await findCover(
-      courseDirectory,
-      courseRelativePath,
-      entries,
-      metadata?.cover,
-      warnings,
-    );
-    const course: CourseRecord = {
-      id: courseId,
-      path: courseRelativePath,
-      title: metadata?.title ?? courseEntry.name,
-      description: metadata?.description ?? "",
-      category: metadata?.category ?? "Uncategorized",
-      instructors: metadata?.instructors ?? [],
-      tags: metadata?.tags ?? [],
-      coverPath: localCover ? posixPath(path.relative(root, localCover)) : null,
-      sortOrder,
-    };
-    let courseVideoCount = 0;
-
-    const directVideos: Dirent[] = [];
-    const sectionEntries: Dirent[] = [];
-    for (const entry of entries) {
-      if (entry.isFile() && videoExtensions.has(path.extname(entry.name).toLowerCase())) {
-        directVideos.push(entry);
-      } else if (isCatalogDirectory(entry)) {
-        sectionEntries.push(entry);
-      }
-    }
-    courseVideoCount += directVideos.length;
-    await appendLessons({
-      files: directVideos,
-      directory: courseDirectory,
-      root,
-      courseId,
-      sectionId: null,
-      lessons,
-      chapters,
-      skippedLessonIds,
-      warnings,
-      probe,
-      existingLessonsByPath,
-      ffprobePath: configuration.media.ffprobePath,
-    });
-
-    let sectionIndex = 0;
-    for (const sectionEntry of sectionEntries) {
-      const sectionDirectory = path.join(courseDirectory, sectionEntry.name);
-      const sectionRelativePath = posixPath(path.relative(root, sectionDirectory));
-      const sectionId = identifier(sectionRelativePath);
-      const directoryEntries = await fs.readdir(sectionDirectory, { withFileTypes: true });
-      const sectionFiles: Dirent[] = [];
-      for (const entry of directoryEntries) {
-        if (entry.isFile() && videoExtensions.has(path.extname(entry.name).toLowerCase())) {
-          sectionFiles.push(entry);
-        }
-      }
-      sectionFiles.sort((left, right) => naturalOrder(left.name, right.name));
-      if (sectionFiles.length === 0) continue;
-      courseVideoCount += sectionFiles.length;
-      sections.push({
-        id: sectionId,
-        courseId,
-        path: sectionRelativePath,
-        title: displayName(sectionEntry.name),
-        sortOrder: sectionIndex++,
-      });
-      await appendLessons({
-        files: sectionFiles,
-        directory: sectionDirectory,
+  for (const entry of entries) {
+    if (requestedPaths && !requestedPaths.has(entry.path)) continue;
+    if (entry.kind === "video") {
+      await appendVideo({
+        absolutePath: path.join(root, entry.entry.name),
         root,
-        courseId,
-        sectionId,
-        lessons,
-        chapters,
-        skippedLessonIds,
+        playlistId: null,
+        playlistSectionId: null,
+        sortOrder: entry.sortOrder,
+        snapshot,
+        authorsByName,
         warnings,
         probe,
-        existingLessonsByPath,
+        existingVideosByPath,
+        ffprobePath: configuration.media.ffprobePath,
+      });
+    } else {
+      await appendPlaylist({
+        entry,
+        root,
+        snapshot,
+        authorsByName,
+        warnings,
+        probe,
+        existingVideosByPath,
         ffprobePath: configuration.media.ffprobePath,
       });
     }
-
-    if (courseVideoCount === 0) continue;
-    courses.push(course);
   }
 
-  return {
-    snapshot: { courses, sections, lessons, chapters, skippedLessonIds },
-    courseOrder,
-  };
+  return { snapshot, rootOrder };
 }
 
-interface AppendLessonsOptions {
-  files: Dirent[];
-  directory: string;
+interface AppendPlaylistOptions {
+  entry: LibraryEntry;
   root: string;
-  courseId: string;
-  sectionId: string | null;
-  lessons: LessonRecord[];
-  chapters: ChapterRecord[];
-  skippedLessonIds: string[];
+  snapshot: LibrarySnapshot;
+  authorsByName: Map<string, AuthorRecord>;
   warnings: ScanWarning[];
   probe: (filename: string, ffprobePath: string) => Promise<VideoProbe>;
-  existingLessonsByPath: Map<string, LessonRecord>;
+  existingVideosByPath: Map<string, VideoRecord>;
   ffprobePath: string;
 }
 
-async function appendLessons(options: AppendLessonsOptions): Promise<void> {
-  for (const [index, file] of options.files.entries()) {
-    const absolutePath = path.join(options.directory, file.name);
-    const relativePath = posixPath(path.relative(options.root, absolutePath));
-    const sidecarPath = `${relativePath}.json`;
-    const { metadata: videoMetadata, warning } = await readVideoMetadata(absolutePath);
-    if (warning) options.warnings.push({ path: sidecarPath, message: warning });
-    try {
-      const fileStats = await fs.stat(absolutePath);
-      const modifiedAt = fileStats.mtime.toISOString();
-      const existing = options.existingLessonsByPath.get(relativePath);
-      const video =
-        existing && existing.modifiedAt === modifiedAt && existing.sizeBytes === fileStats.size
-          ? existing
-          : await options.probe(absolutePath, options.ffprobePath);
-      const lessonId = identifier(relativePath);
-      options.lessons.push({
-        id: lessonId,
-        courseId: options.courseId,
-        sectionId: options.sectionId,
-        path: relativePath,
-        title: displayName(file.name),
-        sortOrder: index,
-        durationSeconds: video.durationSeconds,
-        sizeBytes: video.sizeBytes,
-        container: video.container,
-        videoCodec: video.videoCodec,
-        audioCodec: video.audioCodec,
-        browserCompatible: video.browserCompatible,
-        modifiedAt,
+async function appendPlaylist(options: AppendPlaylistOptions): Promise<void> {
+  const { entry, root, snapshot, warnings } = options;
+  const playlistDirectory = path.join(root, entry.entry.name);
+  const { metadata, warning } = await readPlaylistMetadata(playlistDirectory);
+  if (warning) warnings.push({ path: `${entry.path}/playlist.json`, message: warning });
+  const directoryEntries = (await fs.readdir(playlistDirectory, { withFileTypes: true })).sort(
+    (left, right) => naturalOrder(left.name, right.name),
+  );
+  const directVideos = directoryEntries.filter(isVideoFile);
+  const sectionEntries = directoryEntries.filter(isLibraryDirectory);
+  const playlistCover = await findPlaylistCover(
+    playlistDirectory,
+    entry.path,
+    directoryEntries,
+    metadata?.cover,
+    warnings,
+  );
+  let playlistVideoOrder = 0;
+  let videoFileCount = directVideos.length;
+
+  for (const video of directVideos) {
+    await appendVideo({
+      absolutePath: path.join(playlistDirectory, video.name),
+      root,
+      playlistId: entry.id,
+      playlistSectionId: null,
+      sortOrder: playlistVideoOrder++,
+      snapshot,
+      authorsByName: options.authorsByName,
+      warnings,
+      probe: options.probe,
+      existingVideosByPath: options.existingVideosByPath,
+      ffprobePath: options.ffprobePath,
+    });
+  }
+
+  let sectionOrder = 0;
+  for (const sectionEntry of sectionEntries) {
+    const sectionDirectory = path.join(playlistDirectory, sectionEntry.name);
+    const sectionPath = posixPath(path.relative(root, sectionDirectory));
+    const sectionDirectoryEntries = (
+      await fs.readdir(sectionDirectory, { withFileTypes: true })
+    ).sort((left, right) => naturalOrder(left.name, right.name));
+    for (const nested of sectionDirectoryEntries.filter(isLibraryDirectory)) {
+      warnings.push({
+        path: `${sectionPath}/${nested.name}`,
+        message: "Directories below playlist sections are unsupported",
       });
-      for (const [chapterIndex, chapter] of (videoMetadata?.chapters ?? []).entries()) {
-        if (chapter.startSeconds >= video.durationSeconds) {
-          options.warnings.push({
-            path: sidecarPath,
-            message: `Chapter “${chapter.title}” starts outside ${file.name}`,
-          });
-          continue;
-        }
-        options.chapters.push({
-          id: identifier(`${relativePath}\0${chapter.startSeconds}`),
-          lessonId,
-          title: chapter.title,
-          startSeconds: chapter.startSeconds,
-          sortOrder: chapterIndex,
+    }
+    const sectionVideos = sectionDirectoryEntries.filter(isVideoFile);
+    if (sectionVideos.length === 0) continue;
+    videoFileCount += sectionVideos.length;
+    const sectionId = identifier(sectionPath);
+    snapshot.playlistSections.push({
+      id: sectionId,
+      playlistId: entry.id,
+      path: sectionPath,
+      title: displayName(sectionEntry.name),
+      sortOrder: sectionOrder++,
+    });
+    for (const video of sectionVideos) {
+      await appendVideo({
+        absolutePath: path.join(sectionDirectory, video.name),
+        root,
+        playlistId: entry.id,
+        playlistSectionId: sectionId,
+        sortOrder: playlistVideoOrder++,
+        snapshot,
+        authorsByName: options.authorsByName,
+        warnings,
+        probe: options.probe,
+        existingVideosByPath: options.existingVideosByPath,
+        ffprobePath: options.ffprobePath,
+      });
+    }
+  }
+
+  if (videoFileCount === 0) return;
+  snapshot.playlists.push({
+    id: entry.id,
+    path: entry.path,
+    title: metadata?.title ?? entry.entry.name,
+    description: metadata?.description ?? "",
+    tags: metadata?.tags ?? [],
+    coverPath: playlistCover ? posixPath(path.relative(root, playlistCover)) : null,
+    sourceProvider: metadata?.source?.provider ?? null,
+    sourceUrl: metadata?.source?.url ?? null,
+    sortOrder: entry.sortOrder,
+  });
+  appendAuthors(metadata?.authors ?? [], entry.id, "playlist", snapshot, options.authorsByName);
+}
+
+interface AppendVideoOptions {
+  absolutePath: string;
+  root: string;
+  playlistId: string | null;
+  playlistSectionId: string | null;
+  sortOrder: number;
+  snapshot: LibrarySnapshot;
+  authorsByName: Map<string, AuthorRecord>;
+  warnings: ScanWarning[];
+  probe: (filename: string, ffprobePath: string) => Promise<VideoProbe>;
+  existingVideosByPath: Map<string, VideoRecord>;
+  ffprobePath: string;
+}
+
+async function appendVideo(options: AppendVideoOptions): Promise<void> {
+  const relativePath = posixPath(path.relative(options.root, options.absolutePath));
+  const sidecarPath = `${relativePath}.json`;
+  const videoId = identifier(relativePath);
+  const { metadata, warning } = await readVideoMetadata(options.absolutePath);
+  if (warning) options.warnings.push({ path: sidecarPath, message: warning });
+
+  try {
+    const fileStats = await fs.stat(options.absolutePath);
+    const modifiedAt = fileStats.mtime.toISOString();
+    const existing = options.existingVideosByPath.get(relativePath);
+    const probeResult =
+      existing && existing.modifiedAt === modifiedAt && existing.sizeBytes === fileStats.size
+        ? existing
+        : await options.probe(options.absolutePath, options.ffprobePath);
+    const coverPath = await findVideoCover(
+      options.absolutePath,
+      options.root,
+      sidecarPath,
+      metadata?.cover,
+      options.warnings,
+    );
+    options.snapshot.videos.push({
+      id: videoId,
+      path: relativePath,
+      playlistId: options.playlistId,
+      playlistSectionId: options.playlistSectionId,
+      title: metadata?.title ?? displayName(path.basename(options.absolutePath)),
+      description: metadata?.description ?? "",
+      tags: metadata?.tags ?? [],
+      coverPath,
+      sourceProvider: metadata?.source?.provider ?? null,
+      sourceUrl: metadata?.source?.url ?? null,
+      sortOrder: options.sortOrder,
+      durationSeconds: probeResult.durationSeconds,
+      sizeBytes: probeResult.sizeBytes,
+      container: probeResult.container,
+      videoCodec: probeResult.videoCodec,
+      audioCodec: probeResult.audioCodec,
+      browserCompatible: probeResult.browserCompatible,
+      modifiedAt,
+    });
+    appendAuthors(
+      metadata?.authors ?? [],
+      videoId,
+      "video",
+      options.snapshot,
+      options.authorsByName,
+    );
+    for (const [chapterIndex, chapter] of (metadata?.chapters ?? []).entries()) {
+      if (chapter.startSeconds >= probeResult.durationSeconds) {
+        options.warnings.push({
+          path: sidecarPath,
+          message: `Chapter “${chapter.title}” starts outside ${path.basename(options.absolutePath)}`,
         });
+        continue;
       }
-    } catch (error) {
-      options.skippedLessonIds.push(identifier(relativePath));
-      options.warnings.push({
-        path: relativePath,
-        message: error instanceof Error ? error.message : "Could not inspect video",
+      options.snapshot.chapters.push({
+        id: identifier(`${relativePath}\0${chapter.startSeconds}`),
+        videoId,
+        title: chapter.title,
+        startSeconds: chapter.startSeconds,
+        sortOrder: chapterIndex,
       });
+    }
+  } catch (error) {
+    options.snapshot.skippedVideoIds.push(videoId);
+    options.warnings.push({
+      path: relativePath,
+      message: error instanceof Error ? error.message : "Could not inspect video",
+    });
+  }
+}
+
+function appendAuthors(
+  names: string[],
+  ownerId: string,
+  ownerKind: "playlist" | "video",
+  snapshot: LibrarySnapshot,
+  authorsByName: Map<string, AuthorRecord>,
+): void {
+  for (const [sortOrder, name] of names.entries()) {
+    const normalizedName = normalizeMetadataName(name);
+    let author = authorsByName.get(normalizedName);
+    if (!author) {
+      author = { id: identifier(`author\0${normalizedName}`), name, normalizedName };
+      authorsByName.set(normalizedName, author);
+      snapshot.authors.push(author);
+    }
+    if (ownerKind === "playlist") {
+      snapshot.playlistAuthors.push({
+        playlistId: ownerId,
+        authorId: author.id,
+        sortOrder,
+      } satisfies PlaylistAuthorRecord);
+    } else {
+      snapshot.videoAuthors.push({
+        videoId: ownerId,
+        authorId: author.id,
+        sortOrder,
+      } satisfies VideoAuthorRecord);
     }
   }
 }
 
-async function findCover(
-  courseDirectory: string,
-  courseRelativePath: string,
+async function findPlaylistCover(
+  playlistDirectory: string,
+  playlistPath: string,
   entries: Dirent[],
   requestedCover: string | undefined,
   warnings: ScanWarning[],
 ): Promise<string | null> {
   if (requestedCover) {
-    const warningPath = `${courseRelativePath}/${posixPath(requestedCover)}`;
-    const requestedPath = path.resolve(courseDirectory, requestedCover);
-    const relative = path.relative(courseDirectory, requestedPath);
+    const warningPath = `${playlistPath}/${posixPath(requestedCover)}`;
+    const requestedPath = path.resolve(playlistDirectory, requestedCover);
+    const relative = path.relative(playlistDirectory, requestedPath);
     if (relative.startsWith("..") || path.isAbsolute(relative)) {
-      warnings.push({ path: warningPath, message: "Cover path leaves the course directory" });
+      warnings.push({ path: warningPath, message: "Cover path leaves the playlist directory" });
     } else if (!coverExtensions.has(path.extname(requestedPath).toLowerCase())) {
       warnings.push({ path: warningPath, message: "Cover must be a JPG, PNG, or WebP image" });
     } else {
@@ -553,8 +650,37 @@ async function findCover(
 
   for (const entry of entries) {
     if (entry.isFile() && coverExtensions.has(path.extname(entry.name).toLowerCase())) {
-      return path.join(courseDirectory, entry.name);
+      return path.join(playlistDirectory, entry.name);
     }
+  }
+  return null;
+}
+
+async function findVideoCover(
+  videoFilename: string,
+  root: string,
+  sidecarPath: string,
+  requestedCover: string | undefined,
+  warnings: ScanWarning[],
+): Promise<string | null> {
+  if (!requestedCover) return null;
+  const videoDirectory = path.dirname(videoFilename);
+  const requestedPath = path.resolve(videoDirectory, requestedCover);
+  const relative = path.relative(videoDirectory, requestedPath);
+  if (relative.startsWith("..") || path.isAbsolute(relative)) {
+    warnings.push({ path: sidecarPath, message: "Cover path leaves the video directory" });
+    return null;
+  }
+  if (!coverExtensions.has(path.extname(requestedPath).toLowerCase())) {
+    warnings.push({ path: sidecarPath, message: "Cover must be a JPG, PNG, or WebP image" });
+    return null;
+  }
+  try {
+    if ((await fs.stat(requestedPath)).isFile()) {
+      return posixPath(path.relative(root, requestedPath));
+    }
+  } catch {
+    warnings.push({ path: sidecarPath, message: "Configured cover does not exist" });
   }
   return null;
 }
