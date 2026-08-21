@@ -69,7 +69,6 @@ function submit(): void {
       <AppInput
         :id="inputId"
         v-model="setupToken"
-        class="lg:min-h-12"
         :aria-describedby="describedBy"
         :invalid="invalid"
         type="password"
@@ -88,7 +87,6 @@ function submit(): void {
       <AppInput
         :id="inputId"
         v-model="password"
-        class="lg:min-h-12"
         :aria-describedby="describedBy"
         :invalid="invalid"
         type="password"
@@ -111,7 +109,6 @@ function submit(): void {
       <AppInput
         :id="inputId"
         v-model="confirmPassword"
-        class="lg:min-h-12"
         :aria-describedby="describedBy"
         :invalid="invalid"
         type="password"
@@ -127,7 +124,7 @@ function submit(): void {
     </AlertMessage>
 
     <AppButton
-      class="mt-6 lg:h-12"
+      class="mt-6"
       block
       size="lg"
       type="submit"
