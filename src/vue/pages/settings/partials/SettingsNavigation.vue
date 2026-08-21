@@ -27,7 +27,7 @@ const sections = computed(() =>
     if (route.name === section.routeName) {
       return {
         ...section,
-        stateClasses: "bg-pine! text-white! shadow-[0_7px_18px_rgb(21_51_38_/_16%)]",
+        stateClasses: "bg-pine! text-white!",
       };
     }
     return {
@@ -54,7 +54,7 @@ const sections = computed(() =>
         :to="{ name: section.routeName }"
         :prefetch="section.prefetch"
         :class="[
-          'flex h-10 w-full items-center rounded-[7px] px-3.5 text-left text-[.82rem] font-bold transition-[background,color,box-shadow] duration-[160ms] max-[760px]:justify-center max-[760px]:rounded-none max-[760px]:px-0 max-[760px]:shadow-none!',
+          'flex h-10 w-full items-center rounded-[7px] px-3.5 text-left text-[.82rem] font-bold transition-[background,color] duration-[160ms] max-[760px]:justify-center max-[760px]:rounded-none max-[760px]:px-0',
           section.value === 'access' ? 'max-[760px]:border-l max-[760px]:border-line' : '',
           section.stateClasses,
         ]"
