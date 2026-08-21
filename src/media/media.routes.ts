@@ -11,7 +11,7 @@ import type { AppContext } from "../context.js";
 import { createRequireAuth } from "../auth/auth.routes.js";
 import { lessonParametersSchema } from "../catalog/catalog.schema.js";
 import { resolveContainedPath } from "./path.js";
-import { byteRange } from "./range.js";
+import { parseByteRange } from "./range.js";
 
 const hlsParametersSchema = z.object({
   lessonId: lessonParametersSchema.shape.lessonId,
@@ -56,7 +56,7 @@ export function createMediaRouter(context: AppContext) {
       c.header("Cache-Control", "private, no-store");
 
       try {
-        const range = byteRange(c.req.header("range"), statistics.size);
+        const range = parseByteRange(c.req.header("range"), statistics.size);
         if (!range) {
           c.header("Content-Length", String(statistics.size));
           return c.body(createFileBody(filename));

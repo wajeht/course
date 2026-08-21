@@ -19,11 +19,16 @@ Common types are `feat`, `fix`, `docs`, `refactor`, `test`, and `chore`.
 ## Code Conventions
 
 - Prefer exported function declarations.
-- Use `createX()` factory functions instead of service classes.
-- Prefix Node.js built-in imports with `node:`.
-- Use noun variable names and descriptive function names.
-- Use `verbNoun()` for side effects and `is`, `has`, `can`, or `should` for predicates.
+- Use `verbNoun()` for functions that have side effects or can fail.
 - Use a noun for a pure derivation, such as `errorMessage(error)`.
+- Use `is`, `has`, `can`, or `should` for boolean predicates.
+- Use `createX()` factory functions instead of service classes.
+- Drop `get`, `build`, and `format` prefixes from pure derivations. Keep `get`
+  when a function performs real work such as I/O, subprocess execution, or
+  parsing that can throw.
+- Use noun variable names without `get`, `build`, or `format` prefixes.
+- Avoid default exports.
+- Prefix Node.js built-in imports with `node:`.
 - Prefer `for` and `for...of` when iterating in hot paths.
 - Follow existing TypeScript, Vue, Hono, database, and test patterns.
 

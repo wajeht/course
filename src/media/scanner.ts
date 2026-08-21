@@ -35,7 +35,7 @@ function isCatalogDirectory(entry: Dirent): boolean {
 
 export interface Scanner {
   scanCatalog(): Promise<ScanStatus>;
-  getScanStatus(): ScanStatus;
+  scanStatus(): ScanStatus;
   startMonitoring(): () => void;
 }
 
@@ -74,7 +74,7 @@ export function createScanner({
   let fullScanRequested = false;
   const requestedCourses = new Set<string>();
   const courseWarnings = new Map<string, ScanWarning[]>();
-  let scanStatus: ScanStatus = {
+  let currentScanStatus: ScanStatus = {
     status: "idle",
     startedAt: null,
     completedAt: null,
@@ -115,12 +115,12 @@ export function createScanner({
       status: "scanning",
       startedAt,
       completedAt: null,
-      courseCount: scanStatus.courseCount,
-      lessonCount: scanStatus.lessonCount,
+      courseCount: currentScanStatus.courseCount,
+      lessonCount: currentScanStatus.lessonCount,
       warnings: currentWarnings(),
       error: null,
     };
-    scanStatus = scanning;
+    currentScanStatus = scanning;
 
     try {
       if (courseNames) {
@@ -187,7 +187,7 @@ export function createScanner({
         warnings: currentWarnings(),
         ...counts,
       };
-      scanStatus = complete;
+      currentScanStatus = complete;
       logger.info("Media scan complete", {
         courses: complete.courseCount,
         lessons: complete.lessonCount,
@@ -202,7 +202,7 @@ export function createScanner({
         warnings: currentWarnings(),
         error: error instanceof Error ? error.message : "Media scan failed",
       };
-      scanStatus = failed;
+      currentScanStatus = failed;
       logger.error("Media scan failed", { error });
       return failed;
     }
@@ -241,7 +241,7 @@ export function createScanner({
     do {
       await ensureSynchronization();
     } while (activeSynchronization || fullScanRequested || requestedCourses.size > 0);
-    return scanStatus;
+    return currentScanStatus;
   }
 
   function requestCourseSynchronization(courseNames: Iterable<string>): void {
@@ -259,7 +259,7 @@ export function createScanner({
       }
       return waitForSynchronization();
     },
-    getScanStatus: () => scanStatus,
+    scanStatus: () => currentScanStatus,
     startMonitoring() {
       let debounce: NodeJS.Timeout | null = null;
       const changedCourses = new Set<string>();
