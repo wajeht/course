@@ -467,9 +467,9 @@ describe("media scanner", () => {
     await waitUntil(
       async () =>
         (probeCalls.get("01 - Healthy.mp4") ?? 0) === 2 &&
-        scanner.getScanStatus().status === "complete",
+        scanner.scanStatus().status === "complete",
     );
-    expect(scanner.getScanStatus().warnings).toEqual([
+    expect(scanner.scanStatus().warnings).toEqual([
       {
         path: "Broken Course/01 - Broken.mp4",
         message: "Could not inspect broken video",
@@ -482,9 +482,9 @@ describe("media scanner", () => {
     await waitUntil(
       async () =>
         (probeCalls.get("01 - Broken.mp4") ?? 0) === 2 &&
-        scanner.getScanStatus().status === "complete",
+        scanner.scanStatus().status === "complete",
     );
-    expect(scanner.getScanStatus().warnings).toEqual([]);
+    expect(scanner.scanStatus().warnings).toEqual([]);
   });
 
   it("clears a resolved cover warning after an incremental scan", async () => {
@@ -544,7 +544,7 @@ describe("media scanner", () => {
       return course?.cover_path === "Example Course/missing.jpg";
     });
 
-    expect(scanner.getScanStatus().warnings).toEqual([]);
+    expect(scanner.scanStatus().warnings).toEqual([]);
   });
 
   it("fails when library monitoring cannot start", async () => {
