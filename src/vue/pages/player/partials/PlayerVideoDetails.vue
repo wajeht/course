@@ -15,17 +15,16 @@ defineEmits<{ openPlaylist: []; reset: []; seek: [startSeconds: number] }>();
 </script>
 
 <template>
-  <div v-if="video" class="flex items-start justify-between gap-8 max-[600px]:flex-col">
-    <div>
-      <p
-        v-if="video.playlistSectionTitle"
-        class="mb-2 text-xs font-extrabold tracking-[.18em] text-belt uppercase"
-      >
-        {{ video.playlistSectionTitle }}
-      </p>
-      <h1 class="max-w-[800px] font-display text-[clamp(1.5rem,2.6vw,2.5rem)] leading-[1.05]">
+  <div v-if="video" class="mt-4 flex items-start justify-between gap-8 max-[600px]:flex-col">
+    <div class="min-w-0">
+      <h1 class="max-w-[800px] font-display text-[clamp(1.35rem,2vw,2rem)] leading-[1.1]">
         {{ video.title }}
       </h1>
+      <AuthorLinks
+        v-if="video.authors.length"
+        class="mt-2 block text-sm font-semibold text-white/72"
+        :authors="video.authors"
+      />
       <AppButton
         v-if="playlist"
         class="mt-3 min-[861px]:!hidden"
@@ -35,11 +34,6 @@ defineEmits<{ openPlaylist: []; reset: []; seek: [startSeconds: number] }>();
         @click="$emit('openPlaylist')"
         >Playlist</AppButton
       >
-      <AuthorLinks
-        v-if="video.authors.length"
-        class="mt-3 block text-sm text-white/58"
-        :authors="video.authors"
-      />
       <p v-if="video.description" class="mt-4 max-w-[780px] text-sm leading-relaxed text-white/62">
         {{ video.description }}
       </p>
