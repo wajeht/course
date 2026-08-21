@@ -3,46 +3,42 @@ import { Hono } from "hono";
 
 import type { AppContext } from "../context.js";
 import {
-  courseProgressParametersSchema,
+  playlistProgressParametersSchema,
   progressParametersSchema,
   updateProgressSchema,
 } from "./progress.schema.js";
 
 export function createProgressRouter(context: AppContext) {
   return new Hono()
-    .post("/lessons/:lessonId/open", zValidator("param", progressParametersSchema), async (c) => {
-      const opened = await context.progress.openLesson(c.req.valid("param").lessonId);
-      return opened ? c.json({ opened: true }) : c.json({ message: "Lesson not found" }, 404);
+    .post("/videos/:videoId/open", zValidator("param", progressParametersSchema), async (c) => {
+      const opened = await context.progress.openVideo(c.req.valid("param").videoId);
+      return opened ? c.json({ opened: true }) : c.json({ message: "Video not found" }, 404);
     })
     .put(
-      "/lessons/:lessonId",
+      "/videos/:videoId",
       zValidator("param", progressParametersSchema),
       zValidator("json", updateProgressSchema),
       async (c) => {
         const saved = await context.progress.updateProgress(
-          c.req.valid("param").lessonId,
+          c.req.valid("param").videoId,
           c.req.valid("json").positionSeconds,
         );
-        return saved ? c.json({ saved: true }) : c.json({ message: "Lesson not found" }, 404);
+        return saved ? c.json({ saved: true }) : c.json({ message: "Video not found" }, 404);
       },
     )
-    .post(
-      "/lessons/:lessonId/complete",
-      zValidator("param", progressParametersSchema),
-      async (c) => {
-        const saved = await context.progress.completeLesson(c.req.valid("param").lessonId);
-        return saved ? c.json({ completed: true }) : c.json({ message: "Lesson not found" }, 404);
-      },
-    )
-    .delete("/lessons/:lessonId", zValidator("param", progressParametersSchema), async (c) => {
-      await context.progress.resetLesson(c.req.valid("param").lessonId);
+    .post("/videos/:videoId/complete", zValidator("param", progressParametersSchema), async (c) => {
+      const saved = await context.progress.completeVideo(c.req.valid("param").videoId);
+      return saved ? c.json({ completed: true }) : c.json({ message: "Video not found" }, 404);
+    })
+    .delete("/videos/:videoId", zValidator("param", progressParametersSchema), async (c) => {
+      await context.progress.resetVideo(c.req.valid("param").videoId);
       return c.json({ reset: true });
     })
     .delete(
-      "/courses/:courseId",
-      zValidator("param", courseProgressParametersSchema),
+      "/playlists/:playlistId",
+      zValidator("param", playlistProgressParametersSchema),
       async (c) => {
-        await context.progress.resetCourse(c.req.valid("param").courseId);
+        await context.progress.resetPlaylist(c.req.valid("param").playlistId);
         return c.json({ reset: true });
       },
     );

@@ -37,7 +37,7 @@ export async function stopServer(info: ServerInfo): Promise<void> {
 }
 
 async function runApplication(): Promise<void> {
-  process.title = "course";
+  process.title = "videos";
   const context = await createContext();
   const info = await startServer(context);
   let stopping = false;

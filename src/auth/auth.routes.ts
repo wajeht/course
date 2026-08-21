@@ -57,7 +57,7 @@ function validationHook(
 }
 
 function sessionCookieName(configuration: Configuration): string {
-  return configuration.app.env === "production" ? "__Host-course_session" : "course_session";
+  return configuration.app.env === "production" ? "__Host-videos_session" : "videos_session";
 }
 
 function sessionCookieOptions(configuration: Configuration) {

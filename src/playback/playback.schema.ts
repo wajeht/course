@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-import { identifierSchema } from "../catalog/catalog.schema.js";
+import { identifierSchema } from "../library/library.schema.js";
 
-export const playbackParametersSchema = z.object({ lessonId: identifierSchema });
+export const playbackParametersSchema = z.object({ videoId: identifierSchema });
 
 export const playbackResponseSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("direct"), url: z.string() }),

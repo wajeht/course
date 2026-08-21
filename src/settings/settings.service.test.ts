@@ -12,18 +12,18 @@ beforeEach(async () => {
 });
 
 describe("settings service", () => {
-  it("loads the default catalog page size", async () => {
+  it("loads the default library page size", async () => {
     const service = createSettingsService(createSettingsRepository(database.connection));
 
-    await expect(service.getSettings()).resolves.toEqual({ catalogPageSize: 24 });
+    await expect(service.getSettings()).resolves.toEqual({ libraryPageSize: 24 });
   });
 
-  it("updates the catalog page size", async () => {
+  it("updates the library page size", async () => {
     const service = createSettingsService(createSettingsRepository(database.connection));
 
-    await expect(service.updateSettings({ catalogPageSize: 48 })).resolves.toEqual({
-      catalogPageSize: 48,
+    await expect(service.updateSettings({ libraryPageSize: 48 })).resolves.toEqual({
+      libraryPageSize: 48,
     });
-    await expect(service.getCatalogPageSize()).resolves.toBe(48);
+    await expect(service.getLibraryPageSize()).resolves.toBe(48);
   });
 });

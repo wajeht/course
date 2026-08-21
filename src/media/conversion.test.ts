@@ -3,16 +3,16 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { createCatalogApiRepository } from "../catalog/catalog.repository.js";
 import { createConfiguration } from "../config.js";
 import type { Database } from "../db/db.js";
+import { createLibraryApiRepository } from "../library/library.repository.js";
 import { createLogger } from "../logger.js";
 import { createTemporaryDirectory, createTestDatabase } from "../test/resources.js";
 import { createConversionManager, type ConversionExecutor } from "./conversion.js";
 import { createConversionRepository } from "./conversion.repository.js";
 
 async function createFixture(executor: ConversionExecutor) {
-  const directory = await createTemporaryDirectory("course-conversion-");
+  const directory = await createTemporaryDirectory("video-conversion-");
   const dataDirectory = path.join(directory, "data");
   const videosDirectory = path.join(directory, "videos");
   await Promise.all([
@@ -26,19 +26,19 @@ async function createFixture(executor: ConversionExecutor) {
   });
   const database = await createTestDatabase(configuration);
   const now = new Date().toISOString();
-  await database.connection("courses").insert({
+  await database.connection("playlists").insert({
     id: "a".repeat(24),
-    path: "course",
-    title: "Course",
+    path: "playlist",
+    title: "Playlist",
     description: "",
     sort_order: 0,
   });
   for (const [index, id] of ["b".repeat(24), "c".repeat(24)].entries()) {
-    await database.connection("lessons").insert({
+    await database.connection("videos").insert({
       id,
-      course_id: "a".repeat(24),
-      path: `course/${index}.mkv`,
-      title: `Lesson ${index}`,
+      playlist_id: "a".repeat(24),
+      path: `playlist/${index}.mkv`,
+      title: `Video ${index}`,
       sort_order: index,
       duration_seconds: 100,
       size_bytes: 100,
@@ -49,20 +49,20 @@ async function createFixture(executor: ConversionExecutor) {
       modified_at: now,
     });
   }
-  const catalog = createCatalogApiRepository(database.connection);
+  const library = createLibraryApiRepository(database.connection);
   const manager = createConversionManager({
     repository: createConversionRepository(database.connection),
-    catalog,
+    library,
     configuration,
     logger: createLogger(),
     executor,
   });
-  return { database, catalog, manager };
+  return { database, library, manager };
 }
 
-async function waitForStatus(database: Database, lessonId: string, status: string): Promise<void> {
+async function waitForStatus(database: Database, videoId: string, status: string): Promise<void> {
   for (let attempt = 0; attempt < 100; attempt++) {
-    const row = await database.connection("conversions").where({ lesson_id: lessonId }).first();
+    const row = await database.connection("conversions").where({ video_id: videoId }).first();
     if (row?.status === status) return;
     await new Promise((resolve) => setTimeout(resolve, 2));
   }
@@ -74,15 +74,15 @@ describe("conversion manager", () => {
     let active = 0;
     let maximumActive = 0;
     let calls = 0;
-    const { database, catalog, manager } = await createFixture(async () => {
+    const { database, library, manager } = await createFixture(async () => {
       calls++;
       active++;
       maximumActive = Math.max(maximumActive, active);
       await new Promise((resolve) => setTimeout(resolve, 10));
       active--;
     });
-    const first = (await catalog.findLesson("b".repeat(24)))!;
-    const second = (await catalog.findLesson("c".repeat(24)))!;
+    const first = (await library.findVideo("b".repeat(24)))!;
+    const second = (await library.findVideo("c".repeat(24)))!;
 
     await Promise.all([
       manager.requestConversion(first),
@@ -97,13 +97,13 @@ describe("conversion manager", () => {
   });
 
   it("records failures for an explicit retry", async () => {
-    const { database, catalog, manager } = await createFixture(async () => {
+    const { database, library, manager } = await createFixture(async () => {
       throw new Error("Quick Sync unavailable");
     });
-    const lesson = (await catalog.findLesson("b".repeat(24)))!;
-    await manager.requestConversion(lesson);
-    await waitForStatus(database, lesson.id, "failed");
-    expect(await manager.getConversion(lesson.id)).toMatchObject({
+    const video = (await library.findVideo("b".repeat(24)))!;
+    await manager.requestConversion(video);
+    await waitForStatus(database, video.id, "failed");
+    expect(await manager.getConversion(video.id)).toMatchObject({
       status: "failed",
       error: "Quick Sync unavailable",
     });
@@ -111,15 +111,15 @@ describe("conversion manager", () => {
 
   it("rebuilds a ready conversion when its playlist is missing", async () => {
     let calls = 0;
-    const { database, catalog, manager } = await createFixture(async () => {
+    const { database, library, manager } = await createFixture(async () => {
       calls++;
     });
-    const lesson = (await catalog.findLesson("b".repeat(24)))!;
+    const video = (await library.findVideo("b".repeat(24)))!;
 
-    await manager.requestConversion(lesson);
-    await waitForStatus(database, lesson.id, "ready");
-    await manager.requestConversion(lesson);
-    await waitForStatus(database, lesson.id, "ready");
+    await manager.requestConversion(video);
+    await waitForStatus(database, video.id, "ready");
+    await manager.requestConversion(video);
+    await waitForStatus(database, video.id, "ready");
 
     expect(calls).toBe(2);
   });

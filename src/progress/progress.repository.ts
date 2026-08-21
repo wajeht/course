@@ -1,32 +1,32 @@
 import type { Knex } from "knex";
 
 export interface ProgressRepository {
-  markOpened(lessonId: string): Promise<void>;
-  savePosition(lessonId: string, positionSeconds: number): Promise<void>;
-  completeLesson(lessonId: string, positionSeconds: number): Promise<void>;
-  resetLesson(lessonId: string): Promise<void>;
-  resetCourse(courseId: string): Promise<void>;
+  markOpened(videoId: string): Promise<void>;
+  savePosition(videoId: string, positionSeconds: number): Promise<void>;
+  completeVideo(videoId: string, positionSeconds: number): Promise<void>;
+  resetVideo(videoId: string): Promise<void>;
+  resetPlaylist(playlistId: string): Promise<void>;
 }
 
 export function createProgressRepository(database: Knex): ProgressRepository {
   return {
-    async markOpened(lessonId) {
+    async markOpened(videoId) {
       await database("progress")
-        .where({ lesson_id: lessonId, completed: false })
+        .where({ video_id: videoId, completed: false })
         .where("position_seconds", ">", 0)
         .update({ updated_at: new Date().toISOString() });
     },
 
-    async savePosition(lessonId, positionSeconds) {
+    async savePosition(videoId, positionSeconds) {
       const now = new Date().toISOString();
       await database("progress")
         .insert({
-          lesson_id: lessonId,
+          video_id: videoId,
           position_seconds: positionSeconds,
           completed: false,
           updated_at: now,
         })
-        .onConflict("lesson_id")
+        .onConflict("video_id")
         .merge({
           position_seconds: database.raw(
             "CASE WHEN progress.completed = 1 THEN progress.position_seconds ELSE excluded.position_seconds END",
@@ -35,26 +35,26 @@ export function createProgressRepository(database: Knex): ProgressRepository {
         });
     },
 
-    async completeLesson(lessonId, positionSeconds) {
+    async completeVideo(videoId, positionSeconds) {
       const now = new Date().toISOString();
       await database("progress")
         .insert({
-          lesson_id: lessonId,
+          video_id: videoId,
           position_seconds: positionSeconds,
           completed: true,
           updated_at: now,
         })
-        .onConflict("lesson_id")
+        .onConflict("video_id")
         .merge({ position_seconds: positionSeconds, completed: true, updated_at: now });
     },
 
-    async resetLesson(lessonId) {
-      await database("progress").where({ lesson_id: lessonId }).delete();
+    async resetVideo(videoId) {
+      await database("progress").where({ video_id: videoId }).delete();
     },
 
-    async resetCourse(courseId) {
+    async resetPlaylist(playlistId) {
       await database("progress")
-        .whereIn("lesson_id", database("lessons").select("id").where({ course_id: courseId }))
+        .whereIn("video_id", database("videos").select("id").where({ playlist_id: playlistId }))
         .delete();
     },
   };
