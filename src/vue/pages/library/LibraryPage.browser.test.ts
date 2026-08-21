@@ -158,7 +158,11 @@ test("loads more courses in place on mobile and keeps desktop pagination", async
 
   await expect(page.getByText("Second course", { exact: true })).toBeVisible();
   await expect(loadMore).toHaveCount(0);
-  await expect(page).not.toHaveURL(/page=2/);
+  await expect(page).toHaveURL(/page=2/);
+
+  await page.reload();
+  await expect(page.getByText("First course", { exact: true })).toBeVisible();
+  await expect(page.getByText("Second course", { exact: true })).toBeVisible();
 
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect(page).toHaveURL(/page=2/);

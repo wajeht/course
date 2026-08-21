@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/vue-query";
-import { computed, shallowRef, watch } from "vue";
+import { computed, shallowRef, toRef, watch, type MaybeRefOrGetter } from "vue";
 
 import type { CatalogDto } from "@/api.js";
 import { catalogQueryOptions, type CatalogQueryClient } from "@/queries.js";
@@ -9,8 +9,10 @@ import { useCatalogRouteState } from "./useCatalogRouteState.js";
 export function useCatalogFilters(
   client: Pick<CatalogQueryClient, "getCatalog">,
   debounceMilliseconds = 150,
+  accumulatePages: MaybeRefOrGetter<boolean> = false,
 ) {
   const queryClient = useQueryClient();
+  const accumulatePagesRef = toRef(accumulatePages);
   const routeState = useCatalogRouteState(debounceMilliseconds);
   const dataState = useCatalogData(routeState.filters, client, routeState.normalizePage);
   const loadedCourses = shallowRef<CatalogDto["courses"]>([]);
@@ -21,49 +23,59 @@ export function useCatalogFilters(
   let catalogGeneration = 0;
 
   watch(
-    [routeState.filters, dataState.catalog],
-    ([, catalog]) => {
-      catalogGeneration += 1;
-      loadedCourses.value = catalog.courses;
-      loadedPage.value = catalog.pagination.page;
+    [routeState.filters, dataState.catalog, accumulatePagesRef],
+    async ([filters, catalog, shouldAccumulate]) => {
+      const generation = ++catalogGeneration;
+      const requestedPage = filters.page ?? 1;
+      if (catalog.pagination.page !== requestedPage) return;
+
       loadedTotalPages.value = catalog.pagination.totalPages;
-      loadingMore.value = false;
       loadMoreError.value = "";
+
+      if (!shouldAccumulate) {
+        loadedCourses.value = catalog.courses;
+        loadedPage.value = catalog.pagination.page;
+        loadingMore.value = false;
+        return;
+      }
+
+      try {
+        const catalogs = await Promise.all(
+          Array.from({ length: requestedPage }, (_, index) =>
+            queryClient.fetchQuery(catalogQueryOptions({ ...filters, page: index + 1 }, client)),
+          ),
+        );
+        if (generation !== catalogGeneration) return;
+
+        const loadedIds = new Set<string>();
+        loadedCourses.value = catalogs.flatMap((pageCatalog) =>
+          pageCatalog.courses.filter((course) => {
+            if (loadedIds.has(course.id)) return false;
+            loadedIds.add(course.id);
+            return true;
+          }),
+        );
+        loadedPage.value = catalog.pagination.page;
+      } catch (caught) {
+        if (generation !== catalogGeneration) return;
+        loadMoreError.value =
+          caught instanceof Error ? caught.message : "Could not load more courses";
+      } finally {
+        if (generation === catalogGeneration) loadingMore.value = false;
+      }
     },
     { immediate: true },
   );
 
   const canLoadMore = computed(() => loadedPage.value < loadedTotalPages.value);
-  const lastLoadedPage = computed(() => loadedPage.value);
 
-  async function loadMore(): Promise<void> {
+  function loadMore(): void {
     if (loadingMore.value || !canLoadMore.value) return;
 
-    const generation = catalogGeneration;
     const nextPage = loadedPage.value + 1;
     loadingMore.value = true;
     loadMoreError.value = "";
-
-    try {
-      const nextCatalog = await queryClient.fetchQuery(
-        catalogQueryOptions({ ...routeState.filters.value, page: nextPage }, client),
-      );
-      if (generation !== catalogGeneration) return;
-
-      const loadedIds = new Set(loadedCourses.value.map((course) => course.id));
-      loadedCourses.value = [
-        ...loadedCourses.value,
-        ...nextCatalog.courses.filter((course) => !loadedIds.has(course.id)),
-      ];
-      loadedPage.value = nextCatalog.pagination.page;
-      loadedTotalPages.value = nextCatalog.pagination.totalPages;
-    } catch (caught) {
-      if (generation !== catalogGeneration) return;
-      loadMoreError.value =
-        caught instanceof Error ? caught.message : "Could not load more courses";
-    } finally {
-      if (generation === catalogGeneration) loadingMore.value = false;
-    }
+    routeState.setPage(nextPage);
   }
 
   const libraryTitle = computed(() => {
@@ -81,7 +93,6 @@ export function useCatalogFilters(
     ...routeState,
     ...dataState,
     canLoadMore,
-    lastLoadedPage,
     libraryTitle,
     loadedCourses,
     loadMore,

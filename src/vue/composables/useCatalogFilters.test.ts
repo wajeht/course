@@ -37,6 +37,7 @@ async function setup(
   },
   path = "/",
   debounceMilliseconds = 0,
+  accumulatePages = false,
 ) {
   const router = createRouter({
     history: createMemoryHistory(),
@@ -49,7 +50,7 @@ async function setup(
   app.use(router);
   const scope = effectScope();
   const filters = app.runWithContext(() =>
-    scope.run(() => useCatalogFilters(client, debounceMilliseconds)),
+    scope.run(() => useCatalogFilters(client, debounceMilliseconds, accumulatePages)),
   );
   if (!filters) throw new Error("Composable did not initialize");
   return {
@@ -168,23 +169,24 @@ describe("useCatalogFilters", () => {
     stop();
   });
 
-  it("appends the next page without changing the URL", async () => {
+  it("appends through the URL page when accumulation is enabled", async () => {
     const client = {
       getCatalog: vi.fn(async (filters?: CatalogFilters) =>
         filters?.page === 2 ? catalog("Second course", 2) : catalog("First course", 1),
       ),
     };
-    const { filters, router, stop } = await setup(client);
+    const { filters, router, stop } = await setup(client, "/", 0, true);
     await vi.waitFor(() => expect(filters.loadedCourses.value[0]?.title).toBe("First course"));
 
     await filters.loadMore();
 
+    await vi.waitFor(() => expect(router.currentRoute.value.query.page).toBe("2"));
+    await vi.waitFor(() => expect(filters.loadedCourses.value).toHaveLength(2));
     expect(filters.loadedCourses.value.map((course) => course.title)).toEqual([
       "First course",
       "Second course",
     ]);
     expect(filters.canLoadMore.value).toBe(false);
-    expect(router.currentRoute.value.query.page).toBeUndefined();
     expect(client.getCatalog).toHaveBeenLastCalledWith(
       expect.objectContaining({ page: 2 }),
       expect.any(AbortSignal),
