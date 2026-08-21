@@ -44,12 +44,16 @@ const playlist: PlaylistDetailDto = {
 };
 
 describe("PlayerVideoDetails", () => {
-  it("opens the playlist from below the video title", async () => {
+  it("keeps the playlist action mobile-only", async () => {
     const wrapper = mount(PlayerVideoDetails, {
       props: { currentTime: 0, playlist, resetting: false, video },
     });
 
-    await wrapper.get('[aria-label="Open playlist Saved Collection"]').trigger("click");
+    const action = wrapper.get('[aria-label="Open playlist Saved Collection"]');
+
+    expect(action.classes()).toContain("min-[861px]:!hidden");
+
+    await action.trigger("click");
 
     expect(wrapper.emitted("openPlaylist")).toHaveLength(1);
   });
