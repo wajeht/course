@@ -4,6 +4,7 @@ import { computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { api, apiErrorMessage, isLibraryResourceNotFound } from "@/api.js";
+import AuthorLinks from "@/components/AuthorLinks.vue";
 import VideoCoverPlaceholder from "@/components/VideoCoverPlaceholder.vue";
 import VideoRow from "@/components/VideoRow.vue";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
@@ -97,9 +98,11 @@ watch(
           >
             {{ playlist.title }}
           </h1>
-          <p v-if="playlist.authors.length" class="mt-4 text-sm text-belt-light">
-            {{ playlist.authors.join(", ") }}
-          </p>
+          <AuthorLinks
+            v-if="playlist.authors.length"
+            class="mt-4 block text-sm text-belt-light"
+            :authors="playlist.authors"
+          />
           <p v-if="playlist.description" class="mt-5 max-w-[700px] text-white/72">
             {{ playlist.description }}
           </p>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { VideoDetailDto } from "@/api.js";
+import AuthorLinks from "@/components/AuthorLinks.vue";
 import ChapterList from "@/components/ChapterList.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import { countText } from "@/utils.js";
@@ -20,9 +21,11 @@ defineEmits<{ reset: []; seek: [startSeconds: number] }>();
       <h1 class="max-w-[800px] font-display text-[clamp(1.5rem,2.6vw,2.5rem)] leading-[1.05]">
         {{ video.title }}
       </h1>
-      <p v-if="video.authors.length" class="mt-3 text-sm text-white/58">
-        {{ video.authors.join(", ") }}
-      </p>
+      <AuthorLinks
+        v-if="video.authors.length"
+        class="mt-3 block text-sm text-white/58"
+        :authors="video.authors"
+      />
       <p v-if="video.description" class="mt-4 max-w-[780px] text-sm leading-relaxed text-white/62">
         {{ video.description }}
       </p>

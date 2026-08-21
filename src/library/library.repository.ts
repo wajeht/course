@@ -70,7 +70,7 @@ export interface VideoPagination {
 export interface LibraryRepository {
   listVideos(filters?: VideoFilters, pagination?: VideoPagination): Promise<VideoRow[]>;
   countVideos(filters?: VideoFilters): Promise<number>;
-  listPlaylists(): Promise<PlaylistRow[]>;
+  listPlaylists(filters?: Pick<VideoFilters, "author">): Promise<PlaylistRow[]>;
   listAuthors(): Promise<FilterCountRow[]>;
   listTags(): Promise<FilterCountRow[]>;
   listContinueWatching(): Promise<VideoRow[]>;
@@ -261,8 +261,19 @@ export function createLibraryApiRepository(database: Knex): LibraryRepository {
       return Number(row?.video_count ?? 0);
     },
 
-    listPlaylists() {
-      return createPlaylistsQuery().orderBy("playlists.sort_order");
+    listPlaylists({ author } = {}) {
+      const queryBuilder = createPlaylistsQuery().orderBy("playlists.sort_order");
+      if (author?.length) {
+        const placeholders = author.map(() => "?").join(", ");
+        queryBuilder.whereExists(
+          database("playlist_authors")
+            .join("authors", "authors.id", "playlist_authors.author_id")
+            .select(database.raw("1"))
+            .whereRaw("playlist_authors.playlist_id = playlists.id")
+            .whereRaw(`authors.name COLLATE NOCASE IN (${placeholders})`, author),
+        );
+      }
+      return queryBuilder;
     },
 
     async listAuthors() {

@@ -13,6 +13,7 @@ declare module "vue-router" {
 
 export const loadHomePage = () => import("@/pages/home/HomePage.vue");
 export const loadVideosPage = () => import("@/pages/library/LibraryPage.vue");
+export const loadAuthorPage = () => import("@/pages/author/AuthorPage.vue");
 export const loadPlaylistPage = () => import("@/pages/playlist/PlaylistPage.vue");
 export const loadPlayerPage = () => import("@/pages/player/PlayerPage.vue");
 export const loadSettingsLibraryPage = () => import("@/pages/settings/LibraryPage.vue");
@@ -33,6 +34,12 @@ export const router = createRouter({
       name: "playlist",
       component: loadPlaylistPage,
       meta: { navigation: "videos", title: "Playlist" },
+    },
+    {
+      path: "/authors/:authorName",
+      name: "author",
+      component: loadAuthorPage,
+      meta: { navigation: "videos", title: "Author" },
     },
     {
       path: "/videos/:videoId",

@@ -2,6 +2,7 @@
 import type { DeepReadonly } from "vue";
 
 import type { LibraryDto } from "@/api.js";
+import AuthorLinks from "@/components/AuthorLinks.vue";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import VideoCoverPlaceholder from "@/components/VideoCoverPlaceholder.vue";
 import ProgressBar from "@/components/ui/ProgressBar.vue";
@@ -50,9 +51,11 @@ const prefetch = useRoutePrefetch();
         {{ video.title }}
       </IntentRouterLink>
     </h3>
-    <p v-if="video.authors.length" class="mt-1 truncate text-[.72rem] text-muted">
-      {{ video.authors.join(", ") }}
-    </p>
+    <AuthorLinks
+      v-if="video.authors.length"
+      class="mt-1 block truncate text-[.72rem] text-muted"
+      :authors="video.authors"
+    />
     <IntentRouterLink
       v-if="video.playlistId"
       :to="{ name: 'playlist', params: { playlistId: video.playlistId } }"

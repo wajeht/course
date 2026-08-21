@@ -8,6 +8,7 @@ import {
   videoQueryOptions,
 } from "@/queries.js";
 import {
+  loadAuthorPage,
   loadHomePage,
   loadVideosPage,
   loadPlayerPage,
@@ -25,6 +26,8 @@ export function useRoutePrefetch() {
   return {
     home: () => Promise.all([library(), loadHomePage()]),
     videos: () => Promise.all([library(), loadVideosPage()]),
+    author: (authorName: string) =>
+      Promise.all([library({ author: [authorName] }), loadAuthorPage()]),
     playlist: (playlistId: string) =>
       Promise.all([
         queryClient.prefetchQuery(playlistQueryOptions(playlistId)),
