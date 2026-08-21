@@ -28,7 +28,7 @@ defineEmits<{ openPlaylist: []; reset: []; seek: [startSeconds: number] }>();
       </h1>
       <AppButton
         v-if="playlist"
-        class="mt-3 hidden max-[860px]:inline-flex"
+        class="mt-3 min-[861px]:!hidden"
         variant="outline-inverse"
         size="sm"
         :aria-label="`Open playlist ${playlist.title}`"
