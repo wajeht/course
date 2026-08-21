@@ -1,6 +1,6 @@
 services:
-  course:
-    container_name: course-dev
+  videos:
+    container_name: videos-dev
     build:
       context: .
       dockerfile: Dockerfile.dev

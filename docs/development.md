@@ -88,8 +88,8 @@ make up-qsv
 
 Reusable interface primitives live in `src/vue/components/ui`. Use these for
 buttons, form controls, panels, empty states, alerts, modals, confirmations,
-toasts, and the Course logo. Keep content-specific components such as
-`CourseCard` and `LessonRow` in `src/vue/components`.
+toasts, and the Videos logo. Keep content-specific components such as
+`VideoCard`, `PlaylistCard`, and `VideoRow` in `src/vue/components`.
 
 Route pages live under `src/vue/pages`, with route-specific components in that
 route's `partials` directory. Keep tests beside the page or component they
@@ -117,5 +117,5 @@ production deployment workflow. Pull requests can use the `temp-deploy` or
 
 Production deployment configuration lives in the Home Ops repository,
 including video and data mounts, `/dev/dri` access, `SESSION_SECRET`,
-`AUTH_SETUP_TOKEN`, and image updates. Course handles browser authentication
+`AUTH_SETUP_TOKEN`, and image updates. Videos handles browser authentication
 itself and exposes `/healthz` without authentication for its health check.

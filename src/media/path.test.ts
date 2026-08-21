@@ -8,18 +8,18 @@ import { resolveContainedPath } from "./path.js";
 
 describe("resolveContainedPath", () => {
   it("resolves files inside the configured root", async () => {
-    const root = await createTemporaryDirectory("course-path-root-");
-    const lesson = path.join(root, "course", "lesson.mp4");
-    await fs.mkdir(path.dirname(lesson));
-    await fs.writeFile(lesson, "video");
+    const root = await createTemporaryDirectory("videos-path-root-");
+    const video = path.join(root, "playlist", "video.mp4");
+    await fs.mkdir(path.dirname(video));
+    await fs.writeFile(video, "video");
 
-    await expect(resolveContainedPath(root, "course/lesson.mp4")).resolves.toBe(
-      await fs.realpath(lesson),
+    await expect(resolveContainedPath(root, "playlist/video.mp4")).resolves.toBe(
+      await fs.realpath(video),
     );
   });
 
   it("rejects path traversal", async () => {
-    const root = await createTemporaryDirectory("course-path-root-");
+    const root = await createTemporaryDirectory("videos-path-root-");
 
     await expect(resolveContainedPath(root, "../secret.mp4")).rejects.toThrow(
       "Path leaves the configured media directory",
@@ -27,8 +27,8 @@ describe("resolveContainedPath", () => {
   });
 
   it("rejects symlinks that resolve outside the configured root", async () => {
-    const root = await createTemporaryDirectory("course-path-root-");
-    const outside = await createTemporaryDirectory("course-path-outside-");
+    const root = await createTemporaryDirectory("videos-path-root-");
+    const outside = await createTemporaryDirectory("videos-path-outside-");
     await fs.writeFile(path.join(outside, "secret.mp4"), "secret");
     await fs.symlink(outside, path.join(root, "linked"));
 

@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { defineConfig, devices } from "@playwright/test";
 
-const runtimeDirectory = path.join(os.tmpdir(), "course-pwa-tests");
+const runtimeDirectory = path.join(os.tmpdir(), "videos-pwa-tests");
 const dataDirectory = path.join(runtimeDirectory, "data");
 const videosDirectory = path.join(runtimeDirectory, "videos");
 
@@ -34,8 +34,8 @@ export default defineConfig({
       APP_PORT: "4173",
       DATA_DIR: dataDirectory,
       VIDEOS_DIR: videosDirectory,
-      SESSION_SECRET: "course-playwright-session-secret-123456789",
-      AUTH_SETUP_TOKEN: "course-playwright-setup-token",
+      SESSION_SECRET: "videos-playwright-session-secret-123456789",
+      AUTH_SETUP_TOKEN: "videos-playwright-setup-token",
     },
   },
   projects: [

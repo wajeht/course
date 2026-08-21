@@ -53,16 +53,6 @@ describe("playlist metadata", () => {
     expect(result.warning).toContain("videos");
   });
 
-  it("does not read course.json", async () => {
-    const directory = await createPlaylistDirectory();
-    await fs.writeFile(path.join(directory, "course.json"), JSON.stringify({ version: 1 }));
-
-    await expect(readPlaylistMetadata(directory)).resolves.toEqual({
-      metadata: null,
-      warning: null,
-    });
-  });
-
   it("warns and falls back for invalid JSON", async () => {
     const directory = await createPlaylistDirectory();
     await fs.writeFile(path.join(directory, "playlist.json"), "not-json");

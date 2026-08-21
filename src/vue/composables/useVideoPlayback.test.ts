@@ -14,7 +14,7 @@ function videoElement() {
   } as unknown as HTMLVideoElement;
 }
 
-function playbackClient(result: PlaybackResult = { kind: "direct", url: "/media/lesson" }) {
+function playbackClient(result: PlaybackResult = { kind: "direct", url: "/media/video" }) {
   return {
     getConversionStatus: vi.fn(async () => result),
     retryConversion: vi.fn(async () => result),
@@ -33,11 +33,11 @@ describe("useVideoPlayback", () => {
     const playback = useVideoPlayback(video, client);
     const requestId = playback.startRequest();
 
-    await playback.applyPlayback({ kind: "direct", url: "/media/lesson" }, "lesson", requestId);
+    await playback.applyPlayback({ kind: "direct", url: "/media/video" }, "video", requestId);
 
-    expect(element.src).toBe("/media/lesson");
+    expect(element.src).toBe("/media/video");
     expect(element.load).toHaveBeenCalledOnce();
-    expect(playback.playback.value).toEqual({ kind: "direct", url: "/media/lesson" });
+    expect(playback.playback.value).toEqual({ kind: "direct", url: "/media/video" });
   });
 
   it("does not attach a source from a stale request", async () => {
@@ -47,7 +47,7 @@ describe("useVideoPlayback", () => {
     const requestId = playback.startRequest();
 
     playback.startRequest();
-    await playback.applyPlayback({ kind: "direct", url: "/media/stale" }, "lesson", requestId);
+    await playback.applyPlayback({ kind: "direct", url: "/media/stale" }, "video", requestId);
 
     expect(element.src).toBe("");
     expect(element.load).not.toHaveBeenCalled();
@@ -63,13 +63,13 @@ describe("useVideoPlayback", () => {
 
     await playback.applyPlayback(
       { kind: "converting", status: "queued", progress: 0 },
-      "lesson",
+      "video",
       requestId,
     );
     await vi.advanceTimersByTimeAsync(100);
     await nextTick();
 
-    expect(client.getConversionStatus).toHaveBeenCalledWith("lesson");
+    expect(client.getConversionStatus).toHaveBeenCalledWith("video");
     expect(element.src).toBe("/media/ready");
   });
 
@@ -82,7 +82,7 @@ describe("useVideoPlayback", () => {
 
     await playback.applyPlayback(
       { kind: "converting", status: "queued", progress: 0 },
-      "lesson",
+      "video",
       requestId,
     );
     await vi.advanceTimersByTimeAsync(100);
@@ -95,7 +95,7 @@ describe("useVideoPlayback", () => {
     const playback = useVideoPlayback(ref(element), playbackClient());
     const callback = vi.fn();
     const requestId = playback.startRequest();
-    await playback.applyPlayback({ kind: "direct", url: "/media/lesson" }, "lesson", requestId);
+    await playback.applyPlayback({ kind: "direct", url: "/media/video" }, "video", requestId);
 
     playback.applyMetadata(callback);
     playback.applyMetadata(callback);

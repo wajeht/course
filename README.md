@@ -1,118 +1,103 @@
-# Course
+# Videos
 
 [![Node.js CI](https://github.com/wajeht/course/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/wajeht/course/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Open Source Love svg1](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://github.com/wajeht/course)
 
-A private, opinionated, self-hosted video course library.
+A lean, self-hosted video library for a private media archive.
 
 > [!WARNING]
 > This project is unfinished and under active development.
 
-## Usage
+## Library layout
 
-Run it locally:
-
-```bash
-$ docker run --rm \
-    --publish 80:80 \
-    --env SESSION_SECRET="$(openssl rand -hex 32)" \
-    --env AUTH_SETUP_TOKEN="choose-a-one-time-setup-token" \
-    --read-only \
-    --tmpfs /tmp \
-    --cap-drop ALL \
-    --cap-add DAC_OVERRIDE \
-    --cap-add NET_BIND_SERVICE \
-    --security-opt no-new-privileges \
-    --device /dev/dri:/dev/dri \
-    --volume course-data:/data \
-    --volume /path/to/videos:/videos:ro \
-    ghcr.io/wajeht/course:latest
-```
-
-Then open [localhost](http://localhost).
-
-The published image targets Linux AMD64. `/dev/dri` gives Course access to
-Intel Quick Sync when an incompatible video must be re-encoded; CPU fallback
-is intentionally disabled. H.264/AAC videos can be played directly or remuxed
-without re-encoding.
-
-On the first visit, enter `AUTH_SETUP_TOKEN` and create the library password. The setup token
-is ignored after a password exists. `SESSION_SECRET` must remain stable across restarts or existing
-sessions will be signed out. The library password must contain at least 15 characters. Changing it
-invalidates every other active session.
-
-## Library Layout
+The filesystem is the source of truth:
 
 ```text
 /videos/
-└── Course Name/
-    ├── course.json
+├── Standalone video.mp4
+├── Standalone video.mp4.json
+└── Saved playlist/
+    ├── playlist.json
     ├── cover.jpg
-    ├── 01 - Introduction.mp4
-    ├── 01 - Introduction.mp4.json
-    └── Module 2/
-        ├── 01 - Next lesson.mkv
-        └── 01 - Next lesson.mkv.json
+    ├── 01 - First video.mp4
+    └── Section name/
+        └── 01 - Next video.mkv
 ```
 
-Videos may be directly inside a course or one folder deeper. Direct videos
-appear under **Lessons**. Each first-level folder becomes a named
-curriculum section on the course page and in the player sidebar; deeper nesting
-is not scanned. Supported files include MP4, M4V, MKV, WebM, MOV, AVI, MPEG,
-and MPG. Number prefixes determine natural lesson order and are removed from
-display titles.
+- A video directly under `/videos` is standalone.
+- A top-level folder is a playlist.
+- One nested folder inside a playlist is a playlist section.
+- Deeper folders are ignored and reported during scans.
+- Number prefixes set natural order and are removed from display titles.
 
-Course watches the library for changes and updates only the affected course.
-Unchanged videos reuse their saved media details instead of running `ffprobe`
-again. Startup, manual, and scheduled scans remain as safety checks.
+Supported video files include MP4, M4V, MKV, WebM, MOV, AVI, MPEG, and MPG.
+The app watches the folder and also supports manual and scheduled scans.
 
-Course metadata is optional:
+`playlist.json` is optional:
 
 ```json
 {
   "version": 1,
-  "title": "Course Title",
-  "description": "What the course teaches",
+  "title": "Saved playlist",
+  "description": "Archived talks",
   "cover": "cover.jpg",
-  "category": "Technology",
-  "instructors": ["Jane Smith"],
-  "tags": ["Docker", "Kubernetes", "DevOps"],
+  "authors": ["Jane Smith"],
+  "tags": ["Talks", "Technology"],
   "source": {
-    "provider": "Course Provider",
-    "url": "https://example.com/course"
+    "provider": "Example",
+    "url": "https://example.com/playlist"
   }
 }
 ```
 
-`category`, `instructors`, and `tags` supply library filters and are included in
-search. Each instructor also gets a page containing all of their courses.
-Courses without a category appear under **Uncategorized**. The cover must be a
-local JPG, PNG, or WebP. When it is omitted, Course creates a cover from the
-first valid video.
-
-Video chapters are optional. Place them in a JSON sidecar whose name is the
-video's complete filename plus `.json`. For `01 - Next lesson.mkv`, use
-`01 - Next lesson.mkv.json`:
+A video sidecar uses the complete filename plus `.json`, such as
+`First video.mp4.json`:
 
 ```json
 {
   "version": 1,
+  "title": "First video",
+  "authors": ["Jane Smith"],
+  "tags": ["Archive"],
   "chapters": [
     { "title": "Introduction", "startSeconds": 0 },
-    { "title": "First technique", "startSeconds": 416 }
+    { "title": "Main topic", "startSeconds": 416 }
   ]
 }
 ```
 
-Chapter start times use whole seconds, must be in increasing order, and must
-fall within the matching video.
+Playlist authors and tags are inherited by its videos for display, search, and
+filtering. There are no categories.
+
+## Run with Docker
+
+```bash
+docker run --rm \
+  --publish 80:80 \
+  --env SESSION_SECRET="$(openssl rand -hex 32)" \
+  --env AUTH_SETUP_TOKEN="choose-a-one-time-setup-token" \
+  --read-only \
+  --tmpfs /tmp \
+  --cap-drop ALL \
+  --cap-add DAC_OVERRIDE \
+  --cap-add NET_BIND_SERVICE \
+  --security-opt no-new-privileges \
+  --device /dev/dri:/dev/dri \
+  --volume videos-data:/data \
+  --volume /path/to/videos:/videos:ro \
+  ghcr.io/wajeht/course:latest
+```
+
+Open [localhost](http://localhost), enter `AUTH_SETUP_TOKEN`, and create the
+library password. `/dev/dri` enables Intel Quick Sync for incompatible videos;
+CPU re-encoding is intentionally disabled.
 
 ## Docs
 
-- See the [DEVELOPMENT GUIDE](./docs/development.md) for local setup, commands, and container usage.
-- See the [CONTRIBUTION GUIDE](./docs/contribution.md) before submitting changes.
+- [Development guide](./docs/development.md)
+- [Contribution guide](./docs/contribution.md)
+- [Video-library product contract](./docs/new.md)
 
 ## License
 
-Distributed under the MIT License © [wajeht](https://github.com/wajeht). See [LICENSE](./LICENSE) for more information.
+Distributed under the MIT License © [wajeht](https://github.com/wajeht).
