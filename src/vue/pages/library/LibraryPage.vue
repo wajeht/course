@@ -48,7 +48,7 @@ function prefetchPage(page: number): void {
       >
         <div
           data-testid="catalog-filter-column"
-          class="sticky top-[calc(66px+env(safe-area-inset-top))] z-30 self-start max-[760px]:-mx-5 max-[760px]:border-y max-[760px]:border-line/80 max-[760px]:bg-porcelain/95 max-[760px]:px-5 max-[760px]:py-3 max-[760px]:shadow-[0_10px_24px_rgb(21_51_38_/_10%)] max-[760px]:backdrop-blur-[14px] min-[761px]:top-[calc(90px+env(safe-area-inset-top))] min-[761px]:z-auto min-[761px]:max-h-[calc(100dvh-114px-env(safe-area-inset-top))] min-[761px]:overflow-y-auto min-[761px]:pr-1 min-[761px]:[scrollbar-gutter:stable]"
+          class="sticky top-[calc(66px+env(safe-area-inset-top))] z-30 self-start max-[760px]:-mx-5 max-[760px]:bg-porcelain max-[760px]:px-5 max-[760px]:py-3 min-[761px]:top-[calc(90px+env(safe-area-inset-top))] min-[761px]:z-auto min-[761px]:max-h-[calc(100dvh-114px-env(safe-area-inset-top))] min-[761px]:overflow-y-auto"
         >
           <CatalogFiltersToolbar
             v-model:category="selectedCategory"

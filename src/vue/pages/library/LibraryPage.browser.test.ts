@@ -31,6 +31,9 @@ test("filters through the API and uses the responsive mobile sheet", async ({ pa
   expect((await categoryButton.boundingBox())!.height).toBeGreaterThanOrEqual(40);
   await expect(filterColumn).toHaveCSS("position", "sticky");
   await expect(filterColumn).toHaveCSS("top", "66px");
+  await expect(filterColumn).toHaveCSS("background-color", "rgb(245, 246, 242)");
+  await expect(filterColumn).toHaveCSS("border-top-width", "0px");
+  await expect(filterColumn).toHaveCSS("box-shadow", "none");
   const mobileFilterBox = (await filterColumn.boundingBox())!;
   const mobileClientWidth = await page.evaluate(() => document.documentElement.clientWidth);
   expect(mobileFilterBox.x).toBe(0);
