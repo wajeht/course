@@ -101,10 +101,10 @@ export function createConfiguration(environment: NodeJS.ProcessEnv = process.env
     },
     database: {
       filename:
-        parsed.APP_ENV === "testing" ? ":memory:" : path.join(dataDirectory, "course.sqlite"),
+        parsed.APP_ENV === "testing" ? ":memory:" : path.join(dataDirectory, "videos.sqlite"),
     },
     auth: {
-      sessionSecret: parsed.SESSION_SECRET ?? "course-development-session-secret-change-me",
+      sessionSecret: parsed.SESSION_SECRET ?? "videos-development-session-secret-change-me",
       setupToken: parsed.AUTH_SETUP_TOKEN,
       idleTimeoutMs: parsed.SESSION_IDLE_TIMEOUT_MS,
       absoluteTimeoutMs: parsed.SESSION_ABSOLUTE_TIMEOUT_MS,

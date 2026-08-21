@@ -19,33 +19,33 @@ const requireSameOrigin: MiddlewareHandler = async (c, next) => {
 
 export function createPlaybackRouter(context: AppContext) {
   return new Hono()
-    .post("/:lessonId", zValidator("param", playbackParametersSchema), async (c) => {
-      const playback = await context.playback.preparePlayback(c.req.valid("param").lessonId);
+    .post("/:videoId", zValidator("param", playbackParametersSchema), async (c) => {
+      const playback = await context.playback.preparePlayback(c.req.valid("param").videoId);
       return playback
         ? c.json(playbackResponseSchema.parse(playback))
-        : c.json({ message: "Lesson not found" }, 404);
+        : c.json({ message: "Video not found" }, 404);
     })
     .get(
-      "/:lessonId",
+      "/:videoId",
       requireSameOrigin,
       zValidator("param", playbackParametersSchema),
       async (c) => {
-        const playback = await context.playback.preparePlayback(c.req.valid("param").lessonId);
+        const playback = await context.playback.preparePlayback(c.req.valid("param").videoId);
         return playback
           ? c.json(playbackResponseSchema.parse(playback))
-          : c.json({ message: "Lesson not found" }, 404);
+          : c.json({ message: "Video not found" }, 404);
       },
     )
-    .get("/:lessonId/conversion", zValidator("param", playbackParametersSchema), async (c) => {
-      const playback = await context.playback.getConversionStatus(c.req.valid("param").lessonId);
+    .get("/:videoId/conversion", zValidator("param", playbackParametersSchema), async (c) => {
+      const playback = await context.playback.getConversionStatus(c.req.valid("param").videoId);
       return playback
         ? c.json(playbackResponseSchema.parse(playback))
         : c.json({ message: "Conversion not found" }, 404);
     })
-    .post("/:lessonId/retry", zValidator("param", playbackParametersSchema), async (c) => {
-      const playback = await context.playback.retryConversion(c.req.valid("param").lessonId);
+    .post("/:videoId/retry", zValidator("param", playbackParametersSchema), async (c) => {
+      const playback = await context.playback.retryConversion(c.req.valid("param").videoId);
       return playback
         ? c.json(playbackResponseSchema.parse(playback))
-        : c.json({ message: "Lesson not found" }, 404);
+        : c.json({ message: "Video not found" }, 404);
     });
 }
