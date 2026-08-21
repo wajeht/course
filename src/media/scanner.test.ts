@@ -13,7 +13,7 @@ import type { VideoProbe } from "./probe.js";
 const monitorStops: Array<() => void> = [];
 
 afterEach(() => {
-  for (const stop of monitorStops.splice(0)) stop();
+  for (const stopMonitoring of monitorStops.splice(0)) stopMonitoring();
 });
 
 async function createScannerDirectories(): Promise<{
@@ -294,6 +294,10 @@ describe("media scanner", () => {
     );
 
     expect(probeCalls).toEqual(["01 - Existing.mp4", "01 - Added.mp4"]);
+    expect(await database.connection("courses").orderBy("sort_order").select("title")).toEqual([
+      { title: "Added Course" },
+      { title: "Existing Course" },
+    ]);
 
     const renamedCourse = path.join(root, "Renamed Course");
     await fs.rename(existingCourse, renamedCourse);
@@ -303,6 +307,10 @@ describe("media scanner", () => {
       return courses.length === 2 && courses.some((course) => course.title === "Renamed Course");
     });
     expect(probeCalls).toEqual(["01 - Existing.mp4", "01 - Added.mp4", "01 - Existing.mp4"]);
+    expect(await database.connection("courses").orderBy("sort_order").select("title")).toEqual([
+      { title: "Added Course" },
+      { title: "Renamed Course" },
+    ]);
 
     await fs.rm(addedCourse, { recursive: true });
     emitWatchEvent("Added Course");
@@ -586,9 +594,9 @@ describe("media scanner", () => {
       }),
     });
 
-    const stop = scanner.startMonitoring();
+    const stopMonitoring = scanner.startMonitoring();
     failWatcher?.(new Error("Library watcher unavailable"));
-    stop();
+    stopMonitoring();
 
     expect(closeCount).toBe(1);
     expect(warn).toHaveBeenCalledWith(
