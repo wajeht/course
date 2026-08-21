@@ -44,6 +44,30 @@ const playlist: PlaylistDetailDto = {
 };
 
 describe("PlayerVideoDetails", () => {
+  it("places the author directly after the video title", () => {
+    const wrapper = mount(PlayerVideoDetails, {
+      props: {
+        currentTime: 0,
+        playlist,
+        resetting: false,
+        video: { ...video, authors: ["Example Author"], playlistSectionTitle: "Volume 1" },
+      },
+      global: {
+        stubs: {
+          AuthorLinks: {
+            props: ["authors"],
+            template: '<p>{{ authors.join(", ") }}</p>',
+          },
+        },
+      },
+    });
+
+    const markup = wrapper.html();
+
+    expect(markup.indexOf("Example video")).toBeLessThan(markup.indexOf("Example Author"));
+    expect(wrapper.text()).not.toContain("Volume 1");
+  });
+
   it("keeps the playlist action mobile-only", async () => {
     const wrapper = mount(PlayerVideoDetails, {
       props: { currentTime: 0, playlist, resetting: false, video },
