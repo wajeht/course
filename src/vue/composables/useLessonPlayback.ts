@@ -13,6 +13,7 @@ import { useAsyncAction } from "@/composables/useAsyncAction.js";
 import { useConfirm } from "@/composables/useConfirm.js";
 import { useMediaSession } from "@/composables/useMediaSession.js";
 import { usePlaybackProgress } from "@/composables/usePlaybackProgress.js";
+import { usePauseVideoOnHidden } from "@/composables/usePauseVideoOnHidden.js";
 import { useScreenWakeLock } from "@/composables/useScreenWakeLock.js";
 import { useToast } from "@/composables/useToast.js";
 import { useVideoPlayback } from "@/composables/useVideoPlayback.js";
@@ -117,6 +118,7 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
     next: () => openLessonFromMediaSession(nextLesson.value),
   });
   useScreenWakeLock(video);
+  usePauseVideoOnHidden(video);
 
   function destroyPlayback(): void {
     playbackProgress.clearSession();
