@@ -5,7 +5,8 @@
 - Node.js 24+
 - npm 11+
 - FFmpeg and FFprobe
-- Intel Quick Sync device access for video conversion
+- Intel Quick Sync device access when re-encoding incompatible videos on Linux
+  (CPU fallback is disabled)
 
 ## Local Development
 
@@ -38,6 +39,10 @@ npm run dev:server    # Start only the API server
 npm run dev:client    # Start only the Vue development server
 npm run db:migrate    # Apply SQLite migrations
 npm run check         # Run types, lint, formatting, tests, and builds
+npm run typecheck     # Run all TypeScript and Vue type checks
+npm run lint          # Run Oxlint
+npm run format        # Format the repository with Oxfmt
+npm run format:check  # Check formatting without changing files
 npm run test          # Run tests once
 npm run test:pwa      # Test production PWA behavior in Chromium
 npm run test:watch    # Run tests in watch mode
@@ -86,20 +91,31 @@ buttons, form controls, panels, empty states, alerts, modals, confirmations,
 toasts, and the Course logo. Keep content-specific components such as
 `CourseCard` and `LessonRow` in `src/vue/components`.
 
+Route pages live under `src/vue/pages`, with route-specific components in that
+route's `partials` directory. Keep tests beside the page or component they
+cover. Pages and composables own server fetching through TanStack Vue Query.
+`src/vue/router.ts` owns route definitions, metadata, scrolling, and navigation
+errors.
+
 Shared interaction state lives in `src/vue/composables`. Use `useAsyncAction`
 for pending and error state, `useConfirm` instead of `window.confirm`, and
 `useToast` for short success or failure notifications. Mount one
 `ConfirmDialog` and `ToastViewport` at the application root.
 
-New primitives need component tests in Happy DOM. User-facing interaction
-changes also need Playwright coverage when they cross routing, authentication,
-offline behavior, or another browser boundary.
+New primitives need component tests in Happy DOM. Browser-boundary coverage
+uses Playwright files named `*.browser.test.ts`; these are kept out of the
+Vitest suite. Add browser coverage when an interaction crosses routing,
+authentication, offline behavior, production PWA behavior, or another browser
+boundary.
 
 ## Deployment
 
-Pushes to `main` publish the production `Dockerfile` image to
-`ghcr.io/wajeht/course`. Production deployment configuration lives in the Home
-Ops repository, including video and data mounts, `/dev/dri` access,
-`SESSION_SECRET`, `AUTH_SETUP_TOKEN`, and image updates. Course handles browser
-authentication itself and exposes `/healthz` without authentication for its
-health check.
+After verification, pushes to `main` create a versioned GitHub release, publish
+version, commit, and `latest` image tags to `ghcr.io/wajeht/course`, and run the
+production deployment workflow. Pull requests can use the `temp-deploy` or
+`temp-deploy-with-auth` label for a temporary environment.
+
+Production deployment configuration lives in the Home Ops repository,
+including video and data mounts, `/dev/dri` access, `SESSION_SECRET`,
+`AUTH_SETUP_TOKEN`, and image updates. Course handles browser authentication
+itself and exposes `/healthz` without authentication for its health check.
