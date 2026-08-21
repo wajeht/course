@@ -56,7 +56,7 @@ async function rescanCatalog(): Promise<void> {
     {{ scanError }}
   </AlertMessage>
 
-  <PanelCard class="min-h-[260px]" padding="none">
+  <PanelCard class="min-h-[260px]" :elevated="false" padding="none">
     <PanelCardHeader
       title="Refresh library"
       description="Check your video folders now for new or changed courses."

@@ -49,7 +49,7 @@ async function saveSettings(): Promise<void> {
     {{ settingsError }}
   </AlertMessage>
 
-  <PanelCard padding="none">
+  <PanelCard :elevated="false" padding="none">
     <PanelCardHeader
       title="Library display"
       description="Choose how many courses appear on each library page."
