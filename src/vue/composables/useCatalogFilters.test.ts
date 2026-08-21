@@ -168,6 +168,30 @@ describe("useCatalogFilters", () => {
     stop();
   });
 
+  it("appends the next page without changing the URL", async () => {
+    const client = {
+      getCatalog: vi.fn(async (filters?: CatalogFilters) =>
+        filters?.page === 2 ? catalog("Second course", 2) : catalog("First course", 1),
+      ),
+    };
+    const { filters, router, stop } = await setup(client);
+    await vi.waitFor(() => expect(filters.loadedCourses.value[0]?.title).toBe("First course"));
+
+    await filters.loadMore();
+
+    expect(filters.loadedCourses.value.map((course) => course.title)).toEqual([
+      "First course",
+      "Second course",
+    ]);
+    expect(filters.canLoadMore.value).toBe(false);
+    expect(router.currentRoute.value.query.page).toBeUndefined();
+    expect(client.getCatalog).toHaveBeenLastCalledWith(
+      expect.objectContaining({ page: 2 }),
+      expect.any(AbortSignal),
+    );
+    stop();
+  });
+
   it("uses a page size from the URL when provided", async () => {
     const client = {
       getCatalog: vi.fn(async () => catalog()),
