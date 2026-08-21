@@ -38,10 +38,17 @@ function submit(): void {
 </script>
 
 <template>
-  <form class="px-8 py-8 lg:p-10" @submit.prevent="submit">
-    <h1 class="font-display text-2xl font-extrabold lg:text-[2rem]">
+  <form class="px-8 py-8 lg:p-0" @submit.prevent="submit">
+    <h1 class="font-display text-2xl font-extrabold lg:text-[2.4rem] lg:leading-none">
       {{ isSetup ? "Set up your library" : "Welcome back" }}
     </h1>
+    <p class="mt-3 hidden text-sm leading-6 text-muted lg:block">
+      {{
+        isSetup
+          ? "Create the password that protects your private course library."
+          : "Please sign in to continue."
+      }}
+    </p>
     <input
       class="sr-only"
       name="username"
@@ -80,6 +87,7 @@ function submit(): void {
       <AppInput
         :id="inputId"
         v-model="password"
+        class="lg:min-h-12"
         :aria-describedby="describedBy"
         :invalid="invalid"
         type="password"
@@ -117,7 +125,7 @@ function submit(): void {
     </AlertMessage>
 
     <AppButton
-      class="mt-6"
+      class="mt-6 lg:h-12"
       block
       size="lg"
       type="submit"
