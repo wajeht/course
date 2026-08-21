@@ -51,10 +51,17 @@ function forwardSetup(password: string, confirmPassword: string, setupToken?: st
     </aside>
 
     <section
-      class="grid min-h-screen grid-rows-[1fr_auto] px-5 py-8 lg:order-2 lg:border-l lg:border-pine/10 lg:px-6 lg:py-10 xl:px-[clamp(32px,3vw,56px)]"
+      class="grid min-h-screen grid-rows-[1fr_auto] px-5 py-8 lg:order-2 lg:grid-rows-[auto_1fr_auto] lg:border-l lg:border-pine/10 lg:px-8 lg:py-10 xl:px-[clamp(36px,3.5vw,60px)]"
     >
-      <PanelCard class="w-full max-w-[430px] place-self-center lg:max-w-[480px]" padding="none">
-        <header class="bg-pine-deep px-8 py-7 text-white">
+      <div class="hidden text-pine-deep lg:block">
+        <AppLogo />
+      </div>
+
+      <PanelCard
+        class="w-full max-w-[430px] place-self-center lg:max-w-[420px] lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none"
+        padding="none"
+      >
+        <header class="bg-pine-deep px-8 py-7 text-white lg:hidden">
           <AppLogo />
           <p class="mt-3 text-sm leading-6 text-white/68">
             {{
