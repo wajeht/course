@@ -23,8 +23,8 @@ const prefetch = useRoutePrefetch();
     >
       <template #icon>▶</template>
       <template #actions>
-        <AppButton :as="IntentRouterLink" to="/library" :prefetch="prefetch.library" size="lg"
-          >Browse library</AppButton
+        <AppButton :as="IntentRouterLink" to="/videos" :prefetch="prefetch.videos" size="lg"
+          >Browse videos</AppButton
         >
       </template>
     </EmptyState>

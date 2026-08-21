@@ -11,10 +11,10 @@
   "categories": ["entertainment", "productivity"],
   "shortcuts": [
     {
-      "name": "Open library",
-      "short_name": "Library",
+      "name": "Open videos",
+      "short_name": "Videos",
       "description": "Browse your archived videos.",
-      "url": "/library"
+      "url": "/videos"
     },
     {
       "name": "Open settings",

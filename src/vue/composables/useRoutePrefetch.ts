@@ -9,7 +9,7 @@ import {
 } from "@/queries.js";
 import {
   loadHomePage,
-  loadLibraryPage,
+  loadVideosPage,
   loadPlayerPage,
   loadPlaylistPage,
   loadSettingsAccessPage,
@@ -24,7 +24,7 @@ export function useRoutePrefetch() {
 
   return {
     home: () => Promise.all([library(), loadHomePage()]),
-    library: () => Promise.all([library(), loadLibraryPage()]),
+    videos: () => Promise.all([library(), loadVideosPage()]),
     playlist: (playlistId: string) =>
       Promise.all([
         queryClient.prefetchQuery(playlistQueryOptions(playlistId)),
