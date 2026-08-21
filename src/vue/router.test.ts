@@ -21,6 +21,15 @@ describe("router error pages", () => {
     expect(legacyLibrary.redirectedFrom).toBeUndefined();
   });
 
+  it("provides author pages under the canonical author vocabulary", () => {
+    const author = router.resolve("/authors/Jane%20Smith");
+
+    expect(author.name).toBe("author");
+    expect(author.params.authorName).toBe("Jane Smith");
+    expect(author.meta.navigation).toBe("videos");
+    expect(author.meta.title).toBe("Author");
+  });
+
   it("provides separate Library and Access settings routes", () => {
     const library = router.resolve("/settings/library");
     const access = router.resolve("/settings/access");

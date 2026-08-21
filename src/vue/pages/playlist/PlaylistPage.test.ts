@@ -70,6 +70,7 @@ async function mountPlaylistPage() {
     routes: [
       { path: "/playlists/:playlistId", name: "playlist", component: PlaylistPage },
       { path: "/videos/:videoId", name: "player", component: { template: "<div />" } },
+      { path: "/authors/:authorName", name: "author", component: { template: "<div />" } },
     ],
   });
   await router.push(`/playlists/${playlistId}`);

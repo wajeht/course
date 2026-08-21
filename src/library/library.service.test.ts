@@ -109,6 +109,7 @@ describe("library service", () => {
       authors: ["Guest", "Jane Smith"],
       tags: ["Guard", "Instructional"],
     });
+    expect(library.playlists.map((playlist) => playlist.title)).toEqual(["Saved Collection"]);
     expect(library.authors).toEqual([
       { name: "Guest", videoCount: 1 },
       { name: "Jane Smith", videoCount: 2 },
