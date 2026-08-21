@@ -6,13 +6,24 @@ import ProgressBar from "@/components/ui/ProgressBar.vue";
 import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import { countText, durationText } from "@/utils.js";
 
-defineProps<{ course: CatalogDto["courses"][number] }>();
+withDefaults(
+  defineProps<{
+    course: CatalogDto["courses"][number];
+    elevated?: boolean;
+  }>(),
+  { elevated: true },
+);
 const prefetch = useRoutePrefetch();
 </script>
 
 <template>
   <article
-    class="group flex min-w-0 flex-col overflow-hidden rounded-[10px] border border-line bg-white shadow-[0_8px_30px_rgb(24_32_29_/_5%)] transition-[transform,box-shadow,border-color] duration-[220ms] hover:-translate-y-1 hover:border-[#b9c6be] hover:shadow-course max-[600px]:grid max-[600px]:grid-cols-[125px_minmax(0,1fr)]"
+    class="group flex min-w-0 flex-col overflow-hidden rounded-[10px] border border-line bg-white transition-[transform,box-shadow,border-color] duration-[220ms] hover:border-[#b9c6be] max-[600px]:grid max-[600px]:grid-cols-[125px_minmax(0,1fr)]"
+    :class="
+      elevated
+        ? 'shadow-[0_8px_30px_rgb(24_32_29_/_5%)] hover:-translate-y-1 hover:shadow-course'
+        : ''
+    "
   >
     <IntentRouterLink
       :to="{ name: 'course', params: { courseId: course.id } }"

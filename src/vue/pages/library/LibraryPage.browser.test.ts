@@ -34,6 +34,10 @@ test("filters through the API and uses the responsive mobile sheet", async ({ pa
   await expect(filterColumn).toHaveCSS("background-color", "rgb(245, 246, 242)");
   await expect(filterColumn).toHaveCSS("border-top-width", "0px");
   await expect(filterColumn).toHaveCSS("box-shadow", "none");
+  await expect(page.locator('[data-testid="catalog-search"]:visible')).toHaveCSS(
+    "box-shadow",
+    "none",
+  );
   const mobileFilterBox = (await filterColumn.boundingBox())!;
   const mobileClientWidth = await page.evaluate(() => document.documentElement.clientWidth);
   expect(mobileFilterBox.x).toBe(0);
@@ -92,5 +96,7 @@ test("filters through the API and uses the responsive mobile sheet", async ({ pa
 
   await page.setViewportSize({ width: 1280, height: 720 });
   await expect(categoryButton).toBeHidden();
-  await expect(page.getByRole("group", { name: "Categories" })).toBeVisible();
+  const categoriesGroup = page.getByRole("group", { name: "Categories" });
+  await expect(categoriesGroup).toBeVisible();
+  await expect(categoriesGroup).toHaveCSS("box-shadow", "none");
 });

@@ -4,13 +4,16 @@ import { useId } from "vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppInput from "@/components/ui/AppInput.vue";
 
+const props = withDefaults(defineProps<{ elevated?: boolean }>(), { elevated: true });
 const query = defineModel<string>({ required: true });
 const inputId = `catalog-search-${useId()}`;
 </script>
 
 <template>
   <div
-    class="flex min-h-10 items-center gap-2 rounded-[7px] border border-line bg-white px-3.5 shadow-[0_8px_30px_rgb(24_32_29_/_5%)] focus-within:border-pine focus-within:shadow-[0_0_0_3px_rgb(36_77_59_/_10%)]"
+    data-testid="catalog-search"
+    class="flex min-h-10 items-center gap-2 rounded-[7px] border border-line bg-white px-3.5 focus-within:border-pine focus-within:shadow-[0_0_0_3px_rgb(36_77_59_/_10%)]"
+    :class="props.elevated ? 'shadow-[0_8px_30px_rgb(24_32_29_/_5%)]' : ''"
   >
     <svg
       class="w-[18px] flex-none fill-none stroke-pine stroke-[1.7] [stroke-linecap:round]"

@@ -6,10 +6,11 @@ defineOptions({ inheritAttrs: false });
 const props = withDefaults(
   defineProps<{
     as?: string;
+    elevated?: boolean;
     padding?: "compact" | "default" | "none";
     variant?: "default" | "subtle";
   }>(),
-  { as: "section", padding: "default", variant: "default" },
+  { as: "section", elevated: true, padding: "default", variant: "default" },
 );
 
 const paddingClasses = computed(
@@ -20,19 +21,17 @@ const paddingClasses = computed(
       none: "",
     })[props.padding],
 );
+const surfaceClasses = computed(() => {
+  if (props.variant === "subtle") return "border-dashed border-[#bfc8c2] bg-white/55";
+  return ["border-line bg-white", props.elevated ? "shadow-course" : ""];
+});
 </script>
 
 <template>
   <component
     :is="as"
     v-bind="$attrs"
-    :class="[
-      'overflow-hidden rounded-[10px] border',
-      variant === 'default'
-        ? 'border-line bg-white shadow-course'
-        : 'border-dashed border-[#bfc8c2] bg-white/55',
-      paddingClasses,
-    ]"
+    :class="['overflow-hidden rounded-[10px] border', surfaceClasses, paddingClasses]"
   >
     <slot />
   </component>
