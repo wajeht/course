@@ -14,7 +14,7 @@ A private, opinionated, self-hosted video course library.
 Run it locally:
 
 ```bash
-docker run --rm \
+$ docker run --rm \
   --publish 80:80 \
   --env SESSION_SECRET="$(openssl rand -hex 32)" \
   --env AUTH_SETUP_TOKEN="choose-a-one-time-setup-token" \
