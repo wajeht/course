@@ -16,7 +16,7 @@ const props = withDefaults(
 
 const columnClasses = computed(() =>
   props.layout === "sidebar"
-    ? "grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))]"
+    ? "grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] min-[601px]:grid-cols-[repeat(auto-fill,minmax(min(100%,220px),1fr))]"
     : "grid-cols-4 max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[600px]:grid-cols-1",
 );
 </script>
