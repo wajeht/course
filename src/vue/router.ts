@@ -5,14 +5,14 @@ import { setPageTitle } from "@/utils.js";
 
 declare module "vue-router" {
   interface RouteMeta {
-    navigation?: "home" | "library" | "settings";
+    navigation?: "home" | "videos" | "settings";
     shell?: "player";
     title?: string;
   }
 }
 
 export const loadHomePage = () => import("@/pages/home/HomePage.vue");
-export const loadLibraryPage = () => import("@/pages/library/LibraryPage.vue");
+export const loadVideosPage = () => import("@/pages/library/LibraryPage.vue");
 export const loadPlaylistPage = () => import("@/pages/playlist/PlaylistPage.vue");
 export const loadPlayerPage = () => import("@/pages/player/PlayerPage.vue");
 export const loadSettingsLibraryPage = () => import("@/pages/settings/LibraryPage.vue");
@@ -23,22 +23,22 @@ export const router = createRouter({
   routes: [
     { path: "/", name: "home", component: loadHomePage, meta: { navigation: "home" } },
     {
-      path: "/library",
-      name: "library",
-      component: loadLibraryPage,
-      meta: { navigation: "library", title: "Library" },
+      path: "/videos",
+      name: "videos",
+      component: loadVideosPage,
+      meta: { navigation: "videos", title: "All videos" },
     },
     {
       path: "/playlists/:playlistId",
       name: "playlist",
       component: loadPlaylistPage,
-      meta: { navigation: "library", title: "Playlist" },
+      meta: { navigation: "videos", title: "Playlist" },
     },
     {
       path: "/videos/:videoId",
       name: "player",
       component: loadPlayerPage,
-      meta: { navigation: "library", shell: "player", title: "Video" },
+      meta: { navigation: "videos", shell: "player", title: "Video" },
     },
     {
       path: "/settings/library",

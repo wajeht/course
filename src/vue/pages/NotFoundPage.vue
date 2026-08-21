@@ -2,7 +2,7 @@
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
-import { loadHomePage, loadLibraryPage } from "@/router.js";
+import { loadHomePage, loadVideosPage } from "@/router.js";
 
 withDefaults(defineProps<{ standalone?: boolean }>(), {
   standalone: false,
@@ -28,12 +28,12 @@ withDefaults(defineProps<{ standalone?: boolean }>(), {
         <AppButton
           v-if="!standalone"
           :as="IntentRouterLink"
-          to="/library"
-          :prefetch="loadLibraryPage"
+          to="/videos"
+          :prefetch="loadVideosPage"
           variant="secondary"
           size="lg"
         >
-          Browse library
+          Browse videos
         </AppButton>
       </template>
     </EmptyState>

@@ -10,6 +10,17 @@ function normalizedLocation(path: string): RouteLocationNormalizedLoaded {
 }
 
 describe("router error pages", () => {
+  it("uses Videos as the primary browse route without a Library alias", () => {
+    const videos = router.resolve("/videos");
+    const legacyLibrary = router.resolve("/library");
+
+    expect(videos.name).toBe("videos");
+    expect(videos.meta.navigation).toBe("videos");
+    expect(videos.meta.title).toBe("All videos");
+    expect(legacyLibrary.name).toBe("not-found");
+    expect(legacyLibrary.redirectedFrom).toBeUndefined();
+  });
+
   it("provides separate Library and Access settings routes", () => {
     const library = router.resolve("/settings/library");
     const access = router.resolve("/settings/access");
@@ -52,11 +63,7 @@ describe("router scrolling", () => {
 
     expect(scrollBehavior).toBeTypeOf("function");
     expect(
-      await scrollBehavior?.(
-        normalizedLocation("/library"),
-        normalizedLocation("/"),
-        savedPosition,
-      ),
+      await scrollBehavior?.(normalizedLocation("/videos"), normalizedLocation("/"), savedPosition),
     ).toEqual(savedPosition);
   });
 
@@ -65,13 +72,13 @@ describe("router scrolling", () => {
 
     expect(
       await scrollBehavior?.(
-        normalizedLocation("/library?page=2"),
-        normalizedLocation("/library?page=1"),
+        normalizedLocation("/videos?page=2"),
+        normalizedLocation("/videos?page=1"),
         null,
       ),
     ).toBe(false);
     expect(
-      await scrollBehavior?.(normalizedLocation("/library"), normalizedLocation("/"), null),
+      await scrollBehavior?.(normalizedLocation("/videos"), normalizedLocation("/"), null),
     ).toEqual({ top: 0 });
   });
 });

@@ -49,7 +49,7 @@ test("keeps the install experience online-only", async ({ context, page }) => {
     shortcuts: Array<{ url: string }>;
   };
   expect(manifest.shortcuts.map((shortcut) => shortcut.url)).toEqual([
-    "/library",
+    "/videos",
     "/settings/library",
   ]);
   expect(manifest.screenshots.map((screenshot) => screenshot.form_factor)).toEqual([
@@ -57,9 +57,9 @@ test("keeps the install experience online-only", async ({ context, page }) => {
     "wide",
   ]);
 
-  await page.goto("/library");
+  await page.goto("/videos");
   await expect(page.getByRole("heading", { level: 1, name: "All videos" })).toBeVisible();
-  await expect(page).toHaveTitle("Library · Videos");
+  await expect(page).toHaveTitle("All videos · Videos");
 
   await page.reload();
   await expect.poll(() => page.evaluate(async () => (await caches.keys()).length)).toBe(0);

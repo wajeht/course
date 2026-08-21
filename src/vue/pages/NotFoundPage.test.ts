@@ -16,7 +16,7 @@ describe("NotFoundPage", () => {
     expect(wrapper.get(".text-ink").text()).toBe("404");
     expect(wrapper.findAllComponents(RouterLinkStub).map((link) => link.props("to"))).toEqual([
       "/",
-      "/library",
+      "/videos",
     ]);
     expect(wrapper.get("main").classes()).toContain("min-h-[calc(100vh-66px)]");
   });

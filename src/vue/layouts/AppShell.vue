@@ -45,16 +45,16 @@ const isPlayer = computed(() => route.meta.shell === "player");
           Home
         </IntentRouterLink>
         <IntentRouterLink
-          to="/library"
-          :prefetch="prefetch.library"
+          to="/videos"
+          :prefetch="prefetch.videos"
           class="border-b-2 px-0 py-2 text-[.76rem] font-bold tracking-[.14em] uppercase"
           :class="
-            activeNavigation === 'library'
+            activeNavigation === 'videos'
               ? 'border-belt text-white/90'
               : 'border-transparent text-white/55'
           "
         >
-          Library
+          Videos
         </IntentRouterLink>
         <IntentRouterLink
           to="/settings/library"
@@ -90,18 +90,18 @@ const isPlayer = computed(() => route.meta.shell === "player");
         Home
       </IntentRouterLink>
       <IntentRouterLink
-        to="/library"
-        :prefetch="prefetch.library"
+        to="/videos"
+        :prefetch="prefetch.videos"
         class="relative flex min-h-[56px] items-center justify-center rounded-[8px] text-[.7rem] font-bold tracking-[.1em] uppercase"
-        :class="activeNavigation === 'library' ? 'text-belt-light' : 'text-white/55'"
-        :aria-current="activeNavigation === 'library' ? 'page' : undefined"
+        :class="activeNavigation === 'videos' ? 'text-belt-light' : 'text-white/55'"
+        :aria-current="activeNavigation === 'videos' ? 'page' : undefined"
       >
         <span
           class="absolute top-0 h-[3px] w-8 rounded-full bg-belt-light transition-opacity"
-          :class="activeNavigation === 'library' ? 'opacity-100' : 'opacity-0'"
+          :class="activeNavigation === 'videos' ? 'opacity-100' : 'opacity-0'"
           aria-hidden="true"
         />
-        Library
+        Videos
       </IntentRouterLink>
       <IntentRouterLink
         to="/settings/library"
