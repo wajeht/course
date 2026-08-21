@@ -1,6 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
-test("filters through the API and uses the responsive mobile sheet", async ({ page }) => {
+async function authenticate(page: Page): Promise<void> {
   const password = "playwright-password";
   const setup = await page.request.post("/api/auth/password", {
     data: {
@@ -12,6 +12,10 @@ test("filters through the API and uses the responsive mobile sheet", async ({ pa
   expect([201, 409]).toContain(setup.status());
   const login = await page.request.post("/api/auth", { data: { password } });
   expect(login.status()).toBe(200);
+}
+
+test("filters through the API and uses the responsive mobile sheet", async ({ page }) => {
+  await authenticate(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   const catalogResponsePromise = page.waitForResponse(
@@ -106,4 +110,53 @@ test("filters through the API and uses the responsive mobile sheet", async ({ pa
   const categoriesGroup = page.getByRole("group", { name: "Categories" });
   await expect(categoriesGroup).toBeVisible();
   await expect(categoriesGroup).toHaveCSS("box-shadow", "none");
+});
+
+test("loads more courses in place on mobile and keeps desktop pagination", async ({ page }) => {
+  await authenticate(page);
+  await page.route("**/api/catalog**", async (route) => {
+    const requestedPage = Number(new URL(route.request().url()).searchParams.get("page") ?? "1");
+    const title = requestedPage === 2 ? "Second course" : "First course";
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        courses: [
+          {
+            id: title,
+            title,
+            description: "",
+            coverUrl: null,
+            category: "Technology",
+            instructors: ["Instructor"],
+            tags: [],
+            lessonCount: 1,
+            durationSeconds: 60,
+            completedCount: 0,
+            progressPercent: 0,
+          },
+        ],
+        categories: [],
+        instructors: [],
+        tags: [],
+        continueWatching: [],
+        pagination: { page: requestedPage, pageSize: 1, totalCourses: 2, totalPages: 2 },
+      }),
+    });
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/library?pageSize=1");
+  await expect(page.getByText("First course", { exact: true })).toBeVisible();
+
+  const loadMore = page.getByTestId("load-more-courses");
+  await expect(loadMore).toHaveText("Load more");
+  await loadMore.click();
+
+  await expect(page.getByText("Second course", { exact: true })).toBeVisible();
+  await expect(loadMore).toHaveCount(0);
+  await expect(page).not.toHaveURL(/page=2/);
+
+  await page.setViewportSize({ width: 800, height: 900 });
+  await expect(page.getByText("Second course", { exact: true })).toBeHidden();
+  await expect(page.getByText("Page 1 of 2")).toBeVisible();
 });

@@ -3,21 +3,29 @@ import { api } from "@/api.js";
 import CatalogFiltersToolbar from "@/pages/library/partials/CatalogFiltersToolbar.vue";
 import CourseCardGrid from "@/pages/catalog/partials/CourseCardGrid.vue";
 import AlertMessage from "@/components/ui/AlertMessage.vue";
+import AppButton from "@/components/ui/AppButton.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
 import PaginationControls from "@/components/ui/PaginationControls.vue";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import { useCatalogFilters } from "@/composables/useCatalogFilters.js";
+import { useMediaQuery } from "@/composables/useMediaQuery.js";
 import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
+import { computed } from "vue";
 
 const {
   catalog,
+  canLoadMore,
   clearFilters,
   error,
   filters,
   hasActiveFilters,
   libraryTitle,
+  loadedCourses,
+  loadMore,
+  loadMoreError,
   loading,
+  loadingMore,
   page,
   query,
   refreshing,
@@ -27,6 +35,10 @@ const {
   setPage,
 } = useCatalogFilters(api);
 const prefetch = useRoutePrefetch();
+const isMobile = useMediaQuery("(max-width: 600px)");
+const displayedCourses = computed(() =>
+  isMobile.value ? loadedCourses.value : catalog.value.courses,
+);
 
 function prefetchPage(page: number): void {
   void prefetch.catalog({ ...filters.value, page });
@@ -64,8 +76,8 @@ function prefetchPage(page: number): void {
         </div>
         <div data-testid="catalog-course-column" class="min-w-0">
           <CourseCardGrid
-            v-if="loading || catalog.courses.length"
-            :courses="catalog.courses"
+            v-if="loading || displayedCourses.length"
+            :courses="displayedCourses"
             :elevated="false"
             layout="sidebar"
             :loading
@@ -87,13 +99,29 @@ function prefetchPage(page: number): void {
 
           <PaginationControls
             v-if="!loading"
-            class="mt-8"
+            class="mt-8 max-[600px]:hidden"
             :disabled="refreshing"
             :page="page"
             :total-pages="catalog.pagination.totalPages"
             @change="setPage"
             @prefetch="prefetchPage"
           />
+
+          <AlertMessage v-if="loadMoreError" class="mt-[18px] max-[600px]:block min-[601px]:hidden">
+            {{ loadMoreError }}
+          </AlertMessage>
+          <div v-if="canLoadMore" class="mt-[18px] hidden max-[600px]:block">
+            <AppButton
+              block
+              data-testid="load-more-courses"
+              :loading="loadingMore"
+              loading-label="Loading more…"
+              size="lg"
+              @click="loadMore"
+            >
+              Load more
+            </AppButton>
+          </div>
         </div>
       </div>
     </section>
