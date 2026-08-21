@@ -25,7 +25,7 @@ const prefetch = useRoutePrefetch();
     <div
       v-if="loading"
       class="grid grid-cols-4 gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[600px]:grid-cols-1"
-      aria-label="Loading courses"
+      aria-label="Loading lessons"
     >
       <div
         v-for="index in 4"

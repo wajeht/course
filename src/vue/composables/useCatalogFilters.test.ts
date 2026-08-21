@@ -88,6 +88,16 @@ describe("useCatalogFilters", () => {
     stop();
   });
 
+  it("uses a natural heading for a single instructor filter", async () => {
+    const client = {
+      getCatalog: vi.fn(async () => catalog()),
+    };
+    const { filters, stop } = await setup(client, "/?instructor=John+Danaher");
+
+    await vi.waitFor(() => expect(filters.libraryTitle.value).toBe("Courses by John Danaher"));
+    stop();
+  });
+
   it("debounces search into the URL", async () => {
     const client = {
       getCatalog: vi.fn(async () => catalog()),

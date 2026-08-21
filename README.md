@@ -7,7 +7,7 @@
 A private, opinionated, self-hosted video course library.
 
 > [!WARNING]
-> This project is unfinished and heavily work in progress.
+> This project is unfinished and under active development.
 
 ## Usage
 
@@ -37,10 +37,10 @@ Intel Quick Sync when an incompatible video must be re-encoded; CPU fallback
 is intentionally disabled. H.264/AAC videos can be played directly or remuxed
 without re-encoding.
 
-On the first visit, enter `AUTH_SETUP_TOKEN` and create the application password. The setup token
+On the first visit, enter `AUTH_SETUP_TOKEN` and create the library password. The setup token
 is ignored after a password exists. `SESSION_SECRET` must remain stable across restarts or existing
-sessions will be signed out. Application passwords must contain at least 15 characters. Changing the
-password invalidates every other active session.
+sessions will be signed out. The library password must contain at least 15 characters. Changing it
+invalidates every other active session.
 
 ## Library Layout
 
