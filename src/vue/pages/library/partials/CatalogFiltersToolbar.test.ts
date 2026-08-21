@@ -86,10 +86,10 @@ describe("CatalogFiltersToolbar", () => {
     expect(wrapper.emitted("update:category")?.at(-1)).toEqual([["Technology"]]);
 
     await wrapper.setProps({ category: ["Technology"] });
-    expect(categoryButton.text()).toBe("Categories: Technology");
+    expect(categoryButton.text()).toBe("Category: Technology");
 
     const closeButton = drawer?.querySelector<HTMLButtonElement>(
-      '[aria-label="Close categories filters"]',
+      '[aria-label="Close category filters"]',
     );
     expect(closeButton).not.toBeNull();
     await new DOMWrapper(closeButton!).trigger("click");

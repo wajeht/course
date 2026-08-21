@@ -2,6 +2,7 @@
 import type { LessonDetailDto } from "@/api.js";
 import ChapterList from "@/components/ChapterList.vue";
 import AppButton from "@/components/ui/AppButton.vue";
+import { countText } from "@/utils.js";
 
 defineProps<{
   currentTime: number;
@@ -50,14 +51,14 @@ const emit = defineEmits<{
     <header class="flex items-center justify-between gap-4 px-5 py-4 max-[600px]:px-4">
       <div>
         <p class="mb-1.5 text-[.65rem] font-extrabold tracking-[.18em] text-belt uppercase">
-          Technique index
+          Lesson outline
         </p>
         <h2 id="chapter-list-heading" class="font-display text-[1.15rem] font-extrabold">
           Chapters
         </h2>
       </div>
       <span class="font-mono text-[.72rem] font-semibold text-muted">
-        {{ lesson.chapters.length }} total
+        {{ countText(lesson.chapters.length, "chapter") }}
       </span>
     </header>
     <div class="max-h-[380px] overflow-y-auto overscroll-contain border-t border-line">

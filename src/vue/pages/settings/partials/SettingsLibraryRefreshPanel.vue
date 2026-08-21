@@ -45,6 +45,18 @@ const scanError = computed(() => {
   if (caught instanceof Error) return caught.message;
   return "Could not load library status";
 });
+const libraryStatusText = computed(() => {
+  if (scanStatus.value?.status === "failed") return "Refresh failed";
+  if (scanRequest.error.value) return "Library status unavailable";
+  if (scanStatus.value?.status === "scanning") return "Refreshing library…";
+  if (scanStatus.value?.completedAt) {
+    return scanStatus.value.warnings.length
+      ? countText(scanStatus.value.warnings.length, "library issue")
+      : `${countText(scanStatus.value.courseCount, "course")} · ${countText(scanStatus.value.lessonCount, "lesson")}`;
+  }
+  if (scanRequest.isPending.value) return "Library status is loading…";
+  return "Library has not been refreshed yet";
+});
 
 async function rescanCatalog(): Promise<void> {
   await rescanAction.run();
@@ -78,17 +90,7 @@ async function rescanCatalog(): Promise<void> {
                 'text-muted': scanStatus?.status !== 'failed' && !scanStatus?.warnings.length,
               }"
             >
-              <template v-if="scanStatus?.status === 'failed'">Refresh failed</template>
-              <template v-else-if="scanStatus?.completedAt">
-                <template v-if="scanStatus.warnings.length">
-                  {{ countText(scanStatus.warnings.length, "library issue") }}
-                </template>
-                <template v-else>
-                  {{ countText(scanStatus.courseCount, "course") }} ·
-                  {{ countText(scanStatus.lessonCount, "lesson") }}
-                </template>
-              </template>
-              <template v-else>Library status is loading…</template>
+              {{ libraryStatusText }}
             </p>
             <p
               v-if="

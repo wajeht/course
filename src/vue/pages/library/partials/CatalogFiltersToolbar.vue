@@ -25,9 +25,19 @@ const tag = defineModel<string[]>("tag", { required: true });
 
 const activeMobilePanel = shallowRef<FilterType | null>(null);
 const mobileFilterButtons = computed(() => [
-  { label: "Categories", type: "category" as const, values: category.value },
-  { label: "Instructors", type: "instructor" as const, values: instructor.value },
-  { label: "Tags", type: "tag" as const, values: tag.value },
+  {
+    label: "Categories",
+    singularLabel: "Category",
+    type: "category" as const,
+    values: category.value,
+  },
+  {
+    label: "Instructors",
+    singularLabel: "Instructor",
+    type: "instructor" as const,
+    values: instructor.value,
+  },
+  { label: "Tags", singularLabel: "Tag", type: "tag" as const, values: tag.value },
 ]);
 
 const mobilePanel = computed(() => {
@@ -35,6 +45,7 @@ const mobilePanel = computed(() => {
   if (panel === "category") {
     return {
       allLabel: "All categories",
+      closeLabel: "Close category filters",
       options: props.categories,
       title: "Categories",
       type: panel,
@@ -43,13 +54,20 @@ const mobilePanel = computed(() => {
   if (panel === "instructor") {
     return {
       allLabel: "All instructors",
+      closeLabel: "Close instructor filters",
       options: props.instructors,
       title: "Instructors",
       type: panel,
     };
   }
   if (panel === "tag") {
-    return { allLabel: "All tags", options: props.tags, title: "Tags", type: panel };
+    return {
+      allLabel: "All tags",
+      closeLabel: "Close tag filters",
+      options: props.tags,
+      title: "Tags",
+      type: panel,
+    };
   }
   return null;
 });
@@ -141,7 +159,7 @@ function togglePanel(panel: FilterType): void {
         >
           {{
             button.values.length === 1
-              ? `${button.label}: ${button.values[0]}`
+              ? `${button.singularLabel}: ${button.values[0]}`
               : button.values.length > 1
                 ? `${button.label} (${button.values.length})`
                 : button.label
@@ -163,7 +181,7 @@ function togglePanel(panel: FilterType): void {
       v-if="mobilePanel"
       :open="true"
       :title="mobilePanel.title"
-      :close-label="`Close ${mobilePanel.title.toLowerCase()} filters`"
+      :close-label="mobilePanel.closeLabel"
       @close="activeMobilePanel = null"
     >
       <CatalogFilterGroup

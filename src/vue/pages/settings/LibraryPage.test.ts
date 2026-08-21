@@ -98,6 +98,16 @@ describe("settings/LibraryPage", () => {
     expect(wrapper.text()).not.toContain("12 courses · 215 lessons");
   });
 
+  it("shows an unavailable status instead of a loading status after a request fails", async () => {
+    vi.mocked(api.getScanStatus).mockRejectedValueOnce(new Error("Could not load library status"));
+    const wrapper = mountLibraryPage();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Could not load library status");
+    expect(wrapper.text()).toContain("Library status unavailable");
+    expect(wrapper.text()).not.toContain("Library status is loading…");
+  });
+
   it("disables library settings when their saved value cannot be loaded", async () => {
     vi.mocked(api.getSettings).mockRejectedValueOnce(new Error("Could not load settings"));
     vi.mocked(api.updateSettings).mockClear();

@@ -103,6 +103,12 @@ export function useCatalogFilters(
     const count = dataState.catalog.value.pagination.totalCourses;
     const courseLabel = count === 1 ? "course" : "courses";
     if (routeState.searchQuery.value) return `${count} matching ${courseLabel}`;
+    if (
+      routeState.selectedFilters.value.length === 1 &&
+      routeState.selectedInstructor.value.length === 1
+    ) {
+      return `Courses by ${routeState.selectedInstructor.value[0]}`;
+    }
     if (routeState.selectedFilters.value.length === 1) {
       return `${routeState.selectedFilters.value[0]} courses`;
     }

@@ -64,7 +64,7 @@ test("filters through the API and uses the responsive mobile sheet", async ({ pa
 
   const drawer = page.getByRole("dialog", { name: "Categories" });
   const surface = page.getByTestId("app-drawer-surface");
-  const closeButton = drawer.getByRole("button", { name: "Close categories filters" });
+  const closeButton = drawer.getByRole("button", { name: "Close category filters" });
   await expect(drawer).toBeVisible();
   await expect(closeButton).toBeFocused();
   expect(
