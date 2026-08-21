@@ -8,7 +8,7 @@ import SettingsLibraryRefreshPanel from "@/pages/settings/partials/SettingsLibra
   <SettingsLayout>
     <section
       id="settings-library-panel"
-      class="col-span-3 grid gap-[clamp(18px,2vw,30px)] max-[1120px]:col-span-2 max-[860px]:col-span-1"
+      class="grid min-w-0 gap-[clamp(18px,2vw,30px)]"
       aria-labelledby="settings-library-link"
     >
       <SettingsLibraryRefreshPanel />

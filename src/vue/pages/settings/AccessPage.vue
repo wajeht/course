@@ -5,11 +5,7 @@ import SettingsLayout from "@/pages/settings/partials/SettingsLayout.vue";
 
 <template>
   <SettingsLayout>
-    <section
-      id="settings-access-panel"
-      class="col-span-3 max-[1120px]:col-span-2 max-[860px]:col-span-1"
-      aria-labelledby="settings-access-link"
-    >
+    <section id="settings-access-panel" class="min-w-0" aria-labelledby="settings-access-link">
       <SettingsAccessPanel />
     </section>
   </SettingsLayout>
