@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useTemplateRef } from "vue";
 
-import type { PlaybackResult, PlaylistDetailDto, VideoDto } from "@/api.js";
+import type { PlaybackResult, VideoDto } from "@/api.js";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
@@ -12,13 +12,11 @@ const props = defineProps<{
   loading: boolean;
   nextVideo?: VideoDto;
   playback: PlaybackResult | null;
-  playlist: PlaylistDetailDto | null;
   retrying: boolean;
 }>();
 const emit = defineEmits<{
   ended: [];
   loadedMetadata: [];
-  openPlaylist: [];
   pause: [];
   retry: [];
   timeUpdate: [];
@@ -29,20 +27,8 @@ defineExpose({ video });
 </script>
 
 <template>
-  <div v-if="playlist" class="flex min-h-[34px] items-center justify-between">
-    <span class="max-w-[75%] truncate text-[.78rem] font-bold text-white/68">{{
-      playlist.title
-    }}</span>
-    <AppButton
-      class="hidden max-[860px]:inline-flex"
-      variant="outline-inverse"
-      size="sm"
-      @click="emit('openPlaylist')"
-      >Playlist</AppButton
-    >
-  </div>
   <div
-    class="relative mx-auto mt-4 mb-[26px] grid aspect-video max-h-[calc(100vh-260px)] w-full place-items-center overflow-hidden rounded-[7px] border border-white/10 bg-[#070a08] shadow-[0_28px_80px_rgb(0_0_0_/_35%)]"
+    class="relative mx-auto mb-[26px] grid aspect-video max-h-[calc(100vh-260px)] w-full place-items-center overflow-hidden rounded-[7px] border border-white/10 bg-[#070a08] shadow-[0_28px_80px_rgb(0_0_0_/_35%)]"
   >
     <video
       ref="video"
