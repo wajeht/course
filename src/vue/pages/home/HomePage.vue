@@ -4,8 +4,6 @@ import { computed } from "vue";
 
 import { api, apiErrorMessage } from "@/api.js";
 import AlertMessage from "@/components/ui/AlertMessage.vue";
-import PageHeader from "@/components/ui/PageHeader.vue";
-import PlaylistGrid from "@/components/PlaylistGrid.vue";
 import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
 import ContinueWatchingSection from "@/pages/home/partials/ContinueWatchingSection.vue";
 import { libraryQueryOptions } from "@/queries.js";
@@ -25,9 +23,5 @@ const error = computed(() => {
       :videos="library?.continueWatching ?? []"
       :loading="request.isPending.value"
     />
-    <section v-if="library?.playlists.length" class="mt-14">
-      <PageHeader class="mb-6" eyebrow="Collections" title="Playlists" :heading-level="2" />
-      <PlaylistGrid :playlists="library.playlists" />
-    </section>
   </StandardPageLayout>
 </template>
