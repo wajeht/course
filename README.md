@@ -46,14 +46,14 @@ password invalidates every other active session.
 
 ```text
 /videos/
-  Course Name/
-    course.json
-    cover.jpg
-    01 - Introduction.mp4
-    01 - Introduction.mp4.json
-    Module 2/
-      01 - Next lesson.mkv
-      01 - Next lesson.mkv.json
+└── Course Name/
+    ├── course.json
+    ├── cover.jpg
+    ├── 01 - Introduction.mp4
+    ├── 01 - Introduction.mp4.json
+    └── Module 2/
+        ├── 01 - Next lesson.mkv
+        └── 01 - Next lesson.mkv.json
 ```
 
 Videos may be directly inside a course or one folder deeper. Direct videos
