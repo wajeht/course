@@ -53,4 +53,14 @@ describe("AuthPage", () => {
 
     expect(wrapper.text()).toContain("Enter the one-time setup token configured on your server.");
   });
+
+  it("uses the same desktop height for every setup input", () => {
+    const wrapper = mount(AuthPage, {
+      props: { ...baseProps, passwordConfigured: false, setupTokenRequired: true },
+    });
+    const inputs = wrapper.findAll('input[type="password"]');
+
+    expect(inputs).toHaveLength(3);
+    expect(inputs.every((input) => input.classes().includes("lg:min-h-12"))).toBe(true);
+  });
 });
