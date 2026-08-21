@@ -20,7 +20,6 @@ const {
   markComplete,
   nextLesson,
   playback,
-  playbackRate,
   resetProgress,
   resetting,
   retryConversion,
@@ -30,7 +29,6 @@ const {
   seekToChapter,
   sidebarOpen,
   toggleSidebar,
-  updatePlaybackRate,
 } = useLessonPlayback(video);
 </script>
 
@@ -58,11 +56,9 @@ const {
         @time-update="saveOnTimeUpdate"
       />
       <PlayerLessonDetails
-        v-model:playback-rate="playbackRate"
         :current-time="currentTime"
         :lesson
         :resetting
-        @playback-rate-change="updatePlaybackRate"
         @reset="resetProgress"
         @seek="seekToChapter"
       />

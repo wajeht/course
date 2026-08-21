@@ -2,7 +2,6 @@
 import type { LessonDetailDto } from "@/api.js";
 import ChapterList from "@/components/ChapterList.vue";
 import AppButton from "@/components/ui/AppButton.vue";
-import AppSelect from "@/components/ui/AppSelect.vue";
 
 defineProps<{
   currentTime: number;
@@ -11,12 +10,9 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  playbackRateChange: [];
   reset: [];
   seek: [startSeconds: number];
 }>();
-const playbackRate = defineModel<number>("playbackRate", { required: true });
-const playbackRates = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 </script>
 
 <template>
@@ -34,20 +30,7 @@ const playbackRates = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
         {{ lesson.title }}
       </h1>
     </div>
-    <div
-      class="flex flex-none items-center gap-[18px] max-[600px]:w-full max-[600px]:justify-between"
-    >
-      <label class="text-[.7rem] font-bold text-white/60">
-        Speed
-        <AppSelect
-          v-model="playbackRate"
-          class="ml-2 rounded-[5px] border border-white/16 bg-[#202824] py-1.5 pr-6 pl-2 text-white"
-          variant="dark"
-          @change="emit('playbackRateChange')"
-        >
-          <option v-for="rate in playbackRates" :key="rate" :value="rate">{{ rate }}×</option>
-        </AppSelect>
-      </label>
+    <div class="flex-none max-[600px]:w-full">
       <AppButton
         class="cursor-pointer border-0 border-b border-white/20 bg-transparent px-0 py-[7px] text-[.7rem] text-white/58"
         variant="unstyled"

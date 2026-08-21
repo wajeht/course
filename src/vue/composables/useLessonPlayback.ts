@@ -31,7 +31,6 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
   const endedState = shallowRef(false);
   const sidebarOpenState = shallowRef(false);
   const currentTimeState = shallowRef(0);
-  const playbackRate = shallowRef(1);
   const confirmation = useConfirm();
   const toast = useToast();
   const playbackProgress = usePlaybackProgress(async (lessonId, positionSeconds) => {
@@ -194,7 +193,6 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
           Math.max(0, element.duration - 1),
         );
       }
-      element.playbackRate = playbackRate.value;
       currentTimeState.value = element.currentTime;
       playbackProgress.activateSession(element.currentTime);
     });
@@ -260,10 +258,6 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
     await resetAction.run(targetLessonId);
   }
 
-  function updatePlaybackRate(): void {
-    if (video.value) video.value.playbackRate = playbackRate.value;
-  }
-
   function handleVisibility(): void {
     if (document.visibilityState !== "hidden") return;
     playbackProgress.recordPosition(video.value?.currentTime);
@@ -314,7 +308,6 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
     markComplete,
     nextLesson,
     playback: computed(() => videoPlayback.playback.value),
-    playbackRate,
     resetProgress,
     resetting: computed(() => resetAction.pending.value),
     retryConversion,
@@ -324,6 +317,5 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
     seekToChapter,
     sidebarOpen: computed(() => sidebarOpenState.value),
     toggleSidebar,
-    updatePlaybackRate,
   };
 }
