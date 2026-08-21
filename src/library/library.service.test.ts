@@ -135,6 +135,24 @@ describe("library service", () => {
     });
   });
 
+  it("includes every video by default", async () => {
+    const library = await createService().getLibrary();
+
+    expect(library.videos.map((video) => video.id)).toEqual([standaloneVideo, videoA, videoB]);
+  });
+
+  it("applies search and tag filters to playlists", async () => {
+    await expect(createService().getLibrary({ query: "Saved Collection" })).resolves.toMatchObject({
+      playlists: [{ title: "Saved Collection" }],
+    });
+    await expect(createService().getLibrary({ tag: ["Archive"] })).resolves.toMatchObject({
+      playlists: [{ title: "Documentaries" }],
+    });
+    await expect(createService().getLibrary({ tag: ["Instruction"] })).resolves.toMatchObject({
+      playlists: [],
+    });
+  });
+
   it("paginates all videos using the configured page size", async () => {
     await expect(createService(1).getLibrary({ page: 2 })).resolves.toMatchObject({
       videos: [{ title: "Guard Study" }],

@@ -4,6 +4,7 @@ import AppButton from "@/components/ui/AppButton.vue";
 import AppInput from "@/components/ui/AppInput.vue";
 import PanelCard from "@/components/ui/PanelCard.vue";
 import LibraryFilterGroup from "@/pages/library/partials/LibraryFilterGroup.vue";
+import LibraryPlaylistFilter from "@/pages/library/partials/LibraryPlaylistFilter.vue";
 
 defineProps<{
   authors: LibraryDto["authors"];
@@ -14,14 +15,15 @@ defineEmits<{ clear: [] }>();
 const author = defineModel<string[]>("author", { required: true });
 const query = defineModel<string>("query", { required: true });
 const tag = defineModel<string[]>("tag", { required: true });
+const view = defineModel<string>("view", { required: true });
 </script>
 
 <template>
   <aside class="grid gap-4">
     <AppInput
       v-model="query"
-      aria-label="Search videos"
-      placeholder="Search videos"
+      :aria-label="view === 'playlists' ? 'Search playlists' : 'Search videos'"
+      :placeholder="view === 'playlists' ? 'Search playlists' : 'Search videos'"
       type="search"
     />
     <AppButton
@@ -31,6 +33,9 @@ const tag = defineModel<string[]>("tag", { required: true });
       @click="$emit('clear')"
       >Clear filters</AppButton
     >
+    <PanelCard :elevated="false" padding="compact">
+      <LibraryPlaylistFilter v-model="view" />
+    </PanelCard>
     <PanelCard :elevated="false" padding="compact">
       <LibraryFilterGroup
         v-model="author"

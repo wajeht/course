@@ -70,7 +70,7 @@ export interface VideoPagination {
 export interface LibraryRepository {
   listVideos(filters?: VideoFilters, pagination?: VideoPagination): Promise<VideoRow[]>;
   countVideos(filters?: VideoFilters): Promise<number>;
-  listPlaylists(filters?: Pick<VideoFilters, "author">): Promise<PlaylistRow[]>;
+  listPlaylists(filters?: VideoFilters): Promise<PlaylistRow[]>;
   listAuthors(): Promise<FilterCountRow[]>;
   listTags(): Promise<FilterCountRow[]>;
   listContinueWatching(): Promise<VideoRow[]>;
@@ -261,7 +261,7 @@ export function createLibraryApiRepository(database: Knex): LibraryRepository {
       return Number(row?.video_count ?? 0);
     },
 
-    listPlaylists({ author } = {}) {
+    listPlaylists({ query, author, tag } = {}) {
       const queryBuilder = createPlaylistsQuery().orderBy("playlists.sort_order");
       if (author?.length) {
         const placeholders = author.map(() => "?").join(", ");
@@ -272,6 +272,29 @@ export function createLibraryApiRepository(database: Knex): LibraryRepository {
             .whereRaw("playlist_authors.playlist_id = playlists.id")
             .whereRaw(`authors.name COLLATE NOCASE IN (${placeholders})`, author),
         );
+      }
+      if (tag?.length) {
+        const placeholders = tag.map(() => "?").join(", ");
+        queryBuilder.whereRaw(
+          `EXISTS (SELECT 1 FROM json_each(playlists.tags_json) WHERE value COLLATE NOCASE IN (${placeholders}))`,
+          tag,
+        );
+      }
+      if (query) {
+        const search = `%${query}%`;
+        queryBuilder.where((where) => {
+          where
+            .whereLike("playlists.title", search)
+            .orWhereLike("playlists.description", search)
+            .orWhereLike("playlists.tags_json", search)
+            .orWhereExists(
+              database("playlist_authors")
+                .join("authors", "authors.id", "playlist_authors.author_id")
+                .select(database.raw("1"))
+                .whereRaw("playlist_authors.playlist_id = playlists.id")
+                .whereLike("authors.name", search),
+            );
+        });
       }
       return queryBuilder;
     },

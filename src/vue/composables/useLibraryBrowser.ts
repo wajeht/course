@@ -49,6 +49,14 @@ export function useLibraryBrowser(debounceMilliseconds = 150) {
 
   const selectedAuthor = selectedFilter("author");
   const selectedTag = selectedFilter("tag");
+  const selectedView = computed({
+    get: () => (route.query.view === "playlists" ? "playlists" : "videos"),
+    set: (view: string) => {
+      void router.push({
+        query: nextQuery({ view: view === "playlists" ? "playlists" : undefined, page: undefined }),
+      });
+    },
+  });
   const filters = computed<LibraryFilters>(() => ({
     query: routeSearch.value || undefined,
     author: selectedAuthor.value.length ? selectedAuthor.value : undefined,
@@ -58,7 +66,12 @@ export function useLibraryBrowser(debounceMilliseconds = 150) {
   const request = useQuery(computed(() => libraryQueryOptions(filters.value, api)));
   const library = computed(() => request.data.value ?? emptyLibrary());
   const hasActiveFilters = computed(() =>
-    Boolean(query.value || selectedAuthor.value.length || selectedTag.value.length),
+    Boolean(
+      query.value ||
+      selectedView.value === "playlists" ||
+      selectedAuthor.value.length ||
+      selectedTag.value.length,
+    ),
   );
 
   let searchTimer: ReturnType<typeof setTimeout> | undefined;
@@ -88,7 +101,13 @@ export function useLibraryBrowser(debounceMilliseconds = 150) {
     clearFilters() {
       query.value = "";
       void router.push({
-        query: nextQuery({ author: undefined, page: undefined, q: undefined, tag: undefined }),
+        query: nextQuery({
+          author: undefined,
+          page: undefined,
+          q: undefined,
+          tag: undefined,
+          view: undefined,
+        }),
       });
     },
     error: computed(() => {
@@ -103,6 +122,7 @@ export function useLibraryBrowser(debounceMilliseconds = 150) {
     query,
     refreshing: computed(() => request.isFetching.value && !request.isPending.value),
     selectedAuthor,
+    selectedView,
     selectedTag,
     setPage(nextPage: number) {
       return router.push({
