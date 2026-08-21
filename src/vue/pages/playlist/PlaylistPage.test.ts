@@ -53,6 +53,7 @@ async function mountPlaylistPage() {
     description: "",
     durationSeconds: 120,
     id: playlistId,
+    nextVideoId: videoId,
     progressPercent: 0,
     sections: [{ id: null, title: "Videos", videos: [video] }],
     source: null,

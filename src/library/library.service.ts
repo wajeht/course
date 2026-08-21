@@ -46,6 +46,7 @@ export interface PlaylistDto {
   completedCount: number;
   progressPercent: number;
   durationSeconds: number;
+  nextVideoId: string;
 }
 
 export interface PlaylistDetailDto extends PlaylistDto {
@@ -152,6 +153,7 @@ function playlistDto(row: PlaylistRow): PlaylistDto {
     completedCount,
     progressPercent: progressPercent(completedCount, videoCount),
     durationSeconds: Number(row.total_duration),
+    nextVideoId: row.next_video_id,
   };
 }
 

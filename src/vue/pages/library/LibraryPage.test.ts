@@ -33,6 +33,7 @@ function library(): LibraryDto {
         description: "",
         durationSeconds: 120,
         id: playlistId,
+        nextVideoId: videoId,
         progressPercent: 0,
         source: null,
         tags: [],
@@ -98,5 +99,8 @@ describe("LibraryPage", () => {
     expect(wrapper.get("h1").text()).toBe("Playlists");
     expect(wrapper.text()).toContain("Saved Collection");
     expect(wrapper.text()).not.toContain("Standalone video");
+    expect(wrapper.get(`a[href="/videos/${videoId}"]`).attributes("aria-label")).toBe(
+      "Open Saved Collection",
+    );
   });
 });

@@ -141,6 +141,34 @@ describe("library service", () => {
     expect(library.videos.map((video) => video.id)).toEqual([standaloneVideo, videoA, videoB]);
   });
 
+  it("opens a playlist at its first unfinished video", async () => {
+    await database.connection("videos").insert({
+      id: "4".repeat(24),
+      path: "Saved Collection/Second.mp4",
+      playlist_id: playlistA,
+      title: "Second lesson",
+      sort_order: 1,
+      duration_seconds: 100,
+      size_bytes: 100,
+      container: "mp4",
+      video_codec: "h264",
+      browser_compatible: true,
+      modified_at: "2026-08-21T00:00:00.000Z",
+    });
+    await database.connection("progress").insert({
+      video_id: videoA,
+      position_seconds: 100,
+      completed: true,
+      updated_at: "2026-08-21T00:01:00.000Z",
+    });
+
+    const library = await createService().getLibrary();
+
+    expect(library.playlists.find((playlist) => playlist.id === playlistA)?.nextVideoId).toBe(
+      "4".repeat(24),
+    );
+  });
+
   it("applies search and tag filters to playlists", async () => {
     await expect(createService().getLibrary({ query: "Saved Collection" })).resolves.toMatchObject({
       playlists: [{ title: "Saved Collection" }],
