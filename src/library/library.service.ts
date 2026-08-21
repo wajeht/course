@@ -203,7 +203,7 @@ export function createLibraryService(
 
       const [videos, playlists, authors, tags, continuing] = await Promise.all([
         repository.listVideos(videoFilters, { limit: pageSize, offset: (page - 1) * pageSize }),
-        repository.listPlaylists({ author: videoFilters.author }),
+        repository.listPlaylists(videoFilters),
         repository.listAuthors(),
         repository.listTags(),
         repository.listContinueWatching(),
