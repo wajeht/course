@@ -127,7 +127,7 @@ function togglePanel(panel: FilterType): void {
     <div class="hidden max-[760px]:block">
       <CatalogSearchInput v-model="query" class="mb-3" :elevated="false" />
 
-      <div class="flex flex-wrap gap-2">
+      <div data-testid="mobile-filter-actions" class="flex flex-wrap gap-2">
         <AppButton
           v-for="button in mobileFilterButtons"
           :key="button.type"
