@@ -96,9 +96,9 @@ export function useCatalogRouteState(debounceMilliseconds = 150) {
     if (query.value !== value) query.value = value;
   });
 
-  function setPage(nextPage: number): void {
+  function setPage(nextPage: number) {
     const normalized = Math.max(1, nextPage);
-    void router.push({
+    return router.push({
       query: routeQuery({ page: normalized === 1 ? undefined : String(normalized) }),
     });
   }

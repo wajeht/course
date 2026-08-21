@@ -22,8 +22,8 @@ export function useCatalogData(
 ) {
   const catalogRequest = useQuery(computed(() => catalogQueryOptions(filters.value, client)));
 
-  watch(catalogRequest.data, (catalog) => {
-    if (catalog) normalizePage(catalog.pagination.page);
+  watch([catalogRequest.data, catalogRequest.isPlaceholderData], ([catalog, isPlaceholderData]) => {
+    if (catalog && !isPlaceholderData) normalizePage(catalog.pagination.page);
   });
 
   const catalog = computed(() => catalogRequest.data.value ?? emptyCatalog());

@@ -35,7 +35,7 @@ const {
   selectedInstructor,
   selectedTag,
   setPage,
-} = useCatalogFilters(api, 150, isMobile);
+} = useCatalogFilters(api, { accumulatePages: isMobile });
 const prefetch = useRoutePrefetch();
 const displayedCourses = computed(() =>
   isMobile.value ? loadedCourses.value : catalog.value.courses,
