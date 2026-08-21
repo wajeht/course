@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch } from "vue";
+import { computed } from "vue";
 
 import { api } from "@/api.js";
 import CatalogFiltersToolbar from "@/pages/library/partials/CatalogFiltersToolbar.vue";
@@ -14,6 +14,7 @@ import { useMediaQuery } from "@/composables/useMediaQuery.js";
 import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
 
+const isMobile = useMediaQuery("(max-width: 600px)");
 const {
   catalog,
   canLoadMore,
@@ -21,7 +22,6 @@ const {
   error,
   filters,
   hasActiveFilters,
-  lastLoadedPage,
   libraryTitle,
   loadedCourses,
   loadMore,
@@ -35,18 +35,11 @@ const {
   selectedInstructor,
   selectedTag,
   setPage,
-} = useCatalogFilters(api);
+} = useCatalogFilters(api, 150, isMobile);
 const prefetch = useRoutePrefetch();
-const isMobile = useMediaQuery("(max-width: 600px)");
 const displayedCourses = computed(() =>
   isMobile.value ? loadedCourses.value : catalog.value.courses,
 );
-
-watch(isMobile, (mobile, wasMobile) => {
-  if (wasMobile && !mobile && lastLoadedPage.value !== page.value) {
-    setPage(lastLoadedPage.value);
-  }
-});
 
 function prefetchPage(page: number): void {
   void prefetch.catalog({ ...filters.value, page });
