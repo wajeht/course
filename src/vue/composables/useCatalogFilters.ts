@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/vue-query";
 import { computed, readonly, shallowRef, toRef, watch, type MaybeRefOrGetter } from "vue";
 
-import type { CatalogDto } from "@/api.js";
+import { apiErrorMessage, type CatalogDto } from "@/api.js";
 import { catalogQueryOptions, type CatalogQueryClient } from "@/queries.js";
 import { useCatalogData } from "./useCatalogData.js";
 import { useCatalogRouteState } from "./useCatalogRouteState.js";
@@ -67,8 +67,7 @@ export function useCatalogFilters(
         loadedPage.value = catalog.pagination.page;
       } catch (caught) {
         if (cancelled) return;
-        loadMoreError.value =
-          caught instanceof Error ? caught.message : "Could not load more courses";
+        loadMoreError.value = apiErrorMessage(caught, "Could not load more courses");
       } finally {
         if (!cancelled) loadingMore.value = false;
       }
@@ -93,8 +92,7 @@ export function useCatalogFilters(
       );
       if (nextPage === currentPage) accumulationRetry.value += 1;
     } catch (caught) {
-      loadMoreError.value =
-        caught instanceof Error ? caught.message : "Could not load more courses";
+      loadMoreError.value = apiErrorMessage(caught, "Could not load more courses");
       loadingMore.value = false;
     }
   }

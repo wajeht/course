@@ -1,5 +1,7 @@
 import { computed, shallowRef } from "vue";
 
+import { apiErrorMessage } from "@/api.js";
+
 interface AsyncActionOptions<TResult> {
   errorMessage?: string;
   onError?: (error: unknown) => void;
@@ -14,9 +16,7 @@ export function useAsyncAction<TArguments extends unknown[], TResult>(
   const error = shallowRef<unknown>(null);
   const errorMessage = computed(() => {
     if (!error.value) return "";
-    return error.value instanceof Error
-      ? error.value.message
-      : (options.errorMessage ?? "Something went wrong");
+    return apiErrorMessage(error.value, options.errorMessage ?? "Something went wrong");
   });
 
   function clearError(): void {

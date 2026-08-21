@@ -2,7 +2,13 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, expectJson, expectProtectedJson, isCatalogResourceNotFound } from "./api.js";
+import {
+  ApiError,
+  apiErrorMessage,
+  expectJson,
+  expectProtectedJson,
+  isCatalogResourceNotFound,
+} from "./api.js";
 
 const unauthorized = vi.fn();
 
@@ -46,5 +52,15 @@ describe("API response handling", () => {
     expect(isCatalogResourceNotFound(new ApiError("Invalid identifier", 400))).toBe(true);
     expect(isCatalogResourceNotFound(new ApiError("Course not found", 404))).toBe(true);
     expect(isCatalogResourceNotFound(new ApiError("Server failed", 500))).toBe(false);
+  });
+
+  it("preserves API messages and hides technical client errors", () => {
+    expect(apiErrorMessage(new ApiError("Invalid password", 401), "Could not sign in")).toBe(
+      "Invalid password",
+    );
+    expect(apiErrorMessage(new TypeError("Failed to fetch"), "Could not sign in")).toBe(
+      "Could not sign in",
+    );
+    expect(apiErrorMessage(new ApiError("", 500), "Request failed")).toBe("Request failed");
   });
 });

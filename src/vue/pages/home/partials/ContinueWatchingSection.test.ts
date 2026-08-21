@@ -17,6 +17,7 @@ describe("ContinueWatchingSection", () => {
     expect(wrapper.get('[aria-label="Loading lessons"]').attributes("aria-label")).toBe(
       "Loading lessons",
     );
+    expect(wrapper.get('[aria-label="Loading lessons"]').attributes("role")).toBe("status");
     expect(wrapper.find('[aria-label="Loading courses"]').exists()).toBe(false);
   });
 });

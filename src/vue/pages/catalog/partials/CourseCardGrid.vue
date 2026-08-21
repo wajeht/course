@@ -27,6 +27,7 @@ const columnClasses = computed(() =>
     class="grid gap-[clamp(18px,2vw,30px)]"
     :class="columnClasses"
     aria-label="Loading courses"
+    role="status"
   >
     <div
       v-for="index in 4"

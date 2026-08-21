@@ -221,7 +221,7 @@ describe("useCatalogFilters", () => {
 
     await vi.waitFor(() => expect(router.currentRoute.value.query.page).toBe("2"));
     expect(filters.loadingMore.value).toBe(false);
-    expect(filters.loadMoreError.value).toBe("Page failed");
+    expect(filters.loadMoreError.value).toBe("Could not load more courses");
     expect(filters.loadedCourses.value.map((course) => course.title)).toEqual(["First course"]);
 
     await filters.loadMore();
@@ -247,7 +247,7 @@ describe("useCatalogFilters", () => {
       }),
     };
     const { filters, router, stop } = await setup(client, "/?page=2", 0, true);
-    await vi.waitFor(() => expect(filters.loadMoreError.value).toBe("Page one failed"));
+    await vi.waitFor(() => expect(filters.loadMoreError.value).toBe("Could not load more courses"));
 
     await filters.loadMore();
 

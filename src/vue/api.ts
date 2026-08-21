@@ -50,6 +50,10 @@ export class ApiError extends Error {
   }
 }
 
+export function apiErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof ApiError && error.message.trim() ? error.message : fallback;
+}
+
 export function isCatalogResourceNotFound(error: unknown): error is ApiError {
   return error instanceof ApiError && (error.status === 400 || error.status === 404);
 }

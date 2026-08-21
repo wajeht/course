@@ -9,22 +9,27 @@ import { toastKey } from "@/composables/useToast.js";
 
 import LibraryPage from "./LibraryPage.vue";
 
-vi.mock("@/api.js", () => ({
-  api: {
-    getScanStatus: vi.fn(async () => ({
-      completedAt: "2026-08-12T00:00:00.000Z",
-      courseCount: 12,
-      error: null,
-      lessonCount: 215,
-      startedAt: "2026-08-12T00:00:00.000Z",
-      status: "complete",
-      warnings: [],
-    })),
-    getSettings: vi.fn(async () => ({ catalogPageSize: 24 })),
-    rescanCatalog: vi.fn(),
-    updateSettings: vi.fn(async (catalogPageSize) => ({ catalogPageSize })),
-  },
-}));
+vi.mock("@/api.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/api.js")>();
+  return {
+    ...actual,
+    api: {
+      ...actual.api,
+      getScanStatus: vi.fn(async () => ({
+        completedAt: "2026-08-12T00:00:00.000Z",
+        courseCount: 12,
+        error: null,
+        lessonCount: 215,
+        startedAt: "2026-08-12T00:00:00.000Z",
+        status: "complete",
+        warnings: [],
+      })),
+      getSettings: vi.fn(async () => ({ catalogPageSize: 24 })),
+      rescanCatalog: vi.fn(),
+      updateSettings: vi.fn(async (catalogPageSize) => ({ catalogPageSize })),
+    },
+  };
+});
 
 function mountLibraryPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });

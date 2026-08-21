@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { ApiError } from "@/api.js";
+
 import { useAsyncAction } from "./useAsyncAction.js";
 
 describe("useAsyncAction", () => {
@@ -38,5 +40,19 @@ describe("useAsyncAction", () => {
     await expect(state.run()).resolves.toBe("recovered");
     expect(state.error.value).toBeNull();
     expect(onSuccess).toHaveBeenCalledWith("recovered");
+  });
+
+  it("keeps API feedback but hides technical network errors", async () => {
+    const action = vi
+      .fn<() => Promise<void>>()
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockRejectedValueOnce(new ApiError("Current password is incorrect", 400));
+    const state = useAsyncAction(action, { errorMessage: "Could not change password" });
+
+    await state.run();
+    expect(state.errorMessage.value).toBe("Could not change password");
+
+    await state.run();
+    expect(state.errorMessage.value).toBe("Current password is incorrect");
   });
 });
