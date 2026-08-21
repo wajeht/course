@@ -16,8 +16,10 @@ describe("router error pages", () => {
 
     expect(library.name).toBe("settings-library");
     expect(library.meta.navigation).toBe("settings");
+    expect(library.meta.title).toBe("Library settings");
     expect(access.name).toBe("settings-access");
     expect(access.meta.navigation).toBe("settings");
+    expect(access.meta.title).toBe("Access settings");
   });
 
   it("does not retain the old combined settings route", () => {

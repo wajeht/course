@@ -38,13 +38,13 @@ export const router = createRouter({
       path: "/settings/library",
       name: "settings-library",
       component: loadSettingsLibraryPage,
-      meta: { navigation: "settings", title: "Settings" },
+      meta: { navigation: "settings", title: "Library settings" },
     },
     {
       path: "/settings/access",
       name: "settings-access",
       component: loadSettingsAccessPage,
-      meta: { navigation: "settings", title: "Settings" },
+      meta: { navigation: "settings", title: "Access settings" },
     },
     {
       path: "/courses/:courseId",
