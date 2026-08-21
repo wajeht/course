@@ -28,10 +28,7 @@ const rescanAction = useAsyncAction(() => api.rescanLibrary(), {
   errorMessage: "Could not refresh the library",
   onSuccess: async (status) => {
     queryClient.setQueryData(queryKeys.scanStatus, status);
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: queryKeys.library, refetchType: "none" }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.playlists, refetchType: "none" }),
-    ]);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.library, refetchType: "none" });
     if (status.status === "complete") toast.success("Library refreshed");
   },
 });

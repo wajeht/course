@@ -83,7 +83,6 @@ export interface LibraryService {
     continueWatching: VideoDto[];
     pagination: LibraryPaginationDto;
   }>;
-  getPlaylist(playlistId: string): Promise<PlaylistDetailDto | null>;
   getVideo(videoId: string): Promise<{
     video: VideoDetailDto;
     playlist: PlaylistDetailDto | null;
@@ -219,7 +218,6 @@ export function createLibraryService(
         pagination: { page, pageSize, totalVideos, totalPages },
       };
     },
-    getPlaylist,
     async getVideo(videoId) {
       const row = await repository.findVideo(videoId);
       if (!row) return null;

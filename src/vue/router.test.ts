@@ -30,6 +30,13 @@ describe("router error pages", () => {
     expect(author.meta.title).toBe("Author");
   });
 
+  it("does not expose a separate playlist details route", () => {
+    const route = router.resolve(`/playlists/${"a".repeat(24)}`);
+
+    expect(route.name).toBe("not-found");
+    expect(route.redirectedFrom).toBeUndefined();
+  });
+
   it("provides separate Library and Access settings routes", () => {
     const library = router.resolve("/settings/library");
     const access = router.resolve("/settings/access");

@@ -131,12 +131,7 @@ describe("application", () => {
     expect(apiNotFound.status).toBe(404);
     expect(await apiNotFound.json()).toEqual({ message: "Resource not found" });
 
-    for (const libraryPath of [
-      "/api/playlists/not-an-id",
-      "/api/videos/not-an-id",
-      `/api/playlists/${"c".repeat(24)}`,
-      `/api/videos/${"d".repeat(24)}`,
-    ]) {
+    for (const libraryPath of ["/api/videos/not-an-id", `/api/videos/${"d".repeat(24)}`]) {
       expect((await app.request(libraryPath, { headers: { cookie: cookie! } })).status).toBe(404);
     }
 
@@ -162,10 +157,5 @@ describe("application", () => {
       expect(index.headers.get("cache-control")).toBe("no-cache");
       expect(await index.text()).toBe("SPA");
     }
-
-    const browserRoute = await app.request(`/playlists/${"a".repeat(24)}`);
-    expect(browserRoute.status).toBe(200);
-    expect(browserRoute.headers.get("cache-control")).toBe("no-cache");
-    expect(await browserRoute.text()).toBe("SPA");
   });
 });

@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { LibraryDto } from "@/api.js";
-import {
-  createVideosQueryClient,
-  libraryQueryOptions,
-  queryKeys,
-  settingsQueryOptions,
-} from "@/queries.js";
+import { createVideosQueryClient, libraryQueryOptions, settingsQueryOptions } from "@/queries.js";
 
 function library(): LibraryDto {
   return {
@@ -32,15 +27,6 @@ describe("videos query client", () => {
     await queryClient.fetchQuery(libraryQueryOptions({}, client));
     await queryClient.fetchQuery(libraryQueryOptions({ page: 1 }, client));
     expect(requests).toBe(1);
-    queryClient.clear();
-  });
-
-  it("keeps playlist details fresh when library lists are invalidated", async () => {
-    const queryClient = createVideosQueryClient();
-    const playlistKey = queryKeys.playlist("a".repeat(24));
-    queryClient.setQueryData(playlistKey, { title: "Archive" });
-    await queryClient.invalidateQueries({ queryKey: queryKeys.library, refetchType: "none" });
-    expect(queryClient.getQueryState(playlistKey)?.isInvalidated).toBe(false);
     queryClient.clear();
   });
 
