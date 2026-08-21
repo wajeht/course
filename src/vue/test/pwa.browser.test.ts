@@ -78,14 +78,16 @@ test("keeps the install experience online-only", async ({ context, page }) => {
 
   await page.goto("/settings/library");
   await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
-  await expect(page).toHaveTitle("Settings · Course");
+  await expect(page).toHaveTitle("Library settings · Course");
 
   const settingsNavigation = page.getByRole("navigation", { name: "Settings sections" });
   await settingsNavigation.getByRole("link", { name: "Access", exact: true }).click();
   await expect(page).toHaveURL(/\/settings\/access$/);
   await expect(page.getByRole("heading", { level: 2, name: "Access" })).toBeVisible();
+  await expect(page).toHaveTitle("Access settings · Course");
   await settingsNavigation.getByRole("link", { name: "Library", exact: true }).click();
   await expect(page).toHaveURL(/\/settings\/library$/);
+  await expect(page).toHaveTitle("Library settings · Course");
 
   await page.getByRole("button", { name: "Refresh library" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Library refreshed" })).toBeVisible();
