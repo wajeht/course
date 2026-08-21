@@ -14,6 +14,7 @@ import PanelCard from "@/components/ui/PanelCard.vue";
 import ProgressBar from "@/components/ui/ProgressBar.vue";
 import { useAsyncAction } from "@/composables/useAsyncAction.js";
 import { useConfirm } from "@/composables/useConfirm.js";
+import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import { useToast } from "@/composables/useToast.js";
 import { playlistQueryOptions, queryKeys } from "@/queries.js";
 import { notFoundLocation } from "@/router.js";
@@ -24,6 +25,7 @@ const router = useRouter();
 const queryClient = useQueryClient();
 const confirmation = useConfirm();
 const toast = useToast();
+const prefetch = useRoutePrefetch();
 const playlistId = computed(() => String(route.params.playlistId));
 const request = useQuery(computed(() => playlistQueryOptions(playlistId.value)));
 const playlist = computed(() => request.data.value);
@@ -120,6 +122,7 @@ watch(
               v-if="nextVideo"
               :as="IntentRouterLink"
               :to="{ name: 'player', params: { videoId: nextVideo.id } }"
+              :prefetch="() => prefetch.video(nextVideo!.id)"
               variant="accent"
               size="lg"
               >▶ {{ nextVideo.positionSeconds ? "Resume" : "Play" }}</AppButton
