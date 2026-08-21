@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed, watch } from "vue";
+
 import { api } from "@/api.js";
 import CatalogFiltersToolbar from "@/pages/library/partials/CatalogFiltersToolbar.vue";
 import CourseCardGrid from "@/pages/catalog/partials/CourseCardGrid.vue";
@@ -11,7 +13,6 @@ import { useCatalogFilters } from "@/composables/useCatalogFilters.js";
 import { useMediaQuery } from "@/composables/useMediaQuery.js";
 import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
-import { computed } from "vue";
 
 const {
   catalog,
@@ -20,6 +21,7 @@ const {
   error,
   filters,
   hasActiveFilters,
+  lastLoadedPage,
   libraryTitle,
   loadedCourses,
   loadMore,
@@ -39,6 +41,12 @@ const isMobile = useMediaQuery("(max-width: 600px)");
 const displayedCourses = computed(() =>
   isMobile.value ? loadedCourses.value : catalog.value.courses,
 );
+
+watch(isMobile, (mobile, wasMobile) => {
+  if (wasMobile && !mobile && lastLoadedPage.value !== page.value) {
+    setPage(lastLoadedPage.value);
+  }
+});
 
 function prefetchPage(page: number): void {
   void prefetch.catalog({ ...filters.value, page });
