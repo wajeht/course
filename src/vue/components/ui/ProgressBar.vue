@@ -6,7 +6,7 @@ withDefaults(
     compact?: boolean;
     light?: boolean;
   }>(),
-  { label: "Course progress", compact: false, light: false },
+  { label: "Playlist progress", compact: false, light: false },
 );
 </script>
 

@@ -6,7 +6,7 @@ async function authenticate(page: Page): Promise<void> {
     data: {
       password,
       confirmPassword: password,
-      setupToken: "course-playwright-setup-token",
+      setupToken: "playlist-playwright-setup-token",
     },
   });
   expect([201, 409]).toContain(setup.status());
@@ -31,7 +31,7 @@ test("filters through the API and uses the responsive mobile sheet", async ({ pa
 
   const categoryButton = page.locator('[data-mobile-filter="category"]');
   const filterColumn = page.getByTestId("catalog-filter-column");
-  const courseColumn = page.getByTestId("catalog-course-column");
+  const courseColumn = page.getByTestId("catalog-playlist-column");
   await expect(categoryButton).toBeVisible();
   expect((await categoryButton.boundingBox())!.height).toBeGreaterThanOrEqual(40);
   await expect(filterColumn).toHaveCSS("position", "sticky");
@@ -112,22 +112,22 @@ test("filters through the API and uses the responsive mobile sheet", async ({ pa
   await expect(categoriesGroup).toHaveCSS("box-shadow", "none");
 });
 
-test("loads more courses in place on mobile and keeps desktop pagination", async ({ page }) => {
+test("loads more playlists in place on mobile and keeps desktop pagination", async ({ page }) => {
   await authenticate(page);
   await page.route("**/api/catalog**", async (route) => {
     const requestedPage = Number(new URL(route.request().url()).searchParams.get("page") ?? "1");
-    const title = requestedPage === 2 ? "Second course" : "First course";
+    const title = requestedPage === 2 ? "Second playlist" : "First playlist";
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        courses: [
+        playlists: [
           {
             id: title,
             title,
             description: "",
             coverUrl: null,
             category: "Technology",
-            instructors: ["Instructor"],
+            authors: ["Author"],
             tags: [],
             lessonCount: 1,
             durationSeconds: 60,
@@ -136,7 +136,7 @@ test("loads more courses in place on mobile and keeps desktop pagination", async
           },
         ],
         categories: [],
-        instructors: [],
+        authors: [],
         tags: [],
         continueWatching: [],
         pagination: { page: requestedPage, pageSize: 1, totalCourses: 2, totalPages: 2 },
@@ -146,31 +146,31 @@ test("loads more courses in place on mobile and keeps desktop pagination", async
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/library?pageSize=1");
-  await expect(page.getByText("First course", { exact: true })).toBeVisible();
+  await expect(page.getByText("First playlist", { exact: true })).toBeVisible();
 
-  const mobileCourseColumn = (await page.getByTestId("catalog-course-column").boundingBox())!;
+  const mobileCourseColumn = (await page.getByTestId("catalog-playlist-column").boundingBox())!;
   const mobileCard = (await page.locator("article").boundingBox())!;
   expect(Math.round(mobileCard.width)).toBe(Math.round(mobileCourseColumn.width));
 
-  const loadMore = page.getByTestId("load-more-courses");
+  const loadMore = page.getByTestId("load-more-playlists");
   await expect(loadMore).toHaveText("Load more");
   await loadMore.click();
 
-  await expect(page.getByText("Second course", { exact: true })).toBeVisible();
+  await expect(page.getByText("Second playlist", { exact: true })).toBeVisible();
   await expect(loadMore).toHaveCount(0);
   await expect(page).toHaveURL(/page=2/);
 
   await page.reload();
-  await expect(page.getByText("First course", { exact: true })).toBeVisible();
-  await expect(page.getByText("Second course", { exact: true })).toBeVisible();
+  await expect(page.getByText("First playlist", { exact: true })).toBeVisible();
+  await expect(page.getByText("Second playlist", { exact: true })).toBeVisible();
 
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect(page).toHaveURL(/page=2/);
-  await expect(page.getByText("First course", { exact: true })).toBeHidden();
-  await expect(page.getByText("Second course", { exact: true })).toBeVisible();
+  await expect(page.getByText("First playlist", { exact: true })).toBeHidden();
+  await expect(page.getByText("Second playlist", { exact: true })).toBeVisible();
   await expect(page.getByText("Page 2 of 2")).toBeVisible();
 
-  const desktopCourseColumn = (await page.getByTestId("catalog-course-column").boundingBox())!;
+  const desktopCourseColumn = (await page.getByTestId("catalog-playlist-column").boundingBox())!;
   const lastPageCard = (await page.locator("article").boundingBox())!;
   expect(lastPageCard.width).toBeLessThan(desktopCourseColumn.width / 2);
 });

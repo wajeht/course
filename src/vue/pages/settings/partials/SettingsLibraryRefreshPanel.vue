@@ -30,7 +30,7 @@ const rescanAction = useAsyncAction(() => api.rescanCatalog(), {
     queryClient.setQueryData(queryKeys.scanStatus, status);
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: queryKeys.catalog, refetchType: "none" }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.courses, refetchType: "none" }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.playlists, refetchType: "none" }),
     ]);
     if (status.status === "complete") toast.success("Library refreshed");
   },
@@ -51,7 +51,7 @@ const libraryStatusText = computed(() => {
   if (scanStatus.value?.completedAt) {
     return scanStatus.value.warnings.length
       ? countText(scanStatus.value.warnings.length, "library issue")
-      : `${countText(scanStatus.value.courseCount, "course")} · ${countText(scanStatus.value.lessonCount, "lesson")}`;
+      : `${countText(scanStatus.value.courseCount, "playlist")} · ${countText(scanStatus.value.lessonCount, "video")}`;
   }
   if (scanRequest.isPending.value) return "Library status is loading…";
   return "Library has not been refreshed yet";
@@ -70,7 +70,7 @@ async function rescanCatalog(): Promise<void> {
   <PanelCard class="min-h-[260px]" :elevated="false" padding="none">
     <PanelCardHeader
       title="Refresh library"
-      description="Check your video folders now for new or changed courses."
+      description="Check your video folders now for new or changed playlists."
     />
     <div
       class="flex min-h-[180px] flex-col items-start justify-between gap-8 p-[clamp(22px,4vw,34px)]"
@@ -99,8 +99,8 @@ async function rescanCatalog(): Promise<void> {
               "
               class="mt-1.5 text-xs leading-5 text-muted"
             >
-              {{ countText(scanStatus.courseCount, "course") }} ·
-              {{ countText(scanStatus.lessonCount, "lesson") }}
+              {{ countText(scanStatus.courseCount, "playlist") }} ·
+              {{ countText(scanStatus.lessonCount, "video") }}
             </p>
           </div>
 

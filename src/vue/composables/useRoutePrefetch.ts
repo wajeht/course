@@ -27,12 +27,12 @@ export function useRoutePrefetch() {
 
   return {
     catalog,
-    course: (courseId: string) =>
+    playlist: (courseId: string) =>
       Promise.all([queryClient.prefetchQuery(courseQueryOptions(courseId)), loadCoursePage()]),
     home: () => Promise.all([catalog({}), loadHomePage()]),
-    instructor: (instructor: string) =>
-      Promise.all([catalog({ instructor: [instructor], page: 1 }), loadInstructorPage()]),
-    lesson: (lessonId: string) =>
+    author: (author: string) =>
+      Promise.all([catalog({ author: [author], page: 1 }), loadInstructorPage()]),
+    video: (lessonId: string) =>
       Promise.all([queryClient.prefetchQuery(lessonQueryOptions(lessonId)), loadPlayerPage()]),
     library: () => Promise.all([catalog({}), loadLibraryPage()]),
     settingsAccess: () => loadSettingsAccessPage(),

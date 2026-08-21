@@ -6,7 +6,7 @@ import CourseCard from "@/components/CourseCard.vue";
 
 const props = withDefaults(
   defineProps<{
-    courses: DeepReadonly<CatalogDto["courses"]>;
+    playlists: DeepReadonly<CatalogDto["playlists"]>;
     elevated?: boolean;
     layout?: "page" | "sidebar";
     loading?: boolean;
@@ -26,7 +26,7 @@ const columnClasses = computed(() =>
     v-if="loading"
     class="grid gap-[clamp(18px,2vw,30px)]"
     :class="columnClasses"
-    aria-label="Loading courses"
+    aria-label="Loading playlists"
     role="status"
   >
     <div
@@ -36,6 +36,6 @@ const columnClasses = computed(() =>
     />
   </div>
   <div v-else class="grid gap-[clamp(18px,2vw,30px)]" :class="columnClasses">
-    <CourseCard v-for="course in courses" :key="course.id" :course="course" :elevated />
+    <CourseCard v-for="playlist in playlists" :key="playlist.id" :playlist="playlist" :elevated />
   </div>
 </template>

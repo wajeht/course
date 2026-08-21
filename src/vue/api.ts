@@ -36,8 +36,8 @@ export type {
 };
 
 export interface LessonPlayerDetailDto {
-  lesson: LessonDetailDto;
-  course: CourseDetailDto;
+  video: LessonDetailDto;
+  playlist: CourseDetailDto;
 }
 
 export class ApiError extends Error {
@@ -61,7 +61,7 @@ export async function expectJson<T>(response: Response, notifyUnauthorized = fal
   const body = (await response.json()) as T | { message?: string };
   if (!response.ok) {
     if (notifyUnauthorized && response.status === 401 && typeof window !== "undefined") {
-      window.dispatchEvent(new Event("course:unauthorized"));
+      window.dispatchEvent(new Event("videos:unauthorized"));
     }
     throw new ApiError(
       "message" in (body as object)
@@ -123,14 +123,14 @@ export const api = {
     return expectProtectedJson<CatalogDto>(response);
   },
   async getCourse(courseId: string, signal?: AbortSignal): Promise<CourseDetailDto> {
-    const response = await apiClient.api.catalog.courses[":courseId"].$get(
+    const response = await apiClient.api.catalog.playlists[":courseId"].$get(
       { param: { courseId } },
       { init: { signal } },
     );
     return expectProtectedJson<CourseDetailDto>(response);
   },
   async getLesson(lessonId: string, signal?: AbortSignal): Promise<LessonPlayerDetailDto> {
-    const response = await apiClient.api.catalog.lessons[":lessonId"].$get(
+    const response = await apiClient.api.catalog.videos[":lessonId"].$get(
       { param: { lessonId } },
       { init: { signal } },
     );
@@ -141,7 +141,7 @@ export const api = {
     return expectProtectedJson<PlaybackResult>(response);
   },
   async openLesson(lessonId: string): Promise<void> {
-    const response = await apiClient.api.progress.lessons[":lessonId"].open.$post({
+    const response = await apiClient.api.progress.videos[":lessonId"].open.$post({
       param: { lessonId },
     });
     await expectProtectedJson(response);
@@ -159,26 +159,26 @@ export const api = {
     return expectProtectedJson<PlaybackResult>(response);
   },
   async saveProgress(lessonId: string, positionSeconds: number): Promise<void> {
-    const response = await apiClient.api.progress.lessons[":lessonId"].$put({
+    const response = await apiClient.api.progress.videos[":lessonId"].$put({
       param: { lessonId },
       json: { positionSeconds },
     });
     await expectProtectedJson(response);
   },
   async completeLesson(lessonId: string): Promise<void> {
-    const response = await apiClient.api.progress.lessons[":lessonId"].complete.$post({
+    const response = await apiClient.api.progress.videos[":lessonId"].complete.$post({
       param: { lessonId },
     });
     await expectProtectedJson(response);
   },
   async resetLesson(lessonId: string): Promise<void> {
-    const response = await apiClient.api.progress.lessons[":lessonId"].$delete({
+    const response = await apiClient.api.progress.videos[":lessonId"].$delete({
       param: { lessonId },
     });
     await expectProtectedJson(response);
   },
   async resetCourse(courseId: string): Promise<void> {
-    const response = await apiClient.api.progress.courses[":courseId"].$delete({
+    const response = await apiClient.api.progress.playlists[":courseId"].$delete({
       param: { courseId },
     });
     await expectProtectedJson(response);

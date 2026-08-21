@@ -1,6 +1,6 @@
 DC := docker compose -f docker-compose.dev.yml
 DC_QSV := $(DC) -f docker-compose.dev.qsv.yml
-EXEC := $(DC) exec course
+EXEC := $(DC) exec videos
 
 .PHONY: help up up-d up-qsv down restart log shell install db-migrate test test-watch \
 	lint format format-check typecheck build check clean
@@ -45,10 +45,10 @@ down:
 	@$(DC) down
 
 restart:
-	@$(DC) restart course
+	@$(DC) restart videos
 
 log:
-	@$(DC) logs -f course
+	@$(DC) logs -f videos
 
 shell:
 	@$(EXEC) sh

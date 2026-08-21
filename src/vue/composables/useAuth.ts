@@ -32,7 +32,7 @@ export interface AuthController {
   }>;
 }
 
-export const authKey: InjectionKey<AuthController> = Symbol("course-auth");
+export const authKey: InjectionKey<AuthController> = Symbol("playlist-auth");
 
 export function createAuth(
   client: AuthClient = api,
@@ -53,7 +53,7 @@ export function createAuth(
   }
 
   if (typeof window !== "undefined") {
-    window.addEventListener("course:unauthorized", handleUnauthorized);
+    window.addEventListener("videos:unauthorized", handleUnauthorized);
   }
 
   async function initialize(): Promise<void> {
@@ -104,7 +104,7 @@ export function createAuth(
     changePassword: client.changePassword,
     dispose: () => {
       if (typeof window !== "undefined") {
-        window.removeEventListener("course:unauthorized", handleUnauthorized);
+        window.removeEventListener("videos:unauthorized", handleUnauthorized);
       }
     },
     initialize,

@@ -11,9 +11,9 @@ import {
 
 function catalog(): CatalogDto {
   return {
-    courses: [],
+    playlists: [],
     categories: [],
-    instructors: [],
+    authors: [],
     tags: [],
     continueWatching: [],
     pagination: { page: 1, pageSize: 24, totalCourses: 0, totalPages: 0 },
@@ -23,39 +23,39 @@ function catalog(): CatalogDto {
 function lessonDetail(): LessonPlayerDetailDto {
   const courseId = "a".repeat(24);
   const lessonId = "b".repeat(24);
-  const lesson = {
+  const video = {
     id: lessonId,
     courseId,
-    courseTitle: "Course",
+    courseTitle: "Playlist",
     courseCoverUrl: null,
     sectionId: null,
     sectionTitle: null,
-    title: "Lesson",
+    title: "Video",
     durationSeconds: 600,
     positionSeconds: 0,
     completed: false,
     progressPercent: 0,
   };
   return {
-    lesson: { ...lesson, chapters: [] },
-    course: {
+    video: { ...video, chapters: [] },
+    playlist: {
       id: courseId,
-      title: "Course",
+      title: "Playlist",
       description: "",
       category: "Uncategorized",
-      instructors: [],
+      authors: [],
       tags: [],
       coverUrl: null,
       lessonCount: 1,
       completedCount: 0,
       progressPercent: 0,
       durationSeconds: 600,
-      sections: [{ id: null, title: "Lessons", lessons: [lesson] }],
+      sections: [{ id: null, title: "Videos", videos: [video] }],
     },
   };
 }
 
-describe("course query client", () => {
+describe("playlist query client", () => {
   it("reuses fresh catalog data instead of fetching it again", async () => {
     let requests = 0;
     const client = {
@@ -72,10 +72,10 @@ describe("course query client", () => {
     queryClient.clear();
   });
 
-  it("keeps course details fresh when only catalog lists are invalidated", async () => {
+  it("keeps playlist details fresh when only catalog lists are invalidated", async () => {
     const queryClient = createCourseQueryClient();
-    const courseKey = queryKeys.course("a".repeat(24));
-    queryClient.setQueryData(courseKey, { title: "Course" });
+    const courseKey = queryKeys.playlist("a".repeat(24));
+    queryClient.setQueryData(courseKey, { title: "Playlist" });
 
     await queryClient.invalidateQueries({ queryKey: queryKeys.catalog, refetchType: "none" });
 
@@ -83,7 +83,7 @@ describe("course query client", () => {
     queryClient.clear();
   });
 
-  it("reuses lesson detail prefetched before player navigation", async () => {
+  it("reuses video detail prefetched before player navigation", async () => {
     let requests = 0;
     const client = {
       async getLesson() {

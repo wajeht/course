@@ -42,11 +42,11 @@ export function createMediaRouter(context: AppContext) {
     requireAuth,
     zValidator("param", lessonParametersSchema),
     async (c) => {
-      const lesson = await context.catalog.findLessonRecord(c.req.valid("param").lessonId);
-      if (!lesson) return c.json({ message: "Lesson not found" }, 404);
+      const video = await context.catalog.findLessonRecord(c.req.valid("param").lessonId);
+      if (!video) return c.json({ message: "Video not found" }, 404);
       const filename = await resolveContainedPath(
         context.configuration.media.videosDirectory,
-        lesson.path,
+        video.path,
       );
       const statistics = await fs.stat(filename);
       const contentType =
@@ -77,11 +77,11 @@ export function createMediaRouter(context: AppContext) {
     requireAuth,
     zValidator("param", z.object({ courseId: lessonParametersSchema.shape.lessonId })),
     async (c) => {
-      const course = await context.catalogRepository.findCourse(c.req.valid("param").courseId);
-      if (!course?.cover_path) return c.body(null, 404);
+      const playlist = await context.catalogRepository.findCourse(c.req.valid("param").courseId);
+      if (!playlist?.cover_path) return c.body(null, 404);
       const filename = await resolveContainedPath(
         context.configuration.media.videosDirectory,
-        course.cover_path,
+        playlist.cover_path,
       );
       const statistics = await fs.stat(filename);
       const extension = path.extname(filename).toLowerCase();

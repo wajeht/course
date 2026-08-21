@@ -11,10 +11,10 @@ function queryPlugin(): [typeof VueQueryPlugin, { queryClient: QueryClient }] {
 }
 
 describe("PlayerVideoStage", () => {
-  it("announces lesson preparation as a status", () => {
+  it("announces video preparation as a status", () => {
     const wrapper = mount(PlayerVideoStage, {
       props: {
-        course: null,
+        playlist: null,
         ended: false,
         error: "",
         loading: true,
@@ -24,13 +24,13 @@ describe("PlayerVideoStage", () => {
       global: { plugins: [queryPlugin()] },
     });
 
-    expect(wrapper.get('[role="status"]').text()).toContain("Preparing lesson…");
+    expect(wrapper.get('[role="status"]').text()).toContain("Preparing video…");
   });
 
   it("announces video conversion progress as a status", () => {
     const wrapper = mount(PlayerVideoStage, {
       props: {
-        course: null,
+        playlist: null,
         ended: false,
         error: "",
         loading: false,

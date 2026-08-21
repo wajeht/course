@@ -37,7 +37,7 @@ const prefetch = useRoutePrefetch();
         <span
           class="absolute top-5 left-6 text-[.62rem] font-extrabold tracking-[.18em] text-belt-light uppercase max-[700px]:top-4 max-[700px]:left-5"
         >
-          Instructor
+          Author
         </span>
         <span
           class="absolute bottom-5 left-6 font-display text-[clamp(2.8rem,6vw,5.4rem)] leading-none font-black tracking-[-.06em] max-[700px]:bottom-4 max-[700px]:left-5 max-[700px]:text-[2.8rem]"
@@ -47,7 +47,7 @@ const prefetch = useRoutePrefetch();
       </div>
       <div>
         <p class="mb-3 text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase">
-          Instructor
+          Author
         </p>
         <h1
           class="max-w-[900px] font-display text-[clamp(3.4rem,7vw,7.5rem)] leading-[.88] font-extrabold tracking-[-.055em] text-pine-deep max-[700px]:text-[clamp(2.3rem,9vw,4rem)]"
@@ -55,7 +55,7 @@ const prefetch = useRoutePrefetch();
           {{ name }}
         </h1>
         <p class="mt-7 text-[.82rem] font-bold tracking-[.04em] text-pine max-[700px]:mt-4">
-          {{ courseCount }} {{ courseCount === 1 ? "course" : "courses" }}
+          {{ courseCount }} {{ courseCount === 1 ? "playlist" : "playlists" }}
         </p>
       </div>
     </div>

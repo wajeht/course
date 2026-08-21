@@ -40,7 +40,7 @@ describe("AppShell", () => {
 
     expect(desktopNavigation.classes()).toContain("max-[600px]:hidden");
     expect(mobileNavigation.classes()).toContain("max-[600px]:grid");
-    expect(wrapper.get("header").text()).toContain("Course");
+    expect(wrapper.get("header").text()).toContain("Playlist");
     expect(wrapper.get("header a > span > span:last-child").classes()).not.toContain(
       "max-[600px]:hidden",
     );

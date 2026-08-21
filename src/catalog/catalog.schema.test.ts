@@ -7,11 +7,11 @@ describe("catalogQuerySchema", () => {
     expect(
       catalogQuerySchema.parse({
         category: ["Technology", "Martial Arts"],
-        instructor: "Jane Smith",
+        author: "Jane Smith",
       }),
     ).toMatchObject({
       category: ["Technology", "Martial Arts"],
-      instructor: ["Jane Smith"],
+      author: ["Jane Smith"],
     });
   });
 });

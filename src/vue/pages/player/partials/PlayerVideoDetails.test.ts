@@ -6,10 +6,10 @@ import { describe, expect, it } from "vitest";
 import type { LessonDetailDto } from "@/api.js";
 import PlayerLessonDetails from "./PlayerLessonDetails.vue";
 
-const lesson: LessonDetailDto = {
-  id: "lesson-1",
-  courseId: "course-1",
-  courseTitle: "Course",
+const video: LessonDetailDto = {
+  id: "video-1",
+  courseId: "playlist-1",
+  courseTitle: "Playlist",
   courseCoverUrl: null,
   sectionId: null,
   sectionTitle: null,
@@ -22,12 +22,12 @@ const lesson: LessonDetailDto = {
 };
 
 describe("PlayerLessonDetails", () => {
-  it("describes chapters in course-neutral language with a complete count", () => {
+  it("describes chapters in playlist-neutral language with a complete count", () => {
     const wrapper = mount(PlayerLessonDetails, {
-      props: { currentTime: 0, lesson, resetting: false },
+      props: { currentTime: 0, video, resetting: false },
     });
 
-    expect(wrapper.text()).toContain("Lesson outline");
+    expect(wrapper.text()).toContain("Video outline");
     expect(wrapper.text()).toContain("1 chapter");
     expect(wrapper.text()).not.toContain("Technique index");
     expect(wrapper.text()).not.toContain("1 total");

@@ -11,8 +11,8 @@
 ## Local Development
 
 ```bash
-git clone https://github.com/wajeht/course.git
-cd course
+git clone https://github.com/wajeht/videos.git
+cd playlist
 cp .env.example .env
 npm ci
 npx playwright install chromium
@@ -88,7 +88,7 @@ make up-qsv
 
 Reusable interface primitives live in `src/vue/components/ui`. Use these for
 buttons, form controls, panels, empty states, alerts, modals, confirmations,
-toasts, and the Course logo. Keep content-specific components such as
+toasts, and the Playlist logo. Keep content-specific components such as
 `CourseCard` and `LessonRow` in `src/vue/components`.
 
 Route pages live under `src/vue/pages`, with route-specific components in that
@@ -111,11 +111,11 @@ boundary.
 ## Deployment
 
 After verification, pushes to `main` create a versioned GitHub release, publish
-version, commit, and `latest` image tags to `ghcr.io/wajeht/course`, and run the
+version, commit, and `latest` image tags to `ghcr.io/wajeht/videos`, and run the
 production deployment workflow. Pull requests can use the `temp-deploy` or
 `temp-deploy-with-auth` label for a temporary environment.
 
 Production deployment configuration lives in the Home Ops repository,
 including video and data mounts, `/dev/dri` access, `SESSION_SECRET`,
-`AUTH_SETUP_TOKEN`, and image updates. Course handles browser authentication
+`AUTH_SETUP_TOKEN`, and image updates. Playlist handles browser authentication
 itself and exposes `/healthz` without authentication for its health check.

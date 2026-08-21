@@ -27,7 +27,7 @@ const isPlayer = computed(() => route.meta.shell === "player");
         to="/"
         :prefetch="prefetch.home"
         class="flex items-center gap-3 font-display text-2xl font-extrabold tracking-[.04em] uppercase"
-        aria-label="Course home"
+        aria-label="Playlist home"
       >
         <AppLogo />
       </IntentRouterLink>

@@ -9,17 +9,17 @@ import PanelCard from "@/components/ui/PanelCard.vue";
 import { useExpandableSections } from "@/composables/useExpandableSections.js";
 import { countText } from "@/utils.js";
 
-const props = defineProps<{ course: CourseDetailDto }>();
+const props = defineProps<{ playlist: CourseDetailDto }>();
 const { isSectionExpanded, replaceExpandedSections, sectionPanelId, toggleSection } =
-  useExpandableSections("course-section");
+  useExpandableSections("playlist-section");
 
 watch(
-  () => props.course,
-  (course) => {
-    const lessons = course.sections.flatMap((section) => section.lessons);
-    const startingLesson = lessons.find((lesson) => !lesson.completed) ?? lessons.at(0);
-    const startingSection = course.sections.find((section) =>
-      section.lessons.some((lesson) => lesson.id === startingLesson?.id),
+  () => props.playlist,
+  (playlist) => {
+    const videos = playlist.sections.flatMap((section) => section.videos);
+    const startingLesson = videos.find((video) => !video.completed) ?? videos.at(0);
+    const startingSection = playlist.sections.find((section) =>
+      section.videos.some((video) => video.id === startingLesson?.id),
     );
     replaceExpandedSections(startingSection ? [startingSection] : []);
   },
@@ -34,17 +34,17 @@ watch(
     <PageHeader
       class="mb-6"
       eyebrow="Structured learning"
-      title="Course curriculum"
+      title="Playlist curriculum"
       :heading-level="2"
     >
       <template #aside>
         <span class="text-[.78rem] font-semibold text-muted">
-          {{ course.completedCount }} of {{ course.lessonCount }} completed
+          {{ playlist.completedCount }} of {{ playlist.lessonCount }} completed
         </span>
       </template>
     </PageHeader>
     <PanelCard
-      v-for="section in course.sections"
+      v-for="section in playlist.sections"
       :key="section.id ?? 'direct'"
       as="article"
       class="mb-5 shadow-[0_6px_22px_rgb(24_32_29_/_4%)]"
@@ -66,7 +66,7 @@ watch(
               <span
                 class="rounded-full border border-pine/15 bg-pine/10 px-2.5 py-1 text-[.66rem] font-bold tracking-[.06em] text-pine-deep uppercase"
               >
-                {{ countText(section.lessons.length, "lesson") }}
+                {{ countText(section.videos.length, "video") }}
               </span>
               <span
                 class="grid h-8 w-8 place-items-center rounded-full border border-pine/20 bg-white/55 text-pine"
@@ -86,9 +86,9 @@ watch(
       </header>
       <div v-show="isSectionExpanded(section)" :id="sectionPanelId(section)">
         <LessonRow
-          v-for="(lesson, index) in section.lessons"
-          :key="lesson.id"
-          :lesson="lesson"
+          v-for="(video, index) in section.videos"
+          :key="video.id"
+          :video="video"
           :index="index"
         />
       </div>

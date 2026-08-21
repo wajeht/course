@@ -13,7 +13,7 @@ import {
 const unauthorized = vi.fn();
 
 afterEach(() => {
-  window.removeEventListener("course:unauthorized", unauthorized);
+  window.removeEventListener("videos:unauthorized", unauthorized);
   unauthorized.mockReset();
 });
 
@@ -27,7 +27,7 @@ describe("API response handling", () => {
   });
 
   it("does not expire the session for public endpoint failures", async () => {
-    window.addEventListener("course:unauthorized", unauthorized);
+    window.addEventListener("videos:unauthorized", unauthorized);
     const response = new Response(JSON.stringify({ message: "Invalid password" }), {
       status: 401,
       headers: { "content-type": "application/json" },
@@ -38,7 +38,7 @@ describe("API response handling", () => {
   });
 
   it("notifies the auth provider when a protected endpoint rejects the session", async () => {
-    window.addEventListener("course:unauthorized", unauthorized);
+    window.addEventListener("videos:unauthorized", unauthorized);
     const response = new Response(JSON.stringify({ message: "Unauthorized" }), {
       status: 401,
       headers: { "content-type": "application/json" },
@@ -50,7 +50,7 @@ describe("API response handling", () => {
 
   it("recognizes malformed and missing catalog resource responses as not found", () => {
     expect(isCatalogResourceNotFound(new ApiError("Invalid identifier", 400))).toBe(true);
-    expect(isCatalogResourceNotFound(new ApiError("Course not found", 404))).toBe(true);
+    expect(isCatalogResourceNotFound(new ApiError("Playlist not found", 404))).toBe(true);
     expect(isCatalogResourceNotFound(new ApiError("Server failed", 500))).toBe(false);
   });
 

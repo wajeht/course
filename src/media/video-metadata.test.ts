@@ -8,7 +8,7 @@ import { readVideoMetadata } from "./video-metadata.js";
 
 async function videoFilename(): Promise<string> {
   const directory = await createTemporaryDirectory("video-metadata-");
-  return path.join(directory, "01 - Lesson.mp4");
+  return path.join(directory, "01 - Video.mp4");
 }
 
 describe("video metadata", () => {

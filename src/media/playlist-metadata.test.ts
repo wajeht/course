@@ -4,24 +4,24 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { createTemporaryDirectory } from "../test/resources.js";
-import { readCourseMetadata } from "./course-metadata.js";
+import { readCourseMetadata } from "./playlist-metadata.js";
 
 async function createCourseDirectory(): Promise<string> {
-  return createTemporaryDirectory("course-metadata-");
+  return createTemporaryDirectory("playlist-metadata-");
 }
 
-describe("course metadata", () => {
+describe("playlist metadata", () => {
   it("accepts versioned metadata", async () => {
     const directory = await createCourseDirectory();
     await fs.writeFile(
-      path.join(directory, "course.json"),
+      path.join(directory, "playlist.json"),
       JSON.stringify({
         version: 1,
         title: "Guard Retention",
         description: "Stay connected",
         cover: "cover.jpg",
         category: "Martial Arts",
-        instructors: ["Jane Smith", "jane smith", "John Doe"],
+        authors: ["Jane Smith", "jane smith", "John Doe"],
         tags: ["Guard", "Gi"],
         source: { provider: "BJJ Fanatics", url: "https://bjjfanatics.com/example" },
       }),
@@ -34,7 +34,7 @@ describe("course metadata", () => {
         description: "Stay connected",
         cover: "cover.jpg",
         category: "Martial Arts",
-        instructors: ["Jane Smith", "John Doe"],
+        authors: ["Jane Smith", "John Doe"],
         tags: ["Guard", "Gi"],
         source: { provider: "BJJ Fanatics", url: "https://bjjfanatics.com/example" },
       },
@@ -42,16 +42,16 @@ describe("course metadata", () => {
     });
   });
 
-  it("rejects video metadata in course.json", async () => {
+  it("rejects video metadata in playlist.json", async () => {
     const directory = await createCourseDirectory();
     await fs.writeFile(
-      path.join(directory, "course.json"),
+      path.join(directory, "playlist.json"),
       JSON.stringify({
         version: 1,
         title: "Guard Retention",
-        lessons: [
+        videos: [
           {
-            path: "01 - Lesson.mp4",
+            path: "01 - Video.mp4",
             chapters: [{ title: "Introduction", startSeconds: 0 }],
           },
         ],
@@ -61,12 +61,12 @@ describe("course metadata", () => {
     const result = await readCourseMetadata(directory);
 
     expect(result.metadata).toBeNull();
-    expect(result.warning).toContain("lessons");
+    expect(result.warning).toContain("videos");
   });
 
   it("warns and falls back for invalid JSON", async () => {
     const directory = await createCourseDirectory();
-    await fs.writeFile(path.join(directory, "course.json"), "not-json");
+    await fs.writeFile(path.join(directory, "playlist.json"), "not-json");
 
     const result = await readCourseMetadata(directory);
     expect(result.metadata).toBeNull();

@@ -6,7 +6,7 @@ test("keeps the install experience online-only", async ({ context, page }) => {
     data: {
       password,
       confirmPassword: password,
-      setupToken: "course-playwright-setup-token",
+      setupToken: "playlist-playwright-setup-token",
     },
   });
   expect([201, 409]).toContain(setup.status());
@@ -34,14 +34,14 @@ test("keeps the install experience online-only", async ({ context, page }) => {
   await authCheckStarted;
   try {
     await expect(page.getByText("Checking your session…")).toHaveCount(0);
-    await expect(page.getByRole("status").filter({ hasText: "Opening Course…" })).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: "Opening Playlist…" })).toBeVisible();
   } finally {
     releaseAuthCheck();
     await navigation;
   }
 
   await expect(page.getByRole("heading", { level: 1, name: "Continue watching" })).toBeVisible();
-  await expect(page).toHaveTitle("Course");
+  await expect(page).toHaveTitle("Playlist");
   const manifestResponse = await page.request.get("/manifest.webmanifest");
   expect(manifestResponse.status()).toBe(200);
   const manifest = (await manifestResponse.json()) as {
@@ -58,8 +58,8 @@ test("keeps the install experience online-only", async ({ context, page }) => {
   ]);
 
   await page.goto("/library");
-  await expect(page.getByRole("heading", { level: 1, name: "All courses" })).toBeVisible();
-  await expect(page).toHaveTitle("Library · Course");
+  await expect(page.getByRole("heading", { level: 1, name: "All playlists" })).toBeVisible();
+  await expect(page).toHaveTitle("Library · Playlist");
 
   await page.reload();
   await expect.poll(() => page.evaluate(async () => (await caches.keys()).length)).toBe(0);
@@ -71,23 +71,23 @@ test("keeps the install experience online-only", async ({ context, page }) => {
 
   await context.setOffline(true);
   try {
-    await expect(page.getByText("You’re offline. Reconnect to keep using Course.")).toBeVisible();
+    await expect(page.getByText("You’re offline. Reconnect to keep using Playlist.")).toBeVisible();
   } finally {
     await context.setOffline(false);
   }
 
   await page.goto("/settings/library");
   await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
-  await expect(page).toHaveTitle("Library settings · Course");
+  await expect(page).toHaveTitle("Library settings · Playlist");
 
   const settingsNavigation = page.getByRole("navigation", { name: "Settings sections" });
   await settingsNavigation.getByRole("link", { name: "Access", exact: true }).click();
   await expect(page).toHaveURL(/\/settings\/access$/);
   await expect(page.getByRole("heading", { level: 2, name: "Access" })).toBeVisible();
-  await expect(page).toHaveTitle("Access settings · Course");
+  await expect(page).toHaveTitle("Access settings · Playlist");
   await settingsNavigation.getByRole("link", { name: "Library", exact: true }).click();
   await expect(page).toHaveURL(/\/settings\/library$/);
-  await expect(page).toHaveTitle("Library settings · Course");
+  await expect(page).toHaveTitle("Library settings · Playlist");
 
   await page.getByRole("button", { name: "Refresh library" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Library refreshed" })).toBeVisible();

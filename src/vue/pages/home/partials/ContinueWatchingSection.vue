@@ -9,7 +9,7 @@ import ProgressBar from "@/components/ui/ProgressBar.vue";
 import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 
 defineProps<{
-  lessons: CatalogDto["continueWatching"];
+  videos: CatalogDto["continueWatching"];
   loading: boolean;
 }>();
 
@@ -23,7 +23,7 @@ const prefetch = useRoutePrefetch();
     <div
       v-if="loading"
       class="grid grid-cols-4 gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[600px]:grid-cols-1"
-      aria-label="Loading lessons"
+      aria-label="Loading videos"
       role="status"
     >
       <div
@@ -33,26 +33,26 @@ const prefetch = useRoutePrefetch();
       />
     </div>
     <div
-      v-else-if="lessons.length"
+      v-else-if="videos.length"
       class="grid grid-cols-4 gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[600px]:grid-cols-1"
     >
       <IntentRouterLink
-        v-for="lesson in lessons"
-        :key="lesson.id"
-        :to="{ name: 'player', params: { lessonId: lesson.id } }"
-        :prefetch="() => prefetch.lesson(lesson.id)"
+        v-for="video in videos"
+        :key="video.id"
+        :to="{ name: 'player', params: { lessonId: video.id } }"
+        :prefetch="() => prefetch.video(video.id)"
         class="group relative min-h-[230px] min-w-0 overflow-hidden rounded-[10px] bg-pine text-white"
       >
         <img
-          v-if="lesson.courseCoverUrl"
+          v-if="video.courseCoverUrl"
           class="absolute inset-0 h-full w-full object-cover transition-transform duration-[400ms] group-hover:scale-[1.035] motion-reduce:transition-none"
-          :src="lesson.courseCoverUrl"
-          :alt="`${lesson.courseTitle} cover`"
+          :src="video.courseCoverUrl"
+          :alt="`${video.courseTitle} cover`"
         />
         <CourseCoverPlaceholder
           v-else
           class="absolute inset-0 h-full w-full"
-          :title="lesson.courseTitle"
+          :title="video.courseTitle"
         />
         <div
           class="absolute inset-0 h-full w-full bg-[linear-gradient(90deg,rgb(12_28_21_/_96%)_0%,rgb(12_28_21_/_72%)_55%,rgb(12_28_21_/_30%)_100%)]"
@@ -61,10 +61,10 @@ const prefetch = useRoutePrefetch();
           <p
             class="mb-[7px] max-w-[80%] text-[.65rem] font-[750] tracking-[.08em] text-belt-light uppercase"
           >
-            {{ lesson.courseTitle }}
+            {{ video.courseTitle }}
           </p>
-          <h2 class="mb-5 max-w-[85%] text-xl leading-[1.15]">{{ lesson.title }}</h2>
-          <ProgressBar :value="lesson.progressPercent" label="Lesson progress" compact />
+          <h2 class="mb-5 max-w-[85%] text-xl leading-[1.15]">{{ video.title }}</h2>
+          <ProgressBar :value="video.progressPercent" label="Video progress" compact />
         </div>
         <span
           class="absolute top-5 right-5 z-[3] grid h-[42px] w-[42px] place-items-center rounded-full bg-white pl-0.5 text-[.75rem] text-pine-deep"
@@ -77,7 +77,7 @@ const prefetch = useRoutePrefetch();
     <EmptyState
       v-else
       title="Nothing in progress"
-      description="Start a course from your library and it will appear here."
+      description="Start a playlist from your library and it will appear here."
       :heading-level="2"
     >
       <template #icon>▶</template>

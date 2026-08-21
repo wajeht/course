@@ -6,9 +6,9 @@ import { catalogQueryOptions, type CatalogQueryClient } from "@/queries.js";
 
 function emptyCatalog(): CatalogDto {
   return {
-    courses: [],
+    playlists: [],
     categories: [],
-    instructors: [],
+    authors: [],
     tags: [],
     continueWatching: [],
     pagination: { page: 1, pageSize: 24, totalCourses: 0, totalPages: 0 },

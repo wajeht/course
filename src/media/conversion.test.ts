@@ -12,7 +12,7 @@ import { createConversionManager, type ConversionExecutor } from "./conversion.j
 import { createConversionRepository } from "./conversion.repository.js";
 
 async function createFixture(executor: ConversionExecutor) {
-  const directory = await createTemporaryDirectory("course-conversion-");
+  const directory = await createTemporaryDirectory("playlist-conversion-");
   const dataDirectory = path.join(directory, "data");
   const videosDirectory = path.join(directory, "videos");
   await Promise.all([
@@ -26,19 +26,19 @@ async function createFixture(executor: ConversionExecutor) {
   });
   const database = await createTestDatabase(configuration);
   const now = new Date().toISOString();
-  await database.connection("courses").insert({
+  await database.connection("playlists").insert({
     id: "a".repeat(24),
-    path: "course",
-    title: "Course",
+    path: "playlist",
+    title: "Playlist",
     description: "",
     sort_order: 0,
   });
   for (const [index, id] of ["b".repeat(24), "c".repeat(24)].entries()) {
-    await database.connection("lessons").insert({
+    await database.connection("videos").insert({
       id,
       course_id: "a".repeat(24),
-      path: `course/${index}.mkv`,
-      title: `Lesson ${index}`,
+      path: `playlist/${index}.mkv`,
+      title: `Video ${index}`,
       sort_order: index,
       duration_seconds: 100,
       size_bytes: 100,
@@ -100,10 +100,10 @@ describe("conversion manager", () => {
     const { database, catalog, manager } = await createFixture(async () => {
       throw new Error("Quick Sync unavailable");
     });
-    const lesson = (await catalog.findLesson("b".repeat(24)))!;
-    await manager.requestConversion(lesson);
-    await waitForStatus(database, lesson.id, "failed");
-    expect(await manager.getConversion(lesson.id)).toMatchObject({
+    const video = (await catalog.findLesson("b".repeat(24)))!;
+    await manager.requestConversion(video);
+    await waitForStatus(database, video.id, "failed");
+    expect(await manager.getConversion(video.id)).toMatchObject({
       status: "failed",
       error: "Quick Sync unavailable",
     });
@@ -114,12 +114,12 @@ describe("conversion manager", () => {
     const { database, catalog, manager } = await createFixture(async () => {
       calls++;
     });
-    const lesson = (await catalog.findLesson("b".repeat(24)))!;
+    const video = (await catalog.findLesson("b".repeat(24)))!;
 
-    await manager.requestConversion(lesson);
-    await waitForStatus(database, lesson.id, "ready");
-    await manager.requestConversion(lesson);
-    await waitForStatus(database, lesson.id, "ready");
+    await manager.requestConversion(video);
+    await waitForStatus(database, video.id, "ready");
+    await manager.requestConversion(video);
+    await waitForStatus(database, video.id, "ready");
 
     expect(calls).toBe(2);
   });

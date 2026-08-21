@@ -23,7 +23,7 @@ export function createPlaybackRouter(context: AppContext) {
       const playback = await context.playback.preparePlayback(c.req.valid("param").lessonId);
       return playback
         ? c.json(playbackResponseSchema.parse(playback))
-        : c.json({ message: "Lesson not found" }, 404);
+        : c.json({ message: "Video not found" }, 404);
     })
     .get(
       "/:lessonId",
@@ -33,7 +33,7 @@ export function createPlaybackRouter(context: AppContext) {
         const playback = await context.playback.preparePlayback(c.req.valid("param").lessonId);
         return playback
           ? c.json(playbackResponseSchema.parse(playback))
-          : c.json({ message: "Lesson not found" }, 404);
+          : c.json({ message: "Video not found" }, 404);
       },
     )
     .get("/:lessonId/conversion", zValidator("param", playbackParametersSchema), async (c) => {
@@ -46,6 +46,6 @@ export function createPlaybackRouter(context: AppContext) {
       const playback = await context.playback.retryConversion(c.req.valid("param").lessonId);
       return playback
         ? c.json(playbackResponseSchema.parse(playback))
-        : c.json({ message: "Lesson not found" }, 404);
+        : c.json({ message: "Video not found" }, 404);
     });
 }

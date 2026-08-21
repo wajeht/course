@@ -51,10 +51,10 @@ describe("settings/LibraryPage", () => {
 
     const refreshCard = wrapper.get("#settings-library-panel > section");
     expect(refreshCard.get("header h2").text()).toBe("Refresh library");
-    expect(refreshCard.text()).toContain("12 courses · 215 lessons");
+    expect(refreshCard.text()).toContain("12 playlists · 215 videos");
     expect(refreshCard.get("[data-scan-controls]").classes()).toContain("flex-col");
     expect(wrapper.get("[data-library-display-form]").classes()).toContain("flex-col");
-    expect(wrapper.get("#settings-library-panel").text()).toContain("Courses per page");
+    expect(wrapper.get("#settings-library-panel").text()).toContain("Playlists per page");
     expect(wrapper.get("#settings-library-panel").classes()).toEqual(
       expect.arrayContaining(["grid", "gap-[clamp(18px,2vw,30px)]"]),
     );
@@ -71,14 +71,14 @@ describe("settings/LibraryPage", () => {
       lessonCount: 1,
       startedAt: "2026-08-12T00:00:00.000Z",
       status: "complete",
-      warnings: [{ path: "Example/course.json", message: "Cover file is missing" }],
+      warnings: [{ path: "Example/playlist.json", message: "Cover file is missing" }],
     });
     const wrapper = mountLibraryPage();
     await flushPromises();
 
     const issues = wrapper.get('[aria-label="Library issues"]');
     expect(wrapper.text()).toContain("1 library issue");
-    expect(issues.text()).toContain("Example/course.json");
+    expect(issues.text()).toContain("Example/playlist.json");
     expect(issues.text()).toContain("Cover file is missing");
   });
 
@@ -100,7 +100,7 @@ describe("settings/LibraryPage", () => {
       "The library could not be refreshed. Check that your video folder is available, then try again.",
     );
     expect(wrapper.text()).not.toContain("Video folder is unavailable");
-    expect(wrapper.text()).not.toContain("12 courses · 215 lessons");
+    expect(wrapper.text()).not.toContain("12 playlists · 215 videos");
   });
 
   it("shows an unavailable status instead of a loading status after a request fails", async () => {

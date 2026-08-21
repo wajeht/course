@@ -17,14 +17,14 @@ const metadataNameSchema = z.string().trim().min(1);
 const filterNameSchema = metadataNameSchema.max(200);
 const metadataNamesSchema = z.array(filterNameSchema).max(50).transform(uniqueValues);
 
-const courseMetadataSchema = z
+const playlistMetadataSchema = z
   .object({
     version: z.literal(1),
     title: metadataNameSchema.optional(),
     description: z.string().trim().optional(),
     cover: metadataNameSchema.optional(),
     category: filterNameSchema.optional(),
-    instructors: metadataNamesSchema.optional(),
+    authors: metadataNamesSchema.optional(),
     tags: metadataNamesSchema.optional(),
     source: z
       .object({
@@ -35,16 +35,16 @@ const courseMetadataSchema = z
   })
   .strict();
 
-export type CourseMetadata = z.infer<typeof courseMetadataSchema>;
+export type PlaylistMetadata = z.infer<typeof playlistMetadataSchema>;
 
-export async function readCourseMetadata(courseDirectory: string): Promise<{
-  metadata: CourseMetadata | null;
+export async function readPlaylistMetadata(playlistDirectory: string): Promise<{
+  metadata: PlaylistMetadata | null;
   warning: string | null;
 }> {
   try {
-    const contents = await fs.readFile(path.join(courseDirectory, "course.json"), "utf8");
+    const contents = await fs.readFile(path.join(playlistDirectory, "playlist.json"), "utf8");
     const value: unknown = JSON.parse(contents);
-    const result = courseMetadataSchema.safeParse(value);
+    const result = playlistMetadataSchema.safeParse(value);
     if (!result.success) return { metadata: null, warning: result.error.message };
     return { metadata: result.data, warning: null };
   } catch (error) {
@@ -52,7 +52,7 @@ export async function readCourseMetadata(courseDirectory: string): Promise<{
       return { metadata: null, warning: null };
     return {
       metadata: null,
-      warning: error instanceof Error ? error.message : "Could not read course.json",
+      warning: error instanceof Error ? error.message : "Could not read playlist.json",
     };
   }
 }

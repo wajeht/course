@@ -20,7 +20,7 @@ export function useCatalogFilters(
   const accumulatePagesRef = toRef(accumulatePages);
   const routeState = useCatalogRouteState(debounceMilliseconds);
   const dataState = useCatalogData(routeState.filters, client, routeState.normalizePage);
-  const loadedCourses = shallowRef<CatalogDto["courses"]>([]);
+  const loadedCourses = shallowRef<CatalogDto["playlists"]>([]);
   const loadedPage = shallowRef(1);
   const loadedTotalPages = shallowRef(0);
   const loadingMore = shallowRef(false);
@@ -42,7 +42,7 @@ export function useCatalogFilters(
       loadMoreError.value = "";
 
       if (!shouldAccumulate) {
-        loadedCourses.value = catalog.courses;
+        loadedCourses.value = catalog.playlists;
         loadedPage.value = catalog.pagination.page;
         loadingMore.value = false;
         return;
@@ -58,16 +58,16 @@ export function useCatalogFilters(
 
         const loadedIds = new Set<string>();
         loadedCourses.value = catalogs.flatMap((pageCatalog) =>
-          pageCatalog.courses.filter((course) => {
-            if (loadedIds.has(course.id)) return false;
-            loadedIds.add(course.id);
+          pageCatalog.playlists.filter((playlist) => {
+            if (loadedIds.has(playlist.id)) return false;
+            loadedIds.add(playlist.id);
             return true;
           }),
         );
         loadedPage.value = catalog.pagination.page;
       } catch (caught) {
         if (cancelled) return;
-        loadMoreError.value = apiErrorMessage(caught, "Could not load more courses");
+        loadMoreError.value = apiErrorMessage(caught, "Could not load more playlists");
       } finally {
         if (!cancelled) loadingMore.value = false;
       }
@@ -92,26 +92,26 @@ export function useCatalogFilters(
       );
       if (nextPage === currentPage) accumulationRetry.value += 1;
     } catch (caught) {
-      loadMoreError.value = apiErrorMessage(caught, "Could not load more courses");
+      loadMoreError.value = apiErrorMessage(caught, "Could not load more playlists");
       loadingMore.value = false;
     }
   }
 
   const libraryTitle = computed(() => {
     const count = dataState.catalog.value.pagination.totalCourses;
-    const courseLabel = count === 1 ? "course" : "courses";
+    const courseLabel = count === 1 ? "playlist" : "playlists";
     if (routeState.searchQuery.value) return `${count} matching ${courseLabel}`;
     if (
       routeState.selectedFilters.value.length === 1 &&
       routeState.selectedInstructor.value.length === 1
     ) {
-      return `Courses by ${routeState.selectedInstructor.value[0]}`;
+      return `Playlists by ${routeState.selectedInstructor.value[0]}`;
     }
     if (routeState.selectedFilters.value.length === 1) {
-      return `${routeState.selectedFilters.value[0]} courses`;
+      return `${routeState.selectedFilters.value[0]} playlists`;
     }
     if (routeState.selectedFilters.value.length > 1) return `${count} filtered ${courseLabel}`;
-    return "All courses";
+    return "All playlists";
   });
 
   return {

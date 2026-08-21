@@ -61,23 +61,23 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
       return true;
     },
     {
-      errorMessage: "Could not reset this lesson",
+      errorMessage: "Could not reset this video",
       onError: (caught) => {
-        videoPlayback.error.value = apiErrorMessage(caught, "Could not reset this lesson");
+        videoPlayback.error.value = apiErrorMessage(caught, "Could not reset this video");
       },
       onSuccess: async (reset) => {
         if (!reset) return;
         await invalidateProgressCaches(courseState.value?.id, lessonState.value?.id);
-        toast.success("Lesson progress reset");
+        toast.success("Video progress reset");
       },
     },
   );
 
   const allLessons = computed(
-    () => courseState.value?.sections.flatMap((section) => section.lessons) ?? [],
+    () => courseState.value?.sections.flatMap((section) => section.videos) ?? [],
   );
   const currentIndex = computed(() =>
-    allLessons.value.findIndex((lesson) => lesson.id === lessonState.value?.id),
+    allLessons.value.findIndex((video) => video.id === lessonState.value?.id),
   );
   const previousLesson = computed(() =>
     currentIndex.value > 0 ? allLessons.value.at(currentIndex.value - 1) : undefined,
@@ -89,7 +89,7 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
     if (!lessonState.value || !courseState.value) return null;
     return {
       title: lessonState.value.title,
-      artist: courseState.value.instructors.join(", ") || "Course",
+      artist: courseState.value.authors.join(", ") || "Playlist",
       album: courseState.value.title,
       artwork: courseState.value.coverUrl,
     };
@@ -107,7 +107,7 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
     if (courseId) {
       invalidations.push(
         queryClient.invalidateQueries({
-          queryKey: queryKeys.course(courseId),
+          queryKey: queryKeys.playlist(courseId),
           refetchType: "none",
         }),
       );
@@ -115,7 +115,7 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
     if (lessonId) {
       invalidations.push(
         queryClient.invalidateQueries({
-          queryKey: queryKeys.lesson(lessonId),
+          queryKey: queryKeys.video(lessonId),
           refetchType: "none",
         }),
       );
@@ -178,11 +178,11 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
       await api.openLesson(lessonId);
       await invalidateCatalogCache();
       if (!videoPlayback.isCurrentRequest(requestId)) return;
-      lessonState.value = detail.lesson;
-      setPageTitle(detail.lesson.title);
-      playbackProgress.startSession(detail.lesson.id, detail.lesson.positionSeconds);
-      courseState.value = detail.course;
-      queryClient.setQueryData(queryKeys.course(detail.course.id), detail.course);
+      lessonState.value = detail.video;
+      setPageTitle(detail.video.title);
+      playbackProgress.startSession(detail.video.id, detail.video.positionSeconds);
+      courseState.value = detail.playlist;
+      queryClient.setQueryData(queryKeys.playlist(detail.playlist.id), detail.playlist);
       await videoPlayback.applyPlayback(playback, lessonId, requestId);
     } catch (caught) {
       if (!videoPlayback.isCurrentRequest(requestId)) return;
@@ -190,7 +190,7 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
         await router.replace(notFoundLocation(route.path));
         return;
       }
-      videoPlayback.error.value = apiErrorMessage(caught, "Could not load this lesson");
+      videoPlayback.error.value = apiErrorMessage(caught, "Could not load this video");
     } finally {
       if (videoPlayback.isCurrentRequest(requestId)) loadingState.value = false;
     }
@@ -235,7 +235,7 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
     if (endedState.value) return;
     const snapshot = playbackProgress.captureExitSnapshot(video.value?.currentTime);
     if (!snapshot) return;
-    void fetch(`/api/progress/lessons/${snapshot.lessonId}`, {
+    void fetch(`/api/progress/videos/${snapshot.lessonId}`, {
       method: "PUT",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ positionSeconds: snapshot.positionSeconds }),
@@ -254,7 +254,7 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
       lessonState.value.completed = true;
       lessonState.value.progressPercent = 100;
     } catch (caught) {
-      videoPlayback.error.value = apiErrorMessage(caught, "Could not complete this lesson");
+      videoPlayback.error.value = apiErrorMessage(caught, "Could not complete this video");
     }
   }
 
@@ -266,9 +266,9 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
     if (!lessonState.value) return;
     const targetLessonId = lessonState.value.id;
     const confirmed = await confirmation.confirm({
-      title: "Reset lesson progress?",
-      message: "Your saved position and completion state for this lesson will be removed.",
-      confirmLabel: "Reset lesson",
+      title: "Reset video progress?",
+      message: "Your saved position and completion state for this video will be removed.",
+      confirmLabel: "Reset video",
       variant: "danger",
     });
     if (!confirmed || lessonState.value?.id !== targetLessonId) return;
@@ -316,11 +316,11 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
   return {
     applyResume,
     closeSidebar,
-    course: computed(() => courseState.value),
+    playlist: computed(() => courseState.value),
     currentTime: computed(() => currentTimeState.value),
     ended: computed(() => endedState.value),
     error: computed(() => videoPlayback.error.value),
-    lesson: computed(() => lessonState.value),
+    video: computed(() => lessonState.value),
     loading: computed(() => loadingState.value),
     markComplete,
     nextLesson,

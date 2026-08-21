@@ -22,14 +22,14 @@ const inputId = `catalog-search-${useId()}`;
     >
       <path d="m21 21-4.4-4.4m2.4-5.1a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z" />
     </svg>
-    <label :for="inputId" class="sr-only">Search courses and lessons</label>
+    <label :for="inputId" class="sr-only">Search playlists and videos</label>
     <AppInput
       :id="inputId"
       v-model="query"
       class="w-full min-w-0 border-0 bg-transparent p-0 text-[.85rem] text-ink outline-0 placeholder:text-[#89918d] [&::-webkit-search-cancel-button]:hidden"
       variant="bare"
       type="search"
-      placeholder="Search courses and lessons"
+      placeholder="Search playlists and videos"
     />
     <AppButton
       v-if="query"

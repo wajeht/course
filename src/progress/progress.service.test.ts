@@ -11,18 +11,18 @@ let database: Database;
 beforeEach(async () => {
   database = await createTestDatabase();
   const now = new Date().toISOString();
-  await database.connection("courses").insert({
+  await database.connection("playlists").insert({
     id: "a".repeat(24),
-    path: "course",
-    title: "Course",
+    path: "playlist",
+    title: "Playlist",
     description: "",
     sort_order: 0,
   });
-  await database.connection("lessons").insert({
+  await database.connection("videos").insert({
     id: "b".repeat(24),
     course_id: "a".repeat(24),
-    path: "course/lesson.mp4",
-    title: "Lesson",
+    path: "playlist/video.mp4",
+    title: "Video",
     sort_order: 0,
     duration_seconds: 100,
     size_bytes: 100,
@@ -35,7 +35,7 @@ beforeEach(async () => {
 });
 
 describe("progress service", () => {
-  it("marks an in-progress lesson as most recently opened", async () => {
+  it("marks an in-progress video as most recently opened", async () => {
     const service = createProgressService(
       createProgressRepository(database.connection),
       createCatalogApiRepository(database.connection),
@@ -74,7 +74,7 @@ describe("progress service", () => {
     });
   });
 
-  it("resets lesson and course progress", async () => {
+  it("resets video and playlist progress", async () => {
     const service = createProgressService(
       createProgressRepository(database.connection),
       createCatalogApiRepository(database.connection),

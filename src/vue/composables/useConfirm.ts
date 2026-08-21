@@ -37,7 +37,7 @@ export interface Confirmation {
   confirm(options: ConfirmationOptions): Promise<boolean>;
 }
 
-export const confirmationKey: InjectionKey<ConfirmationController> = Symbol("course-confirmation");
+export const confirmationKey: InjectionKey<ConfirmationController> = Symbol("playlist-confirmation");
 
 export function createConfirmation(): ConfirmationController {
   const active = shallowRef<ConfirmationRequest | null>(null);

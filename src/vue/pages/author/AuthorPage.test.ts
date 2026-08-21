@@ -11,14 +11,14 @@ import InstructorPage from "./InstructorPage.vue";
 
 function catalog(title: string): CatalogDto {
   return {
-    courses: [
+    playlists: [
       {
         id: title,
         title,
         description: "",
         coverUrl: null,
         category: "",
-        instructors: ["Instructor"],
+        authors: ["Author"],
         tags: [],
         lessonCount: 1,
         durationSeconds: 60,
@@ -27,7 +27,7 @@ function catalog(title: string): CatalogDto {
       },
     ],
     categories: [],
-    instructors: [],
+    authors: [],
     tags: [],
     continueWatching: [],
     pagination: { page: 1, pageSize: 24, totalCourses: 1, totalPages: 1 },
@@ -37,28 +37,28 @@ function catalog(title: string): CatalogDto {
 describe("InstructorPage", () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it("renders prefetched instructor data on initial mount", async () => {
+  it("renders prefetched author data on initial mount", async () => {
     const request = vi.spyOn(api, "getCatalog");
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
         { path: "/library", component: { template: "<div />" } },
-        { path: "/courses/:courseId", name: "course", component: { template: "<div />" } },
-        { path: "/instructors/:instructorName", name: "instructor", component: InstructorPage },
+        { path: "/playlists/:courseId", name: "playlist", component: { template: "<div />" } },
+        { path: "/authors/:instructorName", name: "author", component: InstructorPage },
       ],
     });
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     queryClient.setQueryData(
-      queryKeys.catalogList({ instructor: ["Alpha"], page: 1 }),
-      catalog("Cached course"),
+      queryKeys.catalogList({ author: ["Alpha"], page: 1 }),
+      catalog("Cached playlist"),
     );
-    await router.push("/instructors/Alpha");
+    await router.push("/authors/Alpha");
     const wrapper = mount(InstructorPage, {
       global: { plugins: [[VueQueryPlugin, { queryClient }], router] },
     });
 
-    expect(wrapper.text()).toContain("Cached course");
-    expect(wrapper.find('[aria-label="Loading instructor courses"]').exists()).toBe(false);
+    expect(wrapper.text()).toContain("Cached playlist");
+    expect(wrapper.find('[aria-label="Loading author playlists"]').exists()).toBe(false);
     expect(request).not.toHaveBeenCalled();
     wrapper.unmount();
     queryClient.clear();
@@ -70,27 +70,27 @@ describe("InstructorPage", () => {
       history: createMemoryHistory(),
       routes: [
         { path: "/library", component: { template: "<div />" } },
-        { path: "/courses/:courseId", name: "course", component: { template: "<div />" } },
-        { path: "/instructors/:instructorName", name: "instructor", component: InstructorPage },
+        { path: "/playlists/:courseId", name: "playlist", component: { template: "<div />" } },
+        { path: "/authors/:instructorName", name: "author", component: InstructorPage },
       ],
     });
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    await router.push("/instructors/Alpha");
+    await router.push("/authors/Alpha");
     const wrapper = mount(InstructorPage, {
       global: { plugins: [[VueQueryPlugin, { queryClient }], router] },
     });
 
-    await vi.waitFor(() => expect(wrapper.text()).toContain("Could not load this instructor"));
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Could not load this author"));
     expect(wrapper.text()).not.toContain("Failed to fetch");
-    expect(wrapper.find('[aria-label="Loading instructor courses"]').exists()).toBe(false);
+    expect(wrapper.find('[aria-label="Loading author playlists"]').exists()).toBe(false);
     wrapper.unmount();
     queryClient.clear();
   });
 
-  it("hides the previous instructor while a new route param loads", async () => {
+  it("hides the previous author while a new route param loads", async () => {
     let resolveNext: ((value: CatalogDto) => void) | undefined;
     vi.spyOn(api, "getCatalog")
-      .mockResolvedValueOnce(catalog("Alpha course"))
+      .mockResolvedValueOnce(catalog("Alpha playlist"))
       .mockReturnValueOnce(
         new Promise<CatalogDto>((resolve) => {
           resolveNext = resolve;
@@ -100,26 +100,26 @@ describe("InstructorPage", () => {
       history: createMemoryHistory(),
       routes: [
         { path: "/library", component: { template: "<div />" } },
-        { path: "/courses/:courseId", name: "course", component: { template: "<div />" } },
-        { path: "/instructors/:instructorName", name: "instructor", component: InstructorPage },
+        { path: "/playlists/:courseId", name: "playlist", component: { template: "<div />" } },
+        { path: "/authors/:instructorName", name: "author", component: InstructorPage },
       ],
     });
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    await router.push("/instructors/Alpha");
+    await router.push("/authors/Alpha");
     const wrapper = mount(InstructorPage, {
       global: { plugins: [[VueQueryPlugin, { queryClient }], router] },
     });
 
-    await vi.waitFor(() => expect(wrapper.text()).toContain("Alpha course"));
-    await router.push("/instructors/Bravo");
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Alpha playlist"));
+    await router.push("/authors/Bravo");
     await vi.waitFor(() => expect(api.getCatalog).toHaveBeenCalledTimes(2));
 
-    expect(wrapper.text()).not.toContain("Alpha course");
-    const loadingStatus = wrapper.get('[aria-label="Loading instructor courses"]');
+    expect(wrapper.text()).not.toContain("Alpha playlist");
+    const loadingStatus = wrapper.get('[aria-label="Loading author playlists"]');
     expect(loadingStatus.attributes("role")).toBe("status");
 
-    resolveNext?.(catalog("Bravo course"));
-    await vi.waitFor(() => expect(wrapper.text()).toContain("Bravo course"));
+    resolveNext?.(catalog("Bravo playlist"));
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Bravo playlist"));
     wrapper.unmount();
     queryClient.clear();
   });

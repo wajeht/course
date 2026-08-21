@@ -6,7 +6,7 @@ describe("usePlaybackProgress", () => {
   it("records and saves positions only while the session is active", async () => {
     const saver = vi.fn(async () => undefined);
     const progress = usePlaybackProgress(saver);
-    progress.startSession("lesson", 0);
+    progress.startSession("video", 0);
 
     progress.recordPosition(30);
     await progress.persistProgress(true);
@@ -15,7 +15,7 @@ describe("usePlaybackProgress", () => {
     progress.activateSession(0);
     progress.recordPosition(30);
     await progress.persistProgress(true);
-    expect(saver).toHaveBeenCalledWith("lesson", 30);
+    expect(saver).toHaveBeenCalledWith("video", 30);
 
     progress.stopSession();
     progress.recordPosition(0);
@@ -26,7 +26,7 @@ describe("usePlaybackProgress", () => {
   it("does not persist zero as playback progress", async () => {
     const saver = vi.fn(async () => undefined);
     const progress = usePlaybackProgress(saver);
-    progress.startSession("lesson", 0);
+    progress.startSession("video", 0);
     progress.activateSession(0);
 
     await progress.persistProgress(true);
@@ -45,7 +45,7 @@ describe("usePlaybackProgress", () => {
       if (position === 10) await firstRequest;
     });
     const progress = usePlaybackProgress(saver);
-    progress.startSession("lesson", 0);
+    progress.startSession("video", 0);
     progress.activateSession(0);
 
     progress.recordPosition(10);
@@ -67,7 +67,7 @@ describe("usePlaybackProgress", () => {
     });
     const saver = vi.fn(async () => request);
     const progress = usePlaybackProgress(saver);
-    progress.startSession("lesson", 0);
+    progress.startSession("video", 0);
     progress.activateSession(0);
     progress.recordPosition(10);
 
@@ -77,7 +77,7 @@ describe("usePlaybackProgress", () => {
     releaseSave?.();
     await save;
     expect(progress.captureExitSnapshot(15)).toEqual({
-      lessonId: "lesson",
+      lessonId: "video",
       positionSeconds: 15,
     });
   });
@@ -89,7 +89,7 @@ describe("usePlaybackProgress", () => {
     });
     const saver = vi.fn(async () => request);
     const progress = usePlaybackProgress(saver);
-    progress.startSession("lesson", 0);
+    progress.startSession("video", 0);
     progress.activateSession(0);
     progress.recordPosition(10);
 
@@ -109,7 +109,7 @@ describe("usePlaybackProgress", () => {
       .mockRejectedValueOnce(new Error("offline"))
       .mockResolvedValueOnce(undefined);
     const progress = usePlaybackProgress(saver);
-    progress.startSession("lesson", 0);
+    progress.startSession("video", 0);
     progress.activateSession(0);
     progress.recordPosition(15);
 
@@ -133,7 +133,7 @@ describe("usePlaybackProgress", () => {
       events.push("reset");
     });
     const progress = usePlaybackProgress(saver);
-    progress.startSession("lesson", 0);
+    progress.startSession("video", 0);
     progress.activateSession(0);
     progress.recordPosition(15);
 
@@ -145,7 +145,7 @@ describe("usePlaybackProgress", () => {
     releaseSave?.();
     await Promise.all([save, reset]);
     expect(events).toEqual(["save", "reset"]);
-    expect(resetter).toHaveBeenCalledWith("lesson");
+    expect(resetter).toHaveBeenCalledWith("video");
     expect(progress.captureExitSnapshot(0)).toBeNull();
   });
 });

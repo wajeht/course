@@ -11,7 +11,7 @@ let database: Database;
 
 beforeEach(async () => {
   database = await createTestDatabase();
-  await database.connection("courses").insert([
+  await database.connection("playlists").insert([
     {
       id: "a".repeat(24),
       path: "technology",
@@ -42,15 +42,15 @@ function createService(pageSize = 24) {
 }
 
 describe("catalog service", () => {
-  it("filters courses by category and lists category counts", async () => {
+  it("filters playlists by category and lists category counts", async () => {
     const service = createService();
 
     await expect(service.getCatalog({ category: ["Technology"] })).resolves.toMatchObject({
-      courses: [
+      playlists: [
         {
           title: "Container Fundamentals",
           category: "Technology",
-          instructors: ["Jane Smith"],
+          authors: ["Jane Smith"],
           tags: ["Docker", "DevOps"],
         },
       ],
@@ -61,11 +61,11 @@ describe("catalog service", () => {
     });
   });
 
-  it("keeps every filter option available while courses are filtered", async () => {
+  it("keeps every filter option available while playlists are filtered", async () => {
     const service = createService();
 
     await expect(service.getCatalog({ category: ["Martial Arts"] })).resolves.toMatchObject({
-      instructors: [
+      authors: [
         { name: "Jane Smith", courseCount: 2 },
         { name: "John Doe", courseCount: 1 },
       ],
@@ -77,34 +77,34 @@ describe("catalog service", () => {
     });
   });
 
-  it("searches category, instructors, and tags", async () => {
+  it("searches category, authors, and tags", async () => {
     const service = createService();
 
     for (const query of ["Technology", "Docker"]) {
       const result = await service.getCatalog({ query });
-      expect(result.courses.map((course) => course.title)).toEqual(["Container Fundamentals"]);
+      expect(result.playlists.map((playlist) => playlist.title)).toEqual(["Container Fundamentals"]);
     }
 
     const instructorResult = await service.getCatalog({ query: "Jane Smith" });
-    expect(instructorResult.courses.map((course) => course.title)).toEqual([
+    expect(instructorResult.playlists.map((playlist) => playlist.title)).toEqual([
       "Container Fundamentals",
       "Guard Retention",
     ]);
   });
 
-  it("filters by an exact instructor and lists instructor counts", async () => {
+  it("filters by an exact author and lists author counts", async () => {
     const service = createService();
 
-    await expect(service.getCatalog({ instructor: ["Jane Smith"] })).resolves.toMatchObject({
-      courses: [{ title: "Container Fundamentals" }, { title: "Guard Retention" }],
-      instructors: [
+    await expect(service.getCatalog({ author: ["Jane Smith"] })).resolves.toMatchObject({
+      playlists: [{ title: "Container Fundamentals" }, { title: "Guard Retention" }],
+      authors: [
         { name: "Jane Smith", courseCount: 2 },
         { name: "John Doe", courseCount: 1 },
       ],
     });
 
-    await expect(service.getCatalog({ instructor: ["Jane"] })).resolves.toMatchObject({
-      courses: [],
+    await expect(service.getCatalog({ author: ["Jane"] })).resolves.toMatchObject({
+      playlists: [],
     });
   });
 
@@ -112,7 +112,7 @@ describe("catalog service", () => {
     const service = createService();
 
     await expect(service.getCatalog({ tag: ["Guard"] })).resolves.toMatchObject({
-      courses: [{ title: "Guard Retention" }],
+      playlists: [{ title: "Guard Retention" }],
       tags: [
         { name: "DevOps", courseCount: 1 },
         { name: "Docker", courseCount: 1 },
@@ -120,14 +120,14 @@ describe("catalog service", () => {
       ],
     });
 
-    await expect(service.getCatalog({ tag: ["Gua"] })).resolves.toMatchObject({ courses: [] });
+    await expect(service.getCatalog({ tag: ["Gua"] })).resolves.toMatchObject({ playlists: [] });
   });
 
   it("matches any selection within a filter and combines different filters", async () => {
     const service = createService();
 
     const tags = await service.getCatalog({ tag: ["Docker", "Guard"] });
-    expect(tags.courses.map((course) => course.title)).toEqual([
+    expect(tags.playlists.map((playlist) => playlist.title)).toEqual([
       "Container Fundamentals",
       "Guard Retention",
     ]);
@@ -136,14 +136,14 @@ describe("catalog service", () => {
       category: ["Technology", "Martial Arts"],
       tag: ["Docker"],
     });
-    expect(combined.courses.map((course) => course.title)).toEqual(["Container Fundamentals"]);
+    expect(combined.playlists.map((playlist) => playlist.title)).toEqual(["Container Fundamentals"]);
   });
 
-  it("paginates filtered courses and reports the result total", async () => {
+  it("paginates filtered playlists and reports the result total", async () => {
     const service = createService();
 
     await expect(service.getCatalog({ page: 2, pageSize: 1 })).resolves.toMatchObject({
-      courses: [{ title: "Guard Retention" }],
+      playlists: [{ title: "Guard Retention" }],
       pagination: { page: 2, pageSize: 1, totalCourses: 2, totalPages: 2 },
     });
   });
@@ -152,7 +152,7 @@ describe("catalog service", () => {
     const service = createService(1);
 
     await expect(service.getCatalog()).resolves.toMatchObject({
-      courses: [{ title: "Container Fundamentals" }],
+      playlists: [{ title: "Container Fundamentals" }],
       pagination: { page: 1, pageSize: 1, totalCourses: 2, totalPages: 2 },
     });
   });
@@ -161,19 +161,19 @@ describe("catalog service", () => {
     const service = createService();
 
     await expect(service.getCatalog({ page: 99, pageSize: 1 })).resolves.toMatchObject({
-      courses: [{ title: "Guard Retention" }],
+      playlists: [{ title: "Guard Retention" }],
       pagination: { page: 2, pageSize: 1, totalCourses: 2, totalPages: 2 },
     });
   });
 
-  it("lists only the most recently watched lesson from each course", async () => {
+  it("lists only the most recently watched video from each playlist", async () => {
     const lessonIds = ["c".repeat(24), "d".repeat(24), "e".repeat(24)];
-    await database.connection("lessons").insert([
+    await database.connection("videos").insert([
       {
         id: lessonIds[0],
         course_id: "a".repeat(24),
         path: "technology/older.mp4",
-        title: "Older lesson",
+        title: "Older video",
         sort_order: 0,
         duration_seconds: 100,
         size_bytes: 100,
@@ -186,7 +186,7 @@ describe("catalog service", () => {
         id: lessonIds[1],
         course_id: "a".repeat(24),
         path: "technology/latest.mp4",
-        title: "Latest lesson",
+        title: "Latest video",
         sort_order: 1,
         duration_seconds: 100,
         size_bytes: 100,
@@ -199,7 +199,7 @@ describe("catalog service", () => {
         id: lessonIds[2],
         course_id: "b".repeat(24),
         path: "martial-arts/current.mp4",
-        title: "Other course lesson",
+        title: "Other playlist video",
         sort_order: 0,
         duration_seconds: 100,
         size_bytes: 100,
@@ -232,7 +232,7 @@ describe("catalog service", () => {
 
     const catalog = await createService().getCatalog();
 
-    expect(catalog.continueWatching.map((lesson) => lesson.id)).toEqual([
+    expect(catalog.continueWatching.map((video) => video.id)).toEqual([
       lessonIds[1],
       lessonIds[2],
     ]);
@@ -245,19 +245,19 @@ describe("catalog service", () => {
     await progress.openLesson(lessonIds[0]!);
 
     const reopenedCatalog = await createService().getCatalog();
-    expect(reopenedCatalog.continueWatching.map((lesson) => lesson.id)).toEqual([
+    expect(reopenedCatalog.continueWatching.map((video) => video.id)).toEqual([
       lessonIds[0],
       lessonIds[2],
     ]);
   });
 
-  it("returns ordered chapters only with the opened lesson", async () => {
+  it("returns ordered chapters only with the opened video", async () => {
     const lessonId = "c".repeat(24);
-    await database.connection("lessons").insert({
+    await database.connection("videos").insert({
       id: lessonId,
       course_id: "a".repeat(24),
-      path: "technology/lesson.mp4",
-      title: "Lesson",
+      path: "technology/video.mp4",
+      title: "Video",
       sort_order: 0,
       duration_seconds: 1_000,
       size_bytes: 100,
@@ -284,8 +284,8 @@ describe("catalog service", () => {
     ]);
 
     await expect(createService().getLesson(lessonId)).resolves.toMatchObject({
-      lesson: {
-        title: "Lesson",
+      video: {
+        title: "Video",
         chapters: [
           { title: "Introduction", startSeconds: 0 },
           { title: "Second technique", startSeconds: 416 },

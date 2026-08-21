@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Course",
-  "short_name": "Course",
-  "description": "A private, opinionated, self-hosted video course library.",
+  "name": "Videos",
+  "short_name": "Videos",
+  "description": "A private, opinionated, self-hosted video library.",
   "theme_color": "#244d3b",
   "background_color": "#f5f6f2",
   "display": "standalone",
@@ -13,13 +13,13 @@
     {
       "name": "Open library",
       "short_name": "Library",
-      "description": "Browse your video courses.",
+      "description": "Browse your videos and playlists.",
       "url": "/library"
     },
     {
       "name": "Open settings",
       "short_name": "Settings",
-      "description": "Manage Course settings.",
+      "description": "Manage Videos settings.",
       "url": "/settings/library"
     }
   ],
@@ -29,14 +29,14 @@
       "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Course sign-in on mobile"
+      "label": "Videos sign-in on mobile"
     },
     {
       "src": "/pwa-library-wide.png",
       "sizes": "1440x900",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Course sign-in on desktop"
+      "label": "Videos sign-in on desktop"
     }
   ],
   "icons": [

@@ -12,7 +12,7 @@ const catalogFilterSchema = z
 export const catalogQuerySchema = z.object({
   query: z.string().trim().max(200).optional(),
   category: catalogFilterSchema.optional(),
-  instructor: catalogFilterSchema.optional(),
+  author: catalogFilterSchema.optional(),
   tag: catalogFilterSchema.optional(),
   page: z.coerce.number().int().min(1).optional(),
   pageSize: z.coerce.number().int().min(1).max(100).optional(),
@@ -54,7 +54,7 @@ export const courseResponseSchema = z.object({
   title: z.string(),
   description: z.string(),
   category: z.string(),
-  instructors: z.array(z.string()),
+  authors: z.array(z.string()),
   tags: z.array(z.string()),
   coverUrl: z.string().nullable(),
   lessonCount: z.number().int().nonnegative(),
@@ -68,20 +68,20 @@ export const courseDetailResponseSchema = courseResponseSchema.extend({
     z.object({
       id: identifierSchema.nullable(),
       title: z.string(),
-      lessons: z.array(lessonResponseSchema),
+      videos: z.array(lessonResponseSchema),
     }),
   ),
 });
 
 export const catalogResponseSchema = z.object({
-  courses: z.array(courseResponseSchema),
+  playlists: z.array(courseResponseSchema),
   categories: z.array(
     z.object({
       name: z.string(),
       courseCount: z.number().int().nonnegative(),
     }),
   ),
-  instructors: z.array(
+  authors: z.array(
     z.object({
       name: z.string(),
       courseCount: z.number().int().nonnegative(),
@@ -103,6 +103,6 @@ export const catalogResponseSchema = z.object({
 });
 
 export const lessonDetailResponseSchema = z.object({
-  lesson: lessonWithChaptersResponseSchema,
-  course: courseDetailResponseSchema,
+  video: lessonWithChaptersResponseSchema,
+  playlist: courseDetailResponseSchema,
 });

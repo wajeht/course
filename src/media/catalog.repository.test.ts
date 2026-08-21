@@ -11,10 +11,10 @@ beforeEach(async () => {
   database = await createTestDatabase();
 });
 
-function lesson(id: string, sortOrder: number): LessonRecord {
+function video(id: string, sortOrder: number): LessonRecord {
   return {
     id,
-    courseId: "course",
+    courseId: "playlist",
     sectionId: null,
     path: `${id}.mp4`,
     title: id,
@@ -30,25 +30,25 @@ function lesson(id: string, sortOrder: number): LessonRecord {
 }
 
 describe("catalog repository", () => {
-  it("reconciles chapters with one bounded delete query per lesson", async () => {
-    const lessons = [lesson("lesson-a", 0), lesson("lesson-b", 1)];
+  it("reconciles chapters with one bounded delete query per video", async () => {
+    const videos = [video("video-a", 0), video("video-b", 1)];
     const snapshot: CatalogSnapshot = {
-      courses: [
+      playlists: [
         {
-          id: "course",
-          path: "course",
-          title: "Course",
+          id: "playlist",
+          path: "playlist",
+          title: "Playlist",
           description: "",
           category: "Uncategorized",
-          instructors: [],
+          authors: [],
           tags: [],
           coverPath: null,
           sortOrder: 0,
         },
       ],
       sections: [],
-      lessons,
-      chapters: lessons.flatMap((item) => [
+      videos,
+      chapters: videos.flatMap((item) => [
         {
           id: `${item.id}-chapter-a`,
           lessonId: item.id,

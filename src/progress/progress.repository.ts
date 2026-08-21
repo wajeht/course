@@ -54,7 +54,7 @@ export function createProgressRepository(database: Knex): ProgressRepository {
 
     async resetCourse(courseId) {
       await database("progress")
-        .whereIn("lesson_id", database("lessons").select("id").where({ course_id: courseId }))
+        .whereIn("lesson_id", database("videos").select("id").where({ course_id: courseId }))
         .delete();
     },
   };

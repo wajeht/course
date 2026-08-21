@@ -15,8 +15,8 @@ export const loadHomePage = () => import("@/pages/home/HomePage.vue");
 export const loadLibraryPage = () => import("@/pages/library/LibraryPage.vue");
 export const loadSettingsLibraryPage = () => import("@/pages/settings/LibraryPage.vue");
 export const loadSettingsAccessPage = () => import("@/pages/settings/AccessPage.vue");
-export const loadCoursePage = () => import("@/pages/course/CoursePage.vue");
-export const loadInstructorPage = () => import("@/pages/instructor/InstructorPage.vue");
+export const loadCoursePage = () => import("@/pages/playlist/CoursePage.vue");
+export const loadInstructorPage = () => import("@/pages/author/InstructorPage.vue");
 export const loadPlayerPage = () => import("@/pages/player/PlayerPage.vue");
 
 export const router = createRouter({
@@ -47,22 +47,22 @@ export const router = createRouter({
       meta: { navigation: "settings", title: "Access settings" },
     },
     {
-      path: "/courses/:courseId",
-      name: "course",
+      path: "/playlists/:courseId",
+      name: "playlist",
       component: loadCoursePage,
-      meta: { navigation: "library", title: "Course details" },
+      meta: { navigation: "library", title: "Playlist details" },
     },
     {
-      path: "/instructors/:instructorName",
-      name: "instructor",
+      path: "/authors/:instructorName",
+      name: "author",
       component: loadInstructorPage,
-      meta: { navigation: "library", title: "Instructor" },
+      meta: { navigation: "library", title: "Author" },
     },
     {
-      path: "/lessons/:lessonId",
+      path: "/videos/:lessonId",
       name: "player",
       component: loadPlayerPage,
-      meta: { navigation: "library", shell: "player", title: "Lesson" },
+      meta: { navigation: "library", shell: "player", title: "Video" },
     },
     {
       path: "/:pathMatch(.*)*",

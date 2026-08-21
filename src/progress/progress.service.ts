@@ -20,19 +20,19 @@ export function createProgressService(
       return true;
     },
     async updateProgress(lessonId, positionSeconds) {
-      const lesson = await catalog.findLesson(lessonId);
-      if (!lesson) return false;
+      const video = await catalog.findLesson(lessonId);
+      if (!video) return false;
       if (positionSeconds <= 0) return true;
       await repository.savePosition(
         lessonId,
-        Math.min(positionSeconds, Number(lesson.duration_seconds)),
+        Math.min(positionSeconds, Number(video.duration_seconds)),
       );
       return true;
     },
     async completeLesson(lessonId) {
-      const lesson = await catalog.findLesson(lessonId);
-      if (!lesson) return false;
-      await repository.completeLesson(lessonId, Number(lesson.duration_seconds));
+      const video = await catalog.findLesson(lessonId);
+      if (!video) return false;
+      await repository.completeLesson(lessonId, Number(video.duration_seconds));
       return true;
     },
     resetLesson: (lessonId) => repository.resetLesson(lessonId),

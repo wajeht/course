@@ -21,8 +21,8 @@ async function createScannerDirectories(): Promise<{
   dataDirectory: string;
 }> {
   const [root, dataDirectory] = await Promise.all([
-    createTemporaryDirectory("course-scanner-"),
-    createTemporaryDirectory("course-scanner-data-"),
+    createTemporaryDirectory("playlist-scanner-"),
+    createTemporaryDirectory("playlist-scanner-data-"),
   ]);
   return { root, dataDirectory };
 }
@@ -32,11 +32,11 @@ describe("media scanner", () => {
     const { root, dataDirectory } = await createScannerDirectories();
     await fs.mkdir(path.join(root, "@eaDir", "metadata"), { recursive: true });
     await fs.writeFile(path.join(root, "@eaDir", "metadata", "thumbnail.mp4"), "video");
-    await fs.mkdir(path.join(root, "#recycle", "Deleted Course"), { recursive: true });
-    await fs.writeFile(path.join(root, "#recycle", "Deleted Course", "lesson.mp4"), "video");
-    await fs.mkdir(path.join(root, "Empty Course"));
+    await fs.mkdir(path.join(root, "#recycle", "Deleted Playlist"), { recursive: true });
+    await fs.writeFile(path.join(root, "#recycle", "Deleted Playlist", "video.mp4"), "video");
+    await fs.mkdir(path.join(root, "Empty Playlist"));
 
-    const courseDirectory = path.join(root, "Real Course");
+    const courseDirectory = path.join(root, "Real Playlist");
     const sectionDirectory = path.join(courseDirectory, "Volume 1");
     await fs.mkdir(path.join(courseDirectory, "@eaDir"), { recursive: true });
     await fs.mkdir(path.join(courseDirectory, "#recycle"), { recursive: true });
@@ -44,7 +44,7 @@ describe("media scanner", () => {
     await fs.mkdir(sectionDirectory, { recursive: true });
     await fs.writeFile(path.join(courseDirectory, "@eaDir", "thumbnail.mp4"), "video");
     await fs.writeFile(path.join(courseDirectory, "#recycle", "deleted.mp4"), "video");
-    await fs.writeFile(path.join(sectionDirectory, "01 - Lesson.mp4"), "video");
+    await fs.writeFile(path.join(sectionDirectory, "01 - Video.mp4"), "video");
 
     const configuration = createConfiguration({
       APP_ENV: "testing",
@@ -67,30 +67,30 @@ describe("media scanner", () => {
     });
 
     const status = await scanner.scanCatalog();
-    const courses = await database.connection("courses").select("title");
+    const playlists = await database.connection("playlists").select("title");
     const sections = await database.connection("sections").select("title");
-    const lessons = await database.connection("lessons").select("title");
+    const videos = await database.connection("videos").select("title");
 
     expect(status).toMatchObject({ status: "complete", courseCount: 1, lessonCount: 1 });
-    expect(courses).toEqual([{ title: "Real Course" }]);
+    expect(playlists).toEqual([{ title: "Real Playlist" }]);
     expect(sections).toEqual([{ title: "Volume 1" }]);
-    expect(lessons).toEqual([{ title: "Lesson" }]);
+    expect(videos).toEqual([{ title: "Video" }]);
   });
 
-  it("indexes course metadata, sections, natural order, and warnings", async () => {
+  it("indexes playlist metadata, sections, natural order, and warnings", async () => {
     const { root, dataDirectory } = await createScannerDirectories();
-    const courseDirectory = path.join(root, "Course 1");
+    const courseDirectory = path.join(root, "Playlist 1");
     const sectionDirectory = path.join(courseDirectory, "02 - Escapes");
     await fs.mkdir(sectionDirectory, { recursive: true });
     await fs.writeFile(
-      path.join(courseDirectory, "course.json"),
+      path.join(courseDirectory, "playlist.json"),
       JSON.stringify({
         version: 1,
         title: "Essential Guard",
         description: "Build reliable layers",
         cover: "cover.jpg",
         category: "Martial Arts",
-        instructors: ["Jane Smith"],
+        authors: ["Jane Smith"],
         tags: ["Guard", "Defense"],
       }),
     );
@@ -155,53 +155,53 @@ describe("media scanner", () => {
     });
 
     const status = await scanner.scanCatalog();
-    const courses = await database
-      .connection("courses")
+    const playlists = await database
+      .connection("playlists")
       .select("title", "description", "category", "instructors_json", "tags_json", "cover_path");
     const sections = await database.connection("sections").select("title");
-    const lessons = await database
-      .connection("lessons")
+    const videos = await database
+      .connection("videos")
       .orderByRaw("section_id IS NOT NULL")
       .orderBy("sort_order")
       .select("title");
     const chapters = await database
       .connection("chapters")
-      .join("lessons", "lessons.id", "chapters.lesson_id")
-      .orderBy("lessons.title")
+      .join("videos", "videos.id", "chapters.lesson_id")
+      .orderBy("videos.title")
       .orderBy("chapters.sort_order")
-      .select("lessons.title as lesson", "chapters.title", "chapters.start_seconds");
+      .select("videos.title as video", "chapters.title", "chapters.start_seconds");
 
     expect(status).toMatchObject({ status: "complete", courseCount: 1, lessonCount: 3 });
     expect(status.warnings).toEqual([
       {
-        path: "Course 1/03 - Broken.mp4",
+        path: "Playlist 1/03 - Broken.mp4",
         message: "File is still copying",
       },
       {
-        path: "Course 1/10 - Finish.mp4.json",
+        path: "Playlist 1/10 - Finish.mp4.json",
         message: "Chapter “Outside video” starts outside 10 - Finish.mp4",
       },
     ]);
-    expect(courses).toEqual([
+    expect(playlists).toEqual([
       {
         title: "Essential Guard",
         description: "Build reliable layers",
         category: "Martial Arts",
         instructors_json: '["Jane Smith"]',
         tags_json: '["Guard","Defense"]',
-        cover_path: "Course 1/cover.jpg",
+        cover_path: "Playlist 1/cover.jpg",
       },
     ]);
     expect(sections).toEqual([{ title: "Escapes" }]);
-    expect(lessons).toEqual([{ title: "Start" }, { title: "Finish" }, { title: "Bridge" }]);
+    expect(videos).toEqual([{ title: "Start" }, { title: "Finish" }, { title: "Bridge" }]);
     expect(chapters).toEqual([
-      { lesson: "Bridge", title: "Bridge mechanics", start_seconds: 5 },
-      { lesson: "Start", title: "Introduction", start_seconds: 0 },
-      { lesson: "Start", title: "Frames", start_seconds: 30 },
+      { video: "Bridge", title: "Bridge mechanics", start_seconds: 5 },
+      { video: "Start", title: "Introduction", start_seconds: 0 },
+      { video: "Start", title: "Frames", start_seconds: 30 },
     ]);
 
-    const existingLesson = await database.connection("lessons").where({ title: "Start" }).first();
-    const convertedLesson = await database.connection("lessons").where({ title: "Finish" }).first();
+    const existingLesson = await database.connection("videos").where({ title: "Start" }).first();
+    const convertedLesson = await database.connection("videos").where({ title: "Finish" }).first();
     await database.connection("progress").insert({
       lesson_id: existingLesson.id,
       position_seconds: 30,
@@ -220,7 +220,7 @@ describe("media scanner", () => {
     await scanner.scanCatalog();
 
     expect(
-      await database.connection("lessons").where({ id: existingLesson.id }).first(),
+      await database.connection("videos").where({ id: existingLesson.id }).first(),
     ).toBeTruthy();
     expect(
       await database.connection("progress").where({ lesson_id: existingLesson.id }).first(),
@@ -238,9 +238,9 @@ describe("media scanner", () => {
     });
   });
 
-  it("reconciles added, removed, and renamed courses without re-inspecting other videos", async () => {
+  it("reconciles added, removed, and renamed playlists without re-inspecting other videos", async () => {
     const { root, dataDirectory } = await createScannerDirectories();
-    const existingCourse = path.join(root, "Existing Course");
+    const existingCourse = path.join(root, "Existing Playlist");
     await fs.mkdir(existingCourse);
     await fs.writeFile(path.join(existingCourse, "01 - Existing.mp4"), "existing video");
 
@@ -284,51 +284,51 @@ describe("media scanner", () => {
     const stopMonitoring = scanner.startMonitoring();
     monitorStops.push(stopMonitoring);
 
-    const addedCourse = path.join(root, "Added Course");
+    const addedCourse = path.join(root, "Added Playlist");
     await fs.mkdir(addedCourse);
     await fs.writeFile(path.join(addedCourse, "01 - Added.mp4"), "added video");
-    emitWatchEvent("Added Course/01 - Added.mp4");
+    emitWatchEvent("Added Playlist/01 - Added.mp4");
     await waitUntil(
       async () =>
-        Number((await database.connection("courses").count({ count: "id" }).first())?.count) === 2,
+        Number((await database.connection("playlists").count({ count: "id" }).first())?.count) === 2,
     );
 
     expect(probeCalls).toEqual(["01 - Existing.mp4", "01 - Added.mp4"]);
-    expect(await database.connection("courses").orderBy("sort_order").select("title")).toEqual([
-      { title: "Added Course" },
-      { title: "Existing Course" },
+    expect(await database.connection("playlists").orderBy("sort_order").select("title")).toEqual([
+      { title: "Added Playlist" },
+      { title: "Existing Playlist" },
     ]);
 
-    const renamedCourse = path.join(root, "Renamed Course");
+    const renamedCourse = path.join(root, "Renamed Playlist");
     await fs.rename(existingCourse, renamedCourse);
-    emitWatchEvent("Existing Course");
+    emitWatchEvent("Existing Playlist");
     await waitUntil(async () => {
-      const courses = await database.connection("courses").select("title");
-      return courses.length === 2 && courses.some((course) => course.title === "Renamed Course");
+      const playlists = await database.connection("playlists").select("title");
+      return playlists.length === 2 && playlists.some((playlist) => playlist.title === "Renamed Playlist");
     });
     expect(probeCalls).toEqual(["01 - Existing.mp4", "01 - Added.mp4", "01 - Existing.mp4"]);
-    expect(await database.connection("courses").orderBy("sort_order").select("title")).toEqual([
-      { title: "Added Course" },
-      { title: "Renamed Course" },
+    expect(await database.connection("playlists").orderBy("sort_order").select("title")).toEqual([
+      { title: "Added Playlist" },
+      { title: "Renamed Playlist" },
     ]);
 
     await fs.rm(addedCourse, { recursive: true });
-    emitWatchEvent("Added Course");
+    emitWatchEvent("Added Playlist");
     await waitUntil(
       async () =>
-        Number((await database.connection("courses").count({ count: "id" }).first())?.count) === 1,
+        Number((await database.connection("playlists").count({ count: "id" }).first())?.count) === 1,
     );
-    expect(await database.connection("courses").select("title")).toEqual([
-      { title: "Renamed Course" },
+    expect(await database.connection("playlists").select("title")).toEqual([
+      { title: "Renamed Playlist" },
     ]);
     expect(probeCalls).toEqual(["01 - Existing.mp4", "01 - Added.mp4", "01 - Existing.mp4"]);
   });
 
   it("rebuilds chapters when a sidecar changes without re-inspecting the video", async () => {
     const { root, dataDirectory } = await createScannerDirectories();
-    const courseDirectory = path.join(root, "Example Course");
+    const courseDirectory = path.join(root, "Example Playlist");
     await fs.mkdir(courseDirectory);
-    const video = path.join(courseDirectory, "01 - Lesson.mp4");
+    const video = path.join(courseDirectory, "01 - Video.mp4");
     const sidecar = `${video}.json`;
     await fs.writeFile(video, "video");
     await fs.writeFile(
@@ -386,7 +386,7 @@ describe("media scanner", () => {
         chapters: [{ title: "Updated chapter", startSeconds: 5 }],
       }),
     );
-    emitWatchEvent("Example Course/01 - Lesson.mp4.json");
+    emitWatchEvent("Example Playlist/01 - Video.mp4.json");
     await waitUntil(async () => {
       const titles = await database.connection("chapters").pluck("title");
       return titles.length === 1 && titles[0] === "Updated chapter";
@@ -394,7 +394,7 @@ describe("media scanner", () => {
     expect(probeCount).toBe(1);
 
     await fs.rm(sidecar);
-    emitWatchEvent("Example Course/01 - Lesson.mp4.json");
+    emitWatchEvent("Example Playlist/01 - Video.mp4.json");
     await waitUntil(
       async () =>
         Number((await database.connection("chapters").count({ count: "id" }).first())?.count) === 0,
@@ -402,10 +402,10 @@ describe("media scanner", () => {
     expect(probeCount).toBe(1);
   });
 
-  it("keeps warnings for courses that were not rescanned", async () => {
+  it("keeps warnings for playlists that were not rescanned", async () => {
     const { root, dataDirectory } = await createScannerDirectories();
-    const brokenCourse = path.join(root, "Broken Course");
-    const healthyCourse = path.join(root, "Healthy Course");
+    const brokenCourse = path.join(root, "Broken Playlist");
+    const healthyCourse = path.join(root, "Healthy Playlist");
     await Promise.all([fs.mkdir(brokenCourse), fs.mkdir(healthyCourse)]);
     const brokenVideo = path.join(brokenCourse, "01 - Broken.mp4");
     const healthyVideo = path.join(healthyCourse, "01 - Healthy.mp4");
@@ -455,7 +455,7 @@ describe("media scanner", () => {
 
     expect((await scanner.scanCatalog()).warnings).toEqual([
       {
-        path: "Broken Course/01 - Broken.mp4",
+        path: "Broken Playlist/01 - Broken.mp4",
         message: "Could not inspect broken video",
       },
     ]);
@@ -463,7 +463,7 @@ describe("media scanner", () => {
 
     const changedAt = new Date(Date.now() + 10_000);
     await fs.utimes(healthyVideo, changedAt, changedAt);
-    emitWatchEvent("Healthy Course/01 - Healthy.mp4");
+    emitWatchEvent("Healthy Playlist/01 - Healthy.mp4");
     await waitUntil(
       async () =>
         (probeCalls.get("01 - Healthy.mp4") ?? 0) === 2 &&
@@ -471,14 +471,14 @@ describe("media scanner", () => {
     );
     expect(scanner.scanStatus().warnings).toEqual([
       {
-        path: "Broken Course/01 - Broken.mp4",
+        path: "Broken Playlist/01 - Broken.mp4",
         message: "Could not inspect broken video",
       },
     ]);
 
     broken = false;
     await fs.utimes(brokenVideo, changedAt, changedAt);
-    emitWatchEvent("Broken Course/01 - Broken.mp4");
+    emitWatchEvent("Broken Playlist/01 - Broken.mp4");
     await waitUntil(
       async () =>
         (probeCalls.get("01 - Broken.mp4") ?? 0) === 2 &&
@@ -489,13 +489,13 @@ describe("media scanner", () => {
 
   it("clears a resolved cover warning after an incremental scan", async () => {
     const { root, dataDirectory } = await createScannerDirectories();
-    const courseDirectory = path.join(root, "Example Course");
+    const courseDirectory = path.join(root, "Example Playlist");
     await fs.mkdir(courseDirectory);
     await fs.writeFile(
-      path.join(courseDirectory, "course.json"),
+      path.join(courseDirectory, "playlist.json"),
       JSON.stringify({ version: 1, cover: "missing.jpg" }),
     );
-    await fs.writeFile(path.join(courseDirectory, "01 - Lesson.mp4"), "video");
+    await fs.writeFile(path.join(courseDirectory, "01 - Video.mp4"), "video");
 
     const configuration = createConfiguration({
       APP_ENV: "testing",
@@ -531,17 +531,17 @@ describe("media scanner", () => {
 
     expect((await scanner.scanCatalog()).warnings).toEqual([
       {
-        path: "Example Course/missing.jpg",
+        path: "Example Playlist/missing.jpg",
         message: "Configured cover does not exist",
       },
     ]);
     monitorStops.push(scanner.startMonitoring());
 
     await fs.writeFile(path.join(courseDirectory, "missing.jpg"), "cover");
-    emitWatchEvent("Example Course/missing.jpg");
+    emitWatchEvent("Example Playlist/missing.jpg");
     await waitUntil(async () => {
-      const course = await database.connection("courses").where({ path: "Example Course" }).first();
-      return course?.cover_path === "Example Course/missing.jpg";
+      const playlist = await database.connection("playlists").where({ path: "Example Playlist" }).first();
+      return playlist?.cover_path === "Example Playlist/missing.jpg";
     });
 
     expect(scanner.scanStatus().warnings).toEqual([]);

@@ -8,7 +8,7 @@ import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import { countText, durationText } from "@/utils.js";
 
 const props = defineProps<{
-  course: CourseDetailDto;
+  playlist: CourseDetailDto;
   hasStarted: boolean;
   nextLesson?: LessonDto;
   resetting: boolean;
@@ -19,7 +19,7 @@ const prefetch = useRoutePrefetch();
 
 async function prefetchNextLesson(): Promise<void> {
   if (!props.nextLesson) return;
-  await prefetch.lesson(props.nextLesson.id);
+  await prefetch.video(props.nextLesson.id);
 }
 </script>
 
@@ -31,52 +31,52 @@ async function prefetchNextLesson(): Promise<void> {
       class="aspect-[4/5] self-center overflow-hidden rounded-[10px] border border-white/18 bg-pine shadow-[0_28px_70px_rgb(0_0_0_/_32%)] max-[600px]:w-full max-[600px]:self-start"
     >
       <img
-        v-if="course.coverUrl"
+        v-if="playlist.coverUrl"
         class="h-full w-full object-cover"
-        :src="course.coverUrl"
-        :alt="`${course.title} cover`"
+        :src="playlist.coverUrl"
+        :alt="`${playlist.title} cover`"
       />
-      <CourseCoverPlaceholder v-else class="h-full w-full" :title="course.title" />
+      <CourseCoverPlaceholder v-else class="h-full w-full" :title="playlist.title" />
     </div>
     <div class="max-w-[800px] self-center">
       <p class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt uppercase">
-        <template v-if="course.category !== 'Uncategorized'">{{ course.category }} · </template>
-        {{ countText(course.lessonCount, "lesson") }} · {{ durationText(course.durationSeconds) }}
+        <template v-if="playlist.category !== 'Uncategorized'">{{ playlist.category }} · </template>
+        {{ countText(playlist.lessonCount, "video") }} · {{ durationText(playlist.durationSeconds) }}
       </p>
       <h1
         class="mb-[23px] max-w-[880px] font-display text-[clamp(2.7rem,5.2vw,5.8rem)] leading-[.95] font-extrabold tracking-[-.05em] max-[860px]:text-[clamp(2.3rem,6.4vw,4rem)] max-[600px]:text-[clamp(1.8rem,8vw,2.7rem)]"
       >
-        {{ course.title }}
+        {{ playlist.title }}
       </h1>
       <p
-        v-if="course.instructors.length"
+        v-if="playlist.authors.length"
         class="-mt-3 mb-4 text-[.78rem] font-bold tracking-[.04em] text-belt-light"
       >
         Taught by
-        <template v-for="(instructor, index) in course.instructors" :key="instructor">
+        <template v-for="(author, index) in playlist.authors" :key="author">
           <span v-if="index" aria-hidden="true">, </span>
           <IntentRouterLink
-            :to="{ name: 'instructor', params: { instructorName: instructor } }"
-            :prefetch="() => prefetch.instructor(instructor)"
+            :to="{ name: 'author', params: { instructorName: author } }"
+            :prefetch="() => prefetch.author(author)"
             class="underline decoration-belt-light/35 underline-offset-4 hover:decoration-belt-light"
           >
-            {{ instructor }}
+            {{ author }}
           </IntentRouterLink>
         </template>
       </p>
       <p
         class="max-w-[700px] text-[clamp(.95rem,1.4vw,1.12rem)] leading-[1.65] text-white/72 max-[600px]:col-span-full max-[600px]:text-[.86rem]"
-        :class="course.tags.length ? 'mb-5' : 'mb-[34px]'"
+        :class="playlist.tags.length ? 'mb-5' : 'mb-[34px]'"
       >
-        {{ course.description || "Your course, ready whenever you are." }}
+        {{ playlist.description || "Your playlist, ready whenever you are." }}
       </p>
       <div
-        v-if="course.tags.length"
+        v-if="playlist.tags.length"
         class="mb-[30px] flex max-w-[700px] flex-wrap gap-2 max-[600px]:col-span-full"
-        aria-label="Course topics"
+        aria-label="Playlist topics"
       >
         <span
-          v-for="tag in course.tags"
+          v-for="tag in playlist.tags"
           :key="tag"
           class="rounded-full border border-white/20 bg-white/8 px-3 py-1 text-[.68rem] font-semibold text-white/78"
         >
@@ -85,10 +85,10 @@ async function prefetchNextLesson(): Promise<void> {
       </div>
       <div v-if="hasStarted" class="mb-[30px] max-w-[620px] max-[600px]:col-span-full">
         <div class="mb-[10px] flex justify-between text-[.74rem] font-[650] text-white/68">
-          <span>Course progress</span>
-          <strong class="text-white">{{ course.progressPercent }}%</strong>
+          <span>Playlist progress</span>
+          <strong class="text-white">{{ playlist.progressPercent }}%</strong>
         </div>
-        <ProgressBar :value="course.progressPercent" light />
+        <ProgressBar :value="playlist.progressPercent" light />
       </div>
       <div class="flex flex-wrap gap-[10px] max-[600px]:col-span-full">
         <AppButton
@@ -100,7 +100,7 @@ async function prefetchNextLesson(): Promise<void> {
           size="lg"
         >
           <span aria-hidden="true">▶</span>
-          {{ nextLesson.positionSeconds ? "Resume course" : "Start course" }}
+          {{ nextLesson.positionSeconds ? "Resume playlist" : "Start playlist" }}
         </AppButton>
         <AppButton
           v-if="hasStarted"

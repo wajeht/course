@@ -22,10 +22,10 @@ export interface LessonQueryClient {
 export const queryKeys = {
   catalog: ["catalog"] as const,
   catalogList: (filters: CatalogFilters) => ["catalog", "list", filters] as const,
-  courses: ["courses"] as const,
-  course: (courseId: string) => ["courses", courseId] as const,
-  lessons: ["lessons"] as const,
-  lesson: (lessonId: string) => ["lessons", lessonId] as const,
+  playlists: ["playlists"] as const,
+  playlist: (courseId: string) => ["playlists", courseId] as const,
+  videos: ["videos"] as const,
+  video: (lessonId: string) => ["videos", lessonId] as const,
   scanStatus: ["scan-status"] as const,
   settings: ["settings"] as const,
 };
@@ -58,7 +58,7 @@ export function catalogQueryOptions(
 
 export function courseQueryOptions(courseId: string) {
   return queryOptions({
-    queryKey: queryKeys.course(courseId),
+    queryKey: queryKeys.playlist(courseId),
     queryFn: ({ signal }): Promise<CourseDetailDto> => api.getCourse(courseId, signal),
     staleTime: 5 * 60_000,
   });
@@ -66,7 +66,7 @@ export function courseQueryOptions(courseId: string) {
 
 export function lessonQueryOptions(lessonId: string, client: LessonQueryClient = api) {
   return queryOptions({
-    queryKey: queryKeys.lesson(lessonId),
+    queryKey: queryKeys.video(lessonId),
     queryFn: ({ signal }) => client.getLesson(lessonId, signal),
     staleTime: 5 * 60_000,
   });

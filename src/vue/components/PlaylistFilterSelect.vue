@@ -34,12 +34,12 @@ const selected = computed({
     class="relative flex min-h-10 w-[190px] items-center gap-2.5 rounded-[7px] border border-line bg-white px-3.5 shadow-[0_8px_30px_rgb(24_32_29_/_5%)] focus-within:border-pine focus-within:shadow-[0_0_0_3px_rgb(36_77_59_/_10%)] max-[700px]:w-full"
   >
     <slot />
-    <span class="sr-only">Filter courses by {{ label.toLowerCase() }}</span>
+    <span class="sr-only">Filter playlists by {{ label.toLowerCase() }}</span>
     <AppSelect
       v-model="selected"
       class="w-full min-w-0 cursor-pointer appearance-none border-0 bg-transparent pr-5 text-[.78rem] font-semibold text-pine-deep outline-0"
       variant="bare"
-      :aria-label="`Filter courses by ${label.toLowerCase()}`"
+      :aria-label="`Filter playlists by ${label.toLowerCase()}`"
     >
       <option value="">{{ allLabel }}</option>
       <option v-for="option in visibleOptions" :key="option.name" :value="option.name">

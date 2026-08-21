@@ -17,8 +17,8 @@ describe("database schema", () => {
       "auth_sessions",
       "chapters",
       "conversions",
-      "courses",
-      "lessons",
+      "playlists",
+      "videos",
       "progress",
       "sections",
       "settings",
@@ -27,13 +27,13 @@ describe("database schema", () => {
       "202608160001_create_schema.js",
     ]);
 
-    await expect(database.connection("courses").columnInfo()).resolves.not.toHaveProperty(
+    await expect(database.connection("playlists").columnInfo()).resolves.not.toHaveProperty(
       "created_at",
     );
-    await expect(database.connection("courses").columnInfo()).resolves.not.toHaveProperty(
+    await expect(database.connection("playlists").columnInfo()).resolves.not.toHaveProperty(
       "updated_at",
     );
-    await expect(database.connection("courses").columnInfo()).resolves.not.toHaveProperty(
+    await expect(database.connection("playlists").columnInfo()).resolves.not.toHaveProperty(
       "cover_origin",
     );
     await expect(database.connection("conversions").columnInfo()).resolves.toEqual(

@@ -7,7 +7,7 @@ import AppButton from "@/components/ui/AppButton.vue";
 import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 
 const props = defineProps<{
-  course: CourseDetailDto | null;
+  playlist: CourseDetailDto | null;
   ended: boolean;
   error: string;
   loading: boolean;
@@ -29,12 +29,12 @@ const prefetch = useRoutePrefetch();
 
 async function prefetchNextLesson(): Promise<void> {
   if (!props.nextLesson) return;
-  await prefetch.lesson(props.nextLesson.id);
+  await prefetch.video(props.nextLesson.id);
 }
 
 async function prefetchCourse(): Promise<void> {
-  if (!props.course) return;
-  await prefetch.course(props.course.id);
+  if (!props.playlist) return;
+  await prefetch.playlist(props.playlist.id);
 }
 
 defineExpose({ video });
@@ -43,19 +43,19 @@ defineExpose({ video });
 <template>
   <div class="flex min-h-[34px] items-center justify-between">
     <IntentRouterLink
-      v-if="course"
-      :to="{ name: 'course', params: { courseId: course.id } }"
+      v-if="playlist"
+      :to="{ name: 'playlist', params: { courseId: playlist.id } }"
       :prefetch="prefetchCourse"
       class="mb-0 inline-block max-w-[75%] overflow-hidden text-[.78rem] font-bold text-ellipsis whitespace-nowrap text-white/68 hover:text-white"
     >
-      ← {{ course.title }}
+      ← {{ playlist.title }}
     </IntentRouterLink>
     <AppButton
       class="hidden rounded-[5px] border border-white/25 bg-transparent px-[11px] py-[7px] text-white max-[860px]:inline-flex"
       variant="unstyled"
       @click="emit('openLessons')"
     >
-      Lessons
+      Videos
     </AppButton>
   </div>
   <div
@@ -79,7 +79,7 @@ defineExpose({ video });
       <div
         class="h-[42px] w-[42px] animate-spin rounded-full border-[3px] border-white/20 border-t-white"
       />
-      <p class="mt-4 max-w-[540px] text-[.82rem] text-white/58">Preparing lesson…</p>
+      <p class="mt-4 max-w-[540px] text-[.82rem] text-white/58">Preparing video…</p>
     </div>
     <div
       v-else-if="playback?.kind === 'converting'"
@@ -120,10 +120,10 @@ defineExpose({ video });
       class="absolute inset-0 z-[3] grid place-items-center content-center bg-[rgb(12_18_15_/_92%)] p-[30px] text-center backdrop-blur-lg"
     >
       <span class="text-[.7rem] font-extrabold tracking-[.16em] text-belt-light uppercase">
-        Lesson complete
+        Video complete
       </span>
       <h2 class="mt-4 mb-[7px] font-display text-[clamp(1.6rem,3vw,2.8rem)]">
-        {{ nextLesson ? "Ready for the next one?" : "Course complete." }}
+        {{ nextLesson ? "Ready for the next one?" : "Playlist complete." }}
       </h2>
       <AppButton
         v-if="nextLesson"
@@ -134,7 +134,7 @@ defineExpose({ video });
         variant="inverse"
         size="lg"
       >
-        Next lesson →
+        Next video →
       </AppButton>
     </div>
   </div>

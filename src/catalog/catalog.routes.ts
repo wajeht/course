@@ -18,27 +18,27 @@ export function createCatalogRouter(context: AppContext) {
       return c.json(catalogResponseSchema.parse(await context.catalog.getCatalog(filters)));
     })
     .get(
-      "/courses/:courseId",
+      "/playlists/:courseId",
       zValidator("param", courseParametersSchema, (result, c) => {
-        if (!result.success) return c.json({ message: "Course not found" }, 404);
+        if (!result.success) return c.json({ message: "Playlist not found" }, 404);
       }),
       async (c) => {
         const result = await context.catalog.getCourse(c.req.valid("param").courseId);
         return result
           ? c.json(courseDetailResponseSchema.parse(result))
-          : c.json({ message: "Course not found" }, 404);
+          : c.json({ message: "Playlist not found" }, 404);
       },
     )
     .get(
-      "/lessons/:lessonId",
+      "/videos/:lessonId",
       zValidator("param", lessonParametersSchema, (result, c) => {
-        if (!result.success) return c.json({ message: "Lesson not found" }, 404);
+        if (!result.success) return c.json({ message: "Video not found" }, 404);
       }),
       async (c) => {
         const result = await context.catalog.getLesson(c.req.valid("param").lessonId);
         return result
           ? c.json(lessonDetailResponseSchema.parse(result))
-          : c.json({ message: "Lesson not found" }, 404);
+          : c.json({ message: "Video not found" }, 404);
       },
     );
 }

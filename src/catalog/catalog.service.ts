@@ -35,7 +35,7 @@ export interface CourseDto {
   title: string;
   description: string;
   category: string;
-  instructors: string[];
+  authors: string[];
   tags: string[];
   coverUrl: string | null;
   lessonCount: number;
@@ -65,23 +65,23 @@ export interface CourseDetailDto extends CourseDto {
   sections: Array<{
     id: string | null;
     title: string;
-    lessons: LessonDto[];
+    videos: LessonDto[];
   }>;
 }
 
 export interface CatalogService {
   getCatalog(filters?: CatalogFilters): Promise<{
-    courses: CourseDto[];
+    playlists: CourseDto[];
     categories: CatalogFilterDto[];
-    instructors: CatalogFilterDto[];
+    authors: CatalogFilterDto[];
     tags: CatalogFilterDto[];
     continueWatching: LessonDto[];
     pagination: CatalogPaginationDto;
   }>;
   getCourse(courseId: string): Promise<CourseDetailDto | null>;
   getLesson(lessonId: string): Promise<{
-    lesson: LessonDetailDto;
-    course: CourseDetailDto;
+    video: LessonDetailDto;
+    playlist: CourseDetailDto;
   } | null>;
   findLessonRecord(lessonId: string): Promise<LessonRow | undefined>;
 }
@@ -106,7 +106,7 @@ function courseDto(row: CourseRow): CourseDto {
     title: row.title,
     description: row.description,
     category: row.category,
-    instructors: stringList(row.instructors_json),
+    authors: stringList(row.instructors_json),
     tags: stringList(row.tags_json),
     coverUrl: row.cover_path ? `/covers/${row.id}` : null,
     lessonCount,
@@ -160,10 +160,10 @@ export function createCatalogService(
       const key = row.section_id ?? "__direct";
       const section = sectionMap.get(key) ?? {
         id: row.section_id,
-        title: row.section_title ?? "Lessons",
-        lessons: [],
+        title: row.section_title ?? "Videos",
+        videos: [],
       };
-      section.lessons.push(lessonDto(row));
+      section.videos.push(lessonDto(row));
       sectionMap.set(key, section);
     }
     return { ...courseDto(courseRow), sections: [...sectionMap.values()] };
@@ -182,7 +182,7 @@ export function createCatalogService(
       const totalPages = Math.ceil(totalCourses / pageSize);
       const page = totalPages === 0 ? 1 : Math.min(Math.max(1, requestedPage), totalPages);
 
-      const [courses, categories, instructors, tags, continuing] = await Promise.all([
+      const [playlists, categories, authors, tags, continuing] = await Promise.all([
         repository.listCourses(courseFilters, { limit: pageSize, offset: (page - 1) * pageSize }),
         repository.listCategories(),
         repository.listInstructors(),
@@ -190,9 +190,9 @@ export function createCatalogService(
         repository.listContinueWatching(),
       ]);
       return {
-        courses: courses.map(courseDto),
+        playlists: playlists.map(courseDto),
         categories: categories.map(catalogFilterDto),
-        instructors: instructors.map(catalogFilterDto),
+        authors: authors.map(catalogFilterDto),
         tags: tags.map(catalogFilterDto),
         continueWatching: continuing.map(lessonDto),
         pagination: { page, pageSize, totalCourses, totalPages },
@@ -208,8 +208,8 @@ export function createCatalogService(
       ]);
       if (!courseDetail) return null;
       return {
-        lesson: { ...lessonDto(row), chapters: chapters.map(chapterDto) },
-        course: courseDetail,
+        video: { ...lessonDto(row), chapters: chapters.map(chapterDto) },
+        playlist: courseDetail,
       };
     },
     findLessonRecord: (lessonId) => repository.findLesson(lessonId),

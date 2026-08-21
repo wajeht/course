@@ -6,16 +6,16 @@ import { describe, expect, it, vi } from "vitest";
 import type { CatalogDto, CatalogFilters } from "@/api.js";
 import { useCatalogFilters } from "./useCatalogFilters.js";
 
-function catalog(title = "Course", page = 1): CatalogDto {
+function catalog(title = "Playlist", page = 1): CatalogDto {
   return {
-    courses: [
+    playlists: [
       {
         id: title,
         title,
         description: "",
         coverUrl: null,
         category: "Technology",
-        instructors: ["Instructor"],
+        authors: ["Author"],
         tags: [],
         lessonCount: 1,
         durationSeconds: 60,
@@ -24,7 +24,7 @@ function catalog(title = "Course", page = 1): CatalogDto {
       },
     ],
     categories: [],
-    instructors: [],
+    authors: [],
     tags: [],
     continueWatching: [],
     pagination: { page, pageSize: 24, totalCourses: 30, totalPages: 2 },
@@ -70,15 +70,15 @@ describe("useCatalogFilters", () => {
     };
     const { filters, stop } = await setup(
       client,
-      "/?q=guard&category=Technology&category=Martial+Arts&category=Technology&instructor=John+Danaher&tag=BJJ&page=2",
+      "/?q=guard&category=Technology&category=Martial+Arts&category=Technology&author=John+Danaher&tag=BJJ&page=2",
     );
 
-    await vi.waitFor(() => expect(filters.catalog.value.courses[0]?.title).toBe("Course"));
+    await vi.waitFor(() => expect(filters.catalog.value.playlists[0]?.title).toBe("Playlist"));
     expect(client.getCatalog).toHaveBeenCalledWith(
       {
         query: "guard",
         category: ["Martial Arts", "Technology"],
-        instructor: ["John Danaher"],
+        author: ["John Danaher"],
         tag: ["BJJ"],
         page: 2,
         pageSize: undefined,
@@ -88,13 +88,13 @@ describe("useCatalogFilters", () => {
     stop();
   });
 
-  it("uses a natural heading for a single instructor filter", async () => {
+  it("uses a natural heading for a single author filter", async () => {
     const client = {
       getCatalog: vi.fn(async () => catalog()),
     };
-    const { filters, stop } = await setup(client, "/?instructor=John+Danaher");
+    const { filters, stop } = await setup(client, "/?author=John+Danaher");
 
-    await vi.waitFor(() => expect(filters.libraryTitle.value).toBe("Courses by John Danaher"));
+    await vi.waitFor(() => expect(filters.libraryTitle.value).toBe("Playlists by John Danaher"));
     stop();
   });
 
@@ -113,11 +113,11 @@ describe("useCatalogFilters", () => {
 
   it("clears search and facet filters with one route update", async () => {
     const client = {
-      getCatalog: vi.fn(async (filters?: CatalogFilters) => catalog("Course", filters?.page)),
+      getCatalog: vi.fn(async (filters?: CatalogFilters) => catalog("Playlist", filters?.page)),
     };
     const { filters, router, stop } = await setup(
       client,
-      "/?q=guard&category=Technology&instructor=Instructor&tag=Tag&page=2&pageSize=48",
+      "/?q=guard&category=Technology&author=Author&tag=Tag&page=2&pageSize=48",
       10,
     );
 
@@ -154,22 +154,22 @@ describe("useCatalogFilters", () => {
         .mockReturnValueOnce(searchResult),
     };
     const { filters, stop } = await setup(client);
-    await vi.waitFor(() => expect(filters.catalog.value.courses[0]?.title).toBe("Old result"));
+    await vi.waitFor(() => expect(filters.catalog.value.playlists[0]?.title).toBe("Old result"));
 
     filters.query.value = "new";
     await vi.waitFor(() => expect(client.getCatalog).toHaveBeenCalledTimes(2));
-    expect(filters.catalog.value.courses[0]?.title).toBe("Old result");
+    expect(filters.catalog.value.playlists[0]?.title).toBe("Old result");
     expect(filters.loading.value).toBe(false);
     expect(filters.refreshing.value).toBe(true);
 
     resolveSearch?.(catalog("New result"));
-    await vi.waitFor(() => expect(filters.catalog.value.courses[0]?.title).toBe("New result"));
+    await vi.waitFor(() => expect(filters.catalog.value.playlists[0]?.title).toBe("New result"));
     stop();
   });
 
   it("stores pagination changes in the URL", async () => {
     const client = {
-      getCatalog: vi.fn(async (filters?: CatalogFilters) => catalog("Course", filters?.page)),
+      getCatalog: vi.fn(async (filters?: CatalogFilters) => catalog("Playlist", filters?.page)),
     };
     const { filters, router, stop } = await setup(client);
     await vi.waitFor(() => expect(filters.catalog.value.pagination.totalPages).toBe(2));
@@ -182,19 +182,19 @@ describe("useCatalogFilters", () => {
   it("appends through the URL page when accumulation is enabled", async () => {
     const client = {
       getCatalog: vi.fn(async (filters?: CatalogFilters) =>
-        filters?.page === 2 ? catalog("Second course", 2) : catalog("First course", 1),
+        filters?.page === 2 ? catalog("Second playlist", 2) : catalog("First playlist", 1),
       ),
     };
     const { filters, router, stop } = await setup(client, "/", 0, true);
-    await vi.waitFor(() => expect(filters.loadedCourses.value[0]?.title).toBe("First course"));
+    await vi.waitFor(() => expect(filters.loadedCourses.value[0]?.title).toBe("First playlist"));
 
     await filters.loadMore();
 
     await vi.waitFor(() => expect(router.currentRoute.value.query.page).toBe("2"));
     await vi.waitFor(() => expect(filters.loadedCourses.value).toHaveLength(2));
-    expect(filters.loadedCourses.value.map((course) => course.title)).toEqual([
-      "First course",
-      "Second course",
+    expect(filters.loadedCourses.value.map((playlist) => playlist.title)).toEqual([
+      "First playlist",
+      "Second playlist",
     ]);
     expect(filters.canLoadMore.value).toBe(false);
     expect(client.getCatalog).toHaveBeenLastCalledWith(
@@ -208,10 +208,10 @@ describe("useCatalogFilters", () => {
     let pageTwoAttempts = 0;
     const client = {
       getCatalog: vi.fn(async (filters?: CatalogFilters) => {
-        if (filters?.page !== 2) return catalog("First course", 1);
+        if (filters?.page !== 2) return catalog("First playlist", 1);
         pageTwoAttempts += 1;
         if (pageTwoAttempts === 1) throw new Error("Page failed");
-        return catalog("Second course", 2);
+        return catalog("Second playlist", 2);
       }),
     };
     const { filters, router, stop } = await setup(client, "/", 0, true);
@@ -221,8 +221,8 @@ describe("useCatalogFilters", () => {
 
     await vi.waitFor(() => expect(router.currentRoute.value.query.page).toBe("2"));
     expect(filters.loadingMore.value).toBe(false);
-    expect(filters.loadMoreError.value).toBe("Could not load more courses");
-    expect(filters.loadedCourses.value.map((course) => course.title)).toEqual(["First course"]);
+    expect(filters.loadMoreError.value).toBe("Could not load more playlists");
+    expect(filters.loadedCourses.value.map((playlist) => playlist.title)).toEqual(["First playlist"]);
 
     await filters.loadMore();
 
@@ -240,22 +240,22 @@ describe("useCatalogFilters", () => {
     let pageOneAttempts = 0;
     const client = {
       getCatalog: vi.fn(async (filters?: CatalogFilters) => {
-        if (filters?.page === 2) return catalog("Second course", 2);
+        if (filters?.page === 2) return catalog("Second playlist", 2);
         pageOneAttempts += 1;
         if (pageOneAttempts === 1) throw new Error("Page one failed");
-        return catalog("First course", 1);
+        return catalog("First playlist", 1);
       }),
     };
     const { filters, router, stop } = await setup(client, "/?page=2", 0, true);
-    await vi.waitFor(() => expect(filters.loadMoreError.value).toBe("Could not load more courses"));
+    await vi.waitFor(() => expect(filters.loadMoreError.value).toBe("Could not load more playlists"));
 
     await filters.loadMore();
 
     await vi.waitFor(() => expect(filters.loadedCourses.value).toHaveLength(2));
     expect(router.currentRoute.value.query.page).toBe("2");
-    expect(filters.loadedCourses.value.map((course) => course.title)).toEqual([
-      "First course",
-      "Second course",
+    expect(filters.loadedCourses.value.map((playlist) => playlist.title)).toEqual([
+      "First playlist",
+      "Second playlist",
     ]);
     expect(filters.loadingMore.value).toBe(false);
     expect(filters.loadMoreError.value).toBe("");
@@ -280,7 +280,7 @@ describe("useCatalogFilters", () => {
 
   it("normalizes a page beyond the available results", async () => {
     const client = {
-      getCatalog: vi.fn(async () => catalog("Course", 2)),
+      getCatalog: vi.fn(async () => catalog("Playlist", 2)),
     };
     const { router, stop } = await setup(client, "/?page=99");
 

@@ -11,39 +11,39 @@ import LessonRow from "./LessonRow.vue";
 
 const courseId = "a".repeat(24);
 const lessonId = "b".repeat(24);
-const lesson = {
+const video = {
   id: lessonId,
   courseId,
-  courseTitle: "Course",
+  courseTitle: "Playlist",
   courseCoverUrl: null,
   sectionId: null,
   sectionTitle: null,
-  title: "Lesson",
+  title: "Video",
   durationSeconds: 600,
   positionSeconds: 0,
   completed: false,
   progressPercent: 0,
 };
 const detail: LessonPlayerDetailDto = {
-  lesson: { ...lesson, chapters: [] },
-  course: {
+  video: { ...video, chapters: [] },
+  playlist: {
     id: courseId,
-    title: "Course",
+    title: "Playlist",
     description: "",
     category: "Uncategorized",
-    instructors: [],
+    authors: [],
     tags: [],
     coverUrl: null,
     lessonCount: 1,
     completedCount: 0,
     progressPercent: 0,
     durationSeconds: 600,
-    sections: [{ id: null, title: "Lessons", lessons: [lesson] }],
+    sections: [{ id: null, title: "Videos", videos: [video] }],
   },
 };
 
 describe("LessonRow", () => {
-  it("prefetches safe lesson data immediately on hover without preparing playback", async () => {
+  it("prefetches safe video data immediately on hover without preparing playback", async () => {
     const getLesson = vi.spyOn(api, "getLesson").mockResolvedValue(detail);
     const preparePlayback = vi.spyOn(api, "preparePlayback");
     const openLesson = vi.spyOn(api, "openLesson");
@@ -53,7 +53,7 @@ describe("LessonRow", () => {
       routes: [
         { path: "/", component: { template: "<div />" } },
         {
-          path: "/lessons/:lessonId",
+          path: "/videos/:lessonId",
           name: "player",
           component: { template: "<div />" },
         },
@@ -62,7 +62,7 @@ describe("LessonRow", () => {
     await router.push("/");
     await router.isReady();
     const wrapper = mount(LessonRow, {
-      props: { lesson, index: 0 },
+      props: { video, index: 0 },
       global: { plugins: [[VueQueryPlugin, { queryClient }], router] },
     });
 

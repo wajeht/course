@@ -51,7 +51,7 @@ async function saveSettings(): Promise<void> {
   <PanelCard :elevated="false" padding="none">
     <PanelCardHeader
       title="Library display"
-      description="Choose how many courses appear on each library page."
+      description="Choose how many playlists appear on each library page."
     />
     <form
       class="flex flex-col items-stretch gap-8 p-[clamp(22px,4vw,34px)]"
@@ -61,8 +61,8 @@ async function saveSettings(): Promise<void> {
       <FormField
         v-slot="field"
         class="w-full max-w-xs"
-        label="Courses per page"
-        help-text="This becomes the default for library and instructor pages."
+        label="Playlists per page"
+        help-text="This becomes the default for library and author pages."
       >
         <AppSelect
           :id="field.inputId"

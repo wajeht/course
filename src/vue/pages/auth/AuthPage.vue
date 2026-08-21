@@ -34,7 +34,7 @@ function forwardSetup(password: string, confirmPassword: string, setupToken?: st
   <main class="min-h-screen bg-canvas lg:grid lg:grid-cols-[1fr_2fr]">
     <aside
       class="hidden min-h-screen items-center justify-center overflow-hidden bg-pine-deep bg-[radial-gradient(circle_at_83%_20%,rgb(196_147_63_/_16%),transparent_30%),repeating-linear-gradient(90deg,transparent_0_52px,rgb(255_255_255_/_2%)_52px_53px)] px-12 text-white lg:order-2 lg:flex"
-      aria-label="A private, opinionated, self-hosted video course library."
+      aria-label="A private, opinionated, self-hosted video playlist library."
     >
       <div class="w-full max-w-[720px]">
         <AppLogo class="mb-12 text-white" />
@@ -47,7 +47,7 @@ function forwardSetup(password: string, confirmPassword: string, setupToken?: st
             <span class="block text-belt-light">self-hosted</span>
           </p>
           <p class="mt-8 max-w-xl text-xl font-medium tracking-[0.12em] text-white/60 uppercase">
-            Video course library.
+            Video playlist library.
           </p>
         </div>
       </div>
@@ -65,7 +65,7 @@ function forwardSetup(password: string, confirmPassword: string, setupToken?: st
           <p class="mt-3 text-sm leading-6 text-white/68">
             {{
               isSetup
-                ? "Create the password that protects your private course library."
+                ? "Create the password that protects your private playlist library."
                 : "Please sign in to continue."
             }}
           </p>

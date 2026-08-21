@@ -2,6 +2,20 @@ import fs from "node:fs/promises";
 
 import { z } from "zod";
 
+function uniqueValues(values: string[]): string[] {
+  const seen = new Set<string>();
+  return values.filter((value) => {
+    const key = value.toLocaleLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+const metadataNameSchema = z.string().trim().min(1);
+const filterNameSchema = metadataNameSchema.max(200);
+const metadataNamesSchema = z.array(filterNameSchema).max(50).transform(uniqueValues);
+
 const chapterSchema = z
   .object({
     title: z.string().trim().min(1).max(300),
@@ -12,7 +26,13 @@ const chapterSchema = z
 const videoMetadataSchema = z
   .object({
     version: z.literal(1),
-    chapters: z.array(chapterSchema).min(1).max(500),
+    title: metadataNameSchema.optional(),
+    description: z.string().trim().optional(),
+    cover: metadataNameSchema.optional(),
+    category: filterNameSchema.optional(),
+    authors: metadataNamesSchema.optional(),
+    tags: metadataNamesSchema.optional(),
+    chapters: z.array(chapterSchema).max(500).default([]),
   })
   .strict()
   .superRefine(({ chapters }, context) => {

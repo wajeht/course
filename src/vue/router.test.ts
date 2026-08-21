@@ -30,7 +30,7 @@ describe("router error pages", () => {
   });
 
   it("resolves unknown frontend URLs to the not-found page", () => {
-    const route = router.resolve("/missing/course/page");
+    const route = router.resolve("/missing/playlist/page");
 
     expect(route.name).toBe("not-found");
     expect(route.meta.title).toBe("Page not found");
@@ -38,9 +38,9 @@ describe("router error pages", () => {
   });
 
   it("keeps a missing resource URL while matching the not-found page", () => {
-    const route = router.resolve(notFoundLocation("/courses/missing"));
+    const route = router.resolve(notFoundLocation("/playlists/missing"));
 
-    expect(route.path).toBe("/courses/missing");
+    expect(route.path).toBe("/playlists/missing");
     expect(route.name).toBe("not-found");
   });
 });

@@ -10,14 +10,14 @@ const catalogOptions = {
     { name: "Martial Arts", courseCount: 1 },
     { name: "Technology", courseCount: 2 },
   ],
-  instructors: [{ name: "Author One", courseCount: 3 }],
+  authors: [{ name: "Author One", courseCount: 3 }],
   tags: [{ name: "Beginner", courseCount: 5 }],
 };
 
 type ToolbarProps = typeof catalogOptions & {
   category: string[];
   hasActiveFilters: boolean;
-  instructor: string[];
+  author: string[];
   query: string;
   tag: string[];
 };
@@ -36,7 +36,7 @@ function mountToolbar(overrides: Partial<ToolbarProps> = {}) {
       ...catalogOptions,
       category: [],
       hasActiveFilters: false,
-      instructor: [],
+      author: [],
       query: "",
       tag: [],
       ...overrides,

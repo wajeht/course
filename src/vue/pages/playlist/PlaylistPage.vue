@@ -4,8 +4,8 @@ import { computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { api, apiErrorMessage, isCatalogResourceNotFound } from "@/api.js";
-import CourseCurriculum from "@/pages/course/partials/CourseCurriculum.vue";
-import CourseHero from "@/pages/course/partials/CourseHero.vue";
+import CourseCurriculum from "@/pages/playlist/partials/CourseCurriculum.vue";
+import CourseHero from "@/pages/playlist/partials/CourseHero.vue";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
@@ -25,16 +25,16 @@ const courseId = computed(() => String(route.params.courseId));
 const courseRequest = useQuery(computed(() => courseQueryOptions(courseId.value)));
 const confirmation = useConfirm();
 const toast = useToast();
-const course = computed(() => courseRequest.data.value);
+const playlist = computed(() => courseRequest.data.value);
 const loading = computed(() => courseRequest.isPending.value);
 const allLessons = computed(
-  () => course.value?.sections.flatMap((section) => section.lessons) ?? [],
+  () => playlist.value?.sections.flatMap((section) => section.videos) ?? [],
 );
 const hasStarted = computed(() =>
-  allLessons.value.some((lesson) => lesson.completed || lesson.positionSeconds > 0),
+  allLessons.value.some((video) => video.completed || video.positionSeconds > 0),
 );
 const nextLesson = computed(
-  () => allLessons.value.find((lesson) => !lesson.completed) ?? allLessons.value.at(0),
+  () => allLessons.value.find((video) => !video.completed) ?? allLessons.value.at(0),
 );
 
 const resetAction = useAsyncAction(
@@ -42,32 +42,32 @@ const resetAction = useAsyncAction(
     await api.resetCourse(id);
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: queryKeys.catalog }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.course(id) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.playlist(id) }),
     ]);
   },
   {
-    errorMessage: "Could not reset course progress",
+    errorMessage: "Could not reset playlist progress",
     onSuccess: () => {
-      toast.success("Course progress reset");
+      toast.success("Playlist progress reset");
     },
   },
 );
 const error = computed(() => {
   if (resetAction.errorMessage.value) return resetAction.errorMessage.value;
   const caught = courseRequest.error.value;
-  return caught ? apiErrorMessage(caught, "Could not load this course") : "";
+  return caught ? apiErrorMessage(caught, "Could not load this playlist") : "";
 });
 
 async function resetProgress(): Promise<void> {
-  if (!course.value) return;
-  const targetCourseId = course.value.id;
+  if (!playlist.value) return;
+  const targetCourseId = playlist.value.id;
   const confirmed = await confirmation.confirm({
-    title: "Reset course progress?",
-    message: "This resets every lesson in this course and cannot be undone.",
+    title: "Reset playlist progress?",
+    message: "This resets every video in this playlist and cannot be undone.",
     confirmLabel: "Reset progress",
     variant: "danger",
   });
-  if (!confirmed || course.value?.id !== targetCourseId) return;
+  if (!confirmed || playlist.value?.id !== targetCourseId) return;
   await resetAction.run(targetCourseId);
 }
 
@@ -90,15 +90,15 @@ watch(
 </script>
 
 <template>
-  <main v-if="course">
+  <main v-if="playlist">
     <CourseHero
-      :course
+      :playlist
       :has-started="hasStarted"
-      :next-lesson="nextLesson"
+      :next-video="nextLesson"
       :resetting="resetAction.pending.value"
       @reset="resetProgress"
     />
-    <CourseCurriculum :course />
+    <CourseCurriculum :playlist />
   </main>
 
   <main
@@ -108,12 +108,12 @@ watch(
     <div
       v-if="loading"
       class="h-[42px] w-[42px] animate-spin rounded-full border-[3px] border-mist border-t-belt"
-      aria-label="Loading course"
+      aria-label="Loading playlist"
       role="status"
     />
     <EmptyState
       v-else
-      title="Course unavailable"
+      title="Playlist unavailable"
       :description="error"
       :heading-level="1"
       :framed="false"

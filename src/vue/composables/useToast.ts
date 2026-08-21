@@ -18,7 +18,7 @@ export interface ToastController {
   toasts: Readonly<Ref<readonly ToastMessage[]>>;
 }
 
-export const toastKey: InjectionKey<ToastController> = Symbol("course-toast");
+export const toastKey: InjectionKey<ToastController> = Symbol("playlist-toast");
 
 export function createToast(): ToastController {
   const toasts = ref<ToastMessage[]>([]);

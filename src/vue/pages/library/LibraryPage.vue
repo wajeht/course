@@ -38,7 +38,7 @@ const {
 } = useCatalogFilters(api, { accumulatePages: isMobile });
 const prefetch = useRoutePrefetch();
 const displayedCourses = computed(() =>
-  isMobile.value ? loadedCourses.value : catalog.value.courses,
+  isMobile.value ? loadedCourses.value : catalog.value.playlists,
 );
 
 function prefetchPage(page: number): void {
@@ -65,31 +65,31 @@ function prefetchPage(page: number): void {
         >
           <CatalogFiltersToolbar
             v-model:category="selectedCategory"
-            v-model:instructor="selectedInstructor"
+            v-model:author="selectedInstructor"
             v-model:query="query"
             v-model:tag="selectedTag"
             :categories="catalog.categories"
             :has-active-filters="hasActiveFilters"
-            :instructors="catalog.instructors"
+            :authors="catalog.authors"
             :tags="catalog.tags"
             @clear="clearFilters"
           />
         </div>
-        <div data-testid="catalog-course-column" class="min-w-0">
+        <div data-testid="catalog-playlist-column" class="min-w-0">
           <CourseCardGrid
             v-if="loading || displayedCourses.length"
-            :courses="displayedCourses"
+            :playlists="displayedCourses"
             :elevated="false"
             layout="sidebar"
             :loading
           />
           <EmptyState
             v-else
-            :title="hasActiveFilters ? 'No courses match these filters' : 'No courses found'"
+            :title="hasActiveFilters ? 'No playlists match these filters' : 'No playlists found'"
             :description="
               hasActiveFilters
-                ? 'Try another category, instructor, tag, or search term.'
-                : 'Add a course to your video folder, then refresh the library.'
+                ? 'Try another category, author, tag, or search term.'
+                : 'Add a playlist to your video folder, then refresh the library.'
             "
           >
             <template #icon>⌁</template>
@@ -114,7 +114,7 @@ function prefetchPage(page: number): void {
           <div v-if="canLoadMore" class="mt-[18px] hidden max-[600px]:block">
             <AppButton
               block
-              data-testid="load-more-courses"
+              data-testid="load-more-playlists"
               :loading="loadingMore"
               loading-label="Loading more…"
               size="lg"

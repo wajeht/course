@@ -11,11 +11,11 @@ const video = computed(() => playerStage.value?.video ?? null);
 const {
   applyResume,
   closeSidebar,
-  course,
+  playlist,
   currentTime,
   ended,
   error,
-  lesson,
+  video,
   loading,
   markComplete,
   nextLesson,
@@ -41,31 +41,31 @@ const {
     >
       <PlayerVideoStage
         ref="playerStage"
-        :course
+        :playlist
         :ended
         :error
         :loading
-        :next-lesson="nextLesson"
+        :next-video="nextLesson"
         :playback
         :retrying
         @ended="markComplete"
         @loaded-metadata="applyResume"
-        @open-lessons="toggleSidebar"
+        @open-videos="toggleSidebar"
         @pause="saveOnPause"
         @retry="retryConversion"
         @time-update="saveOnTimeUpdate"
       />
       <PlayerLessonDetails
         :current-time="currentTime"
-        :lesson
+        :video
         :resetting
         @reset="resetProgress"
         @seek="seekToChapter"
       />
     </section>
     <PlayerCurriculumSidebar
-      :active-lesson-id="lesson?.id"
-      :course
+      :active-video-id="video?.id"
+      :playlist
       :open="sidebarOpen"
       @close="closeSidebar"
     />

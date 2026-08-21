@@ -21,7 +21,7 @@ export interface CourseCountRow {
 export interface CourseFilters {
   query?: string;
   category?: string[];
-  instructor?: string[];
+  author?: string[];
   tag?: string[];
 }
 
@@ -73,72 +73,72 @@ export interface CatalogRepository {
 }
 
 const lessonSelect = [
-  "lessons.id",
-  "lessons.course_id",
-  "courses.title as course_title",
-  "courses.cover_path as course_cover_path",
-  "lessons.section_id",
+  "videos.id",
+  "videos.course_id",
+  "playlists.title as course_title",
+  "playlists.cover_path as course_cover_path",
+  "videos.section_id",
   "sections.title as section_title",
-  "lessons.title",
-  "lessons.path",
-  "lessons.duration_seconds",
-  "lessons.browser_compatible",
-  "lessons.video_codec",
-  "lessons.audio_codec",
-  "lessons.container",
+  "videos.title",
+  "videos.path",
+  "videos.duration_seconds",
+  "videos.browser_compatible",
+  "videos.video_codec",
+  "videos.audio_codec",
+  "videos.container",
   "progress.position_seconds",
   "progress.completed",
   "progress.updated_at as progress_updated_at",
-  "lessons.sort_order",
+  "videos.sort_order",
   "sections.sort_order as section_sort_order",
 ];
 
 export function createCatalogApiRepository(database: Knex): CatalogRepository {
   function createLessonsQuery() {
-    return database<LessonRow>("lessons")
-      .join("courses", "courses.id", "lessons.course_id")
-      .leftJoin("sections", "sections.id", "lessons.section_id")
-      .leftJoin("progress", "progress.lesson_id", "lessons.id")
+    return database<LessonRow>("videos")
+      .join("playlists", "playlists.id", "videos.course_id")
+      .leftJoin("sections", "sections.id", "videos.section_id")
+      .leftJoin("progress", "progress.lesson_id", "videos.id")
       .select(lessonSelect);
   }
 
   function createCourseQuery() {
-    return database<CourseRow>("courses")
-      .leftJoin("lessons", "lessons.course_id", "courses.id")
-      .leftJoin("progress", "progress.lesson_id", "lessons.id")
+    return database<CourseRow>("playlists")
+      .leftJoin("videos", "videos.course_id", "playlists.id")
+      .leftJoin("progress", "progress.lesson_id", "videos.id")
       .select(
-        "courses.id",
-        "courses.title",
-        "courses.description",
-        "courses.category",
-        "courses.instructors_json",
-        "courses.tags_json",
-        "courses.cover_path",
-        database.raw("COUNT(DISTINCT lessons.id) as lesson_count"),
+        "playlists.id",
+        "playlists.title",
+        "playlists.description",
+        "playlists.category",
+        "playlists.instructors_json",
+        "playlists.tags_json",
+        "playlists.cover_path",
+        database.raw("COUNT(DISTINCT videos.id) as lesson_count"),
         database.raw(
-          "COUNT(DISTINCT CASE WHEN progress.completed = 1 THEN lessons.id END) as completed_count",
+          "COUNT(DISTINCT CASE WHEN progress.completed = 1 THEN videos.id END) as completed_count",
         ),
-        database.raw("COALESCE(SUM(lessons.duration_seconds), 0) as total_duration"),
+        database.raw("COALESCE(SUM(videos.duration_seconds), 0) as total_duration"),
       )
-      .groupBy("courses.id");
+      .groupBy("playlists.id");
   }
 
   function applyCourseFilters(
     queryBuilder: Knex.QueryBuilder,
-    { query, category, instructor, tag }: CourseFilters = {},
+    { query, category, author, tag }: CourseFilters = {},
   ): void {
-    if (category?.length) queryBuilder.whereIn("courses.category", category);
-    if (instructor?.length) {
-      const placeholders = instructor.map(() => "?").join(", ");
+    if (category?.length) queryBuilder.whereIn("playlists.category", category);
+    if (author?.length) {
+      const placeholders = author.map(() => "?").join(", ");
       queryBuilder.whereRaw(
-        `EXISTS (SELECT 1 FROM json_each(courses.instructors_json) WHERE value COLLATE NOCASE IN (${placeholders}))`,
-        instructor,
+        `EXISTS (SELECT 1 FROM json_each(playlists.instructors_json) WHERE value COLLATE NOCASE IN (${placeholders}))`,
+        author,
       );
     }
     if (tag?.length) {
       const placeholders = tag.map(() => "?").join(", ");
       queryBuilder.whereRaw(
-        `EXISTS (SELECT 1 FROM json_each(courses.tags_json) WHERE value COLLATE NOCASE IN (${placeholders}))`,
+        `EXISTS (SELECT 1 FROM json_each(playlists.tags_json) WHERE value COLLATE NOCASE IN (${placeholders}))`,
         tag,
       );
     }
@@ -146,15 +146,15 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
       const search = `%${query}%`;
       queryBuilder.where((where) => {
         where
-          .whereLike("courses.title", search)
-          .orWhereLike("courses.description", search)
-          .orWhereLike("courses.category", search)
-          .orWhereLike("courses.instructors_json", search)
-          .orWhereLike("courses.tags_json", search)
+          .whereLike("playlists.title", search)
+          .orWhereLike("playlists.description", search)
+          .orWhereLike("playlists.category", search)
+          .orWhereLike("playlists.instructors_json", search)
+          .orWhereLike("playlists.tags_json", search)
           .orWhereExists(
-            database("lessons as matching_lessons")
+            database("videos as matching_lessons")
               .select(database.raw("1"))
-              .whereRaw("matching_lessons.course_id = courses.id")
+              .whereRaw("matching_lessons.course_id = playlists.id")
               .whereLike("matching_lessons.title", search),
           );
       });
@@ -163,15 +163,15 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
 
   return {
     async listCourses(filters = {}, pagination) {
-      const queryBuilder = createCourseQuery().orderBy("courses.sort_order");
+      const queryBuilder = createCourseQuery().orderBy("playlists.sort_order");
       applyCourseFilters(queryBuilder, filters);
       if (pagination) queryBuilder.limit(pagination.limit).offset(pagination.offset);
       return queryBuilder;
     },
 
     async countCourses(filters = {}) {
-      const queryBuilder = database("courses")
-        .countDistinct({ course_count: "courses.id" })
+      const queryBuilder = database("playlists")
+        .countDistinct({ course_count: "playlists.id" })
         .first();
       applyCourseFilters(queryBuilder, filters);
       const row = (await queryBuilder) as { course_count?: number | string } | undefined;
@@ -179,9 +179,9 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
     },
 
     async listCategories(filters = {}) {
-      const queryBuilder = database<CourseCountRow>("courses")
+      const queryBuilder = database<CourseCountRow>("playlists")
         .select("category as name")
-        .countDistinct("courses.id as course_count")
+        .countDistinct("playlists.id as course_count")
         .groupBy("category")
         .orderByRaw("category COLLATE NOCASE");
       applyCourseFilters(queryBuilder, filters);
@@ -189,21 +189,21 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
     },
 
     async listInstructors(filters = {}) {
-      const queryBuilder = database<CourseCountRow>("courses")
-        .joinRaw("JOIN json_each(courses.instructors_json) AS instructor")
-        .select(database.raw("MIN(instructor.value) as name"))
-        .countDistinct("courses.id as course_count")
-        .groupByRaw("instructor.value COLLATE NOCASE")
+      const queryBuilder = database<CourseCountRow>("playlists")
+        .joinRaw("JOIN json_each(playlists.instructors_json) AS author")
+        .select(database.raw("MIN(author.value) as name"))
+        .countDistinct("playlists.id as course_count")
+        .groupByRaw("author.value COLLATE NOCASE")
         .orderByRaw("name COLLATE NOCASE");
       applyCourseFilters(queryBuilder, filters);
       return (await queryBuilder) as unknown as CourseCountRow[];
     },
 
     async listTags(filters = {}) {
-      const queryBuilder = database<CourseCountRow>("courses")
-        .joinRaw("JOIN json_each(courses.tags_json) AS tag")
+      const queryBuilder = database<CourseCountRow>("playlists")
+        .joinRaw("JOIN json_each(playlists.tags_json) AS tag")
         .select(database.raw("MIN(tag.value) as name"))
-        .countDistinct("courses.id as course_count")
+        .countDistinct("playlists.id as course_count")
         .groupByRaw("tag.value COLLATE NOCASE")
         .orderByRaw("name COLLATE NOCASE");
       applyCourseFilters(queryBuilder, filters);
@@ -218,8 +218,8 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
           progress.lesson_id = (
             SELECT recent_progress.lesson_id
             FROM progress AS recent_progress
-            JOIN lessons AS recent_lessons ON recent_lessons.id = recent_progress.lesson_id
-            WHERE recent_lessons.course_id = lessons.course_id
+            JOIN videos AS recent_lessons ON recent_lessons.id = recent_progress.lesson_id
+            WHERE recent_lessons.course_id = videos.course_id
               AND recent_progress.position_seconds > 0
               AND recent_progress.completed = 0
             ORDER BY recent_progress.updated_at DESC, recent_progress.lesson_id DESC
@@ -231,19 +231,19 @@ export function createCatalogApiRepository(database: Knex): CatalogRepository {
     },
 
     findCourse(courseId) {
-      return createCourseQuery().where("courses.id", courseId).first();
+      return createCourseQuery().where("playlists.id", courseId).first();
     },
 
     listCourseLessons(courseId) {
       return createLessonsQuery()
-        .where("lessons.course_id", courseId)
-        .orderByRaw("lessons.section_id IS NOT NULL")
+        .where("videos.course_id", courseId)
+        .orderByRaw("videos.section_id IS NOT NULL")
         .orderBy("sections.sort_order")
-        .orderBy("lessons.sort_order");
+        .orderBy("videos.sort_order");
     },
 
     findLesson(lessonId) {
-      return createLessonsQuery().where("lessons.id", lessonId).first();
+      return createLessonsQuery().where("videos.id", lessonId).first();
     },
 
     listLessonChapters(lessonId) {

@@ -42,14 +42,14 @@ export function createPlaybackService(
 ): PlaybackService {
   return {
     async preparePlayback(lessonId) {
-      const lesson = await catalog.findLessonRecord(lessonId);
-      if (!lesson) return null;
-      if (lesson.browser_compatible !== 0) return { kind: "direct", url: `/media/${lessonId}` };
-      return resolveConversionPlayback(await conversions.requestConversion(lesson));
+      const video = await catalog.findLessonRecord(lessonId);
+      if (!video) return null;
+      if (video.browser_compatible !== 0) return { kind: "direct", url: `/media/${lessonId}` };
+      return resolveConversionPlayback(await conversions.requestConversion(video));
     },
     async retryConversion(lessonId) {
-      const lesson = await catalog.findLessonRecord(lessonId);
-      return lesson ? resolveConversionPlayback(await conversions.retryConversion(lesson)) : null;
+      const video = await catalog.findLessonRecord(lessonId);
+      return video ? resolveConversionPlayback(await conversions.retryConversion(video)) : null;
     },
     async getConversionStatus(lessonId) {
       const record = await conversions.getConversion(lessonId);

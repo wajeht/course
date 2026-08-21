@@ -11,7 +11,7 @@ it locally or with Docker.
 Create a focused branch using `<type>/<description>`:
 
 ```bash
-git checkout -b feat/course-filtering
+git checkout -b feat/playlist-filtering
 ```
 
 Common types are `feat`, `fix`, `docs`, `refactor`, `test`, and `chore`.

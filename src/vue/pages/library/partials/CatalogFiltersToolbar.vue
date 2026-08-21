@@ -7,19 +7,19 @@ import PanelCard from "@/components/ui/PanelCard.vue";
 import CatalogFilterGroup from "@/pages/library/partials/CatalogFilterGroup.vue";
 import CatalogSearchInput from "@/pages/library/partials/CatalogSearchInput.vue";
 
-type FilterType = "category" | "instructor" | "tag";
+type FilterType = "category" | "author" | "tag";
 
 const props = defineProps<{
   categories: CatalogDto["categories"];
   hasActiveFilters: boolean;
-  instructors: CatalogDto["instructors"];
+  authors: CatalogDto["authors"];
   tags: CatalogDto["tags"];
 }>();
 
 const emit = defineEmits<{ clear: [] }>();
 
 const category = defineModel<string[]>("category", { required: true });
-const instructor = defineModel<string[]>("instructor", { required: true });
+const author = defineModel<string[]>("author", { required: true });
 const query = defineModel<string>("query", { required: true });
 const tag = defineModel<string[]>("tag", { required: true });
 
@@ -32,10 +32,10 @@ const mobileFilterButtons = computed(() => [
     values: category.value,
   },
   {
-    label: "Instructors",
-    singularLabel: "Instructor",
-    type: "instructor" as const,
-    values: instructor.value,
+    label: "Authors",
+    singularLabel: "Author",
+    type: "author" as const,
+    values: author.value,
   },
   { label: "Tags", singularLabel: "Tag", type: "tag" as const, values: tag.value },
 ]);
@@ -51,12 +51,12 @@ const mobilePanel = computed(() => {
       type: panel,
     };
   }
-  if (panel === "instructor") {
+  if (panel === "author") {
     return {
-      allLabel: "All instructors",
-      closeLabel: "Close instructor filters",
-      options: props.instructors,
-      title: "Instructors",
+      allLabel: "All authors",
+      closeLabel: "Close author filters",
+      options: props.authors,
+      title: "Authors",
       type: panel,
     };
   }
@@ -75,13 +75,13 @@ const mobilePanel = computed(() => {
 const mobilePanelValue = computed({
   get: () => {
     if (activeMobilePanel.value === "category") return category.value;
-    if (activeMobilePanel.value === "instructor") return instructor.value;
+    if (activeMobilePanel.value === "author") return author.value;
     if (activeMobilePanel.value === "tag") return tag.value;
     return [];
   },
   set: (values: string[]) => {
     if (activeMobilePanel.value === "category") category.value = values;
-    if (activeMobilePanel.value === "instructor") instructor.value = values;
+    if (activeMobilePanel.value === "author") author.value = values;
     if (activeMobilePanel.value === "tag") tag.value = values;
   },
 });
@@ -121,11 +121,11 @@ function togglePanel(panel: FilterType): void {
 
         <PanelCard :elevated="false" padding="compact">
           <CatalogFilterGroup
-            v-model="instructor"
-            all-label="All instructors"
-            label="Instructors"
-            name="catalog-desktop-instructor"
-            :options="props.instructors"
+            v-model="author"
+            all-label="All authors"
+            label="Authors"
+            name="catalog-desktop-author"
+            :options="props.authors"
           />
         </PanelCard>
 

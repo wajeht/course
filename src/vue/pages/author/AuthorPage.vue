@@ -5,7 +5,7 @@ import { useRoute, useRouter } from "vue-router";
 
 import { api, apiErrorMessage, type CatalogFilters } from "@/api.js";
 import CourseCardGrid from "@/pages/catalog/partials/CourseCardGrid.vue";
-import InstructorHero from "@/pages/instructor/partials/InstructorHero.vue";
+import InstructorHero from "@/pages/author/partials/InstructorHero.vue";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
@@ -26,7 +26,7 @@ const page = computed(() => {
   return Number.isInteger(value) && value > 0 ? value : 1;
 });
 const filters = computed<CatalogFilters>(() => ({
-  instructor: [instructorName.value],
+  author: [instructorName.value],
   page: page.value,
 }));
 const instructorRequest = useQuery(computed(() => catalogQueryOptions(filters.value, api)));
@@ -34,7 +34,7 @@ const loadedInstructorName = shallowRef("");
 const catalog = computed(() =>
   loadedInstructorName.value === instructorName.value ? instructorRequest.data.value : undefined,
 );
-const courses = computed(() => catalog.value?.courses ?? []);
+const playlists = computed(() => catalog.value?.playlists ?? []);
 const loading = computed(
   () =>
     instructorRequest.isPending.value ||
@@ -43,7 +43,7 @@ const loading = computed(
 const refreshing = computed(() => instructorRequest.isFetching.value && !loading.value);
 const error = computed(() => {
   const caught = instructorRequest.error.value;
-  return caught ? apiErrorMessage(caught, "Could not load this instructor") : "";
+  return caught ? apiErrorMessage(caught, "Could not load this author") : "";
 });
 const instructorInitials = computed(() =>
   instructorName.value
@@ -90,9 +90,9 @@ watch(
 </script>
 
 <template>
-  <main v-if="!loading && courses.length">
+  <main v-if="!loading && playlists.length">
     <InstructorHero
-      :course-count="catalog?.pagination.totalCourses ?? 0"
+      :playlist-count="catalog?.pagination.totalCourses ?? 0"
       :initials="instructorInitials"
       :name="instructorName"
     />
@@ -103,11 +103,11 @@ watch(
     >
       <PageHeader
         class="mb-7"
-        eyebrow="Courses"
-        :title="`Courses by ${instructorName}`"
+        eyebrow="Playlists"
+        :title="`Playlists by ${instructorName}`"
         :heading-level="2"
       />
-      <CourseCardGrid :courses />
+      <CourseCardGrid :playlists />
       <PaginationControls
         :disabled="refreshing"
         :page="page"
@@ -125,13 +125,13 @@ watch(
     <div
       v-if="loading"
       class="h-[42px] w-[42px] animate-spin rounded-full border-[3px] border-mist border-t-belt"
-      aria-label="Loading instructor courses"
+      aria-label="Loading author playlists"
       role="status"
     />
     <EmptyState
       v-else
-      title="Instructor unavailable"
-      :description="error || `No courses are currently listed for ${instructorName}.`"
+      title="Author unavailable"
+      :description="error || `No playlists are currently listed for ${instructorName}.`"
       :heading-level="1"
       :framed="false"
     >

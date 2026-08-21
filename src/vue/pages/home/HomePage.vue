@@ -12,7 +12,7 @@ const catalogRequest = useQuery(catalogQueryOptions({}, api));
 const continueWatching = computed(() => catalogRequest.data.value?.continueWatching ?? []);
 const error = computed(() => {
   const caught = catalogRequest.error.value;
-  return caught ? apiErrorMessage(caught, "Could not load your courses") : "";
+  return caught ? apiErrorMessage(caught, "Could not load your playlists") : "";
 });
 </script>
 
@@ -23,7 +23,7 @@ const error = computed(() => {
     </AlertMessage>
 
     <ContinueWatchingSection
-      :lessons="continueWatching"
+      :videos="continueWatching"
       :loading="catalogRequest.isPending.value"
     />
   </StandardPageLayout>

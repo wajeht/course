@@ -44,7 +44,7 @@ export function useCatalogRouteState(debounceMilliseconds = 150) {
     return next;
   }
 
-  function selectFilters(name: "category" | "instructor" | "tag", values: string[]): void {
+  function selectFilters(name: "category" | "author" | "tag", values: string[]): void {
     const selected = [...new Set(values)].sort((left, right) => left.localeCompare(right));
     void router.push({
       query: routeQuery({ [name]: selected.length ? selected : undefined, page: undefined }),
@@ -56,8 +56,8 @@ export function useCatalogRouteState(debounceMilliseconds = 150) {
     set: (values: string[]) => selectFilters("category", values),
   });
   const selectedInstructor = computed({
-    get: () => queryStrings(route.query.instructor),
-    set: (values: string[]) => selectFilters("instructor", values),
+    get: () => queryStrings(route.query.author),
+    set: (values: string[]) => selectFilters("author", values),
   });
   const selectedTag = computed({
     get: () => queryStrings(route.query.tag),
@@ -70,7 +70,7 @@ export function useCatalogRouteState(debounceMilliseconds = 150) {
   const filters = computed<CatalogFilters>(() => ({
     query: searchQuery.value || undefined,
     category: selectedCategory.value.length ? selectedCategory.value : undefined,
-    instructor: selectedInstructor.value.length ? selectedInstructor.value : undefined,
+    author: selectedInstructor.value.length ? selectedInstructor.value : undefined,
     tag: selectedTag.value.length ? selectedTag.value : undefined,
     page: page.value,
     pageSize: queryPageSize(route.query.pageSize),
@@ -112,7 +112,7 @@ export function useCatalogRouteState(debounceMilliseconds = 150) {
     void router.push({
       query: routeQuery({
         category: undefined,
-        instructor: undefined,
+        author: undefined,
         page: undefined,
         q: undefined,
         tag: undefined,
