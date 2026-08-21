@@ -27,6 +27,7 @@ test("filters through the API and uses the responsive mobile sheet", async ({ pa
 
   const categoryButton = page.locator('[data-mobile-filter="category"]');
   const filterColumn = page.getByTestId("catalog-filter-column");
+  const courseColumn = page.getByTestId("catalog-course-column");
   await expect(categoryButton).toBeVisible();
   expect((await categoryButton.boundingBox())!.height).toBeGreaterThanOrEqual(40);
   await expect(filterColumn).toHaveCSS("position", "sticky");
@@ -42,6 +43,13 @@ test("filters through the API and uses the responsive mobile sheet", async ({ pa
   const mobileClientWidth = await page.evaluate(() => document.documentElement.clientWidth);
   expect(mobileFilterBox.x).toBe(0);
   expect(mobileFilterBox.width).toBe(mobileClientWidth);
+  const mobileSearchBox = (await page
+    .locator('[data-testid="catalog-search"]:visible')
+    .boundingBox())!;
+  const mobileActionsBox = (await page.getByTestId("mobile-filter-actions").boundingBox())!;
+  const mobileCourseBox = (await courseColumn.boundingBox())!;
+  expect(Math.round(mobileSearchBox.y - mobileFilterBox.y)).toBe(18);
+  expect(Math.round(mobileCourseBox.y - (mobileActionsBox.y + mobileActionsBox.height))).toBe(18);
   await filterColumn.evaluate((element) => {
     element.closest<HTMLElement>('[data-testid="catalog-layout"]')!.style.minHeight = "1800px";
   });
@@ -84,7 +92,6 @@ test("filters through the API and uses the responsive mobile sheet", async ({ pa
   await expect(page).not.toHaveURL(/category=/);
 
   await page.setViewportSize({ width: 800, height: 900 });
-  const courseColumn = page.getByTestId("catalog-course-column");
   expect((await filterColumn.boundingBox())!.width).toBe(260);
   expect((await courseColumn.boundingBox())!.width).toBeGreaterThan(440);
   await expect(filterColumn).toHaveCSS("top", "90px");

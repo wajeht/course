@@ -44,11 +44,11 @@ function prefetchPage(page: number): void {
 
       <div
         data-testid="catalog-layout"
-        class="mt-6 grid grid-cols-1 items-start gap-[clamp(18px,2vw,30px)] min-[761px]:grid-cols-[260px_minmax(0,1fr)]"
+        class="mt-0 grid grid-cols-1 items-start gap-0 min-[761px]:mt-6 min-[761px]:grid-cols-[260px_minmax(0,1fr)] min-[761px]:gap-[clamp(18px,2vw,30px)]"
       >
         <div
           data-testid="catalog-filter-column"
-          class="sticky top-[calc(66px+env(safe-area-inset-top))] z-30 self-start max-[760px]:-mx-5 max-[760px]:bg-porcelain max-[760px]:px-5 max-[760px]:py-3 min-[761px]:top-[calc(90px+env(safe-area-inset-top))] min-[761px]:z-auto min-[761px]:max-h-[calc(100dvh-114px-env(safe-area-inset-top))] min-[761px]:overflow-y-auto"
+          class="sticky top-[calc(66px+env(safe-area-inset-top))] z-30 self-start max-[760px]:-mx-5 max-[760px]:bg-porcelain max-[760px]:px-5 max-[760px]:py-[18px] min-[761px]:top-[calc(90px+env(safe-area-inset-top))] min-[761px]:z-auto min-[761px]:max-h-[calc(100dvh-114px-env(safe-area-inset-top))] min-[761px]:overflow-y-auto"
         >
           <CatalogFiltersToolbar
             v-model:category="selectedCategory"
