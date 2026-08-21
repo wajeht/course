@@ -108,16 +108,21 @@ describe("application", () => {
     expect(await cover.text()).toBe("cover");
 
     const openLesson = vi.spyOn(context.progress, "openLesson");
+    const lessonDetail = await app.request(`/api/catalog/lessons/${"b".repeat(24)}`, {
+      headers: { cookie: cookie! },
+    });
+    expect(lessonDetail.status).toBe(200);
+    expect(await lessonDetail.json()).toMatchObject({
+      lesson: { id: "b".repeat(24), title: "Lesson" },
+      course: { id: "a".repeat(24), title: "Course" },
+    });
+
     const player = await app.request(`/api/playback/${"b".repeat(24)}`, {
       method: "POST",
       headers: { cookie: cookie!, origin: "http://localhost" },
     });
     expect(player.status).toBe(200);
-    expect(await player.json()).toMatchObject({
-      lesson: { id: "b".repeat(24), title: "Lesson" },
-      course: { id: "a".repeat(24), title: "Course" },
-      playback: { kind: "direct", url: `/media/${"b".repeat(24)}` },
-    });
+    expect(await player.json()).toEqual({ kind: "direct", url: `/media/${"b".repeat(24)}` });
     expect(openLesson).not.toHaveBeenCalled();
 
     const apiNotFound = await app.request("/api/does-not-exist", {

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { RouterLink } from "vue-router";
-
 import type { CourseDetailDto, LessonDto } from "@/api.js";
 import CourseCoverPlaceholder from "@/components/CourseCoverPlaceholder.vue";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
@@ -9,7 +7,7 @@ import ProgressBar from "@/components/ui/ProgressBar.vue";
 import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import { countText, durationText } from "@/utils.js";
 
-defineProps<{
+const props = defineProps<{
   course: CourseDetailDto;
   hasStarted: boolean;
   nextLesson?: LessonDto;
@@ -18,6 +16,11 @@ defineProps<{
 
 const emit = defineEmits<{ reset: [] }>();
 const prefetch = useRoutePrefetch();
+
+async function prefetchNextLesson(): Promise<void> {
+  if (!props.nextLesson) return;
+  await prefetch.lesson(props.nextLesson.id);
+}
 </script>
 
 <template>
@@ -90,8 +93,10 @@ const prefetch = useRoutePrefetch();
       <div class="flex flex-wrap gap-[10px] max-[600px]:col-span-full">
         <AppButton
           v-if="nextLesson"
-          :as="RouterLink"
+          :as="IntentRouterLink"
           :to="{ name: 'player', params: { lessonId: nextLesson.id } }"
+          :prefetch="prefetchNextLesson"
+          immediate
           variant="accent"
           size="lg"
         >

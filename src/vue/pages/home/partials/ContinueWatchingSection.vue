@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { RouterLink } from "vue-router";
-
 import type { CatalogDto } from "@/api.js";
 import CourseCoverPlaceholder from "@/components/CourseCoverPlaceholder.vue";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
@@ -38,10 +36,12 @@ const prefetch = useRoutePrefetch();
       v-else-if="lessons.length"
       class="grid grid-cols-4 gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[600px]:grid-cols-1"
     >
-      <RouterLink
+      <IntentRouterLink
         v-for="lesson in lessons"
         :key="lesson.id"
         :to="{ name: 'player', params: { lessonId: lesson.id } }"
+        :prefetch="() => prefetch.lesson(lesson.id)"
+        immediate
         class="group relative min-h-[230px] min-w-0 overflow-hidden rounded-[10px] bg-pine text-white"
       >
         <img
@@ -73,7 +73,7 @@ const prefetch = useRoutePrefetch();
         >
           ▶
         </span>
-      </RouterLink>
+      </IntentRouterLink>
     </div>
     <EmptyState
       v-else

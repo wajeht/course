@@ -18,7 +18,7 @@ import { usePauseVideoOnHidden } from "@/composables/usePauseVideoOnHidden.js";
 import { useScreenWakeLock } from "@/composables/useScreenWakeLock.js";
 import { useToast } from "@/composables/useToast.js";
 import { useVideoPlayback } from "@/composables/useVideoPlayback.js";
-import { queryKeys } from "@/queries.js";
+import { lessonQueryOptions, queryKeys } from "@/queries.js";
 import { notFoundLocation } from "@/router.js";
 import { setPageTitle } from "@/utils.js";
 
@@ -36,7 +36,7 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
   const toast = useToast();
   const playbackProgress = usePlaybackProgress(async (lessonId, positionSeconds) => {
     await api.saveProgress(lessonId, positionSeconds);
-    await invalidateProgressCaches(courseState.value?.id);
+    await invalidateProgressCaches(courseState.value?.id, lessonId);
   });
   const videoPlayback = useVideoPlayback(video, api);
   const retryAction = useAsyncAction(async (lessonId: string) => {
@@ -67,7 +67,7 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
       },
       onSuccess: async (reset) => {
         if (!reset) return;
-        await invalidateProgressCaches(courseState.value?.id);
+        await invalidateProgressCaches(courseState.value?.id, lessonState.value?.id);
         toast.success("Lesson progress reset");
       },
     },
@@ -99,13 +99,28 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
     return queryClient.invalidateQueries({ queryKey: queryKeys.catalog, refetchType: "none" });
   }
 
-  async function invalidateProgressCaches(courseId: string | undefined): Promise<void> {
-    await invalidateCatalogCache();
-    if (!courseId) return;
-    await queryClient.invalidateQueries({
-      queryKey: queryKeys.course(courseId),
-      refetchType: "none",
-    });
+  async function invalidateProgressCaches(
+    courseId: string | undefined,
+    lessonId: string | undefined,
+  ): Promise<void> {
+    const invalidations = [invalidateCatalogCache()];
+    if (courseId) {
+      invalidations.push(
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.course(courseId),
+          refetchType: "none",
+        }),
+      );
+    }
+    if (lessonId) {
+      invalidations.push(
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.lesson(lessonId),
+          refetchType: "none",
+        }),
+      );
+    }
+    await Promise.all(invalidations);
   }
 
   function openLessonFromMediaSession(target: LessonDto | undefined): void {
@@ -155,7 +170,10 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
     sidebarOpenState.value = false;
     try {
       const lessonId = String(route.params.lessonId);
-      const detail = await api.openPlayer(lessonId);
+      const [detail, playback] = await Promise.all([
+        queryClient.fetchQuery(lessonQueryOptions(lessonId)),
+        api.preparePlayback(lessonId),
+      ]);
       if (!videoPlayback.isCurrentRequest(requestId)) return;
       await api.openLesson(lessonId);
       await invalidateCatalogCache();
@@ -165,7 +183,7 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
       playbackProgress.startSession(detail.lesson.id, detail.lesson.positionSeconds);
       courseState.value = detail.course;
       queryClient.setQueryData(queryKeys.course(detail.course.id), detail.course);
-      await videoPlayback.applyPlayback(detail.playback, lessonId, requestId);
+      await videoPlayback.applyPlayback(playback, lessonId, requestId);
     } catch (caught) {
       if (!videoPlayback.isCurrentRequest(requestId)) return;
       if (isCatalogResourceNotFound(caught)) {
@@ -227,9 +245,10 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
 
   async function markComplete(): Promise<void> {
     if (!lessonState.value) return;
+    const lessonId = lessonState.value.id;
     try {
-      await api.completeLesson(lessonState.value.id);
-      await invalidateProgressCaches(courseState.value?.id);
+      await api.completeLesson(lessonId);
+      await invalidateProgressCaches(courseState.value?.id, lessonId);
       endedState.value = true;
       playbackProgress.stopSession();
       lessonState.value.completed = true;
