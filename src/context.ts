@@ -5,9 +5,9 @@ import { createAuthService, type AuthService } from "./auth/auth.service.js";
 import { configuration as defaultConfiguration, type Configuration } from "./config.js";
 import { createDatabase, type Database } from "./db/db.js";
 import {
-  createCatalogRepository,
-  type CatalogRepository as ScannerCatalogRepository,
-} from "./media/catalog.repository.js";
+  createLibraryRepository,
+  type LibraryRepository as ScannerLibraryRepository,
+} from "./media/library.repository.js";
 import { createConversionManager, type ConversionManager } from "./media/conversion.js";
 import { createConversionRepository } from "./media/conversion.repository.js";
 import { createScanner, type Scanner } from "./media/scanner.js";
@@ -29,7 +29,7 @@ export interface AppContext {
   database: Database;
   auth: AuthService;
   catalogRepository: CatalogRepository;
-  scannerCatalogRepository: ScannerCatalogRepository;
+  scannerLibraryRepository: ScannerLibraryRepository;
   catalog: CatalogService;
   progress: ProgressService;
   settings: SettingsService;
@@ -48,7 +48,7 @@ export async function createContext(
   ]);
   const database = await createDatabase(configuration, logger);
   const auth = createAuthService(createAuthRepository(database.connection), configuration);
-  const scannerCatalogRepository = createCatalogRepository(database.connection);
+  const scannerLibraryRepository = createLibraryRepository(database.connection);
   const catalogRepository = createCatalogApiRepository(database.connection);
   const settings = createSettingsService(createSettingsRepository(database.connection));
   const catalog = createCatalogService(catalogRepository, settings);
@@ -56,7 +56,7 @@ export async function createContext(
     createProgressRepository(database.connection),
     catalogRepository,
   );
-  const scanner = createScanner({ configuration, repository: scannerCatalogRepository, logger });
+  const scanner = createScanner({ configuration, repository: scannerLibraryRepository, logger });
   const conversions = createConversionManager({
     repository: createConversionRepository(database.connection),
     catalog: catalogRepository,
@@ -71,7 +71,7 @@ export async function createContext(
     database,
     auth,
     catalogRepository,
-    scannerCatalogRepository,
+    scannerLibraryRepository,
     catalog,
     progress,
     settings,

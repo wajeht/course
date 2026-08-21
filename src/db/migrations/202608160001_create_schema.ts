@@ -28,7 +28,6 @@ export async function up(knex: Knex): Promise<void> {
     table.text("title").notNullable();
     table.integer("sort_order").notNullable();
     table.unique(["id", "playlist_id"]);
-    table.unique(["playlist_id", "sort_order"]);
   });
 
   await knex.schema.createTable("videos", (table) => {
@@ -50,7 +49,6 @@ export async function up(knex: Knex): Promise<void> {
     table.text("audio_codec");
     table.boolean("browser_compatible").notNullable().defaultTo(false);
     table.text("modified_at").notNullable();
-    table.unique(["playlist_id", "sort_order"]);
     table
       .foreign(["playlist_section_id", "playlist_id"])
       .references(["id", "playlist_id"])
@@ -78,7 +76,6 @@ export async function up(knex: Knex): Promise<void> {
     table.text("author_id").notNullable().references("id").inTable("authors").onDelete("CASCADE");
     table.integer("sort_order").notNullable();
     table.primary(["playlist_id", "author_id"]);
-    table.unique(["playlist_id", "sort_order"]);
   });
 
   await knex.schema.createTable("video_authors", (table) => {
@@ -86,7 +83,6 @@ export async function up(knex: Knex): Promise<void> {
     table.text("author_id").notNullable().references("id").inTable("authors").onDelete("CASCADE");
     table.integer("sort_order").notNullable();
     table.primary(["video_id", "author_id"]);
-    table.unique(["video_id", "sort_order"]);
   });
 
   await knex.schema.createTable("chapters", (table) => {

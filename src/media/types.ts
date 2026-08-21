@@ -1,29 +1,34 @@
-export interface CourseRecord {
+export interface PlaylistRecord {
   id: string;
   path: string;
   title: string;
   description: string;
-  category: string;
-  instructors: string[];
   tags: string[];
   coverPath: string | null;
+  sourceProvider: string | null;
+  sourceUrl: string | null;
   sortOrder: number;
 }
 
-export interface SectionRecord {
+export interface PlaylistSectionRecord {
   id: string;
-  courseId: string;
+  playlistId: string;
   path: string;
   title: string;
   sortOrder: number;
 }
 
-export interface LessonRecord {
+export interface VideoRecord {
   id: string;
-  courseId: string;
-  sectionId: string | null;
   path: string;
+  playlistId: string | null;
+  playlistSectionId: string | null;
   title: string;
+  description: string;
+  tags: string[];
+  coverPath: string | null;
+  sourceProvider: string | null;
+  sourceUrl: string | null;
   sortOrder: number;
   durationSeconds: number;
   sizeBytes: number;
@@ -34,20 +39,41 @@ export interface LessonRecord {
   modifiedAt: string;
 }
 
+export interface AuthorRecord {
+  id: string;
+  name: string;
+  normalizedName: string;
+}
+
+export interface PlaylistAuthorRecord {
+  playlistId: string;
+  authorId: string;
+  sortOrder: number;
+}
+
+export interface VideoAuthorRecord {
+  videoId: string;
+  authorId: string;
+  sortOrder: number;
+}
+
 export interface ChapterRecord {
   id: string;
-  lessonId: string;
+  videoId: string;
   title: string;
   startSeconds: number;
   sortOrder: number;
 }
 
-export interface CatalogSnapshot {
-  courses: CourseRecord[];
-  sections: SectionRecord[];
-  lessons: LessonRecord[];
+export interface LibrarySnapshot {
+  playlists: PlaylistRecord[];
+  playlistSections: PlaylistSectionRecord[];
+  videos: VideoRecord[];
+  authors: AuthorRecord[];
+  playlistAuthors: PlaylistAuthorRecord[];
+  videoAuthors: VideoAuthorRecord[];
   chapters: ChapterRecord[];
-  skippedLessonIds: string[];
+  skippedVideoIds: string[];
 }
 
 export interface ScanWarning {
@@ -59,8 +85,8 @@ export interface ScanStatus {
   status: "idle" | "scanning" | "complete" | "failed";
   startedAt: string | null;
   completedAt: string | null;
-  courseCount: number;
-  lessonCount: number;
+  playlistCount: number;
+  videoCount: number;
   warnings: ScanWarning[];
   error: string | null;
 }
