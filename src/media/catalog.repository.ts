@@ -36,16 +36,16 @@ export function createCatalogRepository(database: Knex): CatalogRepository {
         await upsertSnapshot(transaction, snapshot);
 
         await deleteMissingChapters(transaction, snapshot);
-        await deleteMissing(transaction, "lessons", [
+        await deleteMissingRecords(transaction, "lessons", [
           ...snapshot.lessons.map((item) => item.id),
           ...snapshot.skippedLessonIds,
         ]);
-        await deleteMissing(
+        await deleteMissingRecords(
           transaction,
           "sections",
           snapshot.sections.map((item) => item.id),
         );
-        await deleteMissing(
+        await deleteMissingRecords(
           transaction,
           "courses",
           snapshot.courses.map((item) => item.id),
@@ -239,7 +239,7 @@ async function deleteMissingChapters(
   }
 }
 
-async function deleteMissing(
+async function deleteMissingRecords(
   transaction: Knex.Transaction,
   table: "courses" | "sections" | "lessons",
   ids: string[],

@@ -3,7 +3,7 @@ export interface ByteRange {
   end: number;
 }
 
-export function parseByteRange(header: string | undefined, size: number): ByteRange | null {
+export function byteRange(header: string | undefined, size: number): ByteRange | null {
   if (!header) return null;
   const match = /^bytes=(\d*)-(\d*)$/.exec(header.trim());
   if (!match) throw new RangeError("Only one byte range is supported");

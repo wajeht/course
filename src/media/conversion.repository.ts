@@ -20,7 +20,10 @@ export interface ConversionRepository {
 }
 
 export function createConversionRepository(database: Knex): ConversionRepository {
-  async function update(lessonId: string, values: Record<string, unknown>): Promise<void> {
+  async function updateConversion(
+    lessonId: string,
+    values: Record<string, unknown>,
+  ): Promise<void> {
     await database("conversions").where({ lesson_id: lessonId }).update(values);
   }
 
@@ -50,15 +53,15 @@ export function createConversionRepository(database: Knex): ConversionRepository
           error: null,
         });
     },
-    markConverting: (lessonId) => update(lessonId, { status: "converting", error: null }),
-    updateProgress: (lessonId, progress) => update(lessonId, { progress }),
+    markConverting: (lessonId) => updateConversion(lessonId, { status: "converting", error: null }),
+    updateProgress: (lessonId, progress) => updateConversion(lessonId, { progress }),
     markReady: (lessonId) =>
-      update(lessonId, {
+      updateConversion(lessonId, {
         status: "ready",
         progress: 100,
         error: null,
       }),
-    markFailed: (lessonId, error) => update(lessonId, { status: "failed", error }),
+    markFailed: (lessonId, error) => updateConversion(lessonId, { status: "failed", error }),
     async listPendingLessonIds() {
       const rows = await database("conversions")
         .whereIn("status", ["queued", "converting"])
