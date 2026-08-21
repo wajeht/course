@@ -37,7 +37,7 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
   const playback = useVideoPlayback(element, api);
   const progress = usePlaybackProgress(async (videoId, positionSeconds) => {
     await api.saveProgress(videoId, positionSeconds);
-    await invalidateProgress(video.value?.playlistId, videoId);
+    await invalidateProgress();
   });
   const retry = useAsyncAction(async (videoId: string) => playback.retryPlayback(videoId));
   const reset = useAsyncAction(
@@ -56,7 +56,7 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
       errorMessage: "Could not reset this video",
       onSuccess: async (didReset) => {
         if (!didReset) return;
-        await invalidateProgress(video.value?.playlistId, video.value?.id);
+        await invalidateProgress();
         toast.success("Video progress reset");
       },
     },
@@ -64,6 +64,42 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
 
   const playlistVideos = computed(
     () => playlist.value?.sections.flatMap((section) => section.videos) ?? [],
+  );
+  const resetPlaylist = useAsyncAction(
+    async (playlistId: string) => {
+      const activeVideo = video.value;
+      if (
+        playlist.value?.id !== playlistId ||
+        !activeVideo ||
+        !progress.isSessionFor(activeVideo.id)
+      )
+        return false;
+      await progress.resetSession(element.value?.currentTime, () => api.resetPlaylist(playlistId));
+      if (playlist.value?.id !== playlistId || video.value?.id !== activeVideo.id) return false;
+
+      for (const item of playlistVideos.value) {
+        item.positionSeconds = 0;
+        item.progressPercent = 0;
+        item.completed = false;
+      }
+      playlist.value.completedCount = 0;
+      playlist.value.progressPercent = 0;
+      activeVideo.positionSeconds = 0;
+      activeVideo.progressPercent = 0;
+      activeVideo.completed = false;
+      ended.value = false;
+      currentTime.value = 0;
+      if (element.value) element.value.currentTime = 0;
+      return true;
+    },
+    {
+      errorMessage: "Could not reset this playlist",
+      onSuccess: async (didReset) => {
+        if (!didReset) return;
+        await invalidateProgress();
+        toast.success("Playlist progress reset");
+      },
+    },
   );
   const currentIndex = computed(() =>
     playlistVideos.value.findIndex((item) => item.id === video.value?.id),
@@ -88,20 +124,11 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
   function invalidateLibrary() {
     return queryClient.invalidateQueries({ queryKey: queryKeys.library, refetchType: "none" });
   }
-  async function invalidateProgress(playlistId?: string | null, videoId?: string) {
-    const requests: Promise<unknown>[] = [invalidateLibrary()];
-    if (playlistId)
-      requests.push(
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.playlist(playlistId),
-          refetchType: "none",
-        }),
-      );
-    if (videoId)
-      requests.push(
-        queryClient.invalidateQueries({ queryKey: queryKeys.video(videoId), refetchType: "none" }),
-      );
-    await Promise.all(requests);
+  async function invalidateProgress() {
+    await Promise.all([
+      invalidateLibrary(),
+      queryClient.invalidateQueries({ queryKey: queryKeys.videos, refetchType: "none" }),
+    ]);
   }
   function navigate(target: VideoDto | undefined) {
     if (target) void router.push({ name: "player", params: { videoId: target.id } });
@@ -153,8 +180,6 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
       playlist.value = detail.playlist;
       setPageTitle(detail.video.title);
       progress.startSession(detail.video.id, detail.video.positionSeconds);
-      if (detail.playlist)
-        queryClient.setQueryData(queryKeys.playlist(detail.playlist.id), detail.playlist);
       await playback.applyPlayback(playbackResult, videoId, requestId);
     } catch (caught) {
       if (!playback.isCurrentRequest(requestId)) return;
@@ -204,7 +229,7 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
     if (!video.value) return;
     try {
       await api.completeVideo(video.value.id);
-      await invalidateProgress(video.value.playlistId, video.value.id);
+      await invalidateProgress();
       ended.value = true;
       progress.stopSession();
       video.value.completed = true;
@@ -223,6 +248,18 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
       variant: "danger",
     });
     if (confirmed && video.value?.id === id) await reset.run(id);
+  }
+  async function resetPlaylistProgress() {
+    const id = playlist.value?.id;
+    if (!id) return;
+    const confirmed = await confirmation.confirm({
+      title: "Reset playlist progress?",
+      message:
+        "Saved positions and completion states for every video in this playlist will be removed.",
+      confirmLabel: "Reset playlist",
+      variant: "danger",
+    });
+    if (confirmed && playlist.value?.id === id) await resetPlaylist.run(id);
   }
   function handleVisibility() {
     if (document.visibilityState !== "hidden") return;
@@ -268,7 +305,9 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
     onTimeUpdate,
     playback: computed(() => playback.playback.value),
     playlist: computed(() => playlist.value),
+    resetPlaylistProgress,
     resetProgress,
+    resettingPlaylist: computed(() => resetPlaylist.pending.value),
     resetting: computed(() => reset.pending.value),
     retryConversion: async () => {
       if (video.value) await retry.run(video.value.id);

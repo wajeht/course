@@ -4,7 +4,6 @@ import {
   api,
   type LibraryDto,
   type LibraryFilters,
-  type PlaylistDetailDto,
   type ScanStatus,
   type SettingsDto,
   type VideoPlayerDetailDto,
@@ -18,8 +17,6 @@ export interface LibraryQueryClient {
 export const queryKeys = {
   library: ["library"] as const,
   libraryList: (filters: LibraryFilters) => ["library", "list", filters] as const,
-  playlists: ["playlists"] as const,
-  playlist: (playlistId: string) => ["playlists", playlistId] as const,
   videos: ["videos"] as const,
   video: (videoId: string) => ["videos", videoId] as const,
   scanStatus: ["scan-status"] as const,
@@ -48,14 +45,6 @@ export function libraryQueryOptions(
     queryKey: queryKeys.libraryList(normalizedFilters),
     queryFn: ({ signal }) => client.getLibrary(normalizedFilters, signal),
     placeholderData: keepPreviousData,
-    staleTime: 5 * 60_000,
-  });
-}
-
-export function playlistQueryOptions(playlistId: string) {
-  return queryOptions({
-    queryKey: queryKeys.playlist(playlistId),
-    queryFn: ({ signal }): Promise<PlaylistDetailDto> => api.getPlaylist(playlistId, signal),
     staleTime: 5 * 60_000,
   });
 }

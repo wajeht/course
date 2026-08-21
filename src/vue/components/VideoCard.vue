@@ -56,13 +56,8 @@ const prefetch = useRoutePrefetch();
       class="mt-1 block truncate text-[.72rem] text-muted"
       :authors="video.authors"
     />
-    <IntentRouterLink
-      v-if="video.playlistId"
-      :to="{ name: 'playlist', params: { playlistId: video.playlistId } }"
-      :prefetch="() => prefetch.playlist(video.playlistId!)"
-      class="mt-1 block truncate text-[.7rem] text-pine hover:underline"
-    >
+    <p v-if="video.playlistId" class="mt-1 truncate text-[.7rem] text-pine">
       {{ video.playlistTitle }}
-    </IntentRouterLink>
+    </p>
   </article>
 </template>

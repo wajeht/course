@@ -70,7 +70,6 @@ async function mountAuthorPage(getLibrary: typeof api.getLibrary = async () => a
     history: createMemoryHistory(),
     routes: [
       { path: "/authors/:authorName", name: "author", component: AuthorPage },
-      { path: "/playlists/:playlistId", name: "playlist", component: { template: "<div />" } },
       { path: "/videos/:videoId", name: "player", component: { template: "<div />" } },
       { path: "/:pathMatch(.*)*", name: "not-found", component: { template: "<div />" } },
     ],

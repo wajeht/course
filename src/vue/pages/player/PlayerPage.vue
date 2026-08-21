@@ -51,7 +51,9 @@ const player = useVideoPlayer(media);
       :active-video-id="player.video.value?.id"
       :playlist="player.playlist.value"
       :open="player.sidebarOpen.value"
+      :resetting="player.resettingPlaylist.value"
       @close="player.closeSidebar"
+      @reset="player.resetPlaylistProgress"
     />
   </main>
 </template>

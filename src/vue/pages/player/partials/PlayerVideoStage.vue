@@ -29,17 +29,11 @@ defineExpose({ video });
 </script>
 
 <template>
-  <div class="flex min-h-[34px] items-center justify-between">
-    <IntentRouterLink
-      v-if="playlist"
-      :to="{ name: 'playlist', params: { playlistId: playlist.id } }"
-      :prefetch="() => prefetch.playlist(playlist!.id)"
-      class="max-w-[75%] truncate text-[.78rem] font-bold text-white/68 hover:text-white"
-      >← {{ playlist.title }}</IntentRouterLink
-    >
-    <span v-else class="text-[.78rem] font-bold text-white/45">Standalone video</span>
+  <div v-if="playlist" class="flex min-h-[34px] items-center justify-between">
+    <span class="max-w-[75%] truncate text-[.78rem] font-bold text-white/68">{{
+      playlist.title
+    }}</span>
     <AppButton
-      v-if="playlist"
       class="hidden max-[860px]:inline-flex"
       variant="outline-inverse"
       size="sm"

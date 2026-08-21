@@ -70,7 +70,6 @@ async function mountLibraryPage() {
     history: createMemoryHistory(),
     routes: [
       { path: "/videos", name: "videos", component: LibraryPage },
-      { path: "/playlists/:playlistId", name: "playlist", component: { template: "<div />" } },
       { path: "/videos/:videoId", name: "player", component: { template: "<div />" } },
     ],
   });

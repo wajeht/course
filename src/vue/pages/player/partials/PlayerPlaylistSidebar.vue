@@ -9,8 +9,9 @@ const props = defineProps<{
   activeVideoId?: string;
   playlist: PlaylistDetailDto | null;
   open: boolean;
+  resetting: boolean;
 }>();
-defineEmits<{ close: [] }>();
+defineEmits<{ close: []; reset: [] }>();
 const videos = computed(() => props.playlist?.sections.flatMap((section) => section.videos) ?? []);
 const currentIndex = computed(() =>
   videos.value.findIndex((video) => video.id === props.activeVideoId),
@@ -28,6 +29,14 @@ const currentIndex = computed(() =>
         <p class="text-xs font-extrabold tracking-[.16em] text-belt uppercase">Playlist</p>
         <h2 class="mt-2 font-display text-lg font-bold">{{ playlist.title }}</h2>
         <p class="mt-1 text-xs text-muted">Video {{ currentIndex + 1 }} of {{ videos.length }}</p>
+        <AppButton
+          variant="unstyled"
+          class="mt-3 border-b border-pine/20 py-1 text-xs text-pine"
+          :loading="resetting"
+          loading-label="Resetting…"
+          @click="$emit('reset')"
+          >Reset playlist progress</AppButton
+        >
       </div>
       <AppButton
         class="hidden max-[860px]:grid"

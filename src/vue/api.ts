@@ -120,14 +120,6 @@ export const api = {
     );
     return expectProtectedJson<LibraryDto>(response);
   },
-  async getPlaylist(playlistId: string, signal?: AbortSignal): Promise<PlaylistDetailDto> {
-    return expectProtectedJson<PlaylistDetailDto>(
-      await apiClient.api.playlists[":playlistId"].$get(
-        { param: { playlistId } },
-        { init: { signal } },
-      ),
-    );
-  },
   async getVideo(videoId: string, signal?: AbortSignal): Promise<VideoPlayerDetailDto> {
     return expectProtectedJson<VideoPlayerDetailDto>(
       await apiClient.api.videos[":videoId"].$get({ param: { videoId } }, { init: { signal } }),
