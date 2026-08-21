@@ -41,7 +41,6 @@ const prefetch = useRoutePrefetch();
         :key="lesson.id"
         :to="{ name: 'player', params: { lessonId: lesson.id } }"
         :prefetch="() => prefetch.lesson(lesson.id)"
-        immediate
         class="group relative min-h-[230px] min-w-0 overflow-hidden rounded-[10px] bg-pine text-white"
       >
         <img

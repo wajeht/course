@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { RouterLink } from "vue-router";
-
+import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
+import { loadHomePage, loadLibraryPage } from "@/router.js";
 
 withDefaults(defineProps<{ standalone?: boolean }>(), {
   standalone: false,
@@ -22,8 +22,17 @@ withDefaults(defineProps<{ standalone?: boolean }>(), {
     >
       <template #icon><span class="text-ink">404</span></template>
       <template #actions>
-        <AppButton :as="RouterLink" to="/" size="lg">Go home</AppButton>
-        <AppButton v-if="!standalone" :as="RouterLink" to="/library" variant="secondary" size="lg">
+        <AppButton :as="IntentRouterLink" to="/" :prefetch="loadHomePage" size="lg">
+          Go home
+        </AppButton>
+        <AppButton
+          v-if="!standalone"
+          :as="IntentRouterLink"
+          to="/library"
+          :prefetch="loadLibraryPage"
+          variant="secondary"
+          size="lg"
+        >
           Browse library
         </AppButton>
       </template>

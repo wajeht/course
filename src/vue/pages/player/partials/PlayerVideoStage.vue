@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { RouterLink } from "vue-router";
 import { useTemplateRef } from "vue";
 
 import type { CourseDetailDto, LessonDto, PlaybackResult } from "@/api.js";
@@ -33,18 +32,24 @@ async function prefetchNextLesson(): Promise<void> {
   await prefetch.lesson(props.nextLesson.id);
 }
 
+async function prefetchCourse(): Promise<void> {
+  if (!props.course) return;
+  await prefetch.course(props.course.id);
+}
+
 defineExpose({ video });
 </script>
 
 <template>
   <div class="flex min-h-[34px] items-center justify-between">
-    <RouterLink
+    <IntentRouterLink
       v-if="course"
       :to="{ name: 'course', params: { courseId: course.id } }"
+      :prefetch="prefetchCourse"
       class="mb-0 inline-block max-w-[75%] overflow-hidden text-[.78rem] font-bold text-ellipsis whitespace-nowrap text-white/68 hover:text-white"
     >
       ← {{ course.title }}
-    </RouterLink>
+    </IntentRouterLink>
     <AppButton
       class="hidden rounded-[5px] border border-white/25 bg-transparent px-[11px] py-[7px] text-white max-[860px]:inline-flex"
       variant="unstyled"
@@ -125,7 +130,6 @@ defineExpose({ video });
         :as="IntentRouterLink"
         :to="{ name: 'player', params: { lessonId: nextLesson.id } }"
         :prefetch="prefetchNextLesson"
-        immediate
         class="mt-[18px]"
         variant="inverse"
         size="lg"

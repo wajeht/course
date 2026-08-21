@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { mount } from "@vue/test-utils";
 import { shallowRef } from "vue";
 import { createMemoryHistory, createRouter } from "vue-router";
@@ -28,10 +29,11 @@ async function mountSettingsLayout() {
   });
   await router.push("/settings/library");
   const request = vi.fn(async () => false);
+  const queryClient = new QueryClient();
   const wrapper = mount(SettingsLayout, {
     slots: { default: '<section data-settings-page="" />' },
     global: {
-      plugins: [router],
+      plugins: [router, [VueQueryPlugin, { queryClient }]],
       provide: {
         [authKey as symbol]: { logout: vi.fn() },
         [confirmationKey as symbol]: {

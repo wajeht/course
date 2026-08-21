@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { onMounted } from "vue";
-import { RouterLink } from "vue-router";
 
+import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
 import { retryFrontend } from "@/frontend-error.js";
+import { loadHomePage } from "@/router.js";
 import { setPageTitle } from "@/utils.js";
 
 onMounted(() => setPageTitle("Unexpected error"));
@@ -23,7 +24,15 @@ onMounted(() => setPageTitle("Unexpected error"));
       <template #icon>!</template>
       <template #actions>
         <AppButton size="lg" @click="retryFrontend">Reload page</AppButton>
-        <AppButton :as="RouterLink" to="/" variant="secondary" size="lg">Go home</AppButton>
+        <AppButton
+          :as="IntentRouterLink"
+          to="/"
+          :prefetch="loadHomePage"
+          variant="secondary"
+          size="lg"
+        >
+          Go home
+        </AppButton>
       </template>
     </EmptyState>
   </main>

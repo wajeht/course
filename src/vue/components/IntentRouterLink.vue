@@ -6,7 +6,6 @@ import { useIntentPrefetch } from "@/composables/useIntentPrefetch.js";
 defineOptions({ inheritAttrs: false });
 
 const props = defineProps<{
-  immediate?: boolean;
   prefetch: () => Promise<unknown>;
   to: RouteLocationRaw;
 }>();
@@ -14,23 +13,13 @@ const props = defineProps<{
 const intent = useIntentPrefetch(() => {
   void props.prefetch().catch(() => undefined);
 });
-
-function handlePointerEnter(): void {
-  if (props.immediate) intent.run();
-  else intent.schedule();
-}
-
-function handlePointerLeave(): void {
-  if (!props.immediate) intent.cancel();
-}
 </script>
 
 <template>
   <RouterLink
     v-bind="$attrs"
     :to="to"
-    @pointerenter="handlePointerEnter"
-    @pointerleave="handlePointerLeave"
+    @pointerenter="intent.run"
     @focus="intent.run"
     @pointerdown="intent.run"
   >

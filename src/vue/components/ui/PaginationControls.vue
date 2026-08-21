@@ -22,8 +22,7 @@ const nextIntent = useIntentPrefetch(() => {
     <AppButton
       variant="secondary"
       :disabled="page <= 1 || disabled"
-      @pointerenter="previousIntent.schedule"
-      @pointerleave="previousIntent.cancel"
+      @pointerenter="previousIntent.run"
       @focus="previousIntent.run"
       @pointerdown="previousIntent.run"
       @click="$emit('change', page - 1)"
@@ -34,8 +33,7 @@ const nextIntent = useIntentPrefetch(() => {
     <AppButton
       variant="secondary"
       :disabled="page >= totalPages || disabled"
-      @pointerenter="nextIntent.schedule"
-      @pointerleave="nextIntent.cancel"
+      @pointerenter="nextIntent.run"
       @focus="nextIntent.run"
       @pointerdown="nextIntent.run"
       @click="$emit('change', page + 1)"
