@@ -5,6 +5,7 @@ import type { CourseDetailDto, LessonDto } from "@/api.js";
 import CourseCoverPlaceholder from "@/components/CourseCoverPlaceholder.vue";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import AppButton from "@/components/ui/AppButton.vue";
+import AppIcon from "@/components/ui/AppIcon.vue";
 import ProgressBar from "@/components/ui/ProgressBar.vue";
 import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import { countText, durationText } from "@/utils.js";
@@ -95,7 +96,7 @@ const prefetch = useRoutePrefetch();
           variant="accent"
           size="lg"
         >
-          <span aria-hidden="true">▶</span>
+          <AppIcon name="play" class="size-3.5" />
           {{ nextLesson.positionSeconds ? "Resume course" : "Start course" }}
         </AppButton>
         <AppButton

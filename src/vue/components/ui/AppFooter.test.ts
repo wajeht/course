@@ -13,6 +13,7 @@ describe("AppFooter", () => {
     expect(githubLink.text()).toBe("@wajeht");
     expect(githubLink.attributes("aria-label")).toBe("App author on GitHub (opens in a new tab)");
     expect(githubLink.attributes("rel")).toBe("noreferrer");
-    expect(wrapper.text()).toContain("© 2026 · Made with ❤️ by @wajeht . v0.1.0");
+    expect(wrapper.text()).toContain("© 2026 · Made with love by @wajeht . v0.1.0");
+    expect(wrapper.get('[data-icon="heart"]').element.tagName).toBe("svg");
   });
 });

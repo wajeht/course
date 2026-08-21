@@ -2,6 +2,7 @@
 import { RouterLink } from "vue-router";
 
 import type { LessonDto } from "@/api.js";
+import AppIcon from "@/components/ui/AppIcon.vue";
 import { durationText } from "@/utils.js";
 
 withDefaults(
@@ -46,7 +47,7 @@ withDefaults(
         <path d="m5 12 4 4L19 6" />
       </svg>
       <span v-else-if="lesson.positionSeconds > 0">{{ lesson.progressPercent }}%</span>
-      <span v-else aria-hidden="true">›</span>
+      <AppIcon v-else name="chevron-right" class="size-4" />
     </span>
   </RouterLink>
 </template>
