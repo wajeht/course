@@ -2,12 +2,25 @@
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 
+import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import PanelCard from "@/components/ui/PanelCard.vue";
+import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 
 const route = useRoute();
+const prefetch = useRoutePrefetch();
 const settingsSections = [
-  { label: "Library", routeName: "settings-library", value: "library" },
-  { label: "Access", routeName: "settings-access", value: "access" },
+  {
+    label: "Library",
+    prefetch: prefetch.settingsLibrary,
+    routeName: "settings-library",
+    value: "library",
+  },
+  {
+    label: "Access",
+    prefetch: prefetch.settingsAccess,
+    routeName: "settings-access",
+    value: "access",
+  },
 ] as const;
 const sections = computed(() =>
   settingsSections.map((section) => {
@@ -34,11 +47,12 @@ const sections = computed(() =>
     aria-label="Settings sections"
   >
     <div class="grid gap-1 max-[760px]:grid-cols-2 max-[760px]:gap-0">
-      <RouterLink
+      <IntentRouterLink
         v-for="section in sections"
         :id="`settings-${section.value}-link`"
         :key="section.value"
         :to="{ name: section.routeName }"
+        :prefetch="section.prefetch"
         :class="[
           'flex h-10 w-full items-center rounded-[7px] px-3.5 text-left text-[.82rem] font-bold transition-[background,color,box-shadow] duration-[160ms] max-[760px]:justify-center max-[760px]:rounded-none max-[760px]:px-0 max-[760px]:shadow-none!',
           section.value === 'access' ? 'max-[760px]:border-l max-[760px]:border-line' : '',
@@ -47,7 +61,7 @@ const sections = computed(() =>
         :aria-controls="`settings-${section.value}-panel`"
       >
         <span>{{ section.label }}</span>
-      </RouterLink>
+      </IntentRouterLink>
     </div>
   </PanelCard>
 </template>

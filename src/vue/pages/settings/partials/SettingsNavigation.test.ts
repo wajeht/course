@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises, mount } from "@vue/test-utils";
 import { createMemoryHistory, createRouter } from "vue-router";
 import { describe, expect, it } from "vitest";
@@ -24,7 +25,10 @@ describe("SettingsNavigation", () => {
       ],
     });
     await router.push("/settings/library");
-    const wrapper = mount(SettingsNavigation, { global: { plugins: [router] } });
+    const queryClient = new QueryClient();
+    const wrapper = mount(SettingsNavigation, {
+      global: { plugins: [router, [VueQueryPlugin, { queryClient }]] },
+    });
     const sectionLinks = wrapper.findAll("a");
 
     expect(sectionLinks.map((link) => link.text())).toEqual(["Library", "Access"]);

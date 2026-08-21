@@ -11,6 +11,12 @@ declare module "vue-router" {
   }
 }
 
+export const loadHomePage = () => import("@/pages/home/HomePage.vue");
+export const loadLibraryPage = () => import("@/pages/library/LibraryPage.vue");
+export const loadSettingsLibraryPage = () => import("@/pages/settings/LibraryPage.vue");
+export const loadSettingsAccessPage = () => import("@/pages/settings/AccessPage.vue");
+export const loadCoursePage = () => import("@/pages/course/CoursePage.vue");
+export const loadInstructorPage = () => import("@/pages/instructor/InstructorPage.vue");
 export const loadPlayerPage = () => import("@/pages/player/PlayerPage.vue");
 
 export const router = createRouter({
@@ -19,37 +25,37 @@ export const router = createRouter({
     {
       path: "/",
       name: "home",
-      component: () => import("@/pages/home/HomePage.vue"),
+      component: loadHomePage,
       meta: { navigation: "home" },
     },
     {
       path: "/library",
       name: "library",
-      component: () => import("@/pages/library/LibraryPage.vue"),
+      component: loadLibraryPage,
       meta: { navigation: "library", title: "Library" },
     },
     {
       path: "/settings/library",
       name: "settings-library",
-      component: () => import("@/pages/settings/LibraryPage.vue"),
+      component: loadSettingsLibraryPage,
       meta: { navigation: "settings", title: "Settings" },
     },
     {
       path: "/settings/access",
       name: "settings-access",
-      component: () => import("@/pages/settings/AccessPage.vue"),
+      component: loadSettingsAccessPage,
       meta: { navigation: "settings", title: "Settings" },
     },
     {
       path: "/courses/:courseId",
       name: "course",
-      component: () => import("@/pages/course/CoursePage.vue"),
+      component: loadCoursePage,
       meta: { navigation: "library", title: "Course details" },
     },
     {
       path: "/instructors/:instructorName",
       name: "instructor",
-      component: () => import("@/pages/instructor/InstructorPage.vue"),
+      component: loadInstructorPage,
       meta: { navigation: "library", title: "Instructor" },
     },
     {

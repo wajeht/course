@@ -8,7 +8,15 @@ import {
   scanStatusQueryOptions,
   settingsQueryOptions,
 } from "@/queries.js";
-import { loadPlayerPage } from "@/router.js";
+import {
+  loadCoursePage,
+  loadHomePage,
+  loadInstructorPage,
+  loadLibraryPage,
+  loadPlayerPage,
+  loadSettingsAccessPage,
+  loadSettingsLibraryPage,
+} from "@/router.js";
 
 export function useRoutePrefetch() {
   const queryClient = useQueryClient();
@@ -19,16 +27,20 @@ export function useRoutePrefetch() {
 
   return {
     catalog,
-    course: (courseId: string) => queryClient.prefetchQuery(courseQueryOptions(courseId)),
-    home: () => catalog({}),
-    instructor: (instructor: string) => catalog({ instructor: [instructor], page: 1 }),
+    course: (courseId: string) =>
+      Promise.all([queryClient.prefetchQuery(courseQueryOptions(courseId)), loadCoursePage()]),
+    home: () => Promise.all([catalog({}), loadHomePage()]),
+    instructor: (instructor: string) =>
+      Promise.all([catalog({ instructor: [instructor], page: 1 }), loadInstructorPage()]),
     lesson: (lessonId: string) =>
       Promise.all([queryClient.prefetchQuery(lessonQueryOptions(lessonId)), loadPlayerPage()]),
-    library: () => catalog({}),
-    settings: () =>
+    library: () => Promise.all([catalog({}), loadLibraryPage()]),
+    settingsAccess: () => loadSettingsAccessPage(),
+    settingsLibrary: () =>
       Promise.all([
         queryClient.prefetchQuery(scanStatusQueryOptions()),
         queryClient.prefetchQuery(settingsQueryOptions()),
+        loadSettingsLibraryPage(),
       ]),
   };
 }

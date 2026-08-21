@@ -96,7 +96,6 @@ async function prefetchNextLesson(): Promise<void> {
           :as="IntentRouterLink"
           :to="{ name: 'player', params: { lessonId: nextLesson.id } }"
           :prefetch="prefetchNextLesson"
-          immediate
           variant="accent"
           size="lg"
         >
