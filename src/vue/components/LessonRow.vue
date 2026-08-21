@@ -1,18 +1,22 @@
 <script setup lang="ts">
-import { RouterLink } from "vue-router";
-
 import type { LessonDto } from "@/api.js";
+import IntentRouterLink from "@/components/IntentRouterLink.vue";
+import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import { durationText } from "@/utils.js";
 
 withDefaults(
   defineProps<{ lesson: LessonDto; index: number; active?: boolean; sidebar?: boolean }>(),
   { active: false, sidebar: false },
 );
+
+const prefetch = useRoutePrefetch();
 </script>
 
 <template>
-  <RouterLink
+  <IntentRouterLink
     :to="{ name: 'player', params: { lessonId: lesson.id } }"
+    :prefetch="() => prefetch.lesson(lesson.id)"
+    immediate
     class="grid items-center border-b border-[#e7eae7] py-2 transition-colors duration-150 last:border-b-0 hover:bg-[#f4f7f4]"
     :class="[
       sidebar
@@ -48,5 +52,5 @@ withDefaults(
       <span v-else-if="lesson.positionSeconds > 0">{{ lesson.progressPercent }}%</span>
       <span v-else aria-hidden="true">›</span>
     </span>
-  </RouterLink>
+  </IntentRouterLink>
 </template>

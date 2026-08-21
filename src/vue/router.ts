@@ -11,6 +11,8 @@ declare module "vue-router" {
   }
 }
 
+export const loadPlayerPage = () => import("@/pages/player/PlayerPage.vue");
+
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -53,7 +55,7 @@ export const router = createRouter({
     {
       path: "/lessons/:lessonId",
       name: "player",
-      component: () => import("@/pages/player/PlayerPage.vue"),
+      component: loadPlayerPage,
       meta: { navigation: "library", shell: "player", title: "Lesson" },
     },
     {

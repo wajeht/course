@@ -3,9 +3,11 @@ import { RouterLink } from "vue-router";
 import { useTemplateRef } from "vue";
 
 import type { CourseDetailDto, LessonDto, PlaybackResult } from "@/api.js";
+import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import AppButton from "@/components/ui/AppButton.vue";
+import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 
-defineProps<{
+const props = defineProps<{
   course: CourseDetailDto | null;
   ended: boolean;
   error: string;
@@ -24,6 +26,12 @@ const emit = defineEmits<{
   timeUpdate: [];
 }>();
 const video = useTemplateRef<HTMLVideoElement>("video");
+const prefetch = useRoutePrefetch();
+
+async function prefetchNextLesson(): Promise<void> {
+  if (!props.nextLesson) return;
+  await prefetch.lesson(props.nextLesson.id);
+}
 
 defineExpose({ video });
 </script>
@@ -114,8 +122,10 @@ defineExpose({ video });
       </h2>
       <AppButton
         v-if="nextLesson"
-        :as="RouterLink"
+        :as="IntentRouterLink"
         :to="{ name: 'player', params: { lessonId: nextLesson.id } }"
+        :prefetch="prefetchNextLesson"
+        immediate
         class="mt-[18px]"
         variant="inverse"
         size="lg"
