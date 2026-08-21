@@ -12,6 +12,7 @@ export interface PlaylistRow {
   video_count: number;
   completed_count: number;
   total_duration: number;
+  next_video_id: string;
 }
 
 export interface VideoRow {
@@ -170,8 +171,29 @@ export function createLibraryApiRepository(database: Knex): LibraryRepository {
           "COUNT(DISTINCT CASE WHEN progress.completed = 1 THEN videos.id END) as completed_count",
         ),
         database.raw("COALESCE(SUM(videos.duration_seconds), 0) as total_duration"),
+        database.raw(`
+          COALESCE(
+            (
+              SELECT candidate.id
+              FROM videos AS candidate
+              LEFT JOIN progress AS candidate_progress ON candidate_progress.video_id = candidate.id
+              WHERE candidate.playlist_id = playlists.id
+                AND COALESCE(candidate_progress.completed, 0) = 0
+              ORDER BY candidate.sort_order
+              LIMIT 1
+            ),
+            (
+              SELECT candidate.id
+              FROM videos AS candidate
+              WHERE candidate.playlist_id = playlists.id
+              ORDER BY candidate.sort_order
+              LIMIT 1
+            )
+          ) AS next_video_id
+        `),
       )
-      .groupBy("playlists.id");
+      .groupBy("playlists.id")
+      .havingRaw("COUNT(DISTINCT videos.id) > 0");
   }
 
   function applyVideoFilters(

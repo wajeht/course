@@ -16,8 +16,8 @@ const prefetch = useRoutePrefetch();
 <template>
   <article class="group min-w-0">
     <IntentRouterLink
-      :to="{ name: 'playlist', params: { playlistId: playlist.id } }"
-      :prefetch="() => prefetch.playlist(playlist.id)"
+      :to="{ name: 'player', params: { videoId: playlist.nextVideoId } }"
+      :prefetch="() => prefetch.video(playlist.nextVideoId)"
       class="relative block aspect-video overflow-hidden rounded-[10px] bg-mist"
       :aria-label="`Open ${playlist.title}`"
     >
@@ -44,8 +44,8 @@ const prefetch = useRoutePrefetch();
     </IntentRouterLink>
     <h3 class="mt-3 line-clamp-2 text-[.92rem] leading-[1.3] font-bold">
       <IntentRouterLink
-        :to="{ name: 'playlist', params: { playlistId: playlist.id } }"
-        :prefetch="() => prefetch.playlist(playlist.id)"
+        :to="{ name: 'player', params: { videoId: playlist.nextVideoId } }"
+        :prefetch="() => prefetch.video(playlist.nextVideoId)"
         class="hover:text-pine"
       >
         {{ playlist.title }}

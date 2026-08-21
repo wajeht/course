@@ -33,6 +33,7 @@ function authorLibrary(): LibraryDto {
         description: "",
         durationSeconds: 120,
         id: playlistId,
+        nextVideoId: videoId,
         progressPercent: 0,
         source: null,
         tags: [],

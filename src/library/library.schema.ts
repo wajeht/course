@@ -61,6 +61,7 @@ export const playlistResponseSchema = z.object({
   completedCount: z.number().int().nonnegative(),
   progressPercent: z.number().int().min(0).max(100),
   durationSeconds: z.number().nonnegative(),
+  nextVideoId: identifierSchema,
 });
 
 export const playlistDetailResponseSchema = playlistResponseSchema.extend({
