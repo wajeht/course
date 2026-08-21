@@ -26,7 +26,13 @@ const sections = computed(() =>
 </script>
 
 <template>
-  <PanelCard as="nav" class="p-8 max-[760px]:p-0" padding="none" aria-label="Settings sections">
+  <PanelCard
+    as="nav"
+    class="p-8 max-[760px]:p-0"
+    :elevated="false"
+    padding="none"
+    aria-label="Settings sections"
+  >
     <div class="grid gap-1 max-[760px]:grid-cols-2 max-[760px]:gap-0">
       <RouterLink
         v-for="section in sections"

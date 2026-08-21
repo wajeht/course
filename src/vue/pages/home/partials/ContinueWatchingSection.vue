@@ -41,7 +41,7 @@ const prefetch = useRoutePrefetch();
         v-for="lesson in lessons"
         :key="lesson.id"
         :to="{ name: 'player', params: { lessonId: lesson.id } }"
-        class="group relative min-h-[230px] min-w-0 overflow-hidden rounded-[10px] bg-pine text-white shadow-course"
+        class="group relative min-h-[230px] min-w-0 overflow-hidden rounded-[10px] bg-pine text-white"
       >
         <img
           v-if="lesson.courseCoverUrl"
