@@ -36,27 +36,26 @@ function forwardSetup(password: string, confirmPassword: string, setupToken?: st
       class="hidden min-h-screen items-center justify-center overflow-hidden bg-pine-deep bg-[radial-gradient(circle_at_83%_20%,rgb(196_147_63_/_16%),transparent_30%),repeating-linear-gradient(90deg,transparent_0_52px,rgb(255_255_255_/_2%)_52px_53px)] px-12 text-white lg:order-2 lg:flex"
       aria-label="A private, opinionated, self-hosted video course library."
     >
-      <div class="w-full max-w-[720px]" aria-hidden="true">
-        <p
-          class="font-display text-[clamp(4rem,6.4vw,8rem)] font-black leading-[0.82] tracking-[-0.025em] uppercase"
-        >
-          <span class="block text-white/45">A private,</span>
-          <span class="block text-white">opinionated,</span>
-          <span class="block text-belt-light">self-hosted</span>
-        </p>
-        <p class="mt-8 max-w-xl text-xl font-medium tracking-[0.12em] text-white/60 uppercase">
-          Video course library.
-        </p>
+      <div class="w-full max-w-[720px]">
+        <AppLogo class="mb-12 text-white" />
+        <div aria-hidden="true">
+          <p
+            class="font-display text-[clamp(4rem,6.4vw,8rem)] font-black leading-[0.82] tracking-[-0.025em] uppercase"
+          >
+            <span class="block text-white/45">A private,</span>
+            <span class="block text-white">opinionated,</span>
+            <span class="block text-belt-light">self-hosted</span>
+          </p>
+          <p class="mt-8 max-w-xl text-xl font-medium tracking-[0.12em] text-white/60 uppercase">
+            Video course library.
+          </p>
+        </div>
       </div>
     </aside>
 
     <section
-      class="grid min-h-screen grid-rows-[1fr_auto] px-5 py-8 lg:order-1 lg:grid-rows-[auto_1fr_auto] lg:border-r lg:border-pine/10 lg:px-8 lg:py-10 xl:px-[clamp(36px,3.5vw,60px)]"
+      class="grid min-h-screen grid-rows-[1fr_auto] px-5 py-8 lg:order-1 lg:border-r lg:border-pine/10 lg:px-8 lg:py-10 xl:px-[clamp(36px,3.5vw,60px)]"
     >
-      <div class="hidden text-pine-deep lg:block">
-        <AppLogo />
-      </div>
-
       <PanelCard
         class="w-full max-w-[430px] place-self-center lg:max-w-[420px] lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none"
         padding="none"
