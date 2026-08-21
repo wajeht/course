@@ -41,6 +41,9 @@ describe("SettingsNavigation", () => {
     expect(sectionLinks[0]?.classes()).toContain("bg-pine!");
     expect(sectionLinks[0]?.classes()).toContain("h-10");
     expect(sectionLinks[0]?.classes()).not.toContain("min-h-12");
+    expect(sectionLinks[0]?.classes().some((className) => className.includes("shadow"))).toBe(
+      false,
+    );
 
     await router.push("/settings/access");
     await flushPromises();
