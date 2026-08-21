@@ -1,16 +1,21 @@
 import { useQueryClient } from "@tanstack/vue-query";
-import { computed, shallowRef, toRef, watch, type MaybeRefOrGetter } from "vue";
+import { computed, readonly, shallowRef, toRef, watch, type MaybeRefOrGetter } from "vue";
 
 import type { CatalogDto } from "@/api.js";
 import { catalogQueryOptions, type CatalogQueryClient } from "@/queries.js";
 import { useCatalogData } from "./useCatalogData.js";
 import { useCatalogRouteState } from "./useCatalogRouteState.js";
 
+interface UseCatalogFiltersOptions {
+  accumulatePages?: MaybeRefOrGetter<boolean>;
+  debounceMilliseconds?: number;
+}
+
 export function useCatalogFilters(
   client: Pick<CatalogQueryClient, "getCatalog">,
-  debounceMilliseconds = 150,
-  accumulatePages: MaybeRefOrGetter<boolean> = false,
+  options: UseCatalogFiltersOptions = {},
 ) {
+  const { accumulatePages = false, debounceMilliseconds = 150 } = options;
   const queryClient = useQueryClient();
   const accumulatePagesRef = toRef(accumulatePages);
   const routeState = useCatalogRouteState(debounceMilliseconds);
@@ -20,12 +25,15 @@ export function useCatalogFilters(
   const loadedTotalPages = shallowRef(0);
   const loadingMore = shallowRef(false);
   const loadMoreError = shallowRef("");
-  let catalogGeneration = 0;
 
   watch(
     [routeState.filters, dataState.catalog, accumulatePagesRef],
-    async ([filters, catalog, shouldAccumulate]) => {
-      const generation = ++catalogGeneration;
+    async ([filters, catalog, shouldAccumulate], _previous, onCleanup) => {
+      let cancelled = false;
+      onCleanup(() => {
+        cancelled = true;
+      });
+
       const requestedPage = filters.page ?? 1;
       if (catalog.pagination.page !== requestedPage) return;
 
@@ -45,7 +53,7 @@ export function useCatalogFilters(
             queryClient.fetchQuery(catalogQueryOptions({ ...filters, page: index + 1 }, client)),
           ),
         );
-        if (generation !== catalogGeneration) return;
+        if (cancelled) return;
 
         const loadedIds = new Set<string>();
         loadedCourses.value = catalogs.flatMap((pageCatalog) =>
@@ -57,11 +65,11 @@ export function useCatalogFilters(
         );
         loadedPage.value = catalog.pagination.page;
       } catch (caught) {
-        if (generation !== catalogGeneration) return;
+        if (cancelled) return;
         loadMoreError.value =
           caught instanceof Error ? caught.message : "Could not load more courses";
       } finally {
-        if (generation === catalogGeneration) loadingMore.value = false;
+        if (!cancelled) loadingMore.value = false;
       }
     },
     { immediate: true },
@@ -69,13 +77,23 @@ export function useCatalogFilters(
 
   const canLoadMore = computed(() => loadedPage.value < loadedTotalPages.value);
 
-  function loadMore(): void {
+  async function loadMore(): Promise<void> {
     if (loadingMore.value || !canLoadMore.value) return;
 
     const nextPage = loadedPage.value + 1;
     loadingMore.value = true;
     loadMoreError.value = "";
-    routeState.setPage(nextPage);
+
+    try {
+      await routeState.setPage(nextPage);
+      await queryClient.fetchQuery(
+        catalogQueryOptions({ ...routeState.filters.value, page: nextPage }, client),
+      );
+    } catch (caught) {
+      loadMoreError.value =
+        caught instanceof Error ? caught.message : "Could not load more courses";
+      loadingMore.value = false;
+    }
   }
 
   const libraryTitle = computed(() => {
@@ -94,9 +112,9 @@ export function useCatalogFilters(
     ...dataState,
     canLoadMore,
     libraryTitle,
-    loadedCourses,
+    loadedCourses: readonly(loadedCourses),
     loadMore,
-    loadMoreError,
-    loadingMore,
+    loadMoreError: readonly(loadMoreError),
+    loadingMore: readonly(loadingMore),
   };
 }

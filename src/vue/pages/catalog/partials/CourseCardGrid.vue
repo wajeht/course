@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, type DeepReadonly } from "vue";
 
 import type { CatalogDto } from "@/api.js";
 import CourseCard from "@/components/CourseCard.vue";
 
 const props = withDefaults(
   defineProps<{
-    courses: CatalogDto["courses"];
+    courses: DeepReadonly<CatalogDto["courses"]>;
     elevated?: boolean;
     layout?: "page" | "sidebar";
     loading?: boolean;

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { DeepReadonly } from "vue";
+
 import type { CatalogDto } from "@/api.js";
 import CourseCoverPlaceholder from "@/components/CourseCoverPlaceholder.vue";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
@@ -8,7 +10,7 @@ import { countText, durationText } from "@/utils.js";
 
 withDefaults(
   defineProps<{
-    course: CatalogDto["courses"][number];
+    course: DeepReadonly<CatalogDto["courses"][number]>;
     elevated?: boolean;
   }>(),
   { elevated: true },

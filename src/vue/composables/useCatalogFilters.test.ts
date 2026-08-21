@@ -1,5 +1,5 @@
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
-import { createApp, effectScope } from "vue";
+import { createApp, effectScope, isReadonly } from "vue";
 import { createMemoryHistory, createRouter } from "vue-router";
 import { describe, expect, it, vi } from "vitest";
 
@@ -50,7 +50,7 @@ async function setup(
   app.use(router);
   const scope = effectScope();
   const filters = app.runWithContext(() =>
-    scope.run(() => useCatalogFilters(client, debounceMilliseconds, accumulatePages)),
+    scope.run(() => useCatalogFilters(client, { accumulatePages, debounceMilliseconds })),
   );
   if (!filters) throw new Error("Composable did not initialize");
   return {
@@ -191,6 +191,38 @@ describe("useCatalogFilters", () => {
       expect.objectContaining({ page: 2 }),
       expect.any(AbortSignal),
     );
+    stop();
+  });
+
+  it("recovers when loading the next page fails", async () => {
+    let pageTwoAttempts = 0;
+    const client = {
+      getCatalog: vi.fn(async (filters?: CatalogFilters) => {
+        if (filters?.page !== 2) return catalog("First course", 1);
+        pageTwoAttempts += 1;
+        if (pageTwoAttempts === 1) throw new Error("Page failed");
+        return catalog("Second course", 2);
+      }),
+    };
+    const { filters, router, stop } = await setup(client, "/", 0, true);
+    await vi.waitFor(() => expect(filters.loadedCourses.value).toHaveLength(1));
+
+    await filters.loadMore();
+
+    await vi.waitFor(() => expect(router.currentRoute.value.query.page).toBe("2"));
+    expect(filters.loadingMore.value).toBe(false);
+    expect(filters.loadMoreError.value).toBe("Page failed");
+    expect(filters.loadedCourses.value.map((course) => course.title)).toEqual(["First course"]);
+
+    await filters.loadMore();
+
+    await vi.waitFor(() => expect(filters.loadedCourses.value).toHaveLength(2), { timeout: 2_000 });
+    expect(filters.loadingMore.value).toBe(false);
+    expect(filters.loadMoreError.value).toBe("");
+    expect(pageTwoAttempts).toBe(2);
+    expect(isReadonly(filters.loadedCourses)).toBe(true);
+    expect(isReadonly(filters.loadingMore)).toBe(true);
+    expect(isReadonly(filters.loadMoreError)).toBe(true);
     stop();
   });
 
