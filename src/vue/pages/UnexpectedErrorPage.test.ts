@@ -13,6 +13,7 @@ describe("UnexpectedErrorPage", () => {
 
     expect(wrapper.get("h1").text()).toBe("Something went wrong");
     expect(wrapper.get("main").classes()).toContain("min-h-screen");
+    expect(wrapper.get('[data-icon="alert-circle"]').element.tagName).toBe("svg");
     expect(wrapper.text()).toContain("Reload page");
     expect(wrapper.getComponent(RouterLinkStub).props("to")).toBe("/");
   });

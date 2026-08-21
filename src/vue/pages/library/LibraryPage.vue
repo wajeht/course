@@ -6,6 +6,7 @@ import CatalogFiltersToolbar from "@/pages/library/partials/CatalogFiltersToolba
 import CourseCardGrid from "@/pages/catalog/partials/CourseCardGrid.vue";
 import AlertMessage from "@/components/ui/AlertMessage.vue";
 import AppButton from "@/components/ui/AppButton.vue";
+import AppIcon from "@/components/ui/AppIcon.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
 import PaginationControls from "@/components/ui/PaginationControls.vue";
 import PageHeader from "@/components/ui/PageHeader.vue";
@@ -92,7 +93,7 @@ function prefetchPage(page: number): void {
                 : 'Add a course to your video folder, then refresh the library.'
             "
           >
-            <template #icon>⌁</template>
+            <template #icon><AppIcon name="library" class="size-12" /></template>
             <template v-if="!hasActiveFilters" #details>
               Server folder: <code>/videos</code>
             </template>

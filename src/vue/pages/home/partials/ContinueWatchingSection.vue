@@ -5,6 +5,7 @@ import type { CatalogDto } from "@/api.js";
 import CourseCoverPlaceholder from "@/components/CourseCoverPlaceholder.vue";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import AppButton from "@/components/ui/AppButton.vue";
+import AppIcon from "@/components/ui/AppIcon.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import ProgressBar from "@/components/ui/ProgressBar.vue";
@@ -70,7 +71,7 @@ const prefetch = useRoutePrefetch();
           class="absolute top-5 right-5 z-[3] grid h-[42px] w-[42px] place-items-center rounded-full bg-white pl-0.5 text-[.75rem] text-pine-deep"
           aria-hidden="true"
         >
-          ▶
+          <AppIcon name="play" class="size-4" />
         </span>
       </RouterLink>
     </div>
@@ -80,7 +81,7 @@ const prefetch = useRoutePrefetch();
       description="Start a course from your library and it will appear here."
       :heading-level="2"
     >
-      <template #icon>▶</template>
+      <template #icon><AppIcon name="play" class="size-12" /></template>
       <template #actions>
         <AppButton :as="IntentRouterLink" to="/library" :prefetch="prefetch.library" size="lg">
           Browse library
