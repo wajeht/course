@@ -2,7 +2,7 @@
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import { computed } from "vue";
 
-import { api } from "@/api.js";
+import { api, apiErrorMessage } from "@/api.js";
 import AlertMessage from "@/components/ui/AlertMessage.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import PanelCard from "@/components/ui/PanelCard.vue";
@@ -42,8 +42,7 @@ const scanError = computed(() => {
   }
   const caught = scanRequest.error.value;
   if (!caught) return "";
-  if (caught instanceof Error) return caught.message;
-  return "Could not load library status";
+  return apiErrorMessage(caught, "Could not load library status");
 });
 const libraryStatusText = computed(() => {
   if (scanStatus.value?.status === "failed") return "Refresh failed";

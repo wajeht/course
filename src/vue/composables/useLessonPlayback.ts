@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 
 import {
   api,
+  apiErrorMessage,
   isCatalogResourceNotFound,
   type CourseDetailDto,
   type LessonDetailDto,
@@ -62,8 +63,7 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
     {
       errorMessage: "Could not reset this lesson",
       onError: (caught) => {
-        videoPlayback.error.value =
-          caught instanceof Error ? caught.message : "Could not reset this lesson";
+        videoPlayback.error.value = apiErrorMessage(caught, "Could not reset this lesson");
       },
       onSuccess: async (reset) => {
         if (!reset) return;
@@ -172,8 +172,7 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
         await router.replace(notFoundLocation(route.path));
         return;
       }
-      videoPlayback.error.value =
-        caught instanceof Error ? caught.message : "Could not load this lesson";
+      videoPlayback.error.value = apiErrorMessage(caught, "Could not load this lesson");
     } finally {
       if (videoPlayback.isCurrentRequest(requestId)) loadingState.value = false;
     }
@@ -236,8 +235,7 @@ export function useLessonPlayback(video: Ref<HTMLVideoElement | null>) {
       lessonState.value.completed = true;
       lessonState.value.progressPercent = 100;
     } catch (caught) {
-      videoPlayback.error.value =
-        caught instanceof Error ? caught.message : "Could not complete this lesson";
+      videoPlayback.error.value = apiErrorMessage(caught, "Could not complete this lesson");
     }
   }
 

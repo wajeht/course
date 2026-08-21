@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import { computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
-import { api, isCatalogResourceNotFound } from "@/api.js";
+import { api, apiErrorMessage, isCatalogResourceNotFound } from "@/api.js";
 import CourseCurriculum from "@/pages/course/partials/CourseCurriculum.vue";
 import CourseHero from "@/pages/course/partials/CourseHero.vue";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
@@ -55,7 +55,7 @@ const resetAction = useAsyncAction(
 const error = computed(() => {
   if (resetAction.errorMessage.value) return resetAction.errorMessage.value;
   const caught = courseRequest.error.value;
-  return caught instanceof Error ? caught.message : caught ? "Could not load this course" : "";
+  return caught ? apiErrorMessage(caught, "Could not load this course") : "";
 });
 
 async function resetProgress(): Promise<void> {
@@ -108,7 +108,8 @@ watch(
     <div
       v-if="loading"
       class="h-[42px] w-[42px] animate-spin rounded-full border-[3px] border-mist border-t-belt"
-      aria-label="Loading"
+      aria-label="Loading course"
+      role="status"
     />
     <EmptyState
       v-else

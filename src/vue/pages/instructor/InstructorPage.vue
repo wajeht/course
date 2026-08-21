@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/vue-query";
 import { computed, shallowRef, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
-import { api, type CatalogFilters } from "@/api.js";
+import { api, apiErrorMessage, type CatalogFilters } from "@/api.js";
 import CourseCardGrid from "@/pages/catalog/partials/CourseCardGrid.vue";
 import InstructorHero from "@/pages/instructor/partials/InstructorHero.vue";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
@@ -43,7 +43,7 @@ const loading = computed(
 const refreshing = computed(() => instructorRequest.isFetching.value && !loading.value);
 const error = computed(() => {
   const caught = instructorRequest.error.value;
-  return caught instanceof Error ? caught.message : caught ? "Could not load this instructor" : "";
+  return caught ? apiErrorMessage(caught, "Could not load this instructor") : "";
 });
 const instructorInitials = computed(() =>
   instructorName.value
@@ -125,12 +125,13 @@ watch(
     <div
       v-if="loading"
       class="h-[42px] w-[42px] animate-spin rounded-full border-[3px] border-mist border-t-belt"
-      aria-label="Loading"
+      aria-label="Loading instructor courses"
+      role="status"
     />
     <EmptyState
       v-else
       title="Instructor unavailable"
-      :description="error || `No courses list ${instructorName} as an instructor.`"
+      :description="error || `No courses are currently listed for ${instructorName}.`"
       :heading-level="1"
       :framed="false"
     >

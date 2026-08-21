@@ -58,14 +58,14 @@ describe("InstructorPage", () => {
     });
 
     expect(wrapper.text()).toContain("Cached course");
-    expect(wrapper.find('[aria-label="Loading"]').exists()).toBe(false);
+    expect(wrapper.find('[aria-label="Loading instructor courses"]').exists()).toBe(false);
     expect(request).not.toHaveBeenCalled();
     wrapper.unmount();
     queryClient.clear();
   });
 
   it("shows a request error instead of loading forever", async () => {
-    vi.spyOn(api, "getCatalog").mockRejectedValueOnce(new Error("Could not load instructor"));
+    vi.spyOn(api, "getCatalog").mockRejectedValueOnce(new TypeError("Failed to fetch"));
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
@@ -80,8 +80,9 @@ describe("InstructorPage", () => {
       global: { plugins: [[VueQueryPlugin, { queryClient }], router] },
     });
 
-    await vi.waitFor(() => expect(wrapper.text()).toContain("Could not load instructor"));
-    expect(wrapper.find('[aria-label="Loading"]').exists()).toBe(false);
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Could not load this instructor"));
+    expect(wrapper.text()).not.toContain("Failed to fetch");
+    expect(wrapper.find('[aria-label="Loading instructor courses"]').exists()).toBe(false);
     wrapper.unmount();
     queryClient.clear();
   });
@@ -114,7 +115,8 @@ describe("InstructorPage", () => {
     await vi.waitFor(() => expect(api.getCatalog).toHaveBeenCalledTimes(2));
 
     expect(wrapper.text()).not.toContain("Alpha course");
-    expect(wrapper.find('[aria-label="Loading"]').exists()).toBe(true);
+    const loadingStatus = wrapper.get('[aria-label="Loading instructor courses"]');
+    expect(loadingStatus.attributes("role")).toBe("status");
 
     resolveNext?.(catalog("Bravo course"));
     await vi.waitFor(() => expect(wrapper.text()).toContain("Bravo course"));

@@ -61,6 +61,7 @@ defineExpose({ video });
     <div
       v-if="loading"
       class="absolute inset-0 grid place-items-center content-center bg-[#0c120f] p-[30px] text-center"
+      role="status"
     >
       <div
         class="h-[42px] w-[42px] animate-spin rounded-full border-[3px] border-white/20 border-t-white"
@@ -70,6 +71,7 @@ defineExpose({ video });
     <div
       v-else-if="playback?.kind === 'converting'"
       class="absolute inset-0 grid place-items-center content-center bg-[#0c120f] p-[30px] text-center"
+      role="status"
     >
       <div
         class="h-[58px] w-[58px] rounded-full bg-[conic-gradient(#e4c57f_var(--progress),rgb(255_255_255_/_12%)_0)] [mask:radial-gradient(circle,transparent_55%,black_57%)]"

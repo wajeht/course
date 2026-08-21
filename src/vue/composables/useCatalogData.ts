@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/vue-query";
 import { computed, watch, type ComputedRef } from "vue";
 
-import type { CatalogDto, CatalogFilters } from "@/api.js";
+import { apiErrorMessage, type CatalogDto, type CatalogFilters } from "@/api.js";
 import { catalogQueryOptions, type CatalogQueryClient } from "@/queries.js";
 
 function emptyCatalog(): CatalogDto {
@@ -33,7 +33,7 @@ export function useCatalogData(
   );
   const error = computed(() => {
     const caught = catalogRequest.error.value;
-    return caught instanceof Error ? caught.message : caught ? "Could not load your library" : "";
+    return caught ? apiErrorMessage(caught, "Could not load your library") : "";
   });
 
   return {

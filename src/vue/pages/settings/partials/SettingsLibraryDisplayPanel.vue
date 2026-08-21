@@ -2,7 +2,7 @@
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import { computed, shallowRef, watch } from "vue";
 
-import { api, type CatalogPageSize } from "@/api.js";
+import { api, apiErrorMessage, type CatalogPageSize } from "@/api.js";
 import AlertMessage from "@/components/ui/AlertMessage.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppSelect from "@/components/ui/AppSelect.vue";
@@ -30,8 +30,7 @@ const settingsError = computed(() => {
   if (settingsAction.errorMessage.value) return settingsAction.errorMessage.value;
   const caught = settingsRequest.error.value;
   if (!caught) return "";
-  if (caught instanceof Error) return caught.message;
-  return "Could not load settings";
+  return apiErrorMessage(caught, "Could not load settings");
 });
 
 watch(settingsRequest.data, (settings) => {
