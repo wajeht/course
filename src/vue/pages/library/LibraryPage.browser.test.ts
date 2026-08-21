@@ -26,8 +26,21 @@ test("filters through the API and uses the responsive mobile sheet", async ({ pa
   ]);
 
   const categoryButton = page.locator('[data-mobile-filter="category"]');
+  const filterColumn = page.getByTestId("catalog-filter-column");
   await expect(categoryButton).toBeVisible();
   expect((await categoryButton.boundingBox())!.height).toBeGreaterThanOrEqual(40);
+  await expect(filterColumn).toHaveCSS("position", "sticky");
+  await expect(filterColumn).toHaveCSS("top", "66px");
+  const mobileFilterBox = (await filterColumn.boundingBox())!;
+  const mobileClientWidth = await page.evaluate(() => document.documentElement.clientWidth);
+  expect(mobileFilterBox.x).toBe(0);
+  expect(mobileFilterBox.width).toBe(mobileClientWidth);
+  await filterColumn.evaluate((element) => {
+    element.closest<HTMLElement>('[data-testid="catalog-layout"]')!.style.minHeight = "1800px";
+  });
+  await page.evaluate(() => window.scrollTo(0, 500));
+  await expect.poll(async () => Math.round((await filterColumn.boundingBox())!.y)).toBe(66);
+  await page.evaluate(() => window.scrollTo(0, 0));
   await categoryButton.click();
 
   const drawer = page.getByRole("dialog", { name: "Categories" });
@@ -64,10 +77,15 @@ test("filters through the API and uses the responsive mobile sheet", async ({ pa
   await expect(page).not.toHaveURL(/category=/);
 
   await page.setViewportSize({ width: 800, height: 900 });
-  const filterColumn = page.getByTestId("catalog-filter-column");
   const courseColumn = page.getByTestId("catalog-course-column");
   expect((await filterColumn.boundingBox())!.width).toBe(260);
   expect((await courseColumn.boundingBox())!.width).toBeGreaterThan(440);
+  await expect(filterColumn).toHaveCSS("top", "90px");
+  await expect(filterColumn).toHaveCSS("max-height", "786px");
+  await expect(filterColumn).toHaveCSS("overflow-y", "auto");
+  await page.evaluate(() => window.scrollTo(0, 500));
+  await expect.poll(async () => Math.round((await filterColumn.boundingBox())!.y)).toBe(90);
+  await page.evaluate(() => window.scrollTo(0, 0));
 
   await page.setViewportSize({ width: 1280, height: 720 });
   await expect(categoryButton).toBeHidden();
