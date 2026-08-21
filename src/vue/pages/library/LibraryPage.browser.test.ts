@@ -148,6 +148,10 @@ test("loads more courses in place on mobile and keeps desktop pagination", async
   await page.goto("/library?pageSize=1");
   await expect(page.getByText("First course", { exact: true })).toBeVisible();
 
+  const mobileCourseColumn = (await page.getByTestId("catalog-course-column").boundingBox())!;
+  const mobileCard = (await page.locator("article").boundingBox())!;
+  expect(Math.round(mobileCard.width)).toBe(Math.round(mobileCourseColumn.width));
+
   const loadMore = page.getByTestId("load-more-courses");
   await expect(loadMore).toHaveText("Load more");
   await loadMore.click();
@@ -156,9 +160,13 @@ test("loads more courses in place on mobile and keeps desktop pagination", async
   await expect(loadMore).toHaveCount(0);
   await expect(page).not.toHaveURL(/page=2/);
 
-  await page.setViewportSize({ width: 800, height: 900 });
+  await page.setViewportSize({ width: 1280, height: 900 });
   await expect(page).toHaveURL(/page=2/);
   await expect(page.getByText("First course", { exact: true })).toBeHidden();
   await expect(page.getByText("Second course", { exact: true })).toBeVisible();
   await expect(page.getByText("Page 2 of 2")).toBeVisible();
+
+  const desktopCourseColumn = (await page.getByTestId("catalog-course-column").boundingBox())!;
+  const lastPageCard = (await page.locator("article").boundingBox())!;
+  expect(lastPageCard.width).toBeLessThan(desktopCourseColumn.width / 2);
 });
