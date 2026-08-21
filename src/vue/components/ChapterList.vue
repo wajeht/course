@@ -31,8 +31,8 @@ function timestampText(seconds: number): string {
     <li v-for="(chapter, index) in chapters" :key="chapter.startSeconds">
       <AppButton
         variant="unstyled"
-        class="group grid min-h-[62px] w-full cursor-pointer grid-cols-[52px_20px_minmax(0,1fr)] items-center gap-2 border-b border-line px-3 text-left transition-colors last:border-b-0 hover:bg-mist focus-visible:z-[1] focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-belt"
-        :class="index === activeIndex && 'bg-[#eef3ef] shadow-[inset_4px_0_#c4933f]'"
+        class="group grid min-h-[62px] w-full cursor-pointer grid-cols-[52px_20px_minmax(0,1fr)] items-center gap-2 border-b border-l-4 border-line px-3 text-left transition-colors last:border-b-0 hover:bg-mist focus-visible:z-[1] focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-belt"
+        :class="index === activeIndex ? 'border-l-belt bg-[#eef3ef]' : 'border-l-transparent'"
         :aria-current="index === activeIndex ? 'true' : undefined"
         @click="emit('seek', chapter.startSeconds)"
       >
@@ -51,7 +51,7 @@ function timestampText(seconds: number): string {
             class="relative h-2.5 w-2.5 rounded-full border-2 transition-colors"
             :class="
               index === activeIndex
-                ? 'border-belt bg-belt shadow-[0_0_0_4px_rgb(196_147_63_/_14%)]'
+                ? 'border-belt bg-belt'
                 : 'border-pine/28 bg-white group-hover:border-pine/55'
             "
           />
