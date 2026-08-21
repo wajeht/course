@@ -1,12 +1,12 @@
 import fs from "node:fs/promises";
 
-import type { CatalogService } from "../catalog/catalog.service.js";
+import type { LibraryService } from "../library/library.service.js";
 import type { ConversionManager, ConversionRecord } from "../media/conversion.js";
 
 export interface PlaybackService {
-  preparePlayback(lessonId: string): Promise<PlaybackResult | null>;
-  retryConversion(lessonId: string): Promise<PlaybackResult | null>;
-  getConversionStatus(lessonId: string): Promise<PlaybackResult | null>;
+  preparePlayback(videoId: string): Promise<PlaybackResult | null>;
+  retryConversion(videoId: string): Promise<PlaybackResult | null>;
+  getConversionStatus(videoId: string): Promise<PlaybackResult | null>;
 }
 
 export type PlaybackResult =
@@ -22,7 +22,7 @@ async function resolveConversionPlayback(record: ConversionRecord): Promise<Play
     await fs.access(record.playlistPath);
     return {
       kind: "hls",
-      url: `/hls/${record.lessonId}/index.m3u8`,
+      url: `/hls/${record.videoId}/index.m3u8`,
       status: record.status === "ready" ? "ready" : "converting",
       progress: record.progress,
     };
@@ -37,22 +37,22 @@ async function resolveConversionPlayback(record: ConversionRecord): Promise<Play
 }
 
 export function createPlaybackService(
-  catalog: CatalogService,
+  library: LibraryService,
   conversions: ConversionManager,
 ): PlaybackService {
   return {
-    async preparePlayback(lessonId) {
-      const lesson = await catalog.findLessonRecord(lessonId);
-      if (!lesson) return null;
-      if (lesson.browser_compatible !== 0) return { kind: "direct", url: `/media/${lessonId}` };
-      return resolveConversionPlayback(await conversions.requestConversion(lesson));
+    async preparePlayback(videoId) {
+      const video = await library.findVideoRecord(videoId);
+      if (!video) return null;
+      if (video.browser_compatible !== 0) return { kind: "direct", url: `/media/${videoId}` };
+      return resolveConversionPlayback(await conversions.requestConversion(video));
     },
-    async retryConversion(lessonId) {
-      const lesson = await catalog.findLessonRecord(lessonId);
-      return lesson ? resolveConversionPlayback(await conversions.retryConversion(lesson)) : null;
+    async retryConversion(videoId) {
+      const video = await library.findVideoRecord(videoId);
+      return video ? resolveConversionPlayback(await conversions.retryConversion(video)) : null;
     },
-    async getConversionStatus(lessonId) {
-      const record = await conversions.getConversion(lessonId);
+    async getConversionStatus(videoId) {
+      const record = await conversions.getConversion(videoId);
       return record ? resolveConversionPlayback(record) : null;
     },
   };

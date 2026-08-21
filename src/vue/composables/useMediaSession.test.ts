@@ -37,7 +37,7 @@ describe("useMediaSession", () => {
     session.playbackState = "none";
   });
 
-  it("publishes lesson metadata and handles native media controls", async () => {
+  it("publishes video metadata and handles native media controls", async () => {
     Object.defineProperty(navigator, "mediaSession", { configurable: true, value: session });
     vi.stubGlobal("MediaMetadata", FakeMediaMetadata);
     const next = vi.fn();
@@ -49,9 +49,9 @@ describe("useMediaSession", () => {
           useMediaSession(
             video,
             computed(() => ({
-              title: "Lesson one",
-              artist: "Instructor",
-              album: "Course name",
+              title: "Video one",
+              artist: "Author",
+              album: "Playlist name",
               artwork: "/cover.png",
             })),
             { next },
@@ -69,7 +69,7 @@ describe("useMediaSession", () => {
     });
     vi.spyOn(video, "pause").mockImplementation(() => undefined);
 
-    expect(session.metadata?.title).toBe("Lesson one");
+    expect(session.metadata?.title).toBe("Video one");
     handlers.get("seekforward")?.({ action: "seekforward", seekOffset: 15 });
     expect(video.currentTime).toBe(35);
     handlers.get("pause")?.({ action: "pause" });

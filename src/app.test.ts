@@ -9,17 +9,17 @@ import { createTemporaryDirectory, createTestContext } from "./test/resources.js
 
 describe("application", () => {
   it("serves health, byte ranges, and production routes", async () => {
-    const directory = await createTemporaryDirectory("course-app-");
+    const directory = await createTemporaryDirectory("videos-app-");
     const videos = path.join(directory, "videos");
-    const course = path.join(videos, "course");
-    await fs.mkdir(course, { recursive: true });
-    await fs.writeFile(path.join(course, "lesson.mp4"), "0123456789");
-    await fs.writeFile(path.join(course, "cover.jpg"), "cover");
+    const playlist = path.join(videos, "playlist");
+    await fs.mkdir(playlist, { recursive: true });
+    await fs.writeFile(path.join(playlist, "video.mp4"), "0123456789");
+    await fs.writeFile(path.join(playlist, "cover.jpg"), "cover");
     const configuration = createConfiguration({
       APP_ENV: "testing",
       VIDEOS_DIR: videos,
       DATA_DIR: path.join(directory, "data"),
-      AUTH_SETUP_TOKEN: "course-app-test-setup-token",
+      AUTH_SETUP_TOKEN: "videos-app-test-setup-token",
     });
     configuration.app.env = "production";
     const context = await createTestContext(configuration);
@@ -32,19 +32,19 @@ describe("application", () => {
     await fs.writeFile(path.join(clientDirectory, "manifest.webmanifest"), "{}");
     context.configuration.app.clientDirectory = clientDirectory;
     const now = new Date().toISOString();
-    await context.database.connection("courses").insert({
+    await context.database.connection("playlists").insert({
       id: "a".repeat(24),
-      path: "course",
-      title: "Course",
+      path: "playlist",
+      title: "Playlist",
       description: "",
-      cover_path: "course/cover.jpg",
+      cover_path: "playlist/cover.jpg",
       sort_order: 0,
     });
-    await context.database.connection("lessons").insert({
+    await context.database.connection("videos").insert({
       id: "b".repeat(24),
-      course_id: "a".repeat(24),
-      path: "course/lesson.mp4",
-      title: "Lesson",
+      playlist_id: "a".repeat(24),
+      path: "playlist/video.mp4",
+      title: "Video",
       sort_order: 0,
       duration_seconds: 10,
       size_bytes: 10,
@@ -57,17 +57,17 @@ describe("application", () => {
     const app = createApp(context);
 
     expect(await (await app.request("/healthz")).json()).toEqual({ status: "ok" });
-    expect((await app.request("/api/catalog")).status).toBe(401);
+    expect((await app.request("/api/library")).status).toBe(401);
     expect((await app.request(`/media/${"b".repeat(24)}`)).status).toBe(401);
-    expect((await app.request(`/covers/${"a".repeat(24)}`)).status).toBe(401);
+    expect((await app.request(`/covers/playlists/${"a".repeat(24)}`)).status).toBe(401);
     expect((await app.request(`/hls/${"b".repeat(24)}/index.m3u8`)).status).toBe(401);
 
     const rejectedSetup = await app.request("/api/auth/password", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        password: "course-test-password",
-        confirmPassword: "course-test-password",
+        password: "videos-test-password",
+        confirmPassword: "videos-test-password",
         setupToken: "wrong-setup-token",
       }),
     });
@@ -77,16 +77,16 @@ describe("application", () => {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        password: "course-test-password",
-        confirmPassword: "course-test-password",
-        setupToken: "course-app-test-setup-token",
+        password: "videos-test-password",
+        confirmPassword: "videos-test-password",
+        setupToken: "videos-app-test-setup-token",
       }),
     });
     expect(setup.status).toBe(201);
     const login = await app.request("/api/auth", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ password: "course-test-password" }),
+      body: JSON.stringify({ password: "videos-test-password" }),
     });
     expect(login.status).toBe(200);
     const cookie = login.headers.get("set-cookie")?.split(";")[0];
@@ -99,7 +99,7 @@ describe("application", () => {
     expect(response.headers.get("content-range")).toBe("bytes 2-5/10");
     expect(await response.text()).toBe("2345");
 
-    const cover = await app.request(`/covers/${"a".repeat(24)}`, {
+    const cover = await app.request(`/covers/playlists/${"a".repeat(24)}`, {
       headers: { cookie: cookie! },
     });
     expect(cover.status).toBe(200);
@@ -107,14 +107,14 @@ describe("application", () => {
     expect(cover.headers.get("vary")).toBe("Cookie");
     expect(await cover.text()).toBe("cover");
 
-    const openLesson = vi.spyOn(context.progress, "openLesson");
-    const lessonDetail = await app.request(`/api/catalog/lessons/${"b".repeat(24)}`, {
+    const openVideo = vi.spyOn(context.progress, "openVideo");
+    const videoDetail = await app.request(`/api/videos/${"b".repeat(24)}`, {
       headers: { cookie: cookie! },
     });
-    expect(lessonDetail.status).toBe(200);
-    expect(await lessonDetail.json()).toMatchObject({
-      lesson: { id: "b".repeat(24), title: "Lesson" },
-      course: { id: "a".repeat(24), title: "Course" },
+    expect(videoDetail.status).toBe(200);
+    expect(await videoDetail.json()).toMatchObject({
+      video: { id: "b".repeat(24), title: "Video" },
+      playlist: { id: "a".repeat(24), title: "Playlist" },
     });
 
     const player = await app.request(`/api/playback/${"b".repeat(24)}`, {
@@ -123,7 +123,7 @@ describe("application", () => {
     });
     expect(player.status).toBe(200);
     expect(await player.json()).toEqual({ kind: "direct", url: `/media/${"b".repeat(24)}` });
-    expect(openLesson).not.toHaveBeenCalled();
+    expect(openVideo).not.toHaveBeenCalled();
 
     const apiNotFound = await app.request("/api/does-not-exist", {
       headers: { cookie: cookie! },
@@ -131,13 +131,8 @@ describe("application", () => {
     expect(apiNotFound.status).toBe(404);
     expect(await apiNotFound.json()).toEqual({ message: "Resource not found" });
 
-    for (const catalogPath of [
-      "/api/catalog/courses/not-an-id",
-      "/api/catalog/lessons/not-an-id",
-      `/api/catalog/courses/${"c".repeat(24)}`,
-      `/api/catalog/lessons/${"d".repeat(24)}`,
-    ]) {
-      expect((await app.request(catalogPath, { headers: { cookie: cookie! } })).status).toBe(404);
+    for (const libraryPath of ["/api/videos/not-an-id", `/api/videos/${"d".repeat(24)}`]) {
+      expect((await app.request(libraryPath, { headers: { cookie: cookie! } })).status).toBe(404);
     }
 
     const robots = await app.request("/robots.txt");
@@ -162,10 +157,5 @@ describe("application", () => {
       expect(index.headers.get("cache-control")).toBe("no-cache");
       expect(await index.text()).toBe("SPA");
     }
-
-    const browserRoute = await app.request(`/courses/${"a".repeat(24)}`);
-    expect(browserRoute.status).toBe(200);
-    expect(browserRoute.headers.get("cache-control")).toBe("no-cache");
-    expect(await browserRoute.text()).toBe("SPA");
   });
 });

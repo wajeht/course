@@ -5,34 +5,40 @@ import { setPageTitle } from "@/utils.js";
 
 declare module "vue-router" {
   interface RouteMeta {
-    navigation?: "home" | "library" | "settings";
+    navigation?: "home" | "videos" | "settings";
     shell?: "player";
     title?: string;
   }
 }
 
 export const loadHomePage = () => import("@/pages/home/HomePage.vue");
-export const loadLibraryPage = () => import("@/pages/library/LibraryPage.vue");
+export const loadVideosPage = () => import("@/pages/library/LibraryPage.vue");
+export const loadAuthorPage = () => import("@/pages/author/AuthorPage.vue");
+export const loadPlayerPage = () => import("@/pages/player/PlayerPage.vue");
 export const loadSettingsLibraryPage = () => import("@/pages/settings/LibraryPage.vue");
 export const loadSettingsAccessPage = () => import("@/pages/settings/AccessPage.vue");
-export const loadCoursePage = () => import("@/pages/course/CoursePage.vue");
-export const loadInstructorPage = () => import("@/pages/instructor/InstructorPage.vue");
-export const loadPlayerPage = () => import("@/pages/player/PlayerPage.vue");
 
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
+    { path: "/", name: "home", component: loadHomePage, meta: { navigation: "home" } },
     {
-      path: "/",
-      name: "home",
-      component: loadHomePage,
-      meta: { navigation: "home" },
+      path: "/videos",
+      name: "videos",
+      component: loadVideosPage,
+      meta: { navigation: "videos", title: "All videos" },
     },
     {
-      path: "/library",
-      name: "library",
-      component: loadLibraryPage,
-      meta: { navigation: "library", title: "Library" },
+      path: "/authors/:authorName",
+      name: "author",
+      component: loadAuthorPage,
+      meta: { navigation: "videos", title: "Author" },
+    },
+    {
+      path: "/videos/:videoId",
+      name: "player",
+      component: loadPlayerPage,
+      meta: { navigation: "videos", shell: "player", title: "Video" },
     },
     {
       path: "/settings/library",
@@ -45,24 +51,6 @@ export const router = createRouter({
       name: "settings-access",
       component: loadSettingsAccessPage,
       meta: { navigation: "settings", title: "Access settings" },
-    },
-    {
-      path: "/courses/:courseId",
-      name: "course",
-      component: loadCoursePage,
-      meta: { navigation: "library", title: "Course details" },
-    },
-    {
-      path: "/instructors/:instructorName",
-      name: "instructor",
-      component: loadInstructorPage,
-      meta: { navigation: "library", title: "Instructor" },
-    },
-    {
-      path: "/lessons/:lessonId",
-      name: "player",
-      component: loadPlayerPage,
-      meta: { navigation: "library", shell: "player", title: "Lesson" },
     },
     {
       path: "/:pathMatch(.*)*",

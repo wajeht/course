@@ -17,6 +17,6 @@ describe("PanelCard", () => {
     const wrapper = mount(PanelCard, { props: { elevated: false } });
 
     expect(wrapper.classes()).toContain("border-line");
-    expect(wrapper.classes()).not.toContain("shadow-course");
+    expect(wrapper.classes()).not.toContain("shadow-card");
   });
 });

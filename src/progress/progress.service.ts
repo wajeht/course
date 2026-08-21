@@ -1,41 +1,41 @@
-import type { CatalogRepository } from "../catalog/catalog.repository.js";
+import type { LibraryRepository } from "../library/library.repository.js";
 import type { ProgressRepository } from "./progress.repository.js";
 
 export interface ProgressService {
-  openLesson(lessonId: string): Promise<boolean>;
-  updateProgress(lessonId: string, positionSeconds: number): Promise<boolean>;
-  completeLesson(lessonId: string): Promise<boolean>;
-  resetLesson(lessonId: string): Promise<void>;
-  resetCourse(courseId: string): Promise<void>;
+  openVideo(videoId: string): Promise<boolean>;
+  updateProgress(videoId: string, positionSeconds: number): Promise<boolean>;
+  completeVideo(videoId: string): Promise<boolean>;
+  resetVideo(videoId: string): Promise<void>;
+  resetPlaylist(playlistId: string): Promise<void>;
 }
 
 export function createProgressService(
   repository: ProgressRepository,
-  catalog: CatalogRepository,
+  library: LibraryRepository,
 ): ProgressService {
   return {
-    async openLesson(lessonId) {
-      if (!(await catalog.findLesson(lessonId))) return false;
-      await repository.markOpened(lessonId);
+    async openVideo(videoId) {
+      if (!(await library.findVideo(videoId))) return false;
+      await repository.markOpened(videoId);
       return true;
     },
-    async updateProgress(lessonId, positionSeconds) {
-      const lesson = await catalog.findLesson(lessonId);
-      if (!lesson) return false;
+    async updateProgress(videoId, positionSeconds) {
+      const video = await library.findVideo(videoId);
+      if (!video) return false;
       if (positionSeconds <= 0) return true;
       await repository.savePosition(
-        lessonId,
-        Math.min(positionSeconds, Number(lesson.duration_seconds)),
+        videoId,
+        Math.min(positionSeconds, Number(video.duration_seconds)),
       );
       return true;
     },
-    async completeLesson(lessonId) {
-      const lesson = await catalog.findLesson(lessonId);
-      if (!lesson) return false;
-      await repository.completeLesson(lessonId, Number(lesson.duration_seconds));
+    async completeVideo(videoId) {
+      const video = await library.findVideo(videoId);
+      if (!video) return false;
+      await repository.completeVideo(videoId, Number(video.duration_seconds));
       return true;
     },
-    resetLesson: (lessonId) => repository.resetLesson(lessonId),
-    resetCourse: (courseId) => repository.resetCourse(courseId),
+    resetVideo: (videoId) => repository.resetVideo(videoId),
+    resetPlaylist: (playlistId) => repository.resetPlaylist(playlistId),
   };
 }

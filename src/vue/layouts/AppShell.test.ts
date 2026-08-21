@@ -10,9 +10,9 @@ import AppShell from "./AppShell.vue";
 const routes: RouteRecordRaw[] = [
   { path: "/", component: { template: "<div />" }, meta: { navigation: "home" } },
   {
-    path: "/library",
+    path: "/videos",
     component: { template: "<div />" },
-    meta: { navigation: "library" },
+    meta: { navigation: "videos" },
   },
   {
     path: "/settings/library",
@@ -40,7 +40,7 @@ describe("AppShell", () => {
 
     expect(desktopNavigation.classes()).toContain("max-[600px]:hidden");
     expect(mobileNavigation.classes()).toContain("max-[600px]:grid");
-    expect(wrapper.get("header").text()).toContain("Course");
+    expect(wrapper.get("header").text()).toContain("Videos");
     expect(wrapper.get("header a > span > span:last-child").classes()).not.toContain(
       "max-[600px]:hidden",
     );
@@ -50,14 +50,14 @@ describe("AppShell", () => {
       "page",
     );
     expect(mobileNavigation.get('a[href="/"]').attributes("aria-current")).toBeUndefined();
-    expect(mobileNavigation.get('a[href="/library"]').attributes("aria-current")).toBeUndefined();
+    expect(mobileNavigation.get('a[href="/videos"]').attributes("aria-current")).toBeUndefined();
   });
 
-  it("selects the library navigation on the library page", async () => {
-    const wrapper = await mountShell("/library");
+  it("selects the videos navigation on the videos page", async () => {
+    const wrapper = await mountShell("/videos");
     const mobileNavigation = wrapper.get('nav[aria-label="Mobile navigation"]');
 
-    expect(mobileNavigation.get('a[href="/library"]').attributes("aria-current")).toBe("page");
+    expect(mobileNavigation.get('a[href="/videos"]').attributes("aria-current")).toBe("page");
     expect(mobileNavigation.get('a[href="/"]').attributes("aria-current")).toBeUndefined();
   });
 

@@ -45,7 +45,7 @@ function submit(): void {
     <p class="mt-3 hidden text-sm leading-6 text-muted lg:block">
       {{
         isSetup
-          ? "Create the password that protects your private course library."
+          ? "Create the password that protects your private video library."
           : "Please sign in to continue."
       }}
     </p>

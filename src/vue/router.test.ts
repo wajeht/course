@@ -10,6 +10,33 @@ function normalizedLocation(path: string): RouteLocationNormalizedLoaded {
 }
 
 describe("router error pages", () => {
+  it("uses Videos as the primary browse route without a Library alias", () => {
+    const videos = router.resolve("/videos");
+    const legacyLibrary = router.resolve("/library");
+
+    expect(videos.name).toBe("videos");
+    expect(videos.meta.navigation).toBe("videos");
+    expect(videos.meta.title).toBe("All videos");
+    expect(legacyLibrary.name).toBe("not-found");
+    expect(legacyLibrary.redirectedFrom).toBeUndefined();
+  });
+
+  it("provides author pages under the canonical author vocabulary", () => {
+    const author = router.resolve("/authors/Jane%20Smith");
+
+    expect(author.name).toBe("author");
+    expect(author.params.authorName).toBe("Jane Smith");
+    expect(author.meta.navigation).toBe("videos");
+    expect(author.meta.title).toBe("Author");
+  });
+
+  it("does not expose a separate playlist details route", () => {
+    const route = router.resolve(`/playlists/${"a".repeat(24)}`);
+
+    expect(route.name).toBe("not-found");
+    expect(route.redirectedFrom).toBeUndefined();
+  });
+
   it("provides separate Library and Access settings routes", () => {
     const library = router.resolve("/settings/library");
     const access = router.resolve("/settings/access");
@@ -30,7 +57,7 @@ describe("router error pages", () => {
   });
 
   it("resolves unknown frontend URLs to the not-found page", () => {
-    const route = router.resolve("/missing/course/page");
+    const route = router.resolve("/missing/video/page");
 
     expect(route.name).toBe("not-found");
     expect(route.meta.title).toBe("Page not found");
@@ -38,9 +65,9 @@ describe("router error pages", () => {
   });
 
   it("keeps a missing resource URL while matching the not-found page", () => {
-    const route = router.resolve(notFoundLocation("/courses/missing"));
+    const route = router.resolve(notFoundLocation("/videos/missing"));
 
-    expect(route.path).toBe("/courses/missing");
+    expect(route.path).toBe("/videos/missing");
     expect(route.name).toBe("not-found");
   });
 });
@@ -52,11 +79,7 @@ describe("router scrolling", () => {
 
     expect(scrollBehavior).toBeTypeOf("function");
     expect(
-      await scrollBehavior?.(
-        normalizedLocation("/library"),
-        normalizedLocation("/"),
-        savedPosition,
-      ),
+      await scrollBehavior?.(normalizedLocation("/videos"), normalizedLocation("/"), savedPosition),
     ).toEqual(savedPosition);
   });
 
@@ -65,13 +88,13 @@ describe("router scrolling", () => {
 
     expect(
       await scrollBehavior?.(
-        normalizedLocation("/library?page=2"),
-        normalizedLocation("/library?page=1"),
+        normalizedLocation("/videos?page=2"),
+        normalizedLocation("/videos?page=1"),
         null,
       ),
     ).toBe(false);
     expect(
-      await scrollBehavior?.(normalizedLocation("/library"), normalizedLocation("/"), null),
+      await scrollBehavior?.(normalizedLocation("/videos"), normalizedLocation("/"), null),
     ).toEqual({ top: 0 });
   });
 });

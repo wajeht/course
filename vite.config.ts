@@ -33,7 +33,7 @@ export default defineConfig({
       clientPort: configuration.app.vuePort,
     },
     proxy: {
-      "^/api/(auth|catalog|progress|playback|scan|settings)": `http://localhost:${configuration.app.port}`,
+      "^/api/(auth|library|playlists|videos|progress|playback|scan|settings)": `http://localhost:${configuration.app.port}`,
       "/covers": `http://localhost:${configuration.app.port}`,
       "/media": `http://localhost:${configuration.app.port}`,
       "/hls": `http://localhost:${configuration.app.port}`,

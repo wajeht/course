@@ -2,7 +2,7 @@
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import { computed, shallowRef, watch } from "vue";
 
-import { api, apiErrorMessage, type CatalogPageSize } from "@/api.js";
+import { api, apiErrorMessage, type LibraryPageSize } from "@/api.js";
 import AlertMessage from "@/components/ui/AlertMessage.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppSelect from "@/components/ui/AppSelect.vue";
@@ -16,13 +16,13 @@ import { queryKeys, settingsQueryOptions } from "@/queries.js";
 const queryClient = useQueryClient();
 const settingsRequest = useQuery(settingsQueryOptions());
 const toast = useToast();
-const catalogPageSize = shallowRef<CatalogPageSize>(24);
-const settingsAction = useAsyncAction(() => api.updateSettings(catalogPageSize.value), {
+const libraryPageSize = shallowRef<LibraryPageSize>(24);
+const settingsAction = useAsyncAction(() => api.updateSettings(libraryPageSize.value), {
   errorMessage: "Could not save library settings",
   onSuccess: async (settings) => {
     queryClient.setQueryData(queryKeys.settings, settings);
-    await queryClient.invalidateQueries({ queryKey: queryKeys.catalog, refetchType: "none" });
-    catalogPageSize.value = settings.catalogPageSize;
+    await queryClient.invalidateQueries({ queryKey: queryKeys.library, refetchType: "none" });
+    libraryPageSize.value = settings.libraryPageSize;
     toast.success("Library settings saved");
   },
 });
@@ -34,7 +34,7 @@ const settingsError = computed(() => {
 });
 
 watch(settingsRequest.data, (settings) => {
-  if (settings) catalogPageSize.value = settings.catalogPageSize;
+  if (settings) libraryPageSize.value = settings.libraryPageSize;
 });
 
 async function saveSettings(): Promise<void> {
@@ -51,7 +51,7 @@ async function saveSettings(): Promise<void> {
   <PanelCard :elevated="false" padding="none">
     <PanelCardHeader
       title="Library display"
-      description="Choose how many courses appear on each library page."
+      description="Choose how many videos appear on each library page."
     />
     <form
       class="flex flex-col items-stretch gap-8 p-[clamp(22px,4vw,34px)]"
@@ -61,12 +61,12 @@ async function saveSettings(): Promise<void> {
       <FormField
         v-slot="field"
         class="w-full max-w-xs"
-        label="Courses per page"
-        help-text="This becomes the default for library and instructor pages."
+        label="Videos per page"
+        help-text="This becomes the default for the library."
       >
         <AppSelect
           :id="field.inputId"
-          v-model="catalogPageSize"
+          v-model="libraryPageSize"
           :aria-describedby="field.describedBy"
           :disabled="
             settingsRequest.isPending.value ||

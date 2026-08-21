@@ -1,17 +1,17 @@
 import { hc } from "hono/client";
 
 import type { AppType } from "../app";
-import type { ScanStatus } from "../media/types";
 import type {
   ChapterDto,
-  CatalogFilters,
-  CatalogService,
-  CourseDetailDto,
-  LessonDetailDto,
-  LessonDto,
-} from "../catalog/catalog.service";
+  LibraryFilters,
+  LibraryService,
+  PlaylistDetailDto,
+  VideoDto,
+  VideoDetailDto,
+} from "../library/library.service";
+import type { ScanStatus } from "../media/types";
 import type { PlaybackResult } from "../playback/playback.service";
-import type { CatalogPageSize, SettingsDto } from "../settings/settings.service";
+import type { LibraryPageSize, SettingsDto } from "../settings/settings.service";
 
 const apiClient = hc<AppType>("/");
 
@@ -22,23 +22,23 @@ export interface AuthStateDto {
   setupTokenRequired: boolean;
 }
 
-export type CatalogDto = Awaited<ReturnType<CatalogService["getCatalog"]>>;
+export type LibraryDto = Awaited<ReturnType<LibraryService["getLibrary"]>>;
+export interface VideoPlayerDetailDto {
+  video: VideoDetailDto;
+  playlist: PlaylistDetailDto | null;
+}
+
 export type {
   ChapterDto,
-  CatalogFilters,
-  CatalogPageSize,
-  CourseDetailDto,
-  LessonDetailDto,
-  LessonDto,
+  LibraryFilters,
+  LibraryPageSize,
   PlaybackResult,
+  PlaylistDetailDto,
   ScanStatus,
   SettingsDto,
+  VideoDetailDto,
+  VideoDto,
 };
-
-export interface LessonPlayerDetailDto {
-  lesson: LessonDetailDto;
-  course: CourseDetailDto;
-}
 
 export class ApiError extends Error {
   constructor(
@@ -53,7 +53,7 @@ export function apiErrorMessage(error: unknown, fallback: string): string {
   return error instanceof ApiError && error.message.trim() ? error.message : fallback;
 }
 
-export function isCatalogResourceNotFound(error: unknown): error is ApiError {
+export function isLibraryResourceNotFound(error: unknown): error is ApiError {
   return error instanceof ApiError && (error.status === 400 || error.status === 404);
 }
 
@@ -61,7 +61,7 @@ export async function expectJson<T>(response: Response, notifyUnauthorized = fal
   const body = (await response.json()) as T | { message?: string };
   if (!response.ok) {
     if (notifyUnauthorized && response.status === 401 && typeof window !== "undefined") {
-      window.dispatchEvent(new Event("course:unauthorized"));
+      window.dispatchEvent(new Event("videos:unauthorized"));
     }
     throw new ApiError(
       "message" in (body as object)
@@ -93,9 +93,7 @@ export const api = {
     setupToken?: string,
   ): Promise<void> {
     await expectJson(
-      await apiClient.api.auth.password.$post({
-        json: { password, confirmPassword, setupToken },
-      }),
+      await apiClient.api.auth.password.$post({ json: { password, confirmPassword, setupToken } }),
     );
   },
   async changePassword(
@@ -109,8 +107,8 @@ export const api = {
       }),
     );
   },
-  async getCatalog(filters: CatalogFilters = {}, signal?: AbortSignal): Promise<CatalogDto> {
-    const response = await apiClient.api.catalog.$get(
+  async getLibrary(filters: LibraryFilters = {}, signal?: AbortSignal): Promise<LibraryDto> {
+    const response = await apiClient.api.library.$get(
       {
         query: {
           ...filters,
@@ -120,83 +118,70 @@ export const api = {
       },
       { init: { signal } },
     );
-    return expectProtectedJson<CatalogDto>(response);
+    return expectProtectedJson<LibraryDto>(response);
   },
-  async getCourse(courseId: string, signal?: AbortSignal): Promise<CourseDetailDto> {
-    const response = await apiClient.api.catalog.courses[":courseId"].$get(
-      { param: { courseId } },
-      { init: { signal } },
+  async getVideo(videoId: string, signal?: AbortSignal): Promise<VideoPlayerDetailDto> {
+    return expectProtectedJson<VideoPlayerDetailDto>(
+      await apiClient.api.videos[":videoId"].$get({ param: { videoId } }, { init: { signal } }),
     );
-    return expectProtectedJson<CourseDetailDto>(response);
   },
-  async getLesson(lessonId: string, signal?: AbortSignal): Promise<LessonPlayerDetailDto> {
-    const response = await apiClient.api.catalog.lessons[":lessonId"].$get(
-      { param: { lessonId } },
-      { init: { signal } },
+  async preparePlayback(videoId: string): Promise<PlaybackResult> {
+    return expectProtectedJson<PlaybackResult>(
+      await apiClient.api.playback[":videoId"].$post({ param: { videoId } }),
     );
-    return expectProtectedJson<LessonPlayerDetailDto>(response);
   },
-  async preparePlayback(lessonId: string): Promise<PlaybackResult> {
-    const response = await apiClient.api.playback[":lessonId"].$post({ param: { lessonId } });
-    return expectProtectedJson<PlaybackResult>(response);
+  async openVideo(videoId: string): Promise<void> {
+    await expectProtectedJson(
+      await apiClient.api.progress.videos[":videoId"].open.$post({ param: { videoId } }),
+    );
   },
-  async openLesson(lessonId: string): Promise<void> {
-    const response = await apiClient.api.progress.lessons[":lessonId"].open.$post({
-      param: { lessonId },
-    });
-    await expectProtectedJson(response);
+  async getConversionStatus(videoId: string): Promise<PlaybackResult> {
+    return expectProtectedJson<PlaybackResult>(
+      await apiClient.api.playback[":videoId"].conversion.$get({ param: { videoId } }),
+    );
   },
-  async getConversionStatus(lessonId: string): Promise<PlaybackResult> {
-    const response = await apiClient.api.playback[":lessonId"].conversion.$get({
-      param: { lessonId },
-    });
-    return expectProtectedJson<PlaybackResult>(response);
+  async retryConversion(videoId: string): Promise<PlaybackResult> {
+    return expectProtectedJson<PlaybackResult>(
+      await apiClient.api.playback[":videoId"].retry.$post({ param: { videoId } }),
+    );
   },
-  async retryConversion(lessonId: string): Promise<PlaybackResult> {
-    const response = await apiClient.api.playback[":lessonId"].retry.$post({
-      param: { lessonId },
-    });
-    return expectProtectedJson<PlaybackResult>(response);
+  async saveProgress(videoId: string, positionSeconds: number): Promise<void> {
+    await expectProtectedJson(
+      await apiClient.api.progress.videos[":videoId"].$put({
+        param: { videoId },
+        json: { positionSeconds },
+      }),
+    );
   },
-  async saveProgress(lessonId: string, positionSeconds: number): Promise<void> {
-    const response = await apiClient.api.progress.lessons[":lessonId"].$put({
-      param: { lessonId },
-      json: { positionSeconds },
-    });
-    await expectProtectedJson(response);
+  async completeVideo(videoId: string): Promise<void> {
+    await expectProtectedJson(
+      await apiClient.api.progress.videos[":videoId"].complete.$post({ param: { videoId } }),
+    );
   },
-  async completeLesson(lessonId: string): Promise<void> {
-    const response = await apiClient.api.progress.lessons[":lessonId"].complete.$post({
-      param: { lessonId },
-    });
-    await expectProtectedJson(response);
+  async resetVideo(videoId: string): Promise<void> {
+    await expectProtectedJson(
+      await apiClient.api.progress.videos[":videoId"].$delete({ param: { videoId } }),
+    );
   },
-  async resetLesson(lessonId: string): Promise<void> {
-    const response = await apiClient.api.progress.lessons[":lessonId"].$delete({
-      param: { lessonId },
-    });
-    await expectProtectedJson(response);
-  },
-  async resetCourse(courseId: string): Promise<void> {
-    const response = await apiClient.api.progress.courses[":courseId"].$delete({
-      param: { courseId },
-    });
-    await expectProtectedJson(response);
+  async resetPlaylist(playlistId: string): Promise<void> {
+    await expectProtectedJson(
+      await apiClient.api.progress.playlists[":playlistId"].$delete({ param: { playlistId } }),
+    );
   },
   async getSettings(signal?: AbortSignal): Promise<SettingsDto> {
     return expectProtectedJson<SettingsDto>(
       await apiClient.api.settings.$get({}, { init: { signal } }),
     );
   },
-  async updateSettings(catalogPageSize: CatalogPageSize): Promise<SettingsDto> {
+  async updateSettings(libraryPageSize: LibraryPageSize): Promise<SettingsDto> {
     return expectProtectedJson<SettingsDto>(
-      await apiClient.api.settings.$put({ json: { catalogPageSize } }),
+      await apiClient.api.settings.$put({ json: { libraryPageSize } }),
     );
   },
   async getScanStatus(signal?: AbortSignal): Promise<ScanStatus> {
     return expectProtectedJson<ScanStatus>(await apiClient.api.scan.$get({}, { init: { signal } }));
   },
-  async rescanCatalog(): Promise<ScanStatus> {
+  async rescanLibrary(): Promise<ScanStatus> {
     return expectProtectedJson<ScanStatus>(await apiClient.api.scan.$post());
   },
 };

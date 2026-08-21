@@ -42,16 +42,14 @@ const isButton = computed(() => props.as === "button");
 const variantClasses = computed(
   () =>
     ({
-      accent:
-        "border-transparent bg-belt-light text-pine-deep shadow-[0_8px_24px_rgb(21_51_38_/_20%)] hover:-translate-y-px",
+      accent: "border-transparent bg-belt-light text-pine-deep hover:-translate-y-px",
       danger: "border-clay bg-clay text-white hover:-translate-y-px hover:bg-clay-deep",
       ghost: "border-line bg-white text-pine hover:-translate-y-px hover:border-pine",
       inverse:
         "border-transparent bg-white text-pine-deep hover:-translate-y-px hover:bg-porcelain",
       "outline-inverse":
         "border-white/24 bg-transparent text-white hover:-translate-y-px hover:border-white/55",
-      primary:
-        "border-transparent bg-pine text-white shadow-[0_8px_24px_rgb(21_51_38_/_14%)] hover:-translate-y-px hover:bg-pine-deep",
+      primary: "border-transparent bg-pine text-white hover:-translate-y-px hover:bg-pine-deep",
       secondary: "border-line bg-white text-pine hover:-translate-y-px hover:border-pine",
       text: "border-transparent bg-transparent px-0 text-pine hover:text-pine-deep",
       unstyled: "border-0 bg-transparent p-0 text-inherit",

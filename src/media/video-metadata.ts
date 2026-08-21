@@ -2,6 +2,8 @@ import fs from "node:fs/promises";
 
 import { z } from "zod";
 
+import { metadataNameSchema, metadataNamesSchema, sourceMetadataSchema } from "./metadata.js";
+
 const chapterSchema = z
   .object({
     title: z.string().trim().min(1).max(300),
@@ -12,10 +14,16 @@ const chapterSchema = z
 const videoMetadataSchema = z
   .object({
     version: z.literal(1),
-    chapters: z.array(chapterSchema).min(1).max(500),
+    title: metadataNameSchema.optional(),
+    description: z.string().trim().optional(),
+    cover: metadataNameSchema.optional(),
+    authors: metadataNamesSchema.optional(),
+    tags: metadataNamesSchema.optional(),
+    source: sourceMetadataSchema.optional(),
+    chapters: z.array(chapterSchema).max(500).optional(),
   })
   .strict()
-  .superRefine(({ chapters }, context) => {
+  .superRefine(({ chapters = [] }, context) => {
     for (let index = 1; index < chapters.length; index += 1) {
       if (chapters[index]!.startSeconds <= chapters[index - 1]!.startSeconds) {
         context.addIssue({

@@ -10,9 +10,9 @@ export interface ServerInfo {
 }
 
 export async function startServer(context: AppContext): Promise<ServerInfo> {
-  const scan = await context.scanner.scanCatalog();
+  const scan = await context.scanner.scanLibrary();
   if (scan.status === "failed")
-    context.logger.warn("Starting with the previous catalog", { error: scan.error });
+    context.logger.warn("Starting with the previous library", { error: scan.error });
   await context.conversions.recoverConversions();
   const stopMonitoring = context.scanner.startMonitoring();
   const app = createApp(context);
@@ -37,7 +37,7 @@ export async function stopServer(info: ServerInfo): Promise<void> {
 }
 
 async function runApplication(): Promise<void> {
-  process.title = "course";
+  process.title = "videos";
   const context = await createContext();
   const info = await startServer(context);
   let stopping = false;

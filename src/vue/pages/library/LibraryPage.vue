@@ -1,128 +1,93 @@
 <script setup lang="ts">
-import { computed } from "vue";
-
-import { api } from "@/api.js";
-import CatalogFiltersToolbar from "@/pages/library/partials/CatalogFiltersToolbar.vue";
-import CourseCardGrid from "@/pages/catalog/partials/CourseCardGrid.vue";
 import AlertMessage from "@/components/ui/AlertMessage.vue";
-import AppButton from "@/components/ui/AppButton.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
-import PaginationControls from "@/components/ui/PaginationControls.vue";
 import PageHeader from "@/components/ui/PageHeader.vue";
-import { useCatalogFilters } from "@/composables/useCatalogFilters.js";
-import { useMediaQuery } from "@/composables/useMediaQuery.js";
-import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
+import PaginationControls from "@/components/ui/PaginationControls.vue";
+import PlaylistGrid from "@/components/PlaylistGrid.vue";
+import VideoGrid from "@/components/VideoGrid.vue";
+import { useLibraryBrowser } from "@/composables/useLibraryBrowser.js";
 import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
+import LibraryFiltersToolbar from "@/pages/library/partials/LibraryFiltersToolbar.vue";
 
-const isMobile = useMediaQuery("(max-width: 600px)");
 const {
-  catalog,
-  canLoadMore,
   clearFilters,
   error,
-  filters,
   hasActiveFilters,
-  libraryTitle,
-  loadedCourses,
-  loadMore,
-  loadMoreError,
+  library,
   loading,
-  loadingMore,
   page,
   query,
   refreshing,
-  selectedCategory,
-  selectedInstructor,
+  selectedAuthor,
   selectedTag,
+  selectedView,
   setPage,
-} = useCatalogFilters(api, { accumulatePages: isMobile });
-const prefetch = useRoutePrefetch();
-const displayedCourses = computed(() =>
-  isMobile.value ? loadedCourses.value : catalog.value.courses,
-);
-
-function prefetchPage(page: number): void {
-  void prefetch.catalog({ ...filters.value, page });
-}
+} = useLibraryBrowser();
 </script>
 
 <template>
   <StandardPageLayout>
-    <AlertMessage v-if="error" class="mb-7" size="lg">
-      {{ error }}
-    </AlertMessage>
-
-    <section id="catalog-results" :aria-busy="refreshing">
-      <PageHeader eyebrow="Your library" :title="libraryTitle" :heading-level="1" />
-
+    <AlertMessage v-if="error" class="mb-7" size="lg">{{ error }}</AlertMessage>
+    <section :aria-busy="refreshing">
+      <PageHeader
+        eyebrow="Your archive"
+        :title="selectedView === 'playlists' ? 'Playlists' : 'All videos'"
+        :heading-level="1"
+      />
       <div
-        data-testid="catalog-layout"
-        class="mt-0 grid grid-cols-1 items-start gap-0 min-[761px]:mt-6 min-[761px]:grid-cols-[260px_minmax(0,1fr)] min-[761px]:gap-[clamp(18px,2vw,30px)]"
+        class="mt-6 grid grid-cols-[240px_minmax(0,1fr)] items-start gap-8 max-[760px]:grid-cols-1"
       >
-        <div
-          data-testid="catalog-filter-column"
-          class="sticky top-[calc(66px+env(safe-area-inset-top))] z-30 self-start max-[760px]:-mx-5 max-[760px]:bg-porcelain max-[760px]:px-5 max-[760px]:py-[18px] min-[761px]:top-[calc(90px+env(safe-area-inset-top))] min-[761px]:z-auto min-[761px]:max-h-[calc(100dvh-114px-env(safe-area-inset-top))] min-[761px]:overflow-y-auto"
-        >
-          <CatalogFiltersToolbar
-            v-model:category="selectedCategory"
-            v-model:instructor="selectedInstructor"
-            v-model:query="query"
-            v-model:tag="selectedTag"
-            :categories="catalog.categories"
-            :has-active-filters="hasActiveFilters"
-            :instructors="catalog.instructors"
-            :tags="catalog.tags"
-            @clear="clearFilters"
+        <LibraryFiltersToolbar
+          v-model:author="selectedAuthor"
+          v-model:query="query"
+          v-model:tag="selectedTag"
+          v-model:view="selectedView"
+          class="sticky top-[90px] max-h-[calc(100dvh-114px)] overflow-y-auto max-[760px]:static max-[760px]:max-h-none"
+          :authors="library.authors"
+          :has-active-filters="hasActiveFilters"
+          :tags="library.tags"
+          @clear="clearFilters"
+        />
+        <div class="min-w-0">
+          <PlaylistGrid
+            v-if="selectedView === 'playlists' && library.playlists.length"
+            :playlists="library.playlists"
           />
-        </div>
-        <div data-testid="catalog-course-column" class="min-w-0">
-          <CourseCardGrid
-            v-if="loading || displayedCourses.length"
-            :courses="displayedCourses"
-            :elevated="false"
-            layout="sidebar"
-            :loading
+          <VideoGrid
+            v-else-if="selectedView === 'videos' && (loading || library.videos.length)"
+            :videos="library.videos"
+            :loading="loading"
           />
           <EmptyState
-            v-else
-            :title="hasActiveFilters ? 'No courses match these filters' : 'No courses found'"
+            v-else-if="!loading"
+            :title="
+              selectedView === 'playlists'
+                ? 'No playlists match these filters'
+                : hasActiveFilters
+                  ? 'No videos match these filters'
+                  : 'No videos found'
+            "
             :description="
-              hasActiveFilters
-                ? 'Try another category, instructor, tag, or search term.'
-                : 'Add a course to your video folder, then refresh the library.'
+              selectedView === 'playlists'
+                ? 'Try another author, tag, or search term.'
+                : hasActiveFilters
+                  ? 'Try another author, tag, or search term.'
+                  : 'Add a video to your videos folder, then refresh the library.'
             "
           >
-            <template #icon>⌁</template>
-            <template v-if="!hasActiveFilters" #details>
-              Server folder: <code>/videos</code>
-            </template>
+            <template #icon>▶</template>
+            <template v-if="!hasActiveFilters" #details
+              >Server folder: <code>/videos</code></template
+            >
           </EmptyState>
-
           <PaginationControls
-            v-if="!loading"
-            class="mt-8 max-[600px]:hidden"
+            v-if="selectedView === 'videos' && !loading"
+            class="mt-8"
             :disabled="refreshing"
             :page="page"
-            :total-pages="catalog.pagination.totalPages"
+            :total-pages="library.pagination.totalPages"
             @change="setPage"
-            @prefetch="prefetchPage"
           />
-
-          <AlertMessage v-if="loadMoreError" class="mt-[18px] max-[600px]:block min-[601px]:hidden">
-            {{ loadMoreError }}
-          </AlertMessage>
-          <div v-if="canLoadMore" class="mt-[18px] hidden max-[600px]:block">
-            <AppButton
-              block
-              data-testid="load-more-courses"
-              :loading="loadingMore"
-              loading-label="Loading more…"
-              size="lg"
-              @click="loadMore"
-            >
-              Load more
-            </AppButton>
-          </div>
         </div>
       </div>
     </section>

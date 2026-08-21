@@ -4,13 +4,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import type { Configuration } from "../config.js";
-import type { CatalogRepository, LessonRow } from "../catalog/catalog.repository.js";
+import type { LibraryRepository, VideoRow } from "../library/library.repository.js";
 import type { Logger } from "../logger.js";
 import type { ConversionRepository, StoredConversion } from "./conversion.repository.js";
 import { resolveContainedPath } from "./path.js";
 
 export type ConversionExecutor = (
-  lesson: LessonRow,
+  video: VideoRow,
   onProgress: (progress: number) => Promise<void>,
 ) => Promise<void>;
 
@@ -19,23 +19,22 @@ export interface ConversionRecord extends StoredConversion {
 }
 
 export interface ConversionManager {
-  requestConversion(lesson: LessonRow): Promise<ConversionRecord>;
-  retryConversion(lesson: LessonRow): Promise<ConversionRecord>;
-  getConversion(lessonId: string): Promise<ConversionRecord | null>;
+  requestConversion(video: VideoRow): Promise<ConversionRecord>;
+  retryConversion(video: VideoRow): Promise<ConversionRecord>;
+  getConversion(videoId: string): Promise<ConversionRecord | null>;
   recoverConversions(): Promise<void>;
 }
 
 export function createFfmpegConversionExecutor(configuration: Configuration): ConversionExecutor {
-  return async (lesson, onProgress) => {
-    const source = await resolveContainedPath(configuration.media.videosDirectory, lesson.path);
-    const outputDirectory = path.join(configuration.media.hlsDirectory, lesson.id);
+  return async (video, onProgress) => {
+    const source = await resolveContainedPath(configuration.media.videosDirectory, video.path);
+    const outputDirectory = path.join(configuration.media.hlsDirectory, video.id);
     const playlist = path.join(outputDirectory, "index.m3u8");
     await fs.rm(outputDirectory, { recursive: true, force: true });
     await fs.mkdir(outputDirectory, { recursive: true });
 
     const canRemux =
-      lesson.video_codec === "h264" &&
-      (lesson.audio_codec === null || lesson.audio_codec === "aac");
+      video.video_codec === "h264" && (video.audio_codec === null || video.audio_codec === "aac");
     const hardwareInputArguments = canRemux
       ? []
       : [
@@ -109,7 +108,7 @@ export function createFfmpegConversionExecutor(configuration: Configuration): Co
           const microseconds = Number(line.slice("out_time_us=".length));
           const progress = Math.min(
             99,
-            Math.round((microseconds / 1_000_000 / Number(lesson.duration_seconds)) * 100),
+            Math.round((microseconds / 1_000_000 / Number(video.duration_seconds)) * 100),
           );
           if (progress >= lastProgress + 2) {
             lastProgress = progress;
@@ -133,7 +132,7 @@ export function createFfmpegConversionExecutor(configuration: Configuration): Co
 
 export function createConversionManager(options: {
   repository: ConversionRepository;
-  catalog: CatalogRepository;
+  library: LibraryRepository;
   configuration: Configuration;
   logger: Logger;
   executor?: ConversionExecutor;
@@ -148,16 +147,16 @@ export function createConversionManager(options: {
       ...stored,
       playlistPath: path.join(
         options.configuration.media.hlsDirectory,
-        stored.lessonId,
+        stored.videoId,
         "index.m3u8",
       ),
     };
   }
 
-  function enqueueLesson(lessonId: string): void {
-    if (scheduled.has(lessonId)) return;
-    scheduled.add(lessonId);
-    queue.push(lessonId);
+  function enqueueVideo(videoId: string): void {
+    if (scheduled.has(videoId)) return;
+    scheduled.add(videoId);
+    queue.push(videoId);
     void processQueue();
   }
 
@@ -166,25 +165,23 @@ export function createConversionManager(options: {
     processing = true;
     try {
       while (queue.length > 0) {
-        const lessonId = queue.shift();
-        if (!lessonId) continue;
-        const lesson = await options.catalog.findLesson(lessonId);
-        if (!lesson) {
-          scheduled.delete(lessonId);
+        const videoId = queue.shift();
+        if (!videoId) continue;
+        const video = await options.library.findVideo(videoId);
+        if (!video) {
+          scheduled.delete(videoId);
           continue;
         }
-        await options.repository.markConverting(lessonId);
+        await options.repository.markConverting(videoId);
         try {
-          await executor(lesson, (progress) =>
-            options.repository.updateProgress(lessonId, progress),
-          );
-          await options.repository.markReady(lessonId);
+          await executor(video, (progress) => options.repository.updateProgress(videoId, progress));
+          await options.repository.markReady(videoId);
         } catch (error) {
           const message = error instanceof Error ? error.message : "Conversion failed";
-          await options.repository.markFailed(lessonId, message);
-          options.logger.error("Video conversion failed", { lessonId, error });
+          await options.repository.markFailed(videoId, message);
+          options.logger.error("Video conversion failed", { videoId, error });
         } finally {
-          scheduled.delete(lessonId);
+          scheduled.delete(videoId);
         }
       }
     } finally {
@@ -192,29 +189,29 @@ export function createConversionManager(options: {
     }
   }
 
-  async function queueLesson(lesson: LessonRow, force: boolean): Promise<ConversionRecord> {
-    const stored = await options.repository.getConversion(lesson.id);
+  async function queueVideo(video: VideoRow, force: boolean): Promise<ConversionRecord> {
+    const stored = await options.repository.getConversion(video.id);
     if (!force && stored) {
       const existing = conversionRecord(stored);
       if (existing.status !== "ready" || (await hasConversionPlaylist(existing))) return existing;
-      options.logger.warn("Rebuilding missing conversion cache", { lessonId: lesson.id });
+      options.logger.warn("Rebuilding missing conversion cache", { videoId: video.id });
     }
-    await options.repository.queueConversion(lesson.id);
-    enqueueLesson(lesson.id);
-    return conversionRecord((await options.repository.getConversion(lesson.id))!);
+    await options.repository.queueConversion(video.id);
+    enqueueVideo(video.id);
+    return conversionRecord((await options.repository.getConversion(video.id))!);
   }
 
   return {
-    requestConversion: (lesson) => queueLesson(lesson, false),
-    retryConversion: (lesson) => queueLesson(lesson, true),
-    async getConversion(lessonId) {
-      const stored = await options.repository.getConversion(lessonId);
+    requestConversion: (video) => queueVideo(video, false),
+    retryConversion: (video) => queueVideo(video, true),
+    async getConversion(videoId) {
+      const stored = await options.repository.getConversion(videoId);
       return stored ? conversionRecord(stored) : null;
     },
     async recoverConversions() {
-      for (const lessonId of await options.repository.listPendingLessonIds()) {
-        await options.repository.queueConversion(lessonId);
-        enqueueLesson(lessonId);
+      for (const videoId of await options.repository.listPendingVideoIds()) {
+        await options.repository.queueConversion(videoId);
+        enqueueVideo(videoId);
       }
     },
   };

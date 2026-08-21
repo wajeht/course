@@ -3,70 +3,67 @@ import type { Knex } from "knex";
 export type ConversionState = "queued" | "converting" | "ready" | "failed";
 
 export interface StoredConversion {
-  lessonId: string;
+  videoId: string;
   status: ConversionState;
   progress: number;
   error: string | null;
 }
 
 export interface ConversionRepository {
-  getConversion(lessonId: string): Promise<StoredConversion | null>;
-  queueConversion(lessonId: string): Promise<void>;
-  markConverting(lessonId: string): Promise<void>;
-  updateProgress(lessonId: string, progress: number): Promise<void>;
-  markReady(lessonId: string): Promise<void>;
-  markFailed(lessonId: string, error: string): Promise<void>;
-  listPendingLessonIds(): Promise<string[]>;
+  getConversion(videoId: string): Promise<StoredConversion | null>;
+  queueConversion(videoId: string): Promise<void>;
+  markConverting(videoId: string): Promise<void>;
+  updateProgress(videoId: string, progress: number): Promise<void>;
+  markReady(videoId: string): Promise<void>;
+  markFailed(videoId: string, error: string): Promise<void>;
+  listPendingVideoIds(): Promise<string[]>;
 }
 
 export function createConversionRepository(database: Knex): ConversionRepository {
-  async function updateConversion(
-    lessonId: string,
-    values: Record<string, unknown>,
-  ): Promise<void> {
-    await database("conversions").where({ lesson_id: lessonId }).update(values);
+  async function updateConversion(videoId: string, values: Record<string, unknown>): Promise<void> {
+    await database("conversions").where({ video_id: videoId }).update(values);
   }
 
   return {
-    async getConversion(lessonId) {
-      const row = await database("conversions").where({ lesson_id: lessonId }).first();
+    async getConversion(videoId) {
+      const row = await database("conversions").where({ video_id: videoId }).first();
       if (!row) return null;
       return {
-        lessonId: row.lesson_id as string,
+        videoId: row.video_id as string,
         status: row.status as ConversionState,
         progress: Number(row.progress),
         error: row.error as string | null,
       };
     },
-    async queueConversion(lessonId) {
+    async queueConversion(videoId) {
       await database("conversions")
         .insert({
-          lesson_id: lessonId,
+          video_id: videoId,
           status: "queued",
           progress: 0,
           error: null,
         })
-        .onConflict("lesson_id")
+        .onConflict("video_id")
         .merge({
           status: "queued",
           progress: 0,
           error: null,
         });
     },
-    markConverting: (lessonId) => updateConversion(lessonId, { status: "converting", error: null }),
-    updateProgress: (lessonId, progress) => updateConversion(lessonId, { progress }),
-    markReady: (lessonId) =>
-      updateConversion(lessonId, {
+    markConverting: (videoId) => updateConversion(videoId, { status: "converting", error: null }),
+    updateProgress: (videoId, progress) => updateConversion(videoId, { progress }),
+    markReady: (videoId) =>
+      updateConversion(videoId, {
         status: "ready",
         progress: 100,
         error: null,
       }),
-    markFailed: (lessonId, error) => updateConversion(lessonId, { status: "failed", error }),
-    async listPendingLessonIds() {
+    markFailed: (videoId, error) => updateConversion(videoId, { status: "failed", error }),
+    async listPendingVideoIds() {
       const rows = await database("conversions")
         .whereIn("status", ["queued", "converting"])
-        .select("lesson_id");
-      return rows.map((row) => row.lesson_id as string);
+        .select("video_id");
+      return rows.map((row) => row.video_id as string);
     },
   };
 }

@@ -1,65 +1,34 @@
 <script setup lang="ts">
 import { useTemplateRef } from "vue";
 
-import type { CourseDetailDto, LessonDto, PlaybackResult } from "@/api.js";
+import type { PlaybackResult, VideoDto } from "@/api.js";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 
 const props = defineProps<{
-  course: CourseDetailDto | null;
   ended: boolean;
   error: string;
   loading: boolean;
-  nextLesson?: LessonDto;
+  nextVideo?: VideoDto;
   playback: PlaybackResult | null;
   retrying: boolean;
 }>();
-
 const emit = defineEmits<{
   ended: [];
   loadedMetadata: [];
-  openLessons: [];
   pause: [];
   retry: [];
   timeUpdate: [];
 }>();
 const video = useTemplateRef<HTMLVideoElement>("video");
 const prefetch = useRoutePrefetch();
-
-async function prefetchNextLesson(): Promise<void> {
-  if (!props.nextLesson) return;
-  await prefetch.lesson(props.nextLesson.id);
-}
-
-async function prefetchCourse(): Promise<void> {
-  if (!props.course) return;
-  await prefetch.course(props.course.id);
-}
-
 defineExpose({ video });
 </script>
 
 <template>
-  <div class="flex min-h-[34px] items-center justify-between">
-    <IntentRouterLink
-      v-if="course"
-      :to="{ name: 'course', params: { courseId: course.id } }"
-      :prefetch="prefetchCourse"
-      class="mb-0 inline-block max-w-[75%] overflow-hidden text-[.78rem] font-bold text-ellipsis whitespace-nowrap text-white/68 hover:text-white"
-    >
-      ← {{ course.title }}
-    </IntentRouterLink>
-    <AppButton
-      class="hidden rounded-[5px] border border-white/25 bg-transparent px-[11px] py-[7px] text-white max-[860px]:inline-flex"
-      variant="unstyled"
-      @click="emit('openLessons')"
-    >
-      Lessons
-    </AppButton>
-  </div>
   <div
-    class="relative mx-auto mt-4 mb-[26px] grid aspect-video max-h-[calc(100vh-260px)] w-full place-items-center overflow-hidden rounded-[7px] border border-white/10 bg-[#070a08] shadow-[0_28px_80px_rgb(0_0_0_/_35%)] max-[860px]:max-h-none"
+    class="relative mx-auto mb-[26px] grid aspect-video max-h-[calc(100vh-260px)] w-full place-items-center overflow-hidden rounded-[7px] border border-white/10 bg-[#070a08] shadow-[0_28px_80px_rgb(0_0_0_/_35%)]"
   >
     <video
       ref="video"
@@ -73,69 +42,56 @@ defineExpose({ video });
     />
     <div
       v-if="loading"
-      class="absolute inset-0 grid place-items-center content-center bg-[#0c120f] p-[30px] text-center"
+      class="absolute inset-0 grid place-items-center content-center bg-[#0c120f] p-8 text-center"
       role="status"
     >
       <div
-        class="h-[42px] w-[42px] animate-spin rounded-full border-[3px] border-white/20 border-t-white"
+        class="h-10 w-10 animate-spin rounded-full border-[3px] border-white/20 border-t-white"
       />
-      <p class="mt-4 max-w-[540px] text-[.82rem] text-white/58">Preparing lesson…</p>
+      <p class="mt-4 text-sm text-white/58">Preparing video…</p>
     </div>
     <div
       v-else-if="playback?.kind === 'converting'"
-      class="absolute inset-0 grid place-items-center content-center bg-[#0c120f] p-[30px] text-center"
+      class="absolute inset-0 grid place-items-center content-center bg-[#0c120f] p-8 text-center"
       role="status"
     >
-      <div
-        class="h-[58px] w-[58px] rounded-full bg-[conic-gradient(#e4c57f_var(--progress),rgb(255_255_255_/_12%)_0)] [mask:radial-gradient(circle,transparent_55%,black_57%)]"
-        :style="{ '--progress': `${playback.progress * 3.6}deg` }"
-      />
-      <h2 class="mt-4 mb-[7px] font-display text-[clamp(1.6rem,3vw,2.8rem)]">
-        Preparing this video
-      </h2>
-      <p class="max-w-[540px] text-[.82rem] text-white/58">
-        {{ playback.progress }}% complete. This may take a moment.
-      </p>
+      <h2 class="font-display text-3xl">Preparing this video</h2>
+      <p class="mt-2 text-sm text-white/58">{{ playback.progress }}% complete.</p>
     </div>
     <div
       v-else-if="error"
-      class="absolute inset-0 grid place-items-center content-center bg-[#0c120f] p-[30px] text-center"
+      class="absolute inset-0 grid place-items-center content-center bg-[#0c120f] p-8 text-center"
     >
-      <h2 class="mt-4 mb-[7px] font-display text-[clamp(1.6rem,3vw,2.8rem)]">Video unavailable</h2>
-      <p class="max-w-[540px] text-[.82rem] text-white/58">{{ error }}</p>
+      <h2 class="font-display text-3xl">Video unavailable</h2>
+      <p class="mt-2 text-sm text-white/58">{{ error }}</p>
       <AppButton
         v-if="playback?.kind === 'error'"
-        class="mt-[22px]"
+        class="mt-5"
         variant="inverse"
-        size="lg"
         :loading="retrying"
-        loading-label="Retrying…"
         @click="emit('retry')"
+        >Try again</AppButton
       >
-        Try again
-      </AppButton>
     </div>
     <div
       v-if="ended"
-      class="absolute inset-0 z-[3] grid place-items-center content-center bg-[rgb(12_18_15_/_92%)] p-[30px] text-center backdrop-blur-lg"
+      class="absolute inset-0 z-[3] grid place-items-center content-center bg-[rgb(12_18_15_/_92%)] p-8 text-center backdrop-blur-lg"
     >
-      <span class="text-[.7rem] font-extrabold tracking-[.16em] text-belt-light uppercase">
-        Lesson complete
-      </span>
-      <h2 class="mt-4 mb-[7px] font-display text-[clamp(1.6rem,3vw,2.8rem)]">
-        {{ nextLesson ? "Ready for the next one?" : "Course complete." }}
+      <span class="text-xs font-extrabold tracking-[.16em] text-belt-light uppercase"
+        >Video complete</span
+      >
+      <h2 class="mt-4 font-display text-3xl">
+        {{ nextVideo ? "Ready for the next video?" : "Finished." }}
       </h2>
       <AppButton
-        v-if="nextLesson"
+        v-if="nextVideo"
         :as="IntentRouterLink"
-        :to="{ name: 'player', params: { lessonId: nextLesson.id } }"
-        :prefetch="prefetchNextLesson"
-        class="mt-[18px]"
+        :to="{ name: 'player', params: { videoId: nextVideo.id } }"
+        :prefetch="() => prefetch.video(nextVideo!.id)"
+        class="mt-5"
         variant="inverse"
-        size="lg"
+        >Next video →</AppButton
       >
-        Next lesson →
-      </AppButton>
     </div>
   </div>
 </template>

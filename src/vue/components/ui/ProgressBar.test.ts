@@ -10,6 +10,6 @@ describe("ProgressBar", () => {
     const wrapper = mount(ProgressBar, { props: { value: 120 } });
 
     expect(wrapper.find('[style*="width"]').attributes("style")).toContain("width: 100%");
-    expect(wrapper.text()).toContain("Course progress: 120%");
+    expect(wrapper.text()).toContain("Video progress: 120%");
   });
 });

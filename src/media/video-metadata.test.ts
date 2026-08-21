@@ -8,16 +8,22 @@ import { readVideoMetadata } from "./video-metadata.js";
 
 async function videoFilename(): Promise<string> {
   const directory = await createTemporaryDirectory("video-metadata-");
-  return path.join(directory, "01 - Lesson.mp4");
+  return path.join(directory, "01 - Video.mp4");
 }
 
 describe("video metadata", () => {
-  it("reads chapters from the exact video sidecar", async () => {
+  it("reads display metadata and chapters from the exact video sidecar", async () => {
     const video = await videoFilename();
     await fs.writeFile(
       `${video}.json`,
       JSON.stringify({
         version: 1,
+        title: "Opening Sequence",
+        description: "A saved instructional video",
+        cover: "opening.jpg",
+        authors: ["Jane Smith", "jane smith", "John Doe"],
+        tags: ["Guard", "guard", "Gi"],
+        source: { provider: "YouTube", url: "https://youtube.com/watch?v=example" },
         chapters: [
           { title: "Introduction", startSeconds: 0 },
           { title: "Core movement", startSeconds: 416 },
@@ -28,11 +34,27 @@ describe("video metadata", () => {
     await expect(readVideoMetadata(video)).resolves.toEqual({
       metadata: {
         version: 1,
+        title: "Opening Sequence",
+        description: "A saved instructional video",
+        cover: "opening.jpg",
+        authors: ["Jane Smith", "John Doe"],
+        tags: ["Guard", "Gi"],
+        source: { provider: "YouTube", url: "https://youtube.com/watch?v=example" },
         chapters: [
           { title: "Introduction", startSeconds: 0 },
           { title: "Core movement", startSeconds: 416 },
         ],
       },
+      warning: null,
+    });
+  });
+
+  it("accepts metadata without chapters", async () => {
+    const video = await videoFilename();
+    await fs.writeFile(`${video}.json`, JSON.stringify({ version: 1, title: "Saved Video" }));
+
+    await expect(readVideoMetadata(video)).resolves.toEqual({
+      metadata: { version: 1, title: "Saved Video" },
       warning: null,
     });
   });
@@ -56,7 +78,7 @@ describe("video metadata", () => {
     expect(result.warning).toContain("strictly increasing");
   });
 
-  it("rejects fields other than chapters", async () => {
+  it("rejects unsupported fields", async () => {
     const video = await videoFilename();
     await fs.writeFile(
       `${video}.json`,

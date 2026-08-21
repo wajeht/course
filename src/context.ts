@@ -5,17 +5,17 @@ import { createAuthService, type AuthService } from "./auth/auth.service.js";
 import { configuration as defaultConfiguration, type Configuration } from "./config.js";
 import { createDatabase, type Database } from "./db/db.js";
 import {
-  createCatalogRepository,
-  type CatalogRepository as ScannerCatalogRepository,
-} from "./media/catalog.repository.js";
+  createLibraryApiRepository,
+  type LibraryRepository,
+} from "./library/library.repository.js";
+import { createLibraryService, type LibraryService } from "./library/library.service.js";
+import {
+  createLibraryRepository,
+  type LibraryRepository as ScannerLibraryRepository,
+} from "./media/library.repository.js";
 import { createConversionManager, type ConversionManager } from "./media/conversion.js";
 import { createConversionRepository } from "./media/conversion.repository.js";
 import { createScanner, type Scanner } from "./media/scanner.js";
-import {
-  createCatalogApiRepository,
-  type CatalogRepository,
-} from "./catalog/catalog.repository.js";
-import { createCatalogService, type CatalogService } from "./catalog/catalog.service.js";
 import { createPlaybackService, type PlaybackService } from "./playback/playback.service.js";
 import { createProgressRepository } from "./progress/progress.repository.js";
 import { createProgressService, type ProgressService } from "./progress/progress.service.js";
@@ -28,9 +28,9 @@ export interface AppContext {
   logger: Logger;
   database: Database;
   auth: AuthService;
-  catalogRepository: CatalogRepository;
-  scannerCatalogRepository: ScannerCatalogRepository;
-  catalog: CatalogService;
+  libraryRepository: LibraryRepository;
+  scannerLibraryRepository: ScannerLibraryRepository;
+  library: LibraryService;
   progress: ProgressService;
   settings: SettingsService;
   playback: PlaybackService;
@@ -48,31 +48,31 @@ export async function createContext(
   ]);
   const database = await createDatabase(configuration, logger);
   const auth = createAuthService(createAuthRepository(database.connection), configuration);
-  const scannerCatalogRepository = createCatalogRepository(database.connection);
-  const catalogRepository = createCatalogApiRepository(database.connection);
+  const scannerLibraryRepository = createLibraryRepository(database.connection);
+  const libraryRepository = createLibraryApiRepository(database.connection);
   const settings = createSettingsService(createSettingsRepository(database.connection));
-  const catalog = createCatalogService(catalogRepository, settings);
+  const library = createLibraryService(libraryRepository, settings);
   const progress = createProgressService(
     createProgressRepository(database.connection),
-    catalogRepository,
+    libraryRepository,
   );
-  const scanner = createScanner({ configuration, repository: scannerCatalogRepository, logger });
+  const scanner = createScanner({ configuration, repository: scannerLibraryRepository, logger });
   const conversions = createConversionManager({
     repository: createConversionRepository(database.connection),
-    catalog: catalogRepository,
+    library: libraryRepository,
     configuration,
     logger,
   });
-  const playback = createPlaybackService(catalog, conversions);
+  const playback = createPlaybackService(library, conversions);
 
   return {
     configuration,
     logger,
     database,
     auth,
-    catalogRepository,
-    scannerCatalogRepository,
-    catalog,
+    libraryRepository,
+    scannerLibraryRepository,
+    library,
     progress,
     settings,
     playback,

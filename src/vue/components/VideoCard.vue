@@ -1,0 +1,63 @@
+<script setup lang="ts">
+import type { DeepReadonly } from "vue";
+
+import type { LibraryDto } from "@/api.js";
+import AuthorLinks from "@/components/AuthorLinks.vue";
+import IntentRouterLink from "@/components/IntentRouterLink.vue";
+import VideoCoverPlaceholder from "@/components/VideoCoverPlaceholder.vue";
+import ProgressBar from "@/components/ui/ProgressBar.vue";
+import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
+import { durationText } from "@/utils.js";
+
+defineProps<{ video: DeepReadonly<LibraryDto["videos"][number]> }>();
+const prefetch = useRoutePrefetch();
+</script>
+
+<template>
+  <article class="group min-w-0">
+    <IntentRouterLink
+      :to="{ name: 'player', params: { videoId: video.id } }"
+      :prefetch="() => prefetch.video(video.id)"
+      class="relative block aspect-video overflow-hidden rounded-[10px] bg-mist"
+      :aria-label="`Play ${video.title}`"
+    >
+      <img
+        v-if="video.coverUrl"
+        class="h-full w-full object-cover transition-transform duration-[400ms] group-hover:scale-[1.025] motion-reduce:transition-none"
+        :src="video.coverUrl"
+        :alt="`${video.title} cover`"
+        loading="lazy"
+      />
+      <VideoCoverPlaceholder v-else class="h-full w-full" :title="video.title" />
+      <span
+        class="absolute right-2 bottom-2 rounded bg-black/80 px-1.5 py-0.5 font-mono text-[.66rem] text-white"
+      >
+        {{ durationText(video.durationSeconds) }}
+      </span>
+      <ProgressBar
+        v-if="video.progressPercent > 0"
+        class="absolute right-0 bottom-0 left-0"
+        :value="video.progressPercent"
+        label="Video progress"
+        compact
+      />
+    </IntentRouterLink>
+    <h3 class="mt-3 line-clamp-2 text-[.92rem] leading-[1.3] font-bold">
+      <IntentRouterLink
+        :to="{ name: 'player', params: { videoId: video.id } }"
+        :prefetch="() => prefetch.video(video.id)"
+        class="hover:text-pine"
+      >
+        {{ video.title }}
+      </IntentRouterLink>
+    </h3>
+    <AuthorLinks
+      v-if="video.authors.length"
+      class="mt-1 block truncate text-[.72rem] text-muted"
+      :authors="video.authors"
+    />
+    <p v-if="video.playlistId" class="mt-1 truncate text-[.7rem] text-pine">
+      {{ video.playlistTitle }}
+    </p>
+  </article>
+</template>

@@ -49,4 +49,13 @@ describe("AppButton", () => {
 
     expect(wrapper.classes()).toContain("h-10");
   });
+
+  it.each(["accent", "primary"] as const)("renders %s buttons without a shadow", (variant) => {
+    const wrapper = mount(AppButton, {
+      props: { variant },
+      slots: { default: "Continue" },
+    });
+
+    expect(wrapper.classes().some((className) => className.startsWith("shadow"))).toBe(false);
+  });
 });

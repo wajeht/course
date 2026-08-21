@@ -34,14 +34,14 @@ async function logout(): Promise<void> {
   <StandardPageLayout
     class="min-[601px]:flex min-[601px]:min-h-[calc(100vh-66px)] min-[601px]:flex-col min-[601px]:pb-10"
   >
-    <PageHeader eyebrow="Course settings" title="Settings" />
+    <PageHeader eyebrow="Videos settings" title="Settings" />
 
     <AlertMessage v-if="logoutAction.errorMessage.value" class="mt-8" size="lg">
       {{ logoutAction.errorMessage.value }}
     </AlertMessage>
 
     <div
-      class="mt-6 grid grid-cols-4 items-start gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[760px]:grid-cols-1"
+      class="mt-6 grid grid-cols-[240px_minmax(0,1fr)] items-start gap-8 max-[760px]:grid-cols-1"
       data-settings-layout
     >
       <div class="grid gap-[clamp(18px,2vw,30px)]">
