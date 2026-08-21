@@ -41,7 +41,7 @@ async function runApplication(): Promise<void> {
   const context = await createContext();
   const info = await startServer(context);
   let stopping = false;
-  const stop = async (signal: string) => {
+  const stopApplication = async (signal: string) => {
     if (stopping) return;
     stopping = true;
     context.logger.info("Shutting down", { signal });
@@ -58,7 +58,7 @@ async function runApplication(): Promise<void> {
   };
 
   for (const signal of ["SIGINT", "SIGTERM", "SIGQUIT"] as const) {
-    process.on(signal, () => void stop(signal));
+    process.on(signal, () => void stopApplication(signal));
   }
   process.on("uncaughtException", (error) => {
     context.logger.error("Uncaught exception", { error });

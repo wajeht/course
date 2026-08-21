@@ -136,7 +136,7 @@ export function createAuthRouter(context: AppContext) {
       if (!(await context.auth.isPasswordConfigured())) {
         return c.json({ message: "Library password is not configured" }, 409);
       }
-      if (!(await context.auth.verifyPassword(c.req.valid("json").password))) {
+      if (!(await context.auth.isPasswordValid(c.req.valid("json").password))) {
         await context.auth.recordLoginFailure(key);
         context.logger.warn("Failed login attempt", { client: key });
         return c.json({ message: "Invalid password" }, 401);

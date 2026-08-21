@@ -20,7 +20,7 @@ export type PasswordResult =
 
 export interface AuthService {
   isPasswordConfigured(): Promise<boolean>;
-  verifyPassword(password: string): Promise<boolean>;
+  isPasswordValid(password: string): Promise<boolean>;
   setupPassword(password: string, setupToken?: string): Promise<PasswordResult>;
   changePassword(currentPassword: string, newPassword: string): Promise<PasswordResult>;
   getLoginAttempt(clientKey: string, now?: number): Promise<LoginAttempt | null>;
@@ -36,7 +36,7 @@ function hasValidPasswordLength(password: string): boolean {
   return [...password].length >= MIN_PASSWORD_LENGTH && Buffer.byteLength(password, "utf8") <= 72;
 }
 
-function safeEqual(left: string, right: string): boolean {
+function isSecurelyEqual(left: string, right: string): boolean {
   const leftHash = crypto.createHash("sha256").update(left).digest();
   const rightHash = crypto.createHash("sha256").update(right).digest();
   return crypto.timingSafeEqual(leftHash, rightHash);
@@ -55,7 +55,7 @@ export function createAuthService(
       return Boolean(await repository.getPasswordHash());
     },
 
-    async verifyPassword(password: string): Promise<boolean> {
+    async isPasswordValid(password: string): Promise<boolean> {
       const hash = await repository.getPasswordHash();
       return Boolean(hash) && hasValidPasswordLength(password) && bcrypt.compare(password, hash!);
     },
@@ -65,7 +65,7 @@ export function createAuthService(
       if (!hasValidPasswordLength(password)) return { ok: false, reason: "invalid" };
       if (configuration.app.env === "production") {
         if (!configuration.auth.setupToken) return { ok: false, reason: "setup_disabled" };
-        if (!setupToken || !safeEqual(setupToken, configuration.auth.setupToken)) {
+        if (!setupToken || !isSecurelyEqual(setupToken, configuration.auth.setupToken)) {
           return { ok: false, reason: "invalid" };
         }
       }
@@ -77,7 +77,7 @@ export function createAuthService(
 
     async changePassword(currentPassword: string, newPassword: string): Promise<PasswordResult> {
       if (!(await repository.getPasswordHash())) return { ok: false, reason: "not_configured" };
-      if (!(await this.verifyPassword(currentPassword)) || !hasValidPasswordLength(newPassword)) {
+      if (!(await this.isPasswordValid(currentPassword)) || !hasValidPasswordLength(newPassword)) {
         return { ok: false, reason: "invalid" };
       }
       await repository.changePasswordHash(

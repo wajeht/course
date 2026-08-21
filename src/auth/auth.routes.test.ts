@@ -308,7 +308,7 @@ describe("password authentication", () => {
       password_hash: await bcrypt.hash(password, 4),
     });
 
-    expect(await context.auth.verifyPassword(password)).toBe(false);
+    expect(await context.auth.isPasswordValid(password)).toBe(false);
     const response = await app.request("/api/auth", jsonRequest("POST", { password }));
     expect(response.status).toBe(401);
     expect(await response.json()).toEqual({ message: "Invalid password" });
