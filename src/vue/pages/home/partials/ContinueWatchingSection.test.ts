@@ -7,17 +7,16 @@ import { describe, expect, it } from "vitest";
 import ContinueWatchingSection from "./ContinueWatchingSection.vue";
 
 describe("ContinueWatchingSection", () => {
-  it("announces lesson loading accurately", () => {
+  it("announces video loading accurately", () => {
     const queryClient = new QueryClient();
     const wrapper = mount(ContinueWatchingSection, {
-      props: { lessons: [], loading: true },
+      props: { videos: [], loading: true },
       global: { plugins: [[VueQueryPlugin, { queryClient }]] },
     });
 
-    expect(wrapper.get('[aria-label="Loading lessons"]').attributes("aria-label")).toBe(
-      "Loading lessons",
+    expect(wrapper.get('[aria-label="Loading videos"]').attributes("aria-label")).toBe(
+      "Loading videos",
     );
-    expect(wrapper.get('[aria-label="Loading lessons"]').attributes("role")).toBe("status");
-    expect(wrapper.find('[aria-label="Loading courses"]').exists()).toBe(false);
+    expect(wrapper.get('[aria-label="Loading videos"]').attributes("role")).toBe("status");
   });
 });

@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import AppLogo from "./AppLogo.vue";
 
 describe("AppLogo", () => {
-  it("renders the Course brand", () => {
-    expect(mount(AppLogo).text()).toContain("Course");
+  it("renders the Videos brand", () => {
+    expect(mount(AppLogo).text()).toContain("Videos");
   });
 });

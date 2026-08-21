@@ -7,12 +7,12 @@ import { authKey, createAuth } from "@/composables/useAuth.js";
 import { confirmationKey, createConfirmation } from "@/composables/useConfirm.js";
 import { createToast, toastKey } from "@/composables/useToast.js";
 import { showFrontendError } from "@/frontend-error.js";
-import { createCourseQueryClient } from "@/queries.js";
+import { createVideosQueryClient } from "@/queries.js";
 import { router } from "@/router.js";
 
 const app = createApp(App);
 const auth = createAuth();
-const queryClient = createCourseQueryClient();
+const queryClient = createVideosQueryClient();
 void auth.initialize();
 
 watch(

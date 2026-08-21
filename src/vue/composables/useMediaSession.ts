@@ -1,6 +1,6 @@
 import { onScopeDispose, watch, type ComputedRef, type Ref } from "vue";
 
-export interface CourseMediaMetadata {
+export interface VideoMediaMetadata {
   album: string;
   artist: string;
   artwork?: string | null;
@@ -24,7 +24,7 @@ const actions: MediaSessionAction[] = [
 
 export function useMediaSession(
   video: Ref<HTMLVideoElement | null>,
-  metadata: ComputedRef<CourseMediaMetadata | null>,
+  metadata: ComputedRef<VideoMediaMetadata | null>,
   navigation: MediaSessionNavigation = {},
 ): void {
   if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;

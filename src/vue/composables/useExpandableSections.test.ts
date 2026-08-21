@@ -4,7 +4,7 @@ import { useExpandableSections } from "./useExpandableSections.js";
 
 describe("useExpandableSections", () => {
   it("toggles a section", () => {
-    const sections = useExpandableSections("course-section");
+    const sections = useExpandableSections("playlist-section");
     const section = { id: "volume-1" };
 
     sections.toggleSection(section);
@@ -15,7 +15,7 @@ describe("useExpandableSections", () => {
   });
 
   it("replaces or extends the expanded sections", () => {
-    const sections = useExpandableSections("course-section");
+    const sections = useExpandableSections("playlist-section");
     const first = { id: "volume-1" };
     const second = { id: "volume-2" };
 

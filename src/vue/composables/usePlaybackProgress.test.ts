@@ -77,7 +77,7 @@ describe("usePlaybackProgress", () => {
     releaseSave?.();
     await save;
     expect(progress.captureExitSnapshot(15)).toEqual({
-      lessonId: "lesson",
+      videoId: "lesson",
       positionSeconds: 15,
     });
   });

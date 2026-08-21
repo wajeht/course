@@ -1,73 +1,57 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from "vue";
 
-import PlayerCurriculumSidebar from "@/pages/player/partials/PlayerCurriculumSidebar.vue";
-import PlayerLessonDetails from "@/pages/player/partials/PlayerLessonDetails.vue";
+import { useVideoPlayer } from "@/composables/useVideoPlayer.js";
+import PlayerPlaylistSidebar from "@/pages/player/partials/PlayerPlaylistSidebar.vue";
+import PlayerVideoDetails from "@/pages/player/partials/PlayerVideoDetails.vue";
 import PlayerVideoStage from "@/pages/player/partials/PlayerVideoStage.vue";
-import { useLessonPlayback } from "@/composables/useLessonPlayback.js";
 
-const playerStage = useTemplateRef<InstanceType<typeof PlayerVideoStage>>("playerStage");
-const video = computed(() => playerStage.value?.video ?? null);
-const {
-  applyResume,
-  closeSidebar,
-  course,
-  currentTime,
-  ended,
-  error,
-  lesson,
-  loading,
-  markComplete,
-  nextLesson,
-  playback,
-  resetProgress,
-  resetting,
-  retryConversion,
-  retrying,
-  saveOnPause,
-  saveOnTimeUpdate,
-  seekToChapter,
-  sidebarOpen,
-  toggleSidebar,
-} = useLessonPlayback(video);
+const stage = useTemplateRef<InstanceType<typeof PlayerVideoStage>>("stage");
+const media = computed(() => stage.value?.video ?? null);
+const player = useVideoPlayer(media);
 </script>
 
 <template>
   <main
-    class="grid min-h-[calc(100vh-66px)] grid-cols-[minmax(0,1fr)_390px] bg-[#111714] max-[1120px]:grid-cols-[minmax(0,1fr)_330px] max-[860px]:block"
+    class="grid min-h-[calc(100vh-66px)] bg-[#111714]"
+    :class="
+      player.playlist.value
+        ? 'grid-cols-[minmax(0,1fr)_390px] max-[1120px]:grid-cols-[minmax(0,1fr)_330px] max-[860px]:block'
+        : 'grid-cols-1'
+    "
   >
-    <section
-      class="min-w-0 px-[clamp(20px,3vw,50px)] pt-6 pb-10 text-white max-[860px]:min-h-[calc(100vh-66px)] max-[600px]:px-3 max-[600px]:pt-[18px] max-[600px]:pb-[30px]"
-    >
-      <PlayerVideoStage
-        ref="playerStage"
-        :course
-        :ended
-        :error
-        :loading
-        :next-lesson="nextLesson"
-        :playback
-        :retrying
-        @ended="markComplete"
-        @loaded-metadata="applyResume"
-        @open-lessons="toggleSidebar"
-        @pause="saveOnPause"
-        @retry="retryConversion"
-        @time-update="saveOnTimeUpdate"
-      />
-      <PlayerLessonDetails
-        :current-time="currentTime"
-        :lesson
-        :resetting
-        @reset="resetProgress"
-        @seek="seekToChapter"
-      />
+    <section class="min-w-0 px-[clamp(20px,3vw,50px)] pt-6 pb-10 text-white max-[600px]:px-3">
+      <div :class="player.playlist.value ? '' : 'mx-auto max-w-[1180px]'">
+        <PlayerVideoStage
+          ref="stage"
+          :ended="player.ended.value"
+          :error="player.error.value"
+          :loading="player.loading.value"
+          :next-video="player.nextVideo.value"
+          :playback="player.playback.value"
+          :playlist="player.playlist.value"
+          :retrying="player.retrying.value"
+          @ended="player.markComplete"
+          @loaded-metadata="player.applyResume"
+          @open-playlist="player.toggleSidebar"
+          @pause="player.onPause"
+          @retry="player.retryConversion"
+          @time-update="player.onTimeUpdate"
+        />
+        <PlayerVideoDetails
+          :current-time="player.currentTime.value"
+          :video="player.video.value"
+          :resetting="player.resetting.value"
+          @reset="player.resetProgress"
+          @seek="player.seekToChapter"
+        />
+      </div>
     </section>
-    <PlayerCurriculumSidebar
-      :active-lesson-id="lesson?.id"
-      :course
-      :open="sidebarOpen"
-      @close="closeSidebar"
+    <PlayerPlaylistSidebar
+      :active-video-id="player.video.value?.id"
+      :playlist="player.playlist.value"
+      :open="player.sidebarOpen.value"
+      @close="player.closeSidebar"
     />
   </main>
 </template>

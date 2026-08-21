@@ -105,11 +105,11 @@ describe("App", () => {
     const wrapper = await mountAt("/settings/library", auth);
 
     expect(wrapper.findComponent(OfflinePage).exists()).toBe(true);
-    expect(wrapper.get("h1").text()).toBe("Course can’t connect");
+    expect(wrapper.get("h1").text()).toBe("Videos can’t connect");
     expect(wrapper.text()).toContain(
-      "Make sure this device is online and your Course server is running, then try again.",
+      "Make sure this device is online and your Videos server is running, then try again.",
     );
-    expect(document.title).toBe("Connection unavailable · Course");
+    expect(document.title).toBe("Connection unavailable · Videos");
     expect(wrapper.findComponent(AuthPage).exists()).toBe(false);
   });
 });
