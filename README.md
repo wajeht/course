@@ -11,7 +11,7 @@ A private, opinionated, self-hosted video course library.
 
 ## Usage
 
-Use it at [course.jaw.dev](https://course.jaw.dev), or run it locally:
+Run it locally:
 
 ```bash
 docker run --rm \
