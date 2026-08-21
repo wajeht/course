@@ -25,9 +25,10 @@ export function useCatalogFilters(
   const loadedTotalPages = shallowRef(0);
   const loadingMore = shallowRef(false);
   const loadMoreError = shallowRef("");
+  const accumulationRetry = shallowRef(0);
 
   watch(
-    [routeState.filters, dataState.catalog, accumulatePagesRef],
+    [routeState.filters, dataState.catalog, accumulatePagesRef, accumulationRetry],
     async ([filters, catalog, shouldAccumulate], _previous, onCleanup) => {
       let cancelled = false;
       onCleanup(() => {
@@ -80,15 +81,17 @@ export function useCatalogFilters(
   async function loadMore(): Promise<void> {
     if (loadingMore.value || !canLoadMore.value) return;
 
-    const nextPage = loadedPage.value + 1;
+    const currentPage = routeState.page.value;
+    const nextPage = currentPage > loadedPage.value ? currentPage : loadedPage.value + 1;
     loadingMore.value = true;
     loadMoreError.value = "";
 
     try {
-      await routeState.setPage(nextPage);
+      if (nextPage !== currentPage) await routeState.setPage(nextPage);
       await queryClient.fetchQuery(
         catalogQueryOptions({ ...routeState.filters.value, page: nextPage }, client),
       );
+      if (nextPage === currentPage) accumulationRetry.value += 1;
     } catch (caught) {
       loadMoreError.value =
         caught instanceof Error ? caught.message : "Could not load more courses";
