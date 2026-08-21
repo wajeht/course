@@ -16,7 +16,7 @@
   --color-muted: #68716c;
   --font-body: "Avenir Next", Avenir, "Helvetica Neue", sans-serif;
   --font-display: "Avenir Next Condensed", "Arial Narrow", sans-serif;
-  --shadow-course: 0 18px 50px rgb(24 32 29 / 9%);
+  --shadow-card: 0 18px 50px rgb(24 32 29 / 9%);
 }
 
 @layer base {

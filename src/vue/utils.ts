@@ -14,5 +14,5 @@ export function countText(count: number, singular: string, plural = `${singular}
 }
 
 export function setPageTitle(title?: string): void {
-  document.title = title ? `${title} · Course` : "Course";
+  document.title = title ? `${title} · Videos` : "Videos";
 }

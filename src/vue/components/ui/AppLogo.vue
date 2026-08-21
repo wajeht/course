@@ -17,6 +17,6 @@ withDefaults(defineProps<{ showText?: boolean; textClass?: string }>(), {
       <i class="block h-full w-1 bg-belt-light" />
       <i class="block h-full w-1 bg-belt-light" />
     </span>
-    <span v-if="showText" :class="textClass">Course</span>
+    <span v-if="showText" :class="textClass">Videos</span>
   </span>
 </template>

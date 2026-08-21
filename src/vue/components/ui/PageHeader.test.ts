@@ -8,11 +8,11 @@ import PageHeader from "./PageHeader.vue";
 describe("PageHeader", () => {
   it("renders the requested heading level and aside", () => {
     const wrapper = mount(PageHeader, {
-      props: { eyebrow: "Library", headingLevel: 2, title: "All courses" },
+      props: { eyebrow: "Library", headingLevel: 2, title: "All videos" },
       slots: { aside: "Up to date" },
     });
 
-    expect(wrapper.get("h2").text()).toBe("All courses");
+    expect(wrapper.get("h2").text()).toBe("All videos");
     expect(wrapper.text()).toContain("Up to date");
   });
 

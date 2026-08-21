@@ -34,7 +34,7 @@ async function logout(): Promise<void> {
   <StandardPageLayout
     class="min-[601px]:flex min-[601px]:min-h-[calc(100vh-66px)] min-[601px]:flex-col min-[601px]:pb-10"
   >
-    <PageHeader eyebrow="Course settings" title="Settings" />
+    <PageHeader eyebrow="Videos settings" title="Settings" />
 
     <AlertMessage v-if="logoutAction.errorMessage.value" class="mt-8" size="lg">
       {{ logoutAction.errorMessage.value }}

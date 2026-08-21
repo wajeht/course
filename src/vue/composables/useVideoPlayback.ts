@@ -3,8 +3,8 @@ import { nextTick, shallowRef, type Ref } from "vue";
 import type { PlaybackResult } from "@/api.js";
 
 interface PlaybackClient {
-  getConversionStatus(lessonId: string): Promise<PlaybackResult>;
-  retryConversion(lessonId: string): Promise<PlaybackResult>;
+  getConversionStatus(videoId: string): Promise<PlaybackResult>;
+  retryConversion(videoId: string): Promise<PlaybackResult>;
 }
 
 export function useVideoPlayback(
@@ -82,7 +82,7 @@ export function useVideoPlayback(
 
   async function applyPlayback(
     result: PlaybackResult,
-    lessonId: string,
+    videoId: string,
     requestId: number,
   ): Promise<void> {
     if (!isCurrentRequest(requestId)) return;
@@ -95,8 +95,8 @@ export function useVideoPlayback(
     }
     pollTimer = setTimeout(async () => {
       try {
-        const conversion = await client.getConversionStatus(lessonId);
-        await applyPlayback(conversion, lessonId, requestId);
+        const conversion = await client.getConversionStatus(videoId);
+        await applyPlayback(conversion, videoId, requestId);
       } catch {
         if (!isCurrentRequest(requestId)) return;
         error.value = "We couldn't check the video status. Try again.";
@@ -104,10 +104,10 @@ export function useVideoPlayback(
     }, pollMilliseconds);
   }
 
-  async function retryPlayback(lessonId: string): Promise<void> {
+  async function retryPlayback(videoId: string): Promise<void> {
     error.value = "";
     const requestId = requestSequence;
-    await applyPlayback(await client.retryConversion(lessonId), lessonId, requestId);
+    await applyPlayback(await client.retryConversion(videoId), videoId, requestId);
   }
 
   function applyMetadata(callback: (element: HTMLVideoElement) => void): void {

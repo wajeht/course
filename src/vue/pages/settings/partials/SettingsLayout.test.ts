@@ -56,7 +56,7 @@ describe("SettingsLayout", () => {
 
     const pageHeader = wrapper.get("main > header");
     expect(pageHeader.get("h1").text()).toBe("Settings");
-    expect(pageHeader.text()).toContain("Course settings");
+    expect(pageHeader.text()).toContain("Videos settings");
     expect(wrapper.get('[aria-label="Settings sections"]').text()).toContain("LibraryAccess");
     expect(wrapper.get("[data-settings-page]").element.tagName).toBe("SECTION");
     expect(wrapper.get("[data-mobile-sign-out]").text()).toBe("Sign out");

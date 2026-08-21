@@ -14,7 +14,7 @@ const toast = useToast();
       <div
         v-for="item in toast.toasts.value"
         :key="item.id"
-        class="pointer-events-auto flex items-start justify-between gap-4 rounded-[9px] border px-4 py-3 text-sm shadow-course"
+        class="pointer-events-auto flex items-start justify-between gap-4 rounded-[9px] border px-4 py-3 text-sm shadow-card"
         :class="
           {
             error: 'border-[#e8b7ae] bg-[#f8e5e1] text-[#6c241c]',

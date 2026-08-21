@@ -91,7 +91,7 @@ async function setup(
   >
     <div v-if="showBootstrap" class="text-center text-pine-deep" role="status">
       <AppLogo />
-      <p class="mt-3 text-sm text-muted">Opening Course…</p>
+      <p class="mt-3 text-sm text-muted">Opening Videos…</p>
     </div>
   </main>
   <AppShell v-else-if="auth.state.status === 'authenticated'">

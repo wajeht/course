@@ -1,46 +1,38 @@
 import { useQueryClient } from "@tanstack/vue-query";
 
-import type { CatalogFilters } from "@/api.js";
+import type { LibraryFilters } from "@/api.js";
 import {
-  catalogQueryOptions,
-  courseQueryOptions,
-  lessonQueryOptions,
-  scanStatusQueryOptions,
+  libraryQueryOptions,
+  playlistQueryOptions,
   settingsQueryOptions,
+  videoQueryOptions,
 } from "@/queries.js";
 import {
-  loadCoursePage,
   loadHomePage,
-  loadInstructorPage,
   loadLibraryPage,
   loadPlayerPage,
+  loadPlaylistPage,
   loadSettingsAccessPage,
   loadSettingsLibraryPage,
 } from "@/router.js";
 
 export function useRoutePrefetch() {
   const queryClient = useQueryClient();
-
-  function catalog(filters: CatalogFilters): Promise<unknown> {
-    return queryClient.prefetchQuery(catalogQueryOptions(filters));
-  }
+  const library = (filters: LibraryFilters = {}) =>
+    queryClient.prefetchQuery(libraryQueryOptions(filters));
+  const settings = () => queryClient.prefetchQuery(settingsQueryOptions());
 
   return {
-    catalog,
-    course: (courseId: string) =>
-      Promise.all([queryClient.prefetchQuery(courseQueryOptions(courseId)), loadCoursePage()]),
-    home: () => Promise.all([catalog({}), loadHomePage()]),
-    instructor: (instructor: string) =>
-      Promise.all([catalog({ instructor: [instructor], page: 1 }), loadInstructorPage()]),
-    lesson: (lessonId: string) =>
-      Promise.all([queryClient.prefetchQuery(lessonQueryOptions(lessonId)), loadPlayerPage()]),
-    library: () => Promise.all([catalog({}), loadLibraryPage()]),
-    settingsAccess: () => loadSettingsAccessPage(),
-    settingsLibrary: () =>
+    home: () => Promise.all([library(), loadHomePage()]),
+    library: () => Promise.all([library(), loadLibraryPage()]),
+    playlist: (playlistId: string) =>
       Promise.all([
-        queryClient.prefetchQuery(scanStatusQueryOptions()),
-        queryClient.prefetchQuery(settingsQueryOptions()),
-        loadSettingsLibraryPage(),
+        queryClient.prefetchQuery(playlistQueryOptions(playlistId)),
+        loadPlaylistPage(),
       ]),
+    video: (videoId: string) =>
+      Promise.all([queryClient.prefetchQuery(videoQueryOptions(videoId)), loadPlayerPage()]),
+    settingsAccess: () => Promise.all([settings(), loadSettingsAccessPage()]),
+    settingsLibrary: () => Promise.all([settings(), loadSettingsLibraryPage()]),
   };
 }

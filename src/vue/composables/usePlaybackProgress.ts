@@ -1,5 +1,5 @@
 interface PlaybackSession {
-  lessonId: string;
+  videoId: string;
   positionSeconds: number;
   queuedPositionSeconds: number;
   pendingSaveCount: number;
@@ -8,19 +8,19 @@ interface PlaybackSession {
 }
 
 export interface PlaybackProgressSnapshot {
-  lessonId: string;
+  videoId: string;
   positionSeconds: number;
 }
 
-export type ProgressSaver = (lessonId: string, positionSeconds: number) => Promise<void>;
-export type ProgressResetter = (lessonId: string) => Promise<void>;
+export type ProgressSaver = (videoId: string, positionSeconds: number) => Promise<void>;
+export type ProgressResetter = (videoId: string) => Promise<void>;
 
 export function usePlaybackProgress(saver: ProgressSaver) {
   let session: PlaybackSession | null = null;
 
-  function startSession(lessonId: string, positionSeconds: number): void {
+  function startSession(videoId: string, positionSeconds: number): void {
     session = {
-      lessonId,
+      videoId,
       positionSeconds,
       queuedPositionSeconds: positionSeconds,
       pendingSaveCount: 0,
@@ -29,8 +29,8 @@ export function usePlaybackProgress(saver: ProgressSaver) {
     };
   }
 
-  function isSessionFor(lessonId: string): boolean {
-    return session?.lessonId === lessonId;
+  function isSessionFor(videoId: string): boolean {
+    return session?.videoId === videoId;
   }
 
   function activateSession(positionSeconds: number): void {
@@ -76,7 +76,7 @@ export function usePlaybackProgress(saver: ProgressSaver) {
     const previousQueuedPosition = activeSession.queuedPositionSeconds;
     activeSession.queuedPositionSeconds = position;
     activeSession.pendingSaveCount++;
-    const request = activeSession.saveQueue.then(() => saver(activeSession.lessonId, position));
+    const request = activeSession.saveQueue.then(() => saver(activeSession.videoId, position));
     activeSession.saveQueue = request
       .catch(() => {
         if (activeSession.queuedPositionSeconds === position) {
@@ -103,7 +103,7 @@ export function usePlaybackProgress(saver: ProgressSaver) {
     if (!session?.ready || session.pendingSaveCount > 0 || session.positionSeconds <= 0)
       return null;
     return {
-      lessonId: session.lessonId,
+      videoId: session.videoId,
       positionSeconds: session.positionSeconds,
     };
   }
@@ -119,7 +119,7 @@ export function usePlaybackProgress(saver: ProgressSaver) {
     stopSession();
     try {
       await activeSession.saveQueue;
-      await resetter(activeSession.lessonId);
+      await resetter(activeSession.videoId);
       if (session === activeSession) activateSession(0);
     } catch (error) {
       if (session === activeSession) activateSession(previousPosition);

@@ -2,35 +2,31 @@ import { keepPreviousData, QueryClient, queryOptions } from "@tanstack/vue-query
 
 import {
   api,
-  type CatalogDto,
-  type CatalogFilters,
-  type CourseDetailDto,
-  type LessonPlayerDetailDto,
+  type LibraryDto,
+  type LibraryFilters,
+  type PlaylistDetailDto,
   type ScanStatus,
   type SettingsDto,
+  type VideoPlayerDetailDto,
 } from "@/api.js";
 
-export interface CatalogQueryClient {
-  getCatalog(filters?: CatalogFilters, signal?: AbortSignal): Promise<CatalogDto>;
+export interface LibraryQueryClient {
+  getLibrary(filters?: LibraryFilters, signal?: AbortSignal): Promise<LibraryDto>;
   getScanStatus(signal?: AbortSignal): Promise<ScanStatus>;
 }
 
-export interface LessonQueryClient {
-  getLesson(lessonId: string, signal?: AbortSignal): Promise<LessonPlayerDetailDto>;
-}
-
 export const queryKeys = {
-  catalog: ["catalog"] as const,
-  catalogList: (filters: CatalogFilters) => ["catalog", "list", filters] as const,
-  courses: ["courses"] as const,
-  course: (courseId: string) => ["courses", courseId] as const,
-  lessons: ["lessons"] as const,
-  lesson: (lessonId: string) => ["lessons", lessonId] as const,
+  library: ["library"] as const,
+  libraryList: (filters: LibraryFilters) => ["library", "list", filters] as const,
+  playlists: ["playlists"] as const,
+  playlist: (playlistId: string) => ["playlists", playlistId] as const,
+  videos: ["videos"] as const,
+  video: (videoId: string) => ["videos", videoId] as const,
   scanStatus: ["scan-status"] as const,
   settings: ["settings"] as const,
 };
 
-export function createCourseQueryClient(): QueryClient {
+export function createVideosQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {
@@ -43,36 +39,36 @@ export function createCourseQueryClient(): QueryClient {
   });
 }
 
-export function catalogQueryOptions(
-  filters: CatalogFilters,
-  client: Pick<CatalogQueryClient, "getCatalog"> = api,
+export function libraryQueryOptions(
+  filters: LibraryFilters,
+  client: Pick<LibraryQueryClient, "getLibrary"> = api,
 ) {
   const normalizedFilters = { ...filters, page: filters.page ?? 1 };
   return queryOptions({
-    queryKey: queryKeys.catalogList(normalizedFilters),
-    queryFn: ({ signal }) => client.getCatalog(normalizedFilters, signal),
+    queryKey: queryKeys.libraryList(normalizedFilters),
+    queryFn: ({ signal }) => client.getLibrary(normalizedFilters, signal),
     placeholderData: keepPreviousData,
     staleTime: 5 * 60_000,
   });
 }
 
-export function courseQueryOptions(courseId: string) {
+export function playlistQueryOptions(playlistId: string) {
   return queryOptions({
-    queryKey: queryKeys.course(courseId),
-    queryFn: ({ signal }): Promise<CourseDetailDto> => api.getCourse(courseId, signal),
+    queryKey: queryKeys.playlist(playlistId),
+    queryFn: ({ signal }): Promise<PlaylistDetailDto> => api.getPlaylist(playlistId, signal),
     staleTime: 5 * 60_000,
   });
 }
 
-export function lessonQueryOptions(lessonId: string, client: LessonQueryClient = api) {
+export function videoQueryOptions(videoId: string) {
   return queryOptions({
-    queryKey: queryKeys.lesson(lessonId),
-    queryFn: ({ signal }) => client.getLesson(lessonId, signal),
+    queryKey: queryKeys.video(videoId),
+    queryFn: ({ signal }): Promise<VideoPlayerDetailDto> => api.getVideo(videoId, signal),
     staleTime: 5 * 60_000,
   });
 }
 
-export function scanStatusQueryOptions(client: Pick<CatalogQueryClient, "getScanStatus"> = api) {
+export function scanStatusQueryOptions(client: Pick<LibraryQueryClient, "getScanStatus"> = api) {
   return queryOptions({
     queryKey: queryKeys.scanStatus,
     queryFn: ({ signal }) => client.getScanStatus(signal),
