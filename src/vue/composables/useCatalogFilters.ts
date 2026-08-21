@@ -34,6 +34,7 @@ export function useCatalogFilters(
   );
 
   const canLoadMore = computed(() => loadedPage.value < loadedTotalPages.value);
+  const lastLoadedPage = computed(() => loadedPage.value);
 
   async function loadMore(): Promise<void> {
     if (loadingMore.value || !canLoadMore.value) return;
@@ -80,6 +81,7 @@ export function useCatalogFilters(
     ...routeState,
     ...dataState,
     canLoadMore,
+    lastLoadedPage,
     libraryTitle,
     loadedCourses,
     loadMore,
