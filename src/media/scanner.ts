@@ -85,7 +85,11 @@ export function createScanner({
   };
 
   function currentWarnings(): ScanWarning[] {
-    return [...courseWarnings.values()].flat();
+    const warnings: ScanWarning[] = [];
+    for (const courseWarning of courseWarnings.values()) {
+      for (const warning of courseWarning) warnings.push(warning);
+    }
+    return warnings;
   }
 
   function replaceCourseWarnings(
@@ -122,24 +126,29 @@ export function createScanner({
       if (courseNames) {
         const courseEntries = await readCourseEntries(configuration);
         const storedCourses = await repository.getCourses();
-        const currentCoursePaths = new Set(courseEntries.map((entry) => posixPath(entry.name)));
-        const storedCoursePaths = new Set(storedCourses.map((course) => course.path));
+        const currentCoursePaths = new Set<string>();
+        for (const entry of courseEntries) currentCoursePaths.add(posixPath(entry.name));
+        const storedCoursePaths = new Set<string>();
+        for (const course of storedCourses) storedCoursePaths.add(course.path);
         const requestedCourseNames = new Set(courseNames);
-        const courseNamesToScan = courseEntries
-          .filter(
-            (entry) =>
-              requestedCourseNames.has(entry.name) || !storedCoursePaths.has(posixPath(entry.name)),
-          )
-          .map((entry) => entry.name);
-        const courseIdsToScan = courseNamesToScan.map((courseName) => identifier(courseName));
-        const removedCourses = storedCourses.filter(
-          (course) => !currentCoursePaths.has(course.path),
-        );
-        const removedCourseIds = removedCourses.map((course) => course.id);
-        const synchronizedCourseNames = new Set([
-          ...courseNamesToScan,
-          ...removedCourses.map((course) => course.path),
-        ]);
+        const courseNamesToScan: string[] = [];
+        const courseIdsToScan: string[] = [];
+        for (const entry of courseEntries) {
+          if (
+            requestedCourseNames.has(entry.name) ||
+            !storedCoursePaths.has(posixPath(entry.name))
+          ) {
+            courseNamesToScan.push(entry.name);
+            courseIdsToScan.push(identifier(entry.name));
+          }
+        }
+        const removedCourseIds: string[] = [];
+        const synchronizedCourseNames = new Set(courseNamesToScan);
+        for (const course of storedCourses) {
+          if (currentCoursePaths.has(course.path)) continue;
+          removedCourseIds.push(course.id);
+          synchronizedCourseNames.add(course.path);
+        }
         const existingLessons = await repository.getLessons(courseIdsToScan);
         const { snapshot, courseOrder } = await buildCatalogSnapshot(
           configuration,
@@ -310,9 +319,14 @@ interface BuiltCatalogSnapshot {
 }
 
 async function readCourseEntries(configuration: Configuration): Promise<Dirent[]> {
-  return (await fs.readdir(configuration.media.videosDirectory, { withFileTypes: true }))
-    .filter(isCatalogDirectory)
-    .sort((left, right) => naturalOrder(left.name, right.name));
+  const directoryEntries = await fs.readdir(configuration.media.videosDirectory, {
+    withFileTypes: true,
+  });
+  const courseEntries: Dirent[] = [];
+  for (const entry of directoryEntries) {
+    if (isCatalogDirectory(entry)) courseEntries.push(entry);
+  }
+  return courseEntries.sort((left, right) => naturalOrder(left.name, right.name));
 }
 
 async function buildCatalogSnapshot(
@@ -325,21 +339,21 @@ async function buildCatalogSnapshot(
 ): Promise<BuiltCatalogSnapshot> {
   const root = configuration.media.videosDirectory;
   const requestedNames = requestedCourseNames ? new Set(requestedCourseNames) : null;
-  const entriesToScan = requestedNames
-    ? courseEntries.filter((entry) => requestedNames.has(entry.name))
-    : courseEntries;
-  const courseOrder = courseEntries.map((entry, sortOrder) => ({
-    id: identifier(posixPath(entry.name)),
-    sortOrder,
-  }));
-  const existingLessonsByPath = new Map(existingLessons.map((lesson) => [lesson.path, lesson]));
+  const entriesToScan: Array<{ entry: Dirent; sortOrder: number }> = [];
+  const courseOrder: CourseOrder[] = [];
+  for (const [sortOrder, entry] of courseEntries.entries()) {
+    courseOrder.push({ id: identifier(posixPath(entry.name)), sortOrder });
+    if (!requestedNames || requestedNames.has(entry.name)) entriesToScan.push({ entry, sortOrder });
+  }
+  const existingLessonsByPath = new Map<string, LessonRecord>();
+  for (const lesson of existingLessons) existingLessonsByPath.set(lesson.path, lesson);
   const courses: CourseRecord[] = [];
   const sections: SectionRecord[] = [];
   const lessons: LessonRecord[] = [];
   const chapters: ChapterRecord[] = [];
   const skippedLessonIds: string[] = [];
 
-  for (const courseEntry of entriesToScan) {
+  for (const { entry: courseEntry, sortOrder } of entriesToScan) {
     const courseDirectory = path.join(root, courseEntry.name);
     const courseRelativePath = posixPath(path.relative(root, courseDirectory));
     const courseId = identifier(courseRelativePath);
@@ -364,13 +378,19 @@ async function buildCatalogSnapshot(
       instructors: metadata?.instructors ?? [],
       tags: metadata?.tags ?? [],
       coverPath: localCover ? posixPath(path.relative(root, localCover)) : null,
-      sortOrder: courseEntries.findIndex((entry) => entry.name === courseEntry.name),
+      sortOrder,
     };
     let courseVideoCount = 0;
 
-    const directVideos = entries.filter(
-      (entry) => entry.isFile() && videoExtensions.has(path.extname(entry.name).toLowerCase()),
-    );
+    const directVideos: Dirent[] = [];
+    const sectionEntries: Dirent[] = [];
+    for (const entry of entries) {
+      if (entry.isFile() && videoExtensions.has(path.extname(entry.name).toLowerCase())) {
+        directVideos.push(entry);
+      } else if (isCatalogDirectory(entry)) {
+        sectionEntries.push(entry);
+      }
+    }
     courseVideoCount += directVideos.length;
     await appendLessons({
       files: directVideos,
@@ -387,17 +407,19 @@ async function buildCatalogSnapshot(
       ffprobePath: configuration.media.ffprobePath,
     });
 
-    const sectionEntries = entries.filter(isCatalogDirectory);
     let sectionIndex = 0;
     for (const sectionEntry of sectionEntries) {
       const sectionDirectory = path.join(courseDirectory, sectionEntry.name);
       const sectionRelativePath = posixPath(path.relative(root, sectionDirectory));
       const sectionId = identifier(sectionRelativePath);
-      const sectionFiles = (await fs.readdir(sectionDirectory, { withFileTypes: true }))
-        .filter(
-          (entry) => entry.isFile() && videoExtensions.has(path.extname(entry.name).toLowerCase()),
-        )
-        .sort((left, right) => naturalOrder(left.name, right.name));
+      const directoryEntries = await fs.readdir(sectionDirectory, { withFileTypes: true });
+      const sectionFiles: Dirent[] = [];
+      for (const entry of directoryEntries) {
+        if (entry.isFile() && videoExtensions.has(path.extname(entry.name).toLowerCase())) {
+          sectionFiles.push(entry);
+        }
+      }
+      sectionFiles.sort((left, right) => naturalOrder(left.name, right.name));
       if (sectionFiles.length === 0) continue;
       courseVideoCount += sectionFiles.length;
       sections.push({
@@ -529,8 +551,10 @@ async function findCover(
     }
   }
 
-  const cover = entries.find(
-    (entry) => entry.isFile() && coverExtensions.has(path.extname(entry.name).toLowerCase()),
-  );
-  return cover ? path.join(courseDirectory, cover.name) : null;
+  for (const entry of entries) {
+    if (entry.isFile() && coverExtensions.has(path.extname(entry.name).toLowerCase())) {
+      return path.join(courseDirectory, entry.name);
+    }
+  }
+  return null;
 }
