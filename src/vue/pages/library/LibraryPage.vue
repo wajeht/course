@@ -66,6 +66,7 @@ function prefetchPage(page: number): void {
           <CourseCardGrid
             v-if="loading || catalog.courses.length"
             :courses="catalog.courses"
+            :elevated="false"
             layout="sidebar"
             :loading
           />

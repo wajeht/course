@@ -7,10 +7,11 @@ import CourseCard from "@/components/CourseCard.vue";
 const props = withDefaults(
   defineProps<{
     courses: CatalogDto["courses"];
+    elevated?: boolean;
     layout?: "page" | "sidebar";
     loading?: boolean;
   }>(),
-  { layout: "page", loading: false },
+  { elevated: true, layout: "page", loading: false },
 );
 
 const columnClasses = computed(() =>
@@ -34,6 +35,6 @@ const columnClasses = computed(() =>
     />
   </div>
   <div v-else class="grid gap-[clamp(18px,2vw,30px)]" :class="columnClasses">
-    <CourseCard v-for="course in courses" :key="course.id" :course="course" />
+    <CourseCard v-for="course in courses" :key="course.id" :course="course" :elevated />
   </div>
 </template>

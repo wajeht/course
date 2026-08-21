@@ -78,7 +78,7 @@ function togglePanel(panel: FilterType): void {
     <aside class="hidden min-[761px]:block">
       <div class="grid gap-[clamp(18px,2vw,30px)]">
         <div>
-          <CatalogSearchInput v-model="query" />
+          <CatalogSearchInput v-model="query" :elevated="false" />
           <div v-if="props.hasActiveFilters" class="mt-2 flex justify-end">
             <AppButton
               data-clear-filters="desktop"
@@ -91,7 +91,7 @@ function togglePanel(panel: FilterType): void {
           </div>
         </div>
 
-        <PanelCard padding="compact">
+        <PanelCard :elevated="false" padding="compact">
           <CatalogFilterGroup
             v-model="category"
             all-label="All categories"
@@ -101,7 +101,7 @@ function togglePanel(panel: FilterType): void {
           />
         </PanelCard>
 
-        <PanelCard padding="compact">
+        <PanelCard :elevated="false" padding="compact">
           <CatalogFilterGroup
             v-model="instructor"
             all-label="All instructors"
@@ -111,7 +111,7 @@ function togglePanel(panel: FilterType): void {
           />
         </PanelCard>
 
-        <PanelCard padding="compact">
+        <PanelCard :elevated="false" padding="compact">
           <CatalogFilterGroup
             v-model="tag"
             all-label="All tags"
@@ -125,7 +125,7 @@ function togglePanel(panel: FilterType): void {
     </aside>
 
     <div class="hidden max-[760px]:block">
-      <CatalogSearchInput v-model="query" class="mb-3" />
+      <CatalogSearchInput v-model="query" class="mb-3" :elevated="false" />
 
       <div class="flex flex-wrap gap-2">
         <AppButton
