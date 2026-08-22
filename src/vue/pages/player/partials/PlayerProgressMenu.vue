@@ -69,7 +69,11 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", closeOnOutside
       :aria-expanded="open"
       @click="open = !open"
     >
-      <span aria-hidden="true">•••</span>
+      <span class="flex flex-col items-center gap-0.5" aria-hidden="true">
+        <span class="player-progress-menu-dot h-1 w-1 rounded-full bg-current" />
+        <span class="player-progress-menu-dot h-1 w-1 rounded-full bg-current" />
+        <span class="player-progress-menu-dot h-1 w-1 rounded-full bg-current" />
+      </span>
     </button>
 
     <div

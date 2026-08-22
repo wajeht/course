@@ -60,18 +60,18 @@ async function mountSidebar(resetting = false) {
   await router.isReady();
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return mount(PlayerPlaylistSidebar, {
-    props: { activeVideoId: videoId, open: true, playlist, resetting },
+    props: { activeVideoId: videoId, playlist, resetting },
     global: { plugins: [[VueQueryPlugin, { queryClient }], router] },
   });
 }
 
 describe("PlayerPlaylistSidebar", () => {
-  it("keeps the mobile header below the iOS status bar", async () => {
+  it("exposes the playlist as a labelled panel without a drawer close action", async () => {
     const wrapper = await mountSidebar();
+    const panel = wrapper.get("aside");
 
-    expect(wrapper.get("header").classes()).toContain(
-      "max-[860px]:pt-[calc(1.25rem+env(safe-area-inset-top))]",
-    );
+    expect(panel.attributes("aria-labelledby")).toBe(wrapper.get("h2").attributes("id"));
+    expect(wrapper.find('[aria-label="Close playlist"]').exists()).toBe(false);
   });
 
   it("keeps the playlist reset action in an overflow menu", async () => {

@@ -30,7 +30,6 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
   const playlist = ref<PlaylistDetailDto | null>(null);
   const loading = shallowRef(true);
   const ended = shallowRef(false);
-  const sidebarOpen = shallowRef(false);
   const currentTime = shallowRef(0);
   const confirmation = useConfirm();
   const toast = useToast();
@@ -171,7 +170,6 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
     playback.error.value = "";
     ended.value = false;
     currentTime.value = 0;
-    sidebarOpen.value = false;
     try {
       const videoId = String(route.params.videoId);
       const [detail, playbackResult] = await Promise.all([
@@ -298,9 +296,6 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
 
   return {
     applyResume,
-    closeSidebar: () => {
-      sidebarOpen.value = false;
-    },
     currentTime: computed(() => currentTime.value),
     ended: computed(() => ended.value),
     error: computed(() => playback.error.value),
@@ -322,10 +317,6 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
     seekToChapter: (seconds: number) => {
       seek(seconds);
       void router.replace({ query: { ...route.query, t: String(seconds) } });
-    },
-    sidebarOpen: computed(() => sidebarOpen.value),
-    toggleSidebar: () => {
-      sidebarOpen.value = !sidebarOpen.value;
     },
     video: computed(() => video.value),
   };
