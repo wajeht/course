@@ -25,7 +25,9 @@ const currentIndex = computed(() =>
     class="sticky top-0 flex h-[calc(100vh-66px)] flex-col border-l border-[#2d3732] bg-[#f8f9f6] max-[860px]:fixed max-[860px]:inset-y-0 max-[860px]:right-0 max-[860px]:z-[70] max-[860px]:h-dvh max-[860px]:w-[min(390px,92vw)] max-[860px]:transition-transform"
     :class="open ? 'max-[860px]:translate-x-0' : 'max-[860px]:translate-x-[105%]'"
   >
-    <header class="flex items-start justify-between border-b border-line px-5 py-5">
+    <header
+      class="flex items-start justify-between border-b border-line px-5 py-5 max-[860px]:pt-[calc(1.25rem+env(safe-area-inset-top))]"
+    >
       <div class="min-w-0">
         <p class="text-xs font-extrabold tracking-[.16em] text-belt uppercase">Playlist</p>
         <h2 class="mt-2 font-display text-lg font-bold">{{ playlist.title }}</h2>
