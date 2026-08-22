@@ -30,8 +30,7 @@ The filesystem is the source of truth:
 - Deeper folders are ignored and reported during scans.
 - Number prefixes set natural order and are removed from display titles.
 
-Supported video files include MP4, M4V, MKV, WebM, MOV, AVI, MPEG, and MPG.
-The app watches the folder and also supports manual and scheduled scans.
+Supported video files include MP4, M4V, MKV, WebM, MOV, AVI, MPEG, and MPG. The app watches the folder and also supports manual and scheduled scans.
 
 `playlist.json` is optional:
 
@@ -50,8 +49,7 @@ The app watches the folder and also supports manual and scheduled scans.
 }
 ```
 
-A video sidecar uses the complete filename plus `.json`, such as
-`First video.mp4.json`:
+A video sidecar uses the complete filename plus `.json`, such as `First video.mp4.json`:
 
 ```json
 {
@@ -66,8 +64,7 @@ A video sidecar uses the complete filename plus `.json`, such as
 }
 ```
 
-Playlist authors and tags are inherited by its videos for display, search, and
-filtering. There are no categories.
+Playlist authors and tags are inherited by its videos for display, search, and filtering. There are no categories.
 
 ## Run with Docker
 

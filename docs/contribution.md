@@ -1,12 +1,10 @@
 # Contribution Guide
 
-Please open an issue before starting a large feature or behavior change so the
-approach can be agreed on first.
+Please open an issue before starting a large feature or behavior change so the approach can be agreed on first.
 
 ## Getting Started
 
-Follow the [Development Guide](./development.md) to prepare the project and run
-it locally or with Docker.
+Follow the [Development Guide](./development.md) to prepare the project and run it locally or with Docker.
 
 Create a focused branch using `<type>/<description>`:
 
@@ -52,8 +50,7 @@ Keep commits small and use Conventional Commit messages:
 git commit -m "fix: preserve playback progress"
 ```
 
-Update documentation and tests when behavior changes. Pull requests should
-explain the change, its reason, and how it was verified.
+Update documentation and tests when behavior changes. Pull requests should explain the change, its reason, and how it was verified.
 
 ## License
 
