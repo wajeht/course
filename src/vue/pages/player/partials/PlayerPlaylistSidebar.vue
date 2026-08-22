@@ -4,6 +4,7 @@ import { computed } from "vue";
 import type { PlaylistDetailDto } from "@/api.js";
 import VideoRow from "@/components/VideoRow.vue";
 import AppButton from "@/components/ui/AppButton.vue";
+import PlayerProgressMenu from "@/pages/player/partials/PlayerProgressMenu.vue";
 
 const props = defineProps<{
   activeVideoId?: string;
@@ -24,27 +25,28 @@ const currentIndex = computed(() =>
     class="sticky top-0 flex h-[calc(100vh-66px)] flex-col border-l border-[#2d3732] bg-[#f8f9f6] max-[860px]:fixed max-[860px]:inset-y-0 max-[860px]:right-0 max-[860px]:z-[70] max-[860px]:h-dvh max-[860px]:w-[min(390px,92vw)] max-[860px]:transition-transform"
     :class="open ? 'max-[860px]:translate-x-0' : 'max-[860px]:translate-x-[105%]'"
   >
-    <header class="flex items-center justify-between border-b border-line px-5 py-5">
-      <div>
+    <header class="flex items-start justify-between border-b border-line px-5 py-5">
+      <div class="min-w-0">
         <p class="text-xs font-extrabold tracking-[.16em] text-belt uppercase">Playlist</p>
         <h2 class="mt-2 font-display text-lg font-bold">{{ playlist.title }}</h2>
         <p class="mt-1 text-xs text-muted">Video {{ currentIndex + 1 }} of {{ videos.length }}</p>
+      </div>
+      <div class="flex items-center gap-1">
+        <PlayerProgressMenu
+          label="Playlist actions"
+          reset-label="Reset playlist progress"
+          :resetting="resetting"
+          tone="light"
+          @reset="$emit('reset')"
+        />
         <AppButton
+          class="hidden max-[860px]:grid"
           variant="unstyled"
-          class="mt-3 border-b border-pine/20 py-1 text-xs text-pine"
-          :loading="resetting"
-          loading-label="Resetting…"
-          @click="$emit('reset')"
-          >Reset playlist progress</AppButton
+          aria-label="Close playlist"
+          @click="$emit('close')"
+          >×</AppButton
         >
       </div>
-      <AppButton
-        class="hidden max-[860px]:grid"
-        variant="unstyled"
-        aria-label="Close playlist"
-        @click="$emit('close')"
-        >×</AppButton
-      >
     </header>
     <div class="flex-1 overflow-y-auto">
       <section v-for="section in playlist.sections" :key="section.id ?? 'direct'">

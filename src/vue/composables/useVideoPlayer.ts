@@ -256,7 +256,7 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
       title: "Reset playlist progress?",
       message:
         "Saved positions and completion states for every video in this playlist will be removed.",
-      confirmLabel: "Reset playlist",
+      confirmLabel: "Reset playlist progress",
       variant: "danger",
     });
     if (confirmed && playlist.value?.id === id) await resetPlaylist.run(id);

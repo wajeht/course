@@ -66,10 +66,13 @@ async function mountSidebar(resetting = false) {
 }
 
 describe("PlayerPlaylistSidebar", () => {
-  it("owns the playlist reset action", async () => {
+  it("keeps the playlist reset action in an overflow menu", async () => {
     const wrapper = await mountSidebar();
 
-    await wrapper.get("button").trigger("click");
+    await wrapper.get('[aria-label="Playlist actions"]').trigger("click");
+    expect(wrapper.get('[role="menuitem"]').text()).toBe("Reset playlist progress");
+
+    await wrapper.get('[role="menuitem"]').trigger("click");
 
     expect(wrapper.emitted("reset")).toHaveLength(1);
   });
@@ -77,7 +80,9 @@ describe("PlayerPlaylistSidebar", () => {
   it("shows the pending reset state", async () => {
     const wrapper = await mountSidebar(true);
 
-    expect(wrapper.get("button").text()).toContain("Resetting");
-    expect(wrapper.get("button").attributes("disabled")).toBeDefined();
+    await wrapper.get('[aria-label="Playlist actions"]').trigger("click");
+
+    expect(wrapper.get('[role="menuitem"]').text()).toContain("Resetting");
+    expect(wrapper.get('[role="menuitem"]').attributes("disabled")).toBeDefined();
   });
 });

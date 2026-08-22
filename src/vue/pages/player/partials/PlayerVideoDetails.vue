@@ -3,7 +3,7 @@ import type { PlaylistDetailDto, VideoDetailDto } from "@/api.js";
 import AuthorLinks from "@/components/AuthorLinks.vue";
 import ChapterList from "@/components/ChapterList.vue";
 import AppButton from "@/components/ui/AppButton.vue";
-import PlayerVideoMenu from "@/pages/player/partials/PlayerVideoMenu.vue";
+import PlayerProgressMenu from "@/pages/player/partials/PlayerProgressMenu.vue";
 import { countText } from "@/utils.js";
 
 defineProps<{
@@ -39,7 +39,12 @@ defineEmits<{ openPlaylist: []; reset: []; seek: [startSeconds: number] }>();
         {{ video.description }}
       </p>
     </div>
-    <PlayerVideoMenu :resetting="resetting" @reset="$emit('reset')" />
+    <PlayerProgressMenu
+      label="Video actions"
+      reset-label="Reset progress"
+      :resetting="resetting"
+      @reset="$emit('reset')"
+    />
   </div>
   <section
     v-if="video?.chapters.length"
