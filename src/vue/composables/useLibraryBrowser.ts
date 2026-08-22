@@ -75,8 +75,13 @@ export function useLibraryBrowser(debounceMilliseconds = 150) {
   );
 
   let searchTimer: ReturnType<typeof setTimeout> | undefined;
+  let ignoreNextSearchUpdate = false;
   watch(query, (value) => {
     clearTimeout(searchTimer);
+    if (ignoreNextSearchUpdate) {
+      ignoreNextSearchUpdate = false;
+      return;
+    }
     if (value === routeSearch.value) return;
     const update = () =>
       void router.replace({ query: nextQuery({ q: value.trim() || undefined, page: undefined }) });
@@ -99,7 +104,11 @@ export function useLibraryBrowser(debounceMilliseconds = 150) {
 
   return {
     clearFilters() {
-      query.value = "";
+      clearTimeout(searchTimer);
+      if (query.value) {
+        ignoreNextSearchUpdate = true;
+        query.value = "";
+      }
       void router.push({
         query: nextQuery({
           author: undefined,
