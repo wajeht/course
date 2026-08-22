@@ -52,7 +52,7 @@
     "concurrently": "10.0.5",
     "happy-dom": "20.11.6",
     "oxfmt": "0.63.0",
-    "oxlint": "1.78.0",
+    "oxlint": "1.79.0",
     "tailwindcss": "4.3.3",
     "tsx": "4.23.12",
     "typescript": "6.0.3",
