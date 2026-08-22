@@ -12,6 +12,7 @@ describe("PlayerProgressMenu", () => {
     });
     const trigger = wrapper.get('[aria-label="Video actions"]');
 
+    expect(trigger.findAll(".player-progress-menu-dot")).toHaveLength(3);
     expect(trigger.attributes("aria-expanded")).toBe("false");
     expect(wrapper.find('[role="menu"]').exists()).toBe(false);
 

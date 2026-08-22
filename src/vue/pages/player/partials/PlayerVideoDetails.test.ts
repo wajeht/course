@@ -3,12 +3,11 @@
 import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
 
-import type { PlaylistDetailDto, VideoDetailDto } from "@/api.js";
+import type { VideoDetailDto } from "@/api.js";
 
 import PlayerVideoDetails from "./PlayerVideoDetails.vue";
 
 const videoId = "1".repeat(24);
-const playlistId = "2".repeat(24);
 const video: VideoDetailDto = {
   authors: [],
   chapters: [],
@@ -17,47 +16,52 @@ const video: VideoDetailDto = {
   description: "",
   durationSeconds: 120,
   id: videoId,
-  playlistId,
+  playlistId: null,
   playlistSectionId: null,
   playlistSectionTitle: null,
-  playlistTitle: "Saved Collection",
+  playlistTitle: null,
   positionSeconds: 0,
   progressPercent: 0,
   source: null,
   tags: [],
   title: "Example video",
 };
-const playlist: PlaylistDetailDto = {
-  authors: [],
-  completedCount: 0,
-  coverUrl: null,
-  description: "",
-  durationSeconds: 120,
-  id: playlistId,
-  nextVideoId: videoId,
-  progressPercent: 0,
-  sections: [],
-  source: null,
-  tags: [],
-  title: "Saved Collection",
-  videoCount: 1,
-};
-
 describe("PlayerVideoDetails", () => {
-  it("lets the video title use the available row width", () => {
+  it("expands the mobile video details preview", async () => {
     const wrapper = mount(PlayerVideoDetails, {
-      props: { currentTime: 0, playlist, resetting: false, video },
+      props: {
+        currentTime: 0,
+        resetting: false,
+        video: {
+          ...video,
+          chapters: [
+            { startSeconds: 0, title: "Introduction" },
+            { startSeconds: 90, title: "Memory" },
+            { startSeconds: 180, title: "Pointers" },
+            { startSeconds: 270, title: "Summary" },
+          ],
+          description: "A complete introduction to programming and computer memory.",
+        },
+      },
     });
 
-    expect(wrapper.get("h1").classes()).not.toContain("max-w-[800px]");
-    expect(wrapper.get("h1").element.parentElement?.classList).toContain("flex-1");
+    const toggle = wrapper.get('[aria-label="Expand video details"]');
+    const detailsId = toggle.attributes("aria-controls");
+
+    expect(toggle.attributes("aria-expanded")).toBe("false");
+    expect(wrapper.get(`#${detailsId}`).find('[aria-label="Video chapters"]').exists()).toBe(true);
+
+    await toggle.trigger("click");
+
+    expect(wrapper.get('[aria-label="Collapse video details"]').attributes("aria-expanded")).toBe(
+      "true",
+    );
   });
 
   it("places the author directly after the video title", () => {
     const wrapper = mount(PlayerVideoDetails, {
       props: {
         currentTime: 0,
-        playlist,
         resetting: false,
         video: { ...video, authors: ["Example Author"], playlistSectionTitle: "Volume 1" },
       },
@@ -77,31 +81,9 @@ describe("PlayerVideoDetails", () => {
     expect(wrapper.text()).not.toContain("Volume 1");
   });
 
-  it("keeps the playlist action mobile-only", async () => {
-    const wrapper = mount(PlayerVideoDetails, {
-      props: { currentTime: 0, playlist, resetting: false, video },
-    });
-
-    const action = wrapper.get('[aria-label="Open playlist Saved Collection"]');
-
-    expect(action.classes()).toContain("min-[861px]:!hidden");
-
-    await action.trigger("click");
-
-    expect(wrapper.emitted("openPlaylist")).toHaveLength(1);
-  });
-
-  it("does not show a playlist action for an independent video", () => {
-    const wrapper = mount(PlayerVideoDetails, {
-      props: { currentTime: 0, playlist: null, resetting: false, video },
-    });
-
-    expect(wrapper.find('[aria-label^="Open playlist"]').exists()).toBe(false);
-  });
-
   it("emits reset from the video actions menu", async () => {
     const wrapper = mount(PlayerVideoDetails, {
-      props: { currentTime: 0, playlist: null, resetting: false, video },
+      props: { currentTime: 0, resetting: false, video },
     });
 
     await wrapper.get('[aria-label="Video actions"]').trigger("click");

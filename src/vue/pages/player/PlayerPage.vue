@@ -38,10 +38,8 @@ const player = useVideoPlayer(media);
         />
         <PlayerVideoDetails
           :current-time="player.currentTime.value"
-          :playlist="player.playlist.value"
           :video="player.video.value"
           :resetting="player.resetting.value"
-          @open-playlist="player.toggleSidebar"
           @reset="player.resetProgress"
           @seek="player.seekToChapter"
         />
@@ -50,9 +48,7 @@ const player = useVideoPlayer(media);
     <PlayerPlaylistSidebar
       :active-video-id="player.video.value?.id"
       :playlist="player.playlist.value"
-      :open="player.sidebarOpen.value"
       :resetting="player.resettingPlaylist.value"
-      @close="player.closeSidebar"
       @reset="player.resetPlaylistProgress"
     />
   </main>
