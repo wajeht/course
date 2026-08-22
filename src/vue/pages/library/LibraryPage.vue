@@ -1,20 +1,30 @@
 <script setup lang="ts">
+import { computed } from "vue";
+
 import AlertMessage from "@/components/ui/AlertMessage.vue";
+import AppButton from "@/components/ui/AppButton.vue";
 import EmptyState from "@/components/ui/EmptyState.vue";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import PaginationControls from "@/components/ui/PaginationControls.vue";
 import PlaylistGrid from "@/components/PlaylistGrid.vue";
 import VideoGrid from "@/components/VideoGrid.vue";
 import { useLibraryBrowser } from "@/composables/useLibraryBrowser.js";
+import { useMediaQuery } from "@/composables/useMediaQuery.js";
 import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
 import LibraryFiltersToolbar from "@/pages/library/partials/LibraryFiltersToolbar.vue";
 
+const isMobile = useMediaQuery("(max-width: 600px)");
 const {
+  canLoadMore,
   clearFilters,
   error,
   hasActiveFilters,
   library,
+  loadedVideos,
+  loadMore,
+  loadMoreError,
   loading,
+  loadingMore,
   page,
   query,
   refreshing,
@@ -22,7 +32,10 @@ const {
   selectedTag,
   selectedView,
   setPage,
-} = useLibraryBrowser();
+} = useLibraryBrowser({ accumulatePages: isMobile });
+const displayedVideos = computed(() =>
+  isMobile.value ? loadedVideos.value : library.value.videos,
+);
 </script>
 
 <template>
@@ -54,8 +67,8 @@ const {
             :playlists="library.playlists"
           />
           <VideoGrid
-            v-else-if="selectedView === 'videos' && (loading || library.videos.length)"
-            :videos="library.videos"
+            v-else-if="selectedView === 'videos' && (loading || displayedVideos.length)"
+            :videos="displayedVideos"
             :loading="loading"
           />
           <EmptyState
@@ -82,12 +95,33 @@ const {
           </EmptyState>
           <PaginationControls
             v-if="selectedView === 'videos' && !loading"
-            class="mt-8"
+            class="mt-8 max-[600px]:hidden"
             :disabled="refreshing"
             :page="page"
             :total-pages="library.pagination.totalPages"
             @change="setPage"
           />
+          <AlertMessage
+            v-if="selectedView === 'videos' && loadMoreError"
+            class="mt-[18px] hidden max-[600px]:block"
+          >
+            {{ loadMoreError }}
+          </AlertMessage>
+          <div
+            v-if="selectedView === 'videos' && canLoadMore"
+            class="mt-[18px] hidden max-[600px]:block"
+          >
+            <AppButton
+              block
+              data-testid="load-more-videos"
+              :loading="loadingMore"
+              loading-label="Loading more…"
+              size="lg"
+              @click="loadMore"
+            >
+              Load more
+            </AppButton>
+          </div>
         </div>
       </div>
     </section>

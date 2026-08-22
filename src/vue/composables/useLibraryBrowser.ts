@@ -1,5 +1,13 @@
-import { useQuery } from "@tanstack/vue-query";
-import { computed, onScopeDispose, shallowRef, watch } from "vue";
+import { useQuery, useQueryClient } from "@tanstack/vue-query";
+import {
+  computed,
+  onScopeDispose,
+  readonly,
+  shallowRef,
+  toRef,
+  watch,
+  type MaybeRefOrGetter,
+} from "vue";
 import { useRoute, useRouter, type LocationQueryRaw } from "vue-router";
 
 import { api, apiErrorMessage, type LibraryDto, type LibraryFilters } from "@/api.js";
@@ -21,9 +29,17 @@ function emptyLibrary(): LibraryDto {
   };
 }
 
-export function useLibraryBrowser(debounceMilliseconds = 150) {
+interface UseLibraryBrowserOptions {
+  accumulatePages?: MaybeRefOrGetter<boolean>;
+  debounceMilliseconds?: number;
+}
+
+export function useLibraryBrowser(options: UseLibraryBrowserOptions = {}) {
+  const { accumulatePages = false, debounceMilliseconds = 150 } = options;
   const route = useRoute();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const accumulatePagesRef = toRef(accumulatePages);
   const routeSearch = computed(() => (typeof route.query.q === "string" ? route.query.q : ""));
   const query = shallowRef(routeSearch.value);
   const page = computed(() => Math.max(1, Number(route.query.page) || 1));
@@ -65,6 +81,12 @@ export function useLibraryBrowser(debounceMilliseconds = 150) {
   }));
   const request = useQuery(computed(() => libraryQueryOptions(filters.value, api)));
   const library = computed(() => request.data.value ?? emptyLibrary());
+  const loadedVideos = shallowRef<LibraryDto["videos"]>([]);
+  const loadedPage = shallowRef(1);
+  const loadedTotalPages = shallowRef(0);
+  const loadingMore = shallowRef(false);
+  const loadMoreError = shallowRef("");
+  const accumulationRetry = shallowRef(0);
   const hasActiveFilters = computed(() =>
     Boolean(
       query.value ||
@@ -100,9 +122,83 @@ export function useLibraryBrowser(debounceMilliseconds = 150) {
       });
     },
   );
+  watch(
+    [filters, library, accumulatePagesRef, accumulationRetry],
+    async ([activeFilters, loadedLibrary, shouldAccumulate], _previous, onCleanup) => {
+      let cancelled = false;
+      onCleanup(() => {
+        cancelled = true;
+      });
+
+      const requestedPage = activeFilters.page ?? 1;
+      if (loadedLibrary.pagination.page !== requestedPage) return;
+
+      loadedTotalPages.value = loadedLibrary.pagination.totalPages;
+      loadMoreError.value = "";
+
+      if (!shouldAccumulate) {
+        loadedVideos.value = loadedLibrary.videos;
+        loadedPage.value = loadedLibrary.pagination.page;
+        loadingMore.value = false;
+        return;
+      }
+
+      try {
+        const libraries = await Promise.all(
+          Array.from({ length: requestedPage }, (_, index) =>
+            queryClient.fetchQuery(libraryQueryOptions({ ...activeFilters, page: index + 1 }, api)),
+          ),
+        );
+        if (cancelled) return;
+
+        const loadedIds = new Set<string>();
+        loadedVideos.value = libraries.flatMap((pageLibrary) =>
+          pageLibrary.videos.filter((video) => {
+            if (loadedIds.has(video.id)) return false;
+            loadedIds.add(video.id);
+            return true;
+          }),
+        );
+        loadedPage.value = loadedLibrary.pagination.page;
+      } catch (caught) {
+        if (cancelled) return;
+        loadMoreError.value = apiErrorMessage(caught, "Could not load more videos");
+      } finally {
+        if (!cancelled) loadingMore.value = false;
+      }
+    },
+    { immediate: true },
+  );
   onScopeDispose(() => clearTimeout(searchTimer));
 
+  const canLoadMore = computed(() => loadedPage.value < loadedTotalPages.value);
+
+  function setPage(nextPage: number) {
+    return router.push({
+      query: nextQuery({ page: nextPage <= 1 ? undefined : String(nextPage) }),
+    });
+  }
+
+  async function loadMore(): Promise<void> {
+    if (loadingMore.value || !canLoadMore.value) return;
+
+    const currentPage = page.value;
+    const nextPage = currentPage > loadedPage.value ? currentPage : loadedPage.value + 1;
+    loadingMore.value = true;
+    loadMoreError.value = "";
+
+    try {
+      if (nextPage !== currentPage) await setPage(nextPage);
+      await queryClient.fetchQuery(libraryQueryOptions({ ...filters.value, page: nextPage }, api));
+      if (nextPage === currentPage) accumulationRetry.value += 1;
+    } catch (caught) {
+      loadMoreError.value = apiErrorMessage(caught, "Could not load more videos");
+      loadingMore.value = false;
+    }
+  }
+
   return {
+    canLoadMore,
     clearFilters() {
       clearTimeout(searchTimer);
       if (query.value) {
@@ -127,16 +223,16 @@ export function useLibraryBrowser(debounceMilliseconds = 150) {
     hasActiveFilters,
     library,
     loading: computed(() => request.isPending.value),
+    loadedVideos: readonly(loadedVideos),
+    loadMore,
+    loadMoreError: readonly(loadMoreError),
+    loadingMore: readonly(loadingMore),
     page,
     query,
     refreshing: computed(() => request.isFetching.value && !request.isPending.value),
     selectedAuthor,
     selectedView,
     selectedTag,
-    setPage(nextPage: number) {
-      return router.push({
-        query: nextQuery({ page: nextPage <= 1 ? undefined : String(nextPage) }),
-      });
-    },
+    setPage,
   };
 }
