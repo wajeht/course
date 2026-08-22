@@ -66,6 +66,14 @@ async function mountSidebar(resetting = false) {
 }
 
 describe("PlayerPlaylistSidebar", () => {
+  it("keeps the mobile header below the iOS status bar", async () => {
+    const wrapper = await mountSidebar();
+
+    expect(wrapper.get("header").classes()).toContain(
+      "max-[860px]:pt-[calc(1.25rem+env(safe-area-inset-top))]",
+    );
+  });
+
   it("keeps the playlist reset action in an overflow menu", async () => {
     const wrapper = await mountSidebar();
 
