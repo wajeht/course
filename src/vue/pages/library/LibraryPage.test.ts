@@ -64,7 +64,7 @@ function library(): LibraryDto {
   };
 }
 
-async function mountLibraryPage() {
+async function mountLibraryPage(path = "/videos") {
   vi.mocked(api.getLibrary).mockResolvedValue(library());
   const router = createRouter({
     history: createMemoryHistory(),
@@ -73,7 +73,7 @@ async function mountLibraryPage() {
       { path: "/videos/:videoId", name: "player", component: { template: "<div />" } },
     ],
   });
-  await router.push("/videos");
+  await router.push(path);
   await router.isReady();
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const wrapper = mount(LibraryPage, {
@@ -101,5 +101,16 @@ describe("LibraryPage", () => {
     expect(wrapper.get(`a[href="/videos/${videoId}"]`).attributes("aria-label")).toBe(
       "Open Saved Collection",
     );
+  });
+
+  it("clears search, author, tag, view, and page together", async () => {
+    const { router, wrapper } = await mountLibraryPage(
+      "/videos?q=term&author=Example&tag=Archive&view=playlists&page=2",
+    );
+
+    await wrapper.get('[data-clear-filters="mobile"]').trigger("click");
+    await flushPromises();
+
+    expect(router.currentRoute.value.query).toEqual({});
   });
 });
