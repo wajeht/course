@@ -38,7 +38,7 @@ const titleId = `playlist-title-${useId()}`;
         @reset="$emit('reset')"
       />
     </header>
-    <div class="flex-1 overflow-y-auto max-[860px]:max-h-[55dvh]">
+    <div class="flex-1 overflow-y-auto max-[860px]:overflow-visible">
       <section v-for="section in playlist.sections" :key="section.id ?? 'direct'">
         <h3
           class="sticky top-0 z-[2] border-y border-pine/15 bg-mist px-4 py-3 font-display text-xs font-extrabold tracking-[.08em] text-pine-deep uppercase"

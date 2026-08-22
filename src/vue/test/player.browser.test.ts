@@ -89,18 +89,25 @@ test("uses responsive video details and places the playlist below them on mobile
   await expect(title).toBeVisible();
   expect((await title.boundingBox())?.width).toBeGreaterThan(1000);
   const playlistPanel = page.getByRole("complementary", { name: "Saved Collection" });
+  const playlistVideos = playlistPanel.locator(":scope > div");
   await expect(playlistPanel).toBeVisible();
   await expect(page.getByRole("button", { name: "Summary" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Expand video details" })).toBeHidden();
+  await expect(page.getByRole("button", { name: "Show 1 more chapter" })).toBeHidden();
+  expect(
+    (await page.getByRole("list", { name: "Video chapters" }).boundingBox())?.width,
+  ).toBeLessThanOrEqual(781);
 
   await page.setViewportSize({ width: 390, height: 844 });
   const actions = page.getByRole("button", { name: "Video actions" });
-  const expand = page.getByRole("button", { name: "Expand video details" });
+  const expand = page.getByRole("button", { name: "Show 1 more chapter" });
 
   await expect(actions).toBeVisible();
   await expect(expand).toBeVisible();
   await expect(page.getByRole("button", { name: "Summary" })).toBeHidden();
   await expect(playlistPanel).toBeVisible();
+  expect(await playlistVideos.evaluate((element) => getComputedStyle(element).overflowY)).toBe(
+    "visible",
+  );
   expect(await playlistPanel.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(
     "rgb(248, 249, 246)",
   );
@@ -117,7 +124,7 @@ test("uses responsive video details and places the playlist below them on mobile
 
   await expand.click();
   await expect(page.getByRole("button", { name: "Summary" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Collapse video details" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Show fewer" })).toBeVisible();
 
   const detailsBox = await page.getByRole("region", { name: videoTitle }).boundingBox();
   const playlistBox = await playlistPanel.boundingBox();
