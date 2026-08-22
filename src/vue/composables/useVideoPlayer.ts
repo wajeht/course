@@ -54,6 +54,9 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
     },
     {
       errorMessage: "Could not reset this video",
+      onError: (caught) => {
+        toast.error(apiErrorMessage(caught, "Could not reset this video"));
+      },
       onSuccess: async (didReset) => {
         if (!didReset) return;
         await invalidateProgress();
@@ -94,6 +97,9 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
     },
     {
       errorMessage: "Could not reset this playlist",
+      onError: (caught) => {
+        toast.error(apiErrorMessage(caught, "Could not reset this playlist"));
+      },
       onSuccess: async (didReset) => {
         if (!didReset) return;
         await invalidateProgress();
