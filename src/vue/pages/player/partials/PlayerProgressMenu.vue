@@ -1,14 +1,35 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, shallowRef, useTemplateRef } from "vue";
+import { computed, onBeforeUnmount, onMounted, shallowRef, useTemplateRef } from "vue";
 
 import AppButton from "@/components/ui/AppButton.vue";
 
-defineProps<{ resetting: boolean }>();
+const props = withDefaults(
+  defineProps<{
+    label: string;
+    resetLabel: string;
+    resetting: boolean;
+    tone?: "dark" | "light";
+  }>(),
+  { tone: "dark" },
+);
 const emit = defineEmits<{ reset: [] }>();
 
 const open = shallowRef(false);
 const root = useTemplateRef<HTMLElement>("root");
 const trigger = useTemplateRef<HTMLButtonElement>("trigger");
+const triggerClasses = computed(() =>
+  props.tone === "light"
+    ? "text-pine/58 hover:bg-pine/8 hover:text-pine focus-visible:outline-pine"
+    : "text-white/58 hover:bg-white/8 hover:text-white focus-visible:outline-belt-light",
+);
+const panelClasses = computed(() =>
+  props.tone === "light" ? "border-line bg-white" : "border-white/12 bg-[#1b231f]",
+);
+const itemClasses = computed(() =>
+  props.tone === "light"
+    ? "text-pine hover:bg-pine/8 focus-visible:bg-pine/8"
+    : "text-white/78 hover:bg-white/8 focus-visible:bg-white/8",
+);
 
 function close(): void {
   open.value = false;
@@ -41,8 +62,9 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", closeOnOutside
     <button
       ref="trigger"
       type="button"
-      class="grid h-9 w-9 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-lg leading-none text-white/58 hover:bg-white/8 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-belt-light"
-      aria-label="Video actions"
+      class="grid h-9 w-9 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-lg leading-none focus-visible:outline-2 focus-visible:outline-offset-2"
+      :class="triggerClasses"
+      :aria-label="label"
       aria-haspopup="menu"
       :aria-expanded="open"
       @click="open = !open"
@@ -53,17 +75,19 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", closeOnOutside
     <div
       v-if="open"
       role="menu"
-      aria-label="Video actions"
-      class="absolute right-0 z-20 mt-2 min-w-44 rounded-[7px] border border-white/12 bg-[#1b231f] p-1"
+      :aria-label="label"
+      class="absolute right-0 z-20 mt-2 min-w-44 rounded-[7px] border p-1"
+      :class="panelClasses"
     >
       <AppButton
         variant="unstyled"
         role="menuitem"
-        class="flex w-full items-center gap-2 rounded-[5px] px-3 py-2 text-left text-sm text-white/78 hover:bg-white/8 focus-visible:bg-white/8 focus-visible:outline-none"
+        class="flex w-full items-center gap-2 rounded-[5px] px-3 py-2 text-left text-sm focus-visible:outline-none"
+        :class="itemClasses"
         :loading="resetting"
         loading-label="Resetting…"
         @click="resetProgress"
-        >Reset progress</AppButton
+        >{{ resetLabel }}</AppButton
       >
     </div>
   </div>
