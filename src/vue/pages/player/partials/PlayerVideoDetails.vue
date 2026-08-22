@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { computed, shallowRef, useId, watch } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  shallowRef,
+  useId,
+  useTemplateRef,
+  watch,
+} from "vue";
 
 import type { VideoDetailDto } from "@/api.js";
 import AuthorLinks from "@/components/AuthorLinks.vue";
@@ -15,17 +24,54 @@ const props = defineProps<{
 defineEmits<{ reset: []; seek: [startSeconds: number] }>();
 
 const expanded = shallowRef(false);
+const descriptionTruncated = shallowRef(false);
+const description = useTemplateRef<HTMLParagraphElement>("description");
 const detailsId = `video-details-${useId()}`;
-const expandable = computed(
-  () => Boolean(props.video?.description) || (props.video?.chapters.length ?? 0) > 3,
-);
+const hiddenChapterCount = computed(() => Math.max((props.video?.chapters.length ?? 0) - 3, 0));
+const expandable = computed(() => descriptionTruncated.value || hiddenChapterCount.value > 0);
+const disclosureLabel = computed(() => {
+  if (expanded.value) return "Show fewer";
+  if (hiddenChapterCount.value === 0) return "Show more";
+  return `Show ${hiddenChapterCount.value} more chapter${hiddenChapterCount.value === 1 ? "" : "s"}`;
+});
+
+let descriptionObserver: ResizeObserver | undefined;
+
+function measureDescriptionOverflow(): void {
+  if (expanded.value) return;
+  descriptionTruncated.value = Boolean(
+    description.value && description.value.scrollHeight > description.value.clientHeight + 1,
+  );
+}
+
+function observeDescription(): void {
+  descriptionObserver?.disconnect();
+  if (description.value) descriptionObserver?.observe(description.value);
+  measureDescriptionOverflow();
+}
+
+function toggleExpanded(): void {
+  expanded.value = !expanded.value;
+  if (!expanded.value) void nextTick(measureDescriptionOverflow);
+}
 
 watch(
   () => props.video?.id,
-  () => {
+  async () => {
     expanded.value = false;
+    descriptionTruncated.value = false;
+    await nextTick();
+    observeDescription();
   },
 );
+
+onMounted(() => {
+  if (typeof ResizeObserver !== "undefined") {
+    descriptionObserver = new ResizeObserver(measureDescriptionOverflow);
+  }
+  observeDescription();
+});
+onBeforeUnmount(() => descriptionObserver?.disconnect());
 </script>
 
 <template>
@@ -56,6 +102,7 @@ watch(
     >
       <p
         v-if="video.description"
+        ref="description"
         class="max-w-[780px] text-sm leading-relaxed text-white/62"
         :class="expanded ? '' : 'max-[860px]:line-clamp-2'"
       >
@@ -63,6 +110,7 @@ watch(
       </p>
       <ChapterList
         v-if="video.chapters.length"
+        class="max-w-[780px]"
         :class="video.description ? 'mt-4' : ''"
         :chapters="video.chapters"
         :collapsed="!expanded"
@@ -74,14 +122,14 @@ watch(
     <AppButton
       v-if="expandable"
       variant="unstyled"
-      class="mx-auto mt-2 hidden h-9 w-12 place-items-center text-xl text-white/62 max-[860px]:grid"
+      class="mx-auto mt-2 hidden min-h-9 items-center justify-center gap-2 px-2 text-xs font-bold text-white/62 hover:text-white max-[860px]:flex"
       :aria-controls="detailsId"
       :aria-expanded="expanded"
-      :aria-label="expanded ? 'Collapse video details' : 'Expand video details'"
-      @click="expanded = !expanded"
+      @click="toggleExpanded"
     >
+      {{ disclosureLabel }}
       <span
-        class="transition-transform duration-150"
+        class="text-base transition-transform duration-150"
         :class="expanded ? 'rotate-180' : ''"
         aria-hidden="true"
         >⌄</span

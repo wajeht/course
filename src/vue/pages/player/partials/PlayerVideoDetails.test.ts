@@ -45,17 +45,37 @@ describe("PlayerVideoDetails", () => {
       },
     });
 
-    const toggle = wrapper.get('[aria-label="Expand video details"]');
+    const toggle = wrapper.get("button[aria-controls]");
     const detailsId = toggle.attributes("aria-controls");
 
+    expect(toggle.text()).toContain("Show 1 more chapter");
     expect(toggle.attributes("aria-expanded")).toBe("false");
     expect(wrapper.get(`#${detailsId}`).find('[aria-label="Video chapters"]').exists()).toBe(true);
 
     await toggle.trigger("click");
 
-    expect(wrapper.get('[aria-label="Collapse video details"]').attributes("aria-expanded")).toBe(
-      "true",
-    );
+    expect(wrapper.get("button[aria-controls]").text()).toContain("Show fewer");
+    expect(wrapper.get("button[aria-controls]").attributes("aria-expanded")).toBe("true");
+  });
+
+  it("does not show a disclosure when all details fit", () => {
+    const wrapper = mount(PlayerVideoDetails, {
+      props: {
+        currentTime: 0,
+        resetting: false,
+        video: {
+          ...video,
+          chapters: [
+            { startSeconds: 0, title: "Introduction" },
+            { startSeconds: 90, title: "Memory" },
+            { startSeconds: 180, title: "Summary" },
+          ],
+          description: "A short description.",
+        },
+      },
+    });
+
+    expect(wrapper.find("button[aria-controls]").exists()).toBe(false);
   });
 
   it("places the author directly after the video title", () => {
