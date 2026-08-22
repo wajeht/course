@@ -96,3 +96,63 @@ test("uses responsive library filters and a mobile drawer", async ({ page }) => 
   await expect(actions).toBeHidden();
   await expect(page.getByRole("group", { name: "Authors" })).toBeVisible();
 });
+
+test("loads more videos on mobile and keeps the page in the URL", async ({ page }) => {
+  await authenticate(page);
+  await page.route("**/api/library**", async (route) => {
+    const requestedPage = Number(new URL(route.request().url()).searchParams.get("page") ?? "1");
+    const id = String(requestedPage).repeat(24);
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        authors: [],
+        continueWatching: [],
+        pagination: { page: requestedPage, pageSize: 1, totalPages: 2, totalVideos: 2 },
+        playlists: [],
+        tags: [],
+        videos: [
+          {
+            authors: [],
+            completed: false,
+            coverUrl: null,
+            description: "",
+            durationSeconds: 60,
+            id,
+            playlistId: null,
+            playlistSectionId: null,
+            playlistSectionTitle: null,
+            playlistTitle: null,
+            positionSeconds: 0,
+            progressPercent: 0,
+            source: null,
+            tags: [],
+            title: requestedPage === 2 ? "Second video" : "First video",
+          },
+        ],
+      }),
+    });
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/videos");
+  await expect(page.getByText("First video", { exact: true })).toBeVisible();
+
+  const loadMore = page.getByTestId("load-more-videos");
+  await expect(loadMore).toHaveText("Load more");
+  await loadMore.click();
+
+  await expect(page.getByText("Second video", { exact: true })).toBeVisible();
+  await expect(page.getByText("First video", { exact: true })).toBeVisible();
+  await expect(loadMore).toHaveCount(0);
+  await expect(page).toHaveURL(/page=2/);
+
+  await page.reload();
+  await expect(page.getByText("First video", { exact: true })).toBeVisible();
+  await expect(page.getByText("Second video", { exact: true })).toBeVisible();
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expect(page).toHaveURL(/page=2/);
+  await expect(page.getByText("First video", { exact: true })).toBeHidden();
+  await expect(page.getByText("Second video", { exact: true })).toBeVisible();
+  await expect(page.getByText("Page 2 of 2")).toBeVisible();
+});
