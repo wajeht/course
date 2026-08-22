@@ -17,8 +17,8 @@ defineEmits<{ openPlaylist: []; reset: []; seek: [startSeconds: number] }>();
 
 <template>
   <div v-if="video" class="mt-4 flex items-start justify-between gap-8 max-[600px]:flex-col">
-    <div class="min-w-0">
-      <h1 class="max-w-[800px] font-display text-[clamp(1.35rem,2vw,2rem)] leading-[1.1]">
+    <div class="min-w-0 flex-1">
+      <h1 class="font-display text-[clamp(1.35rem,2vw,2rem)] leading-[1.1]">
         {{ video.title }}
       </h1>
       <AuthorLinks

@@ -44,6 +44,15 @@ const playlist: PlaylistDetailDto = {
 };
 
 describe("PlayerVideoDetails", () => {
+  it("lets the video title use the available row width", () => {
+    const wrapper = mount(PlayerVideoDetails, {
+      props: { currentTime: 0, playlist, resetting: false, video },
+    });
+
+    expect(wrapper.get("h1").classes()).not.toContain("max-w-[800px]");
+    expect(wrapper.get("h1").element.parentElement?.classList).toContain("flex-1");
+  });
+
   it("places the author directly after the video title", () => {
     const wrapper = mount(PlayerVideoDetails, {
       props: {

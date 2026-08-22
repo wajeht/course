@@ -16,9 +16,12 @@ async function authenticate(page: Page): Promise<void> {
   expect((await page.request.post("/api/auth", { data: { password } })).status()).toBe(200);
 }
 
-test("shows the playlist action only on the mobile player", async ({ page }) => {
+test("uses the available title width and shows the playlist action only on mobile", async ({
+  page,
+}) => {
   await authenticate(page);
 
+  const videoTitle = "Basics of computer's memory and Getting started - C Programming Tutorial 02";
   const video = {
     authors: ["Example Author"],
     chapters: [],
@@ -35,7 +38,7 @@ test("shows the playlist action only on the mobile player", async ({ page }) => 
     progressPercent: 0,
     source: null,
     tags: [],
-    title: "Example video",
+    title: videoTitle,
   };
 
   await page.route(`**/api/videos/${videoId}`, async (route) => {
@@ -74,9 +77,11 @@ test("shows the playlist action only on the mobile player", async ({ page }) => 
     await route.fulfill({ contentType: "video/mp4", body: "" });
   });
 
-  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.setViewportSize({ width: 1800, height: 900 });
   await page.goto(`/videos/${videoId}`);
-  await expect(page.getByRole("heading", { name: "Example video" })).toBeVisible();
+  const title = page.getByRole("heading", { name: videoTitle });
+  await expect(title).toBeVisible();
+  expect((await title.boundingBox())?.width).toBeGreaterThan(1000);
 
   const playlistAction = page.getByRole("button", { name: "Open playlist Saved Collection" });
   await expect(playlistAction).toBeHidden();
