@@ -89,4 +89,15 @@ describe("PlayerVideoDetails", () => {
 
     expect(wrapper.find('[aria-label^="Open playlist"]').exists()).toBe(false);
   });
+
+  it("emits reset from the video actions menu", async () => {
+    const wrapper = mount(PlayerVideoDetails, {
+      props: { currentTime: 0, playlist: null, resetting: false, video },
+    });
+
+    await wrapper.get('[aria-label="Video actions"]').trigger("click");
+    await wrapper.get('[role="menuitem"]').trigger("click");
+
+    expect(wrapper.emitted("reset")).toHaveLength(1);
+  });
 });
