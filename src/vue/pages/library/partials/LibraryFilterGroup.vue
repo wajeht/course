@@ -7,11 +7,12 @@ const props = withDefaults(
   defineProps<{
     allLabel: string;
     collapsedLimit?: number;
+    hideLabel?: boolean;
     label: string;
     name: string;
     options: LibraryDto["authors"];
   }>(),
-  { collapsedLimit: 10 },
+  { collapsedLimit: 10, hideLabel: false },
 );
 const selected = defineModel<string[]>({ required: true });
 const expanded = shallowRef(false);
@@ -28,13 +29,19 @@ const visible = computed(() =>
 
 <template>
   <fieldset>
-    <legend class="mb-3 text-[.72rem] font-extrabold tracking-[.08em] text-pine uppercase">
+    <legend
+      :class="
+        hideLabel
+          ? 'sr-only'
+          : 'mb-3 text-[.72rem] font-extrabold tracking-[.08em] text-pine uppercase'
+      "
+    >
       {{ label }}
     </legend>
     <p v-if="!visible.length" class="text-[.82rem] text-muted">{{ allLabel }}</p>
     <ul v-else class="space-y-2 text-[.86rem]">
       <li v-for="option in visible" :key="option.name">
-        <label class="flex cursor-pointer items-center gap-2.5 text-pine-deep">
+        <label class="flex cursor-pointer items-center gap-2.5 text-pine-deep max-[760px]:min-h-11">
           <input
             v-model="selected"
             type="checkbox"
