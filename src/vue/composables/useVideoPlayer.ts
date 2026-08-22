@@ -244,7 +244,7 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
     const confirmed = await confirmation.confirm({
       title: "Reset video progress?",
       message: "Your saved position and completion state for this video will be removed.",
-      confirmLabel: "Reset video",
+      confirmLabel: "Reset progress",
       variant: "danger",
     });
     if (confirmed && video.value?.id === id) await reset.run(id);
