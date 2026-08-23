@@ -168,7 +168,22 @@ test("loads more author videos on mobile and restores them from the URL", async 
         authors: [{ name: "Gordon Ryan", videoCount: 2 }],
         continueWatching: [],
         pagination: { page: requestedPage, pageSize: 1, totalPages: 2, totalVideos: 2 },
-        playlists: [],
+        playlists: [
+          {
+            authors: ["Gordon Ryan"],
+            completedCount: 0,
+            coverUrl: null,
+            description: "",
+            durationSeconds: 120,
+            id: playlistId,
+            nextVideoId: id,
+            progressPercent: 0,
+            source: null,
+            tags: [],
+            title: "Gordon Collection",
+            videoCount: 2,
+          },
+        ],
         tags: [],
         videos: [
           {
@@ -178,10 +193,10 @@ test("loads more author videos on mobile and restores them from the URL", async 
             description: "",
             durationSeconds: 60,
             id,
-            playlistId: null,
+            playlistId,
             playlistSectionId: null,
             playlistSectionTitle: null,
-            playlistTitle: null,
+            playlistTitle: "Gordon Collection",
             positionSeconds: 0,
             progressPercent: 0,
             source: null,
@@ -196,6 +211,8 @@ test("loads more author videos on mobile and restores them from the URL", async 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/authors/Gordon%20Ryan");
   await expect(page.getByText("First author video", { exact: true })).toBeVisible();
+  const playlistLink = page.getByRole("link", { name: "Gordon Collection", exact: true });
+  await expect(playlistLink).toBeVisible();
 
   const loadMore = page.getByTestId("load-more-author-videos");
   await expect(loadMore).toHaveText("Load more");
@@ -203,15 +220,18 @@ test("loads more author videos on mobile and restores them from the URL", async 
 
   await expect(page.getByText("First author video", { exact: true })).toBeVisible();
   await expect(page.getByText("Second author video", { exact: true })).toBeVisible();
+  await expect(playlistLink).toBeVisible();
   await expect(loadMore).toHaveCount(0);
   await expect(page).toHaveURL(/page=2/);
 
   await page.reload();
   await expect(page.getByText("First author video", { exact: true })).toBeVisible();
   await expect(page.getByText("Second author video", { exact: true })).toBeVisible();
+  await expect(playlistLink).toBeVisible();
 
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect(page.getByText("First author video", { exact: true })).toBeHidden();
   await expect(page.getByText("Second author video", { exact: true })).toBeVisible();
+  await expect(playlistLink).toBeHidden();
   await expect(page.getByText("Page 2 of 2")).toBeVisible();
 });

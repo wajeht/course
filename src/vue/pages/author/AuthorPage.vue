@@ -19,6 +19,7 @@ const {
   canLoadMore,
   error,
   library,
+  loadedPlaylists,
   loadedVideos,
   loading,
   loadingMore,
@@ -40,9 +41,9 @@ const displayedVideos = computed(() =>
     <section :aria-busy="refreshing">
       <PageHeader eyebrow="Author" :title="author?.name ?? authorName" :heading-level="1" />
 
-      <section v-if="page === 1 && library?.playlists.length" class="mt-12">
+      <section v-if="loadedPlaylists.length" class="mt-12">
         <PageHeader class="mb-6" eyebrow="Collections" title="Playlists" :heading-level="2" />
-        <PlaylistGrid :playlists="library.playlists" />
+        <PlaylistGrid :playlists="loadedPlaylists" />
       </section>
 
       <section class="mt-12">

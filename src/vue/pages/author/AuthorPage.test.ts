@@ -186,12 +186,14 @@ describe("AuthorPage", () => {
     const { router, wrapper } = await mountAuthorPage(getLibrary);
 
     expect(wrapper.text()).toContain("First author video");
+    expect(wrapper.text()).toContain("Saved Collection");
     const loadMore = wrapper.get('[data-testid="load-more-author-videos"]');
     await loadMore.trigger("click");
     await flushPromises();
 
     expect(wrapper.text()).toContain("First author video");
     expect(wrapper.text()).toContain("Second author video");
+    expect(wrapper.text()).toContain("Saved Collection");
     expect(wrapper.find('[data-testid="load-more-author-videos"]').exists()).toBe(false);
     expect(router.currentRoute.value.query).toEqual({ page: "2" });
   });

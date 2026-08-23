@@ -37,6 +37,7 @@ export function useAuthorLibrary(accumulatePages: MaybeRefOrGetter<boolean>) {
     return caught ? apiErrorMessage(caught, "Could not load this author") : "";
   });
   const loadedVideos = shallowRef<LibraryDto["videos"]>([]);
+  const loadedPlaylists = shallowRef<LibraryDto["playlists"]>([]);
   const loadedPage = shallowRef(1);
   const loadedTotalPages = shallowRef(0);
   const loadingMore = shallowRef(false);
@@ -79,6 +80,7 @@ export function useAuthorLibrary(accumulatePages: MaybeRefOrGetter<boolean>) {
 
   watch(authorName, () => {
     loadedVideos.value = [];
+    loadedPlaylists.value = [];
     loadedPage.value = 1;
     loadedTotalPages.value = 0;
     loadMoreError.value = "";
@@ -101,6 +103,7 @@ export function useAuthorLibrary(accumulatePages: MaybeRefOrGetter<boolean>) {
 
       if (!shouldAccumulate) {
         loadedVideos.value = loadedLibrary.videos;
+        loadedPlaylists.value = requestedPage === 1 ? loadedLibrary.playlists : [];
         loadedPage.value = loadedLibrary.pagination.page;
         loadingMore.value = false;
         return;
@@ -122,6 +125,7 @@ export function useAuthorLibrary(accumulatePages: MaybeRefOrGetter<boolean>) {
             return true;
           }),
         );
+        loadedPlaylists.value = libraries[0]?.playlists ?? [];
         loadedPage.value = loadedLibrary.pagination.page;
       } catch (caught) {
         if (cancelled) return;
@@ -158,6 +162,7 @@ export function useAuthorLibrary(accumulatePages: MaybeRefOrGetter<boolean>) {
     canLoadMore: computed(() => loadedPage.value < loadedTotalPages.value),
     error,
     library,
+    loadedPlaylists: readonly(loadedPlaylists),
     loadedVideos: readonly(loadedVideos),
     loading,
     loadingMore: readonly(loadingMore),
