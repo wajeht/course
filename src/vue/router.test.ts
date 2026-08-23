@@ -3,7 +3,7 @@
 import type { RouteLocationNormalizedLoaded } from "vue-router";
 import { describe, expect, it } from "vitest";
 
-import { notFoundLocation, router } from "./router.js";
+import { notFoundLocation, playerLocation, router } from "./router.js";
 
 function normalizedLocation(path: string): RouteLocationNormalizedLoaded {
   return router.resolve(path) as RouteLocationNormalizedLoaded;
@@ -35,6 +35,19 @@ describe("router error pages", () => {
 
     expect(route.name).toBe("not-found");
     expect(route.redirectedFrom).toBeUndefined();
+  });
+
+  it("attaches playlist context to the player as a list query", () => {
+    const videoId = "a".repeat(24);
+    const playlistId = "b".repeat(24);
+    const withList = router.resolve(playerLocation(videoId, playlistId));
+    const withoutList = router.resolve(playerLocation(videoId));
+
+    expect(withList.name).toBe("player");
+    expect(withList.params.videoId).toBe(videoId);
+    expect(withList.query.list).toBe(playlistId);
+    expect(withoutList.path).toBe(`/videos/${videoId}`);
+    expect(withoutList.query).toEqual({});
   });
 
   it("provides separate Library and Access settings routes", () => {

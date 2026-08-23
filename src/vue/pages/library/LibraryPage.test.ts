@@ -101,9 +101,9 @@ describe("LibraryPage", () => {
     expect(wrapper.get("h1").text()).toBe("Playlists");
     expect(wrapper.text()).toContain("Saved Collection");
     expect(wrapper.text()).not.toContain("Standalone video");
-    expect(wrapper.get(`a[href="/videos/${videoId}"]`).attributes("aria-label")).toBe(
-      "Open Saved Collection",
-    );
+    expect(
+      wrapper.get(`a[href="/videos/${videoId}?list=${playlistId}"]`).attributes("aria-label"),
+    ).toBe("Open Saved Collection");
   });
 
   it("clears search, author, tag, view, and page together", async () => {
