@@ -114,6 +114,9 @@ describe("AuthorPage", () => {
     expect(wrapper.get("h1").text()).toBe("Jane Smith");
     expect(wrapper.text()).toContain("Saved Collection");
     expect(wrapper.text()).toContain("Example video");
+    expect(wrapper.get('a[aria-label="Play Example video"]').attributes("href")).toBe(
+      `/videos/${videoId}?list=${playlistId}`,
+    );
   });
 
   it("loads the next author when the route parameter changes", async () => {

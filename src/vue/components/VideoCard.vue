@@ -12,7 +12,7 @@ import { durationText } from "@/utils.js";
 
 const props = defineProps<{ video: DeepReadonly<LibraryDto["videos"][number]> }>();
 const prefetch = useRoutePrefetch();
-const to = computed(() => playerLocation(props.video.id));
+const to = computed(() => playerLocation(props.video.id, props.video.playlistId));
 </script>
 
 <template>
