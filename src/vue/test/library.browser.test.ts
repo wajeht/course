@@ -70,11 +70,14 @@ test("uses responsive library filters and a mobile drawer", async ({ page }) => 
 
   const search = page.getByTestId("mobile-library-search");
   const actions = page.getByTestId("mobile-filter-actions");
+  const viewButton = page.locator('[data-mobile-filter="view"]');
   const authorButton = page.locator('[data-mobile-filter="author"]');
   const filterColumn = page.getByTestId("library-filter-column");
   await expect(search).toBeVisible();
   await expect(actions).toBeVisible();
   await expect(authorButton).toBeVisible();
+  await expect(viewButton).toHaveCSS("background-color", "rgb(36, 77, 59)");
+  await expect(viewButton).toHaveCSS("color", "rgb(255, 255, 255)");
   await expect(filterColumn).toHaveCSS("position", "sticky");
   await expect(filterColumn).toHaveCSS("top", "66px");
   await expect(filterColumn).toHaveCSS("background-color", "rgb(245, 246, 242)");
@@ -114,6 +117,8 @@ test("uses responsive library filters and a mobile drawer", async ({ page }) => 
   await authorButton.click();
   await drawer.getByRole("checkbox", { name: "Example Author (1)" }).check();
   await expect(page).toHaveURL(/author=Example(?:\+|%20)Author/);
+  await expect(authorButton).toHaveCSS("background-color", "rgb(36, 77, 59)");
+  await expect(authorButton).toHaveCSS("color", "rgb(255, 255, 255)");
   await page.keyboard.press("Escape");
   await expect(drawer).toHaveCount(0);
 
