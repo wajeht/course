@@ -9,6 +9,7 @@ import PaginationControls from "@/components/ui/PaginationControls.vue";
 import PlaylistGrid from "@/components/PlaylistGrid.vue";
 import VideoGrid from "@/components/VideoGrid.vue";
 import { useLibraryBrowser } from "@/composables/useLibraryBrowser.js";
+import { useLibraryPageSize } from "@/composables/useLibraryPageSize.js";
 import { useMediaQuery } from "@/composables/useMediaQuery.js";
 import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
 import LibraryFiltersToolbar from "@/pages/library/partials/LibraryFiltersToolbar.vue";
@@ -34,6 +35,12 @@ const {
   selectedView,
   setPage,
 } = useLibraryBrowser({ accumulatePages: isMobile });
+const {
+  disabled: pageSizeDisabled,
+  error: pageSizeError,
+  libraryPageSize,
+  setLibraryPageSize,
+} = useLibraryPageSize();
 const displayedVideos = computed(() =>
   isMobile.value ? loadedVideos.value : library.value.videos,
 );
@@ -61,8 +68,12 @@ const displayedVideos = computed(() =>
           data-testid="library-filter-column"
           :authors="library.authors"
           :has-active-filters="hasActiveFilters"
+          :page-size="libraryPageSize"
+          :page-size-disabled="pageSizeDisabled"
+          :page-size-error="pageSizeError"
           :tags="library.tags"
           @clear="clearFilters"
+          @update:page-size="setLibraryPageSize"
         />
         <div class="min-w-0">
           <PlaylistGrid

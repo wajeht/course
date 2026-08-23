@@ -1,50 +1,25 @@
 // @vitest-environment happy-dom
 
-import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
-import { DOMWrapper, flushPromises, mount, type VueWrapper } from "@vue/test-utils";
-import { createMemoryHistory, createRouter } from "vue-router";
-import { afterEach, describe, expect, it, vi } from "vitest";
-
-import { api } from "@/api.js";
+import { DOMWrapper, mount, type VueWrapper } from "@vue/test-utils";
+import { afterEach, describe, expect, it } from "vitest";
 
 import LibraryFiltersToolbar from "./LibraryFiltersToolbar.vue";
-
-vi.mock("@/api.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/api.js")>();
-  return {
-    ...actual,
-    api: {
-      ...actual.api,
-      getSettings: vi.fn(async () => ({ libraryPageSize: 24 })),
-      updateSettings: vi.fn(async (libraryPageSize) => ({ libraryPageSize })),
-    },
-  };
-});
 
 const wrappers: VueWrapper[] = [];
 
 afterEach(() => {
   for (const wrapper of wrappers) wrapper.unmount();
   wrappers.length = 0;
-  vi.mocked(api.getSettings).mockClear();
-  vi.mocked(api.updateSettings).mockClear();
 });
 
-async function mountToolbar() {
-  const router = createRouter({
-    history: createMemoryHistory(),
-    routes: [{ path: "/videos", component: { template: "<div />" } }],
-  });
-  await router.push("/videos");
-  await router.isReady();
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+function mountToolbar() {
   const wrapper = mount(LibraryFiltersToolbar, {
     attachTo: document.body,
-    global: { plugins: [[VueQueryPlugin, { queryClient }], router] },
     props: {
       author: [],
       authors: [{ name: "Example Author", videoCount: 3 }],
       hasActiveFilters: false,
+      pageSize: 24,
       query: "",
       tag: [],
       tags: [{ name: "Example Tag", videoCount: 2 }],
@@ -52,13 +27,12 @@ async function mountToolbar() {
     },
   });
   wrappers.push(wrapper);
-  await flushPromises();
   return wrapper;
 }
 
 describe("LibraryFiltersToolbar", () => {
   it("places mobile filter actions after search and opens the author drawer", async () => {
-    const wrapper = await mountToolbar();
+    const wrapper = mountToolbar();
     const search = wrapper.get('[data-testid="mobile-library-search"]');
     const actions = wrapper.get('[data-testid="mobile-filter-actions"]');
     const viewButton = wrapper.get('[data-mobile-filter="view"]');
@@ -89,7 +63,7 @@ describe("LibraryFiltersToolbar", () => {
   });
 
   it("switches the mobile view through the drawer", async () => {
-    const wrapper = await mountToolbar();
+    const wrapper = mountToolbar();
 
     await wrapper.get('[data-mobile-filter="view"]').trigger("click");
 
@@ -106,32 +80,26 @@ describe("LibraryFiltersToolbar", () => {
     expect(viewButton.classes()).toEqual(expect.arrayContaining(["bg-pine", "text-white"]));
   });
 
-  it("saves videos per page when a desktop option is chosen", async () => {
-    const wrapper = await mountToolbar();
-    const current = wrapper.get<HTMLInputElement>(
-      'input[name="library-desktop-page-size"][value="24"]',
-    );
-    const next = wrapper.get('input[name="library-desktop-page-size"][value="48"]');
+  it("emits a new videos-per-page value from the desktop radios", async () => {
+    const wrapper = mountToolbar();
 
-    expect(current.element.checked).toBe(true);
-    await next.setValue();
-    await flushPromises();
+    expect(wrapper.get<HTMLInputElement>('input[value="24"]').element.checked).toBe(true);
+    await wrapper.get('input[name="library-desktop-page-size"][value="48"]').setValue();
 
-    expect(api.updateSettings).toHaveBeenCalledWith(48);
+    expect(wrapper.emitted("update:pageSize")?.at(-1)).toEqual([48]);
   });
 
-  it("opens videos per page in the mobile sheet and saves on select", async () => {
-    const wrapper = await mountToolbar();
+  it("opens videos per page in the mobile sheet and emits on select", async () => {
+    const wrapper = mountToolbar();
 
+    expect(wrapper.get('[data-mobile-filter="pageSize"]').text()).toBe("24 per page");
     await wrapper.get('[data-mobile-filter="pageSize"]').trigger("click");
     const option = document.body.querySelector<HTMLInputElement>(
       'dialog[open] input[name="library-mobile-page-size"][value="12"]',
     );
     expect(option).not.toBeNull();
     await new DOMWrapper(option!).setValue();
-    await flushPromises();
 
-    expect(api.updateSettings).toHaveBeenCalledWith(12);
-    expect(wrapper.get('[data-mobile-filter="pageSize"]').text()).toBe("12 per page");
+    expect(wrapper.emitted("update:pageSize")?.at(-1)).toEqual([12]);
   });
 });

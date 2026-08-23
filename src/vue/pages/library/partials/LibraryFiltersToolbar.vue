@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { computed, shallowRef } from "vue";
 
-import type { LibraryDto } from "@/api.js";
+import type { LibraryDto, LibraryPageSize } from "@/api.js";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppDrawer from "@/components/ui/AppDrawer.vue";
 import AppInput from "@/components/ui/AppInput.vue";
 import PanelCard from "@/components/ui/PanelCard.vue";
-import { useLibraryPageSize } from "@/composables/useLibraryPageSize.js";
 import LibraryFilterGroup from "@/pages/library/partials/LibraryFilterGroup.vue";
 import LibraryPageSizeFilter from "@/pages/library/partials/LibraryPageSizeFilter.vue";
 import LibraryPlaylistFilter from "@/pages/library/partials/LibraryPlaylistFilter.vue";
@@ -16,6 +15,8 @@ type FilterType = "author" | "pageSize" | "tag" | "view";
 const props = defineProps<{
   authors: LibraryDto["authors"];
   hasActiveFilters: boolean;
+  pageSizeDisabled?: boolean;
+  pageSizeError?: string;
   tags: LibraryDto["tags"];
 }>();
 const emit = defineEmits<{ clear: [] }>();
@@ -23,7 +24,7 @@ const author = defineModel<string[]>("author", { required: true });
 const query = defineModel<string>("query", { required: true });
 const tag = defineModel<string[]>("tag", { required: true });
 const view = defineModel<string>("view", { required: true });
-const { disabled: pageSizeDisabled, error: pageSizeError, libraryPageSize } = useLibraryPageSize();
+const pageSize = defineModel<LibraryPageSize>("pageSize", { required: true });
 
 const activeMobilePanel = shallowRef<FilterType | null>(null);
 const mobilePanelTitle = computed(() => {
@@ -46,7 +47,7 @@ const mobileFilterButtons = computed(() => [
   { active: tag.value.length > 0, label: selectionLabel("Tags", tag.value), type: "tag" as const },
   {
     active: false,
-    label: `${libraryPageSize.value} per page`,
+    label: `${pageSize.value} per page`,
     type: "pageSize" as const,
   },
 ]);
@@ -112,7 +113,7 @@ function togglePanel(panel: FilterType): void {
       </PanelCard>
       <PanelCard :elevated="false" padding="compact">
         <LibraryPageSizeFilter
-          v-model="libraryPageSize"
+          v-model="pageSize"
           :disabled="pageSizeDisabled"
           :error="pageSizeError"
           name="library-desktop-page-size"
@@ -177,7 +178,7 @@ function togglePanel(panel: FilterType): void {
       />
       <LibraryPageSizeFilter
         v-else-if="activeMobilePanel === 'pageSize'"
-        v-model="libraryPageSize"
+        v-model="pageSize"
         hide-label
         :disabled="pageSizeDisabled"
         :error="pageSizeError"
