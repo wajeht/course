@@ -41,7 +41,7 @@ describe("AppShell", () => {
     expect(desktopNavigation.classes()).toContain("max-[600px]:hidden");
     expect(mobileNavigation.classes()).toContain("max-[600px]:grid");
     expect(wrapper.get("header").text()).toContain("Videos");
-    expect(wrapper.get('header button[aria-label="Search videos"]').text()).toContain("⌘K");
+    expect(wrapper.find('header button[aria-label="Search videos"]').exists()).toBe(false);
     expect(wrapper.get("header a > span > span:last-child").classes()).not.toContain(
       "max-[600px]:hidden",
     );
