@@ -91,7 +91,6 @@ Open [localhost](http://localhost), enter `AUTH_SETUP_TOKEN`, and create the lib
 
 - [Development guide](./docs/development.md)
 - [Contribution guide](./docs/contribution.md)
-- [Video-library product contract](./docs/new.md)
 
 ## License
 
