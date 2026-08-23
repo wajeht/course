@@ -134,21 +134,6 @@ onBeforeUnmount(() => document.removeEventListener("keydown", handleShortcut));
 </script>
 
 <template>
-  <AppButton
-    variant="outline-inverse"
-    size="sm"
-    class="h-9 text-[.72rem] text-white/70 hover:text-white max-[600px]:h-10"
-    aria-label="Search videos"
-    aria-keyshortcuts="Meta+K Control+K"
-    @click="openPalette"
-  >
-    Search
-    <kbd
-      class="rounded border border-white/20 px-1.5 py-0.5 font-mono text-[.62rem] text-white/55 max-[600px]:hidden"
-      >⌘K</kbd
-    >
-  </AppButton>
-
   <Teleport to="body">
     <dialog
       ref="dialog"

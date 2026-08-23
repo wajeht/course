@@ -104,8 +104,11 @@ describe("VideoSearchPalette", () => {
   });
 
   it("sends an unselected query to the Videos page", async () => {
-    const { router, wrapper } = await mountPalette();
-    await wrapper.get('button[aria-label="Search videos"]').trigger("click");
+    const { router } = await mountPalette();
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true, cancelable: true }),
+    );
+    await flushPromises();
     await dialogElement<HTMLInputElement>('input[aria-label="Search video titles"]').setValue(
       "memory optimization",
     );
@@ -120,8 +123,11 @@ describe("VideoSearchPalette", () => {
   });
 
   it("opens a selected video with the keyboard", async () => {
-    const { router, wrapper } = await mountPalette();
-    await wrapper.get('button[aria-label="Search videos"]').trigger("click");
+    const { router } = await mountPalette();
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true, cancelable: true }),
+    );
+    await flushPromises();
     const input = dialogElement<HTMLInputElement>('input[aria-label="Search video titles"]');
     await input.setValue("memory");
     await vi.waitFor(() => expect(document.body.textContent).toContain("Memory optimization"));
