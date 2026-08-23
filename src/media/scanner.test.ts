@@ -245,7 +245,7 @@ describe("media scanner", () => {
     ]);
   });
 
-  it("generates thumbnails for uncovered videos during a scan", async () => {
+  it("generates thumbnails for every video during a scan", async () => {
     const { root, dataDirectory } = await createScannerDirectories();
     await fs.writeFile(path.join(root, "Talk.mp4"), "talk");
     await fs.writeFile(path.join(root, "Talk.jpg"), "cover");
@@ -277,14 +277,13 @@ describe("media scanner", () => {
     const bare = videos.find((video: { title: string }) => video.title === "Bare");
     const talk = videos.find((video: { title: string }) => video.title === "Talk");
 
-    expect(generate).toHaveBeenCalledTimes(1);
-    expect(generate.mock.calls[0]?.[0]).toContain("Bare.mp4");
+    expect(generate).toHaveBeenCalledTimes(2);
     await expect(
       fs.readFile(path.join(dataDirectory, "thumbnails", `${bare.id}.jpg`), "utf8"),
     ).resolves.toBe("generated");
     await expect(
-      fs.access(path.join(dataDirectory, "thumbnails", `${talk.id}.jpg`)),
-    ).rejects.toMatchObject({ code: "ENOENT" });
+      fs.readFile(path.join(dataDirectory, "thumbnails", `${talk.id}.jpg`), "utf8"),
+    ).resolves.toBe("generated");
   });
 
   it("preserves skipped videos and invalidates conversions only when media changes", async () => {

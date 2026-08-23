@@ -143,7 +143,6 @@ export function createThumbnailCache({
 
       const stale = [];
       for (const video of videos) {
-        if (video.coverPath) continue;
         if (!(await isCurrent(video))) stale.push(video);
       }
       if (stale.length === 0) return;

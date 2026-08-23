@@ -77,7 +77,7 @@ describe("thumbnails", () => {
     expect(thumbnailSeekSeconds(60)).toBe(3);
   });
 
-  it("generates posters for uncovered videos and skips authored covers", async () => {
+  it("generates posters even when a video has an authored cover", async () => {
     const generate = vi.fn<ThumbnailGenerator>(async (_source, destination) => {
       await fs.mkdir(path.dirname(destination), { recursive: true });
       await fs.writeFile(destination, "thumb");
@@ -86,12 +86,14 @@ describe("thumbnails", () => {
 
     await cache.synchronize([videoRecord(videoA, "A.mp4"), videoRecord(videoB, "B.mp4", "B.jpg")]);
 
-    expect(generate).toHaveBeenCalledTimes(1);
-    expect(generate.mock.calls[0]?.[0]).toContain("A.mp4");
+    expect(generate).toHaveBeenCalledTimes(2);
     await expect(
       fs.readFile(thumbnailPath(configuration.media.thumbnailsDirectory, videoA), "utf8"),
     ).resolves.toBe("thumb");
-    await expect(cache.listThumbnailIds()).resolves.toEqual(new Set([videoA]));
+    await expect(
+      fs.readFile(thumbnailPath(configuration.media.thumbnailsDirectory, videoB), "utf8"),
+    ).resolves.toBe("thumb");
+    await expect(cache.listThumbnailIds()).resolves.toEqual(new Set([videoA, videoB]));
   });
 
   it("reuses a current thumbnail and regenerates when the source changes", async () => {
