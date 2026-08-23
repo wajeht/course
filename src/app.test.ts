@@ -107,11 +107,10 @@ describe("application", () => {
     expect(cover.headers.get("vary")).toBe("Cookie");
     expect(await cover.text()).toBe("cover");
 
-    const inherited = await app.request(`/covers/videos/${"b".repeat(24)}`, {
+    const missingVideoCover = await app.request(`/covers/videos/${"b".repeat(24)}`, {
       headers: { cookie: cookie! },
     });
-    expect(inherited.status).toBe(200);
-    expect(await inherited.text()).toBe("cover");
+    expect(missingVideoCover.status).toBe(404);
 
     await fs.writeFile(
       path.join(configuration.media.thumbnailsDirectory, `${"b".repeat(24)}.jpg`),

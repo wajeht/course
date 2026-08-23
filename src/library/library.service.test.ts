@@ -228,7 +228,7 @@ describe("library service", () => {
     });
   });
 
-  it("exposes authored, generated, and inherited covers", async () => {
+  it("keeps playlist covers on playlists and video thumbnails on videos", async () => {
     await database.connection("playlists").where({ id: playlistA }).update({
       cover_path: "Saved Collection/cover.jpg",
     });
@@ -246,9 +246,7 @@ describe("library service", () => {
     );
 
     const library = await service.getLibrary();
-    expect(library.videos.find((video) => video.id === videoA)?.coverUrl).toBe(
-      `/covers/videos/${videoA}`,
-    );
+    expect(library.videos.find((video) => video.id === videoA)?.coverUrl).toBeNull();
     expect(library.videos.find((video) => video.id === videoB)?.coverUrl).toBe(
       `/covers/videos/${videoB}`,
     );

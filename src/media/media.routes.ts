@@ -144,10 +144,6 @@ export function createMediaRouter(context: AppContext) {
         `${video.id}.jpg`,
       );
       if (thumbnail) return thumbnail;
-      if (video.playlist_cover_path) {
-        const cover = await trySendCover(c, videosDirectory, video.playlist_cover_path);
-        if (cover) return cover;
-      }
       return c.body(null, 404);
     },
   );

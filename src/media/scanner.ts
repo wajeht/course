@@ -26,6 +26,7 @@ import { readVideoMetadata } from "./video-metadata.js";
 
 const coverExtensionOrder = [".jpg", ".jpeg", ".png", ".webp"] as const;
 const coverExtensions = new Set<string>(coverExtensionOrder);
+const playlistCoverNames = ["cover", "playlist"] as const;
 const ignoredDirectoryNames = new Set(["@eadir", "#recycle"]);
 
 function isLibraryDirectory(entry: Dirent): boolean {
@@ -660,14 +661,16 @@ async function findPlaylistCover(
     }
   }
 
-  for (const extension of coverExtensionOrder) {
-    const entry = entries.find(
-      (item) =>
-        item.isFile() &&
-        path.extname(item.name).toLowerCase() === extension &&
-        item.name.slice(0, -extension.length).toLowerCase() === "cover",
-    );
-    if (entry) return path.join(playlistDirectory, entry.name);
+  for (const name of playlistCoverNames) {
+    for (const extension of coverExtensionOrder) {
+      const entry = entries.find(
+        (item) =>
+          item.isFile() &&
+          path.extname(item.name).toLowerCase() === extension &&
+          item.name.slice(0, -extension.length).toLowerCase() === name,
+      );
+      if (entry) return path.join(playlistDirectory, entry.name);
+    }
   }
   return null;
 }

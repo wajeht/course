@@ -190,6 +190,32 @@ describe("media scanner", () => {
     ]);
   });
 
+  it("indexes playlist.jpg when cover.jpg is absent", async () => {
+    const { root, dataDirectory } = await createScannerDirectories();
+    const playlistDirectory = path.join(root, "Playlist");
+    await fs.mkdir(playlistDirectory);
+    await fs.writeFile(path.join(playlistDirectory, "playlist.jpg"), "playlist-cover");
+    await fs.writeFile(path.join(playlistDirectory, "01 - Video.mp4"), "video");
+
+    const configuration = createConfiguration({
+      APP_ENV: "testing",
+      VIDEOS_DIR: root,
+      DATA_DIR: dataDirectory,
+    });
+    const database = await createTestDatabase(configuration);
+    const scanner = createScanner({
+      configuration,
+      repository: createLibraryRepository(database.connection),
+      logger: createLogger(),
+      probe: async (filename) => probeResult((await fs.stat(filename)).size),
+    });
+
+    await scanner.scanLibrary();
+    await expect(database.connection("playlists").pluck("cover_path")).resolves.toEqual([
+      "Playlist/playlist.jpg",
+    ]);
+  });
+
   it("prefers a sidecar cover over conventional image files", async () => {
     const { root, dataDirectory } = await createScannerDirectories();
     await fs.writeFile(path.join(root, "Talk.mp4"), "talk");
