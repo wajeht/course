@@ -6,21 +6,18 @@ import { playerLocation } from "@/router.js";
 import { durationText } from "@/utils.js";
 
 withDefaults(
-  defineProps<{
-    video: VideoDto;
-    index: number;
-    active?: boolean;
-    sidebar?: boolean;
-    list?: string | null;
-  }>(),
-  { active: false, sidebar: false, list: null },
+  defineProps<{ video: VideoDto; index: number; active?: boolean; sidebar?: boolean }>(),
+  {
+    active: false,
+    sidebar: false,
+  },
 );
 const prefetch = useRoutePrefetch();
 </script>
 
 <template>
   <IntentRouterLink
-    :to="playerLocation(video.id, list)"
+    :to="playerLocation(video.id, video.playlistId)"
     :prefetch="() => prefetch.video(video.id)"
     class="grid items-center border-b border-[#e7eae7] py-2 transition-colors last:border-b-0 hover:bg-[#f4f7f4]"
     :class="[

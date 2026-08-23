@@ -143,7 +143,7 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
     ]);
   }
   function navigate(target: VideoDto | undefined) {
-    if (target) void router.push(playerLocation(target.id, playlist.value?.id));
+    if (target) void router.push(playerLocation(target.id, target.playlistId));
   }
 
   useMediaSession(element, mediaMetadata, {
