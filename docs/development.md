@@ -11,8 +11,8 @@
 ## Local Development
 
 ```bash
-git clone https://github.com/wajeht/course.git
-cd course
+git clone https://github.com/wajeht/videos.git
+cd videos
 cp .env.example .env
 npm ci
 npx playwright install chromium
@@ -87,6 +87,6 @@ New primitives need component tests in Happy DOM. Browser-boundary coverage uses
 
 ## Deployment
 
-After verification, pushes to `main` create a versioned GitHub release, publish version, commit, and `latest` image tags to `ghcr.io/wajeht/course`, and run the production deployment workflow. Pull requests can use the `temp-deploy` or `temp-deploy-with-auth` label for a temporary environment.
+After verification, pushes to `main` create a versioned GitHub release, publish version, commit, and `latest` image tags to `ghcr.io/wajeht/videos`, and run the production deployment workflow. Pull requests can use the `temp-deploy` or `temp-deploy-with-auth` label for a temporary environment.
 
 Production deployment configuration lives in the Home Ops repository, including video and data mounts, `/dev/dri` access, `SESSION_SECRET`, `AUTH_SETUP_TOKEN`, and image updates. Videos handles browser authentication itself and exposes `/healthz` without authentication for its health check.

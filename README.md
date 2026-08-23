@@ -1,6 +1,6 @@
 # Videos
 
-[![Node.js CI](https://github.com/wajeht/course/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/wajeht/course/actions/workflows/ci.yml)
+[![Node.js CI](https://github.com/wajeht/videos/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/wajeht/videos/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 A lean, self-hosted video library for a private media archive.
@@ -82,7 +82,7 @@ docker run --rm \
   --device /dev/dri:/dev/dri \
   --volume videos-data:/data \
   --volume /path/to/videos:/videos:ro \
-  ghcr.io/wajeht/course:latest
+  ghcr.io/wajeht/videos:latest
 ```
 
 Open [localhost](http://localhost), enter `AUTH_SETUP_TOKEN`, and create the library password. `/dev/dri` enables Intel Quick Sync for incompatible videos; CPU re-encoding is intentionally disabled.
