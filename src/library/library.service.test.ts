@@ -249,10 +249,10 @@ describe("library service", () => {
     expect(library.videos.find((video) => video.id === videoA)?.coverUrl).toBeNull();
     expect(library.videos.find((video) => video.id === videoB)?.coverUrl).toBeNull();
     expect(library.videos.find((video) => video.id === standaloneVideo)?.coverUrl).toBe(
-      `/covers/videos/${standaloneVideo}`,
+      `/covers/videos/${standaloneVideo}?v=2`,
     );
     expect(library.playlists.find((playlist) => playlist.id === playlistA)?.coverUrl).toBe(
-      `/covers/playlists/${playlistA}`,
+      `/covers/playlists/${playlistA}?v=2`,
     );
     expect(library.playlists.find((playlist) => playlist.id === playlistB)?.coverUrl).toBeNull();
   });

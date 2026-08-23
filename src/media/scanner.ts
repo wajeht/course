@@ -12,7 +12,7 @@ import { displayName, naturalOrder } from "./names.js";
 import { posixPath } from "./path.js";
 import { readPlaylistMetadata } from "./playlist-metadata.js";
 import { probeVideo, videoExtensions, type VideoProbe } from "./probe.js";
-import type { ThumbnailCache } from "./thumbnails.js";
+import { chapterThumbnailSeeks, type ThumbnailCache } from "./thumbnails.js";
 import type {
   AuthorRecord,
   LibrarySnapshot,
@@ -146,6 +146,7 @@ export function createScanner({
         readLibraryEntries(configuration),
         repository.getVideos(),
       ]);
+      let chapterSeeks = new Map<string, number>();
       if (entryPaths) {
         const storedEntries = await repository.getRootEntries();
         const currentPaths = new Set(entries.map((entry) => entry.path));
@@ -171,6 +172,7 @@ export function createScanner({
           built.rootOrder,
         );
         replaceEntryWarnings(synchronizedPaths, scanWarnings);
+        chapterSeeks = chapterThumbnailSeeks(built.snapshot.chapters);
       } else {
         const built = await buildLibrarySnapshot(
           configuration,
@@ -181,11 +183,12 @@ export function createScanner({
         );
         await repository.synchronizeLibrary(built.snapshot);
         replaceEntryWarnings(null, scanWarnings);
+        chapterSeeks = chapterThumbnailSeeks(built.snapshot.chapters);
       }
 
       if (thumbnails) {
         try {
-          await thumbnails.synchronize(await repository.getVideos());
+          await thumbnails.synchronize(await repository.getVideos(), chapterSeeks);
         } catch (error) {
           logger.warn("Thumbnail synchronization failed", { error });
         }

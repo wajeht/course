@@ -11,27 +11,49 @@ import type { VideoRecord } from "./types.js";
 const execFileAsync = promisify(execFile);
 const thumbnailConcurrency = 2;
 
+export const thumbnailCacheVersion = 2;
+
 export interface ThumbnailMeta {
   modifiedAt: string;
   sizeBytes: number;
+  version: number;
 }
 
 export type ThumbnailGenerator = (
   sourceVideo: string,
   destination: string,
-  durationSeconds: number,
+  seekSeconds: number,
   ffmpegPath: string,
 ) => Promise<void>;
 
 export interface ThumbnailCache {
   thumbnailPath(videoId: string): string;
   listThumbnailIds(): Promise<Set<string>>;
-  synchronize(videos: VideoRecord[]): Promise<void>;
+  synchronize(videos: VideoRecord[], chapterSeeks?: Map<string, number>): Promise<void>;
 }
 
 export function thumbnailSeekSeconds(durationSeconds: number): number {
-  if (durationSeconds <= 1) return 0;
-  return Math.min(3, Math.round(durationSeconds * 100) / 1000);
+  if (durationSeconds <= 2) return 0;
+  if (durationSeconds < 40) return Math.round(durationSeconds * 30) / 100;
+  return Math.min(90, Math.max(25, Math.round(durationSeconds * 0.12)));
+}
+
+export function chapterThumbnailSeeks(
+  chapters: Array<{ videoId: string; startSeconds: number; sortOrder: number }>,
+): Map<string, number> {
+  const grouped = new Map<string, Array<{ startSeconds: number; sortOrder: number }>>();
+  for (const chapter of chapters) {
+    const list = grouped.get(chapter.videoId) ?? [];
+    list.push(chapter);
+    grouped.set(chapter.videoId, list);
+  }
+  const seeks = new Map<string, number>();
+  for (const [videoId, list] of grouped) {
+    list.sort((left, right) => left.sortOrder - right.sortOrder);
+    const afterIntro = list.find((chapter) => chapter.startSeconds >= 20) ?? list[1];
+    if (afterIntro && afterIntro.startSeconds > 0) seeks.set(videoId, afterIntro.startSeconds);
+  }
+  return seeks;
 }
 
 export function thumbnailPath(directory: string, videoId: string): string {
@@ -41,7 +63,7 @@ export function thumbnailPath(directory: string, videoId: string): string {
 export async function generateThumbnail(
   sourceVideo: string,
   destination: string,
-  durationSeconds: number,
+  seekSeconds: number,
   ffmpegPath: string,
 ): Promise<void> {
   await fs.mkdir(path.dirname(destination), { recursive: true });
@@ -51,7 +73,7 @@ export async function generateThumbnail(
       "-v",
       "error",
       "-ss",
-      String(thumbnailSeekSeconds(durationSeconds)),
+      String(seekSeconds),
       "-i",
       sourceVideo,
       "-frames:v",
@@ -98,7 +120,11 @@ export function createThumbnailCache({
       return false;
     }
     const meta = await readMeta(video.id);
-    return meta?.modifiedAt === video.modifiedAt && meta.sizeBytes === video.sizeBytes;
+    return (
+      meta?.version === thumbnailCacheVersion &&
+      meta.modifiedAt === video.modifiedAt &&
+      meta.sizeBytes === video.sizeBytes
+    );
   }
 
   async function removeThumbnail(videoId: string): Promise<void> {
@@ -126,7 +152,7 @@ export function createThumbnailCache({
       }
     },
 
-    async synchronize(videos) {
+    async synchronize(videos, chapterSeeks = new Map<string, number>()) {
       await fs.mkdir(directory, { recursive: true });
       const retained = new Set(videos.map((video) => video.id));
       let existing: string[] = [];
@@ -154,10 +180,12 @@ export function createThumbnailCache({
             configuration.media.videosDirectory,
             video.path,
           );
+          const seekSeconds =
+            chapterSeeks.get(video.id) ?? thumbnailSeekSeconds(video.durationSeconds);
           await generate(
             source,
             thumbnailPath(directory, video.id),
-            video.durationSeconds,
+            Math.min(seekSeconds, Math.max(0, video.durationSeconds - 1)),
             configuration.media.ffmpegPath,
           );
           await fs.writeFile(
@@ -165,6 +193,7 @@ export function createThumbnailCache({
             JSON.stringify({
               modifiedAt: video.modifiedAt,
               sizeBytes: video.sizeBytes,
+              version: thumbnailCacheVersion,
             } satisfies ThumbnailMeta),
           );
         } catch (error) {

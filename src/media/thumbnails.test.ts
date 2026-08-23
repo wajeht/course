@@ -7,6 +7,7 @@ import { createConfiguration } from "../config.js";
 import { createLogger } from "../logger.js";
 import { createTemporaryDirectory } from "../test/resources.js";
 import {
+  chapterThumbnailSeeks,
   createThumbnailCache,
   thumbnailPath,
   thumbnailSeekSeconds,
@@ -71,10 +72,17 @@ async function createCache(generate?: ThumbnailGenerator) {
 }
 
 describe("thumbnails", () => {
-  it("seeks ten percent into the video, capped at three seconds", () => {
+  it("seeks past short intros, using a later chapter when available", () => {
     expect(thumbnailSeekSeconds(0.5)).toBe(0);
-    expect(thumbnailSeekSeconds(5)).toBe(0.5);
-    expect(thumbnailSeekSeconds(60)).toBe(3);
+    expect(thumbnailSeekSeconds(20)).toBe(6);
+    expect(thumbnailSeekSeconds(60)).toBe(25);
+    expect(thumbnailSeekSeconds(2500)).toBe(90);
+    expect(
+      chapterThumbnailSeeks([
+        { videoId: videoA, startSeconds: 0, sortOrder: 0 },
+        { videoId: videoA, startSeconds: 130, sortOrder: 1 },
+      ]).get(videoA),
+    ).toBe(130);
   });
 
   it("generates posters even when a video has an authored cover", async () => {
@@ -107,6 +115,7 @@ describe("thumbnails", () => {
     await cache.synchronize([video]);
     await cache.synchronize([video]);
     expect(generate).toHaveBeenCalledTimes(1);
+    expect(generate.mock.calls[0]?.[2]).toBe(25);
 
     await cache.synchronize([{ ...video, sizeBytes: 200 }]);
     expect(generate).toHaveBeenCalledTimes(2);
