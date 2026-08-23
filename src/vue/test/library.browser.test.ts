@@ -85,6 +85,7 @@ test("uses responsive library filters and a mobile drawer", async ({ page }) => 
   const headingBox = (await page.getByRole("heading", { level: 1 }).boundingBox())!;
   const searchBox = (await search.boundingBox())!;
   expect(Math.round(searchBox.x)).toBe(Math.round(headingBox.x));
+  expect(Math.round(searchBox.y - (headingBox.y + headingBox.height))).toBe(24);
   const mobileFilterBox = (await filterColumn.boundingBox())!;
   const mobileClientWidth = await page.evaluate(() => document.documentElement.clientWidth);
   expect(mobileFilterBox.x).toBe(0);
