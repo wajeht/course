@@ -30,7 +30,7 @@ const mobilePanelTitle = computed(() => {
 });
 const mobileFilterButtons = computed(() => [
   {
-    active: view.value === "playlists",
+    active: true,
     label: view.value === "playlists" ? "Playlists" : "All videos",
     type: "view" as const,
   },
@@ -117,8 +117,7 @@ function togglePanel(panel: FilterType): void {
           v-for="button in mobileFilterButtons"
           :key="button.type"
           size="sm"
-          variant="secondary"
-          :class="button.active ? 'border-pine! bg-porcelain!' : ''"
+          :variant="button.active ? 'primary' : 'secondary'"
           :aria-expanded="activeMobilePanel === button.type"
           :data-mobile-filter="button.type"
           @click="togglePanel(button.type)"

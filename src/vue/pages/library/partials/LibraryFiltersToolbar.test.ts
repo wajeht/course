@@ -34,12 +34,15 @@ describe("LibraryFiltersToolbar", () => {
     const wrapper = mountToolbar();
     const search = wrapper.get('[data-testid="mobile-library-search"]');
     const actions = wrapper.get('[data-testid="mobile-filter-actions"]');
+    const viewButton = wrapper.get('[data-mobile-filter="view"]');
 
     expect(
       search.element.compareDocumentPosition(actions.element) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+    expect(viewButton.classes()).toEqual(expect.arrayContaining(["bg-pine", "text-white"]));
 
     const authorButton = wrapper.get('[data-mobile-filter="author"]');
+    expect(authorButton.classes()).toEqual(expect.arrayContaining(["bg-white", "text-pine"]));
     await authorButton.trigger("click");
 
     const drawer = document.body.querySelector("dialog[open]");
@@ -55,6 +58,7 @@ describe("LibraryFiltersToolbar", () => {
 
     await wrapper.setProps({ author: ["Example Author"] });
     expect(authorButton.text()).toBe("Authors: Example Author");
+    expect(authorButton.classes()).toEqual(expect.arrayContaining(["bg-pine", "text-white"]));
   });
 
   it("switches the mobile view through the drawer", async () => {
@@ -69,5 +73,9 @@ describe("LibraryFiltersToolbar", () => {
     await new DOMWrapper(playlists!).setValue();
 
     expect(wrapper.emitted("update:view")?.at(-1)).toEqual(["playlists"]);
+    await wrapper.setProps({ view: "playlists" });
+    const viewButton = wrapper.get('[data-mobile-filter="view"]');
+    expect(viewButton.text()).toBe("Playlists");
+    expect(viewButton.classes()).toEqual(expect.arrayContaining(["bg-pine", "text-white"]));
   });
 });
