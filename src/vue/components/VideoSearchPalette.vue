@@ -105,6 +105,8 @@ function moveSelection(offset: number): void {
   const lastIndex = suggestions.value.length - 1;
   if (activeIndex.value < 0) activeIndex.value = offset > 0 ? 0 : lastIndex;
   else activeIndex.value = Math.min(lastIndex, Math.max(0, activeIndex.value + offset));
+  const selected = suggestions.value[activeIndex.value];
+  if (selected) void prefetch.video(selected.id).catch(() => undefined);
   void nextTick(() => {
     document.getElementById(activeResultId.value ?? "")?.scrollIntoView({ block: "nearest" });
   });
