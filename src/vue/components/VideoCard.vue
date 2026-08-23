@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DeepReadonly } from "vue";
+import { computed, type DeepReadonly } from "vue";
 
 import type { LibraryDto } from "@/api.js";
 import AuthorLinks from "@/components/AuthorLinks.vue";
@@ -7,16 +7,18 @@ import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import VideoCoverPlaceholder from "@/components/VideoCoverPlaceholder.vue";
 import ProgressBar from "@/components/ui/ProgressBar.vue";
 import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
+import { playerLocation } from "@/router.js";
 import { durationText } from "@/utils.js";
 
-defineProps<{ video: DeepReadonly<LibraryDto["videos"][number]> }>();
+const props = defineProps<{ video: DeepReadonly<LibraryDto["videos"][number]> }>();
 const prefetch = useRoutePrefetch();
+const to = computed(() => playerLocation(props.video.id));
 </script>
 
 <template>
   <article class="group min-w-0">
     <IntentRouterLink
-      :to="{ name: 'player', params: { videoId: video.id } }"
+      :to="to"
       :prefetch="() => prefetch.video(video.id)"
       class="relative block aspect-video overflow-hidden rounded-[10px] bg-mist"
       :aria-label="`Play ${video.title}`"
@@ -43,11 +45,7 @@ const prefetch = useRoutePrefetch();
       />
     </IntentRouterLink>
     <h3 class="mt-3 line-clamp-2 text-[.92rem] leading-[1.3] font-bold">
-      <IntentRouterLink
-        :to="{ name: 'player', params: { videoId: video.id } }"
-        :prefetch="() => prefetch.video(video.id)"
-        class="hover:text-pine"
-      >
+      <IntentRouterLink :to="to" :prefetch="() => prefetch.video(video.id)" class="hover:text-pine">
         {{ video.title }}
       </IntentRouterLink>
     </h3>

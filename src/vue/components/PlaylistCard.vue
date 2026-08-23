@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DeepReadonly } from "vue";
+import { computed, type DeepReadonly } from "vue";
 
 import type { LibraryDto } from "@/api.js";
 import AuthorLinks from "@/components/AuthorLinks.vue";
@@ -10,14 +10,15 @@ import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import { playerLocation } from "@/router.js";
 import { countText } from "@/utils.js";
 
-defineProps<{ playlist: DeepReadonly<LibraryDto["playlists"][number]> }>();
+const props = defineProps<{ playlist: DeepReadonly<LibraryDto["playlists"][number]> }>();
 const prefetch = useRoutePrefetch();
+const to = computed(() => playerLocation(props.playlist.nextVideoId, props.playlist.id));
 </script>
 
 <template>
   <article class="group min-w-0">
     <IntentRouterLink
-      :to="playerLocation(playlist.nextVideoId, playlist.id)"
+      :to="to"
       :prefetch="() => prefetch.video(playlist.nextVideoId)"
       class="relative block aspect-video overflow-hidden rounded-[10px] bg-mist"
       :aria-label="`Open ${playlist.title}`"
@@ -45,7 +46,7 @@ const prefetch = useRoutePrefetch();
     </IntentRouterLink>
     <h3 class="mt-3 line-clamp-2 text-[.92rem] leading-[1.3] font-bold">
       <IntentRouterLink
-        :to="playerLocation(playlist.nextVideoId, playlist.id)"
+        :to="to"
         :prefetch="() => prefetch.video(playlist.nextVideoId)"
         class="hover:text-pine"
       >

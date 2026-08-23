@@ -93,6 +93,9 @@ describe("LibraryPage", () => {
     expect(wrapper.get("h1").text()).toBe("All videos");
     expect(wrapper.text()).toContain("Standalone video");
     expect(wrapper.text()).not.toContain("Saved Collection");
+    expect(wrapper.get(`a[href="/videos/${videoId}"]`).attributes("aria-label")).toBe(
+      "Play Standalone video",
+    );
 
     await wrapper.get('input[value="playlists"]').setValue();
     await flushPromises();
