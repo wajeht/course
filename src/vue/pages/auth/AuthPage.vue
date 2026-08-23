@@ -47,7 +47,7 @@ function forwardSetup(password: string, confirmPassword: string, setupToken?: st
             <span class="block text-belt-light">self-hosted</span>
           </p>
           <p class="mt-8 max-w-xl text-xl font-medium tracking-[0.12em] text-white/60 uppercase">
-            Your private video archive.
+            video library.
           </p>
         </div>
       </div>

@@ -3,7 +3,7 @@
 [![Node.js CI](https://github.com/wajeht/videos/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/wajeht/videos/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-A lean, self-hosted video library for a private media archive.
+A private, opinionated, self-hosted video library.
 
 > [!WARNING]
 > This project is unfinished and under active development.
