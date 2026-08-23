@@ -227,4 +227,39 @@ describe("library service", () => {
       playlist: null,
     });
   });
+
+  it("exposes authored, generated, and inherited covers", async () => {
+    await database.connection("playlists").where({ id: playlistA }).update({
+      cover_path: "Saved Collection/cover.jpg",
+    });
+    await database.connection("videos").where({ id: videoB }).update({
+      cover_path: "Documentaries/Video.jpg",
+    });
+    const service = createLibraryService(
+      createLibraryApiRepository(database.connection),
+      {
+        getLibraryPageSize: async () => 24,
+      },
+      {
+        listThumbnailIds: async () => new Set([standaloneVideo]),
+      },
+    );
+
+    const library = await service.getLibrary();
+    expect(library.videos.find((video) => video.id === videoA)?.coverUrl).toBe(
+      `/covers/videos/${videoA}`,
+    );
+    expect(library.videos.find((video) => video.id === videoB)?.coverUrl).toBe(
+      `/covers/videos/${videoB}`,
+    );
+    expect(library.videos.find((video) => video.id === standaloneVideo)?.coverUrl).toBe(
+      `/covers/videos/${standaloneVideo}`,
+    );
+    expect(library.playlists.find((playlist) => playlist.id === playlistA)?.coverUrl).toBe(
+      `/covers/playlists/${playlistA}`,
+    );
+    expect(library.playlists.find((playlist) => playlist.id === playlistB)?.coverUrl).toBe(
+      `/covers/playlists/${playlistB}`,
+    );
+  });
 });

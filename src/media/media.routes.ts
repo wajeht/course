@@ -4,7 +4,7 @@ import path from "node:path";
 import { Readable } from "node:stream";
 
 import { zValidator } from "@hono/zod-validator";
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { z } from "zod";
 
 import type { AppContext } from "../context.js";
@@ -31,6 +31,35 @@ const videoContentTypes: Record<string, string> = {
 
 function createFileBody(filename: string, range?: { start: number; end: number }): ReadableStream {
   return Readable.toWeb(createReadStream(filename, range)) as ReadableStream;
+}
+
+function coverContentType(filename: string): string {
+  const extension = path.extname(filename).toLowerCase();
+  if (extension === ".png") return "image/png";
+  if (extension === ".webp") return "image/webp";
+  return "image/jpeg";
+}
+
+async function sendCoverImage(c: Context, filename: string): Promise<Response> {
+  const statistics = await fs.stat(filename);
+  c.header("Content-Type", coverContentType(filename));
+  c.header("Content-Length", String(statistics.size));
+  c.header("Cache-Control", "private, max-age=31536000, immutable");
+  c.header("Vary", "Cookie");
+  return c.body(createFileBody(filename));
+}
+
+async function trySendCover(
+  c: Context,
+  root: string,
+  relativePath: string,
+): Promise<Response | null> {
+  try {
+    return await sendCoverImage(c, await resolveContainedPath(root, relativePath));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  }
 }
 
 export function createMediaRouter(context: AppContext) {
@@ -75,20 +104,25 @@ export function createMediaRouter(context: AppContext) {
       const playlist = await context.libraryRepository.findPlaylist(
         c.req.valid("param").playlistId,
       );
-      if (!playlist?.cover_path) return c.body(null, 404);
-      const filename = await resolveContainedPath(
-        context.configuration.media.videosDirectory,
-        playlist.cover_path,
-      );
-      const statistics = await fs.stat(filename);
-      const extension = path.extname(filename).toLowerCase();
-      const contentType =
-        extension === ".png" ? "image/png" : extension === ".webp" ? "image/webp" : "image/jpeg";
-      c.header("Content-Type", contentType);
-      c.header("Content-Length", String(statistics.size));
-      c.header("Cache-Control", "private, max-age=31536000, immutable");
-      c.header("Vary", "Cookie");
-      return c.body(createFileBody(filename));
+      if (!playlist) return c.body(null, 404);
+      const videosDirectory = context.configuration.media.videosDirectory;
+      if (playlist.cover_path) {
+        const cover = await trySendCover(c, videosDirectory, playlist.cover_path);
+        if (cover) return cover;
+      }
+      if (playlist.first_video_cover_path) {
+        const cover = await trySendCover(c, videosDirectory, playlist.first_video_cover_path);
+        if (cover) return cover;
+      }
+      if (playlist.first_video_id) {
+        const cover = await trySendCover(
+          c,
+          context.configuration.media.thumbnailsDirectory,
+          `${playlist.first_video_id}.jpg`,
+        );
+        if (cover) return cover;
+      }
+      return c.body(null, 404);
     },
   );
 
@@ -98,21 +132,23 @@ export function createMediaRouter(context: AppContext) {
     zValidator("param", videoParametersSchema),
     async (c) => {
       const video = await context.libraryRepository.findVideo(c.req.valid("param").videoId);
-      const coverPath = video?.cover_path ?? video?.playlist_cover_path;
-      if (!coverPath) return c.body(null, 404);
-      const filename = await resolveContainedPath(
-        context.configuration.media.videosDirectory,
-        coverPath,
+      if (!video) return c.body(null, 404);
+      const videosDirectory = context.configuration.media.videosDirectory;
+      if (video.cover_path) {
+        const cover = await trySendCover(c, videosDirectory, video.cover_path);
+        if (cover) return cover;
+      }
+      const thumbnail = await trySendCover(
+        c,
+        context.configuration.media.thumbnailsDirectory,
+        `${video.id}.jpg`,
       );
-      const statistics = await fs.stat(filename);
-      const extension = path.extname(filename).toLowerCase();
-      const contentType =
-        extension === ".png" ? "image/png" : extension === ".webp" ? "image/webp" : "image/jpeg";
-      c.header("Content-Type", contentType);
-      c.header("Content-Length", String(statistics.size));
-      c.header("Cache-Control", "private, max-age=31536000, immutable");
-      c.header("Vary", "Cookie");
-      return c.body(createFileBody(filename));
+      if (thumbnail) return thumbnail;
+      if (video.playlist_cover_path) {
+        const cover = await trySendCover(c, videosDirectory, video.playlist_cover_path);
+        if (cover) return cover;
+      }
+      return c.body(null, 404);
     },
   );
 

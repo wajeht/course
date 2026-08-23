@@ -13,6 +13,8 @@ export interface PlaylistRow {
   completed_count: number;
   total_duration: number;
   next_video_id: string;
+  first_video_id: string | null;
+  first_video_cover_path: string | null;
 }
 
 export interface VideoRow {
@@ -190,6 +192,24 @@ export function createLibraryApiRepository(database: Knex): LibraryRepository {
               LIMIT 1
             )
           ) AS next_video_id
+        `),
+        database.raw(`
+          (
+            SELECT candidate.id
+            FROM videos AS candidate
+            WHERE candidate.playlist_id = playlists.id
+            ORDER BY candidate.sort_order
+            LIMIT 1
+          ) AS first_video_id
+        `),
+        database.raw(`
+          (
+            SELECT candidate.cover_path
+            FROM videos AS candidate
+            WHERE candidate.playlist_id = playlists.id
+            ORDER BY candidate.sort_order
+            LIMIT 1
+          ) AS first_video_cover_path
         `),
       )
       .groupBy("playlists.id")

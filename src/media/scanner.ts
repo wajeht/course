@@ -12,6 +12,7 @@ import { displayName, naturalOrder } from "./names.js";
 import { posixPath } from "./path.js";
 import { readPlaylistMetadata } from "./playlist-metadata.js";
 import { probeVideo, videoExtensions, type VideoProbe } from "./probe.js";
+import type { ThumbnailCache } from "./thumbnails.js";
 import type {
   AuthorRecord,
   LibrarySnapshot,
@@ -23,7 +24,8 @@ import type {
 } from "./types.js";
 import { readVideoMetadata } from "./video-metadata.js";
 
-const coverExtensions = new Set([".jpg", ".jpeg", ".png", ".webp"]);
+const coverExtensionOrder = [".jpg", ".jpeg", ".png", ".webp"] as const;
+const coverExtensions = new Set<string>(coverExtensionOrder);
 const ignoredDirectoryNames = new Set(["@eadir", "#recycle"]);
 
 function isLibraryDirectory(entry: Dirent): boolean {
@@ -50,6 +52,7 @@ export interface ScannerDependencies {
   logger: Logger;
   probe?: (filename: string, ffprobePath: string) => Promise<VideoProbe>;
   watchDirectory?: WatchDirectory;
+  thumbnails?: ThumbnailCache;
 }
 
 interface DirectoryWatcher {
@@ -86,6 +89,7 @@ export function createScanner({
   logger,
   probe = probeVideo,
   watchDirectory = watch,
+  thumbnails,
 }: ScannerDependencies): Scanner {
   let activeSynchronization: Promise<void> | null = null;
   let fullScanInProgress = false;
@@ -176,6 +180,14 @@ export function createScanner({
         );
         await repository.synchronizeLibrary(built.snapshot);
         replaceEntryWarnings(null, scanWarnings);
+      }
+
+      if (thumbnails) {
+        try {
+          await thumbnails.synchronize(await repository.getVideos());
+        } catch (error) {
+          logger.warn("Thumbnail synchronization failed", { error });
+        }
       }
 
       const counts = await repository.getLibraryCounts();
@@ -648,10 +660,14 @@ async function findPlaylistCover(
     }
   }
 
-  for (const entry of entries) {
-    if (entry.isFile() && coverExtensions.has(path.extname(entry.name).toLowerCase())) {
-      return path.join(playlistDirectory, entry.name);
-    }
+  for (const extension of coverExtensionOrder) {
+    const entry = entries.find(
+      (item) =>
+        item.isFile() &&
+        path.extname(item.name).toLowerCase() === extension &&
+        item.name.slice(0, -extension.length).toLowerCase() === "cover",
+    );
+    if (entry) return path.join(playlistDirectory, entry.name);
   }
   return null;
 }
@@ -663,24 +679,56 @@ async function findVideoCover(
   requestedCover: string | undefined,
   warnings: ScanWarning[],
 ): Promise<string | null> {
-  if (!requestedCover) return null;
-  const videoDirectory = path.dirname(videoFilename);
-  const requestedPath = path.resolve(videoDirectory, requestedCover);
-  const relative = path.relative(videoDirectory, requestedPath);
-  if (relative.startsWith("..") || path.isAbsolute(relative)) {
-    warnings.push({ path: sidecarPath, message: "Cover path leaves the video directory" });
-    return null;
-  }
-  if (!coverExtensions.has(path.extname(requestedPath).toLowerCase())) {
-    warnings.push({ path: sidecarPath, message: "Cover must be a JPG, PNG, or WebP image" });
-    return null;
-  }
-  try {
-    if ((await fs.stat(requestedPath)).isFile()) {
-      return posixPath(path.relative(root, requestedPath));
+  if (requestedCover) {
+    const videoDirectory = path.dirname(videoFilename);
+    const requestedPath = path.resolve(videoDirectory, requestedCover);
+    const relative = path.relative(videoDirectory, requestedPath);
+    if (relative.startsWith("..") || path.isAbsolute(relative)) {
+      warnings.push({ path: sidecarPath, message: "Cover path leaves the video directory" });
+      return null;
     }
+    if (!coverExtensions.has(path.extname(requestedPath).toLowerCase())) {
+      warnings.push({ path: sidecarPath, message: "Cover must be a JPG, PNG, or WebP image" });
+      return null;
+    }
+    try {
+      if ((await fs.stat(requestedPath)).isFile()) {
+        return posixPath(path.relative(root, requestedPath));
+      }
+    } catch {
+      warnings.push({ path: sidecarPath, message: "Configured cover does not exist" });
+    }
+    return null;
+  }
+
+  return findConventionVideoCover(videoFilename, root);
+}
+
+async function findConventionVideoCover(
+  videoFilename: string,
+  root: string,
+): Promise<string | null> {
+  const videoDirectory = path.dirname(videoFilename);
+  const basename = path.basename(videoFilename);
+  const stem = basename.slice(0, -path.extname(basename).length);
+  let files: Map<string, string>;
+  try {
+    files = new Map(
+      (await fs.readdir(videoDirectory, { withFileTypes: true }))
+        .filter((entry) => entry.isFile())
+        .map((entry) => [entry.name.toLowerCase(), entry.name]),
+    );
   } catch {
-    warnings.push({ path: sidecarPath, message: "Configured cover does not exist" });
+    return null;
+  }
+
+  for (const name of [basename, stem]) {
+    for (const extension of coverExtensionOrder) {
+      const actualName = files.get(`${name.toLowerCase()}${extension}`);
+      if (actualName) {
+        return posixPath(path.relative(root, path.join(videoDirectory, actualName)));
+      }
+    }
   }
   return null;
 }
