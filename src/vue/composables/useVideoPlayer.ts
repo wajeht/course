@@ -128,7 +128,7 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
           title: video.value.title,
           artist: video.value.authors.join(", ") || "Videos",
           album: playlist.value?.title ?? "Videos",
-          artwork: video.value.coverUrl ?? playlist.value?.coverUrl ?? null,
+          artwork: video.value.coverUrl ?? null,
         }
       : null,
   );
