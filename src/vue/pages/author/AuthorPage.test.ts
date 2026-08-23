@@ -80,7 +80,10 @@ function authorLibrary(): LibraryDto {
   };
 }
 
-async function mountAuthorPage(getLibrary: typeof api.getLibrary = async () => authorLibrary()) {
+async function mountAuthorPage(
+  getLibrary: typeof api.getLibrary = async () => authorLibrary(),
+  initialPath = "/authors/Jane%20Smith",
+) {
   vi.mocked(api.getLibrary).mockImplementation(getLibrary);
   const router = createRouter({
     history: createMemoryHistory(),
@@ -90,7 +93,7 @@ async function mountAuthorPage(getLibrary: typeof api.getLibrary = async () => a
       { path: "/:pathMatch(.*)*", name: "not-found", component: { template: "<div />" } },
     ],
   });
-  await router.push("/authors/Jane%20Smith");
+  await router.push(initialPath);
   await router.isReady();
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const wrapper = mount(AuthorPage, {
@@ -196,5 +199,82 @@ describe("AuthorPage", () => {
     expect(wrapper.text()).toContain("Saved Collection");
     expect(wrapper.find('[data-testid="load-more-author-videos"]').exists()).toBe(false);
     expect(router.currentRoute.value.query).toEqual({ page: "2" });
+  });
+
+  it("does not show a stale load-more error after navigating to another author", async () => {
+    useMobileViewport();
+    let rejectJanePage!: (reason?: unknown) => void;
+    const pendingJanePage = new Promise<LibraryDto>((_resolve, reject) => {
+      rejectJanePage = reject;
+    });
+    const guestLibrary: LibraryDto = {
+      ...authorLibrary(),
+      authors: [{ name: "Guest", videoCount: 1 }],
+      playlists: [],
+      videos: [{ ...authorLibrary().videos[0]!, authors: ["Guest"], title: "Guest video" }],
+    };
+    const getLibrary = vi.fn(async (filters) => {
+      if (filters?.author?.[0] === "Guest") return guestLibrary;
+      if (filters?.page === 2) return pendingJanePage;
+      return {
+        ...authorLibrary(),
+        pagination: { page: 1, pageSize: 1, totalPages: 2, totalVideos: 2 },
+      };
+    });
+    const { router, wrapper } = await mountAuthorPage(getLibrary);
+
+    await wrapper.get('[data-testid="load-more-author-videos"]').trigger("click");
+    await vi.waitFor(() =>
+      expect(getLibrary).toHaveBeenCalledWith(
+        { author: ["Jane Smith"], page: 2 },
+        expect.any(AbortSignal),
+      ),
+    );
+    await router.push("/authors/Guest");
+    await flushPromises();
+    rejectJanePage(new Error("Jane page failed"));
+    await flushPromises();
+
+    expect(wrapper.get("h1").text()).toBe("Guest");
+    expect(wrapper.text()).toContain("Guest video");
+    expect(wrapper.text()).not.toContain("Could not load more videos");
+  });
+
+  it("keeps a mobile page deep link loading while earlier pages accumulate", async () => {
+    useMobileViewport();
+    let resolveFirstPage!: (library: LibraryDto) => void;
+    const pendingFirstPage = new Promise<LibraryDto>((resolve) => {
+      resolveFirstPage = resolve;
+    });
+    const getLibrary = vi.fn(async (filters) => {
+      const requestedPage = filters?.page ?? 1;
+      if (requestedPage === 1) return pendingFirstPage;
+      return {
+        ...authorLibrary(),
+        pagination: { page: 2, pageSize: 1, totalPages: 2, totalVideos: 2 },
+        videos: [
+          {
+            ...authorLibrary().videos[0]!,
+            id: "4".repeat(24),
+            title: "Second author video",
+          },
+        ],
+      };
+    });
+    const { wrapper } = await mountAuthorPage(getLibrary, "/authors/Jane%20Smith?page=2");
+
+    expect(wrapper.text()).not.toContain("No videos found");
+    expect(wrapper.get('[aria-label="Loading videos"]').attributes("role")).toBe("status");
+
+    resolveFirstPage({
+      ...authorLibrary(),
+      pagination: { page: 1, pageSize: 1, totalPages: 2, totalVideos: 2 },
+      videos: [{ ...authorLibrary().videos[0]!, title: "First author video" }],
+    });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("First author video");
+    expect(wrapper.text()).toContain("Second author video");
+    expect(wrapper.text()).not.toContain("No videos found");
   });
 });

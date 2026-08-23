@@ -28,21 +28,27 @@ export function useAuthorLibrary(accumulatePages: MaybeRefOrGetter<boolean>) {
         name.localeCompare(authorName.value, undefined, { sensitivity: "accent" }) === 0,
     ),
   );
-  const loading = computed(
-    () => request.isPending.value || (request.isPlaceholderData.value && !accumulatePagesRef.value),
-  );
-  const refreshing = computed(() => request.isFetching.value && !loading.value);
-  const error = computed(() => {
-    const caught = request.error.value;
-    return caught ? apiErrorMessage(caught, "Could not load this author") : "";
-  });
   const loadedVideos = shallowRef<LibraryDto["videos"]>([]);
   const loadedPlaylists = shallowRef<LibraryDto["playlists"]>([]);
   const loadedPage = shallowRef(1);
   const loadedTotalPages = shallowRef(0);
+  const accumulating = shallowRef(false);
   const loadingMore = shallowRef(false);
   const loadMoreError = shallowRef("");
   const accumulationRetry = shallowRef(0);
+  const loading = computed(
+    () =>
+      request.isPending.value ||
+      (request.isPlaceholderData.value && !accumulatePagesRef.value) ||
+      (accumulating.value && loadedVideos.value.length === 0),
+  );
+  const refreshing = computed(
+    () => (request.isFetching.value || accumulating.value) && !loading.value,
+  );
+  const error = computed(() => {
+    const caught = request.error.value;
+    return caught ? apiErrorMessage(caught, "Could not load this author") : "";
+  });
 
   function pageQuery(nextPage: number) {
     return nextPage === 1 ? {} : { page: String(nextPage) };
@@ -61,6 +67,7 @@ export function useAuthorLibrary(accumulatePages: MaybeRefOrGetter<boolean>) {
   async function loadMore(): Promise<void> {
     if (loadingMore.value || loadedPage.value >= loadedTotalPages.value) return;
 
+    const requestedAuthor = authorName.value;
     const currentPage = page.value;
     const nextPage = currentPage > loadedPage.value ? currentPage : loadedPage.value + 1;
     loadingMore.value = true;
@@ -69,10 +76,12 @@ export function useAuthorLibrary(accumulatePages: MaybeRefOrGetter<boolean>) {
     try {
       if (nextPage !== currentPage) await setPage(nextPage);
       await queryClient.fetchQuery(
-        libraryQueryOptions({ author: [authorName.value], page: nextPage }),
+        libraryQueryOptions({ author: [requestedAuthor], page: nextPage }),
       );
+      if (authorName.value !== requestedAuthor) return;
       if (nextPage === currentPage) accumulationRetry.value += 1;
     } catch (caught) {
+      if (authorName.value !== requestedAuthor) return;
       loadMoreError.value = apiErrorMessage(caught, "Could not load more videos");
       loadingMore.value = false;
     }
@@ -83,6 +92,8 @@ export function useAuthorLibrary(accumulatePages: MaybeRefOrGetter<boolean>) {
     loadedPlaylists.value = [];
     loadedPage.value = 1;
     loadedTotalPages.value = 0;
+    accumulating.value = false;
+    loadingMore.value = false;
     loadMoreError.value = "";
   });
   watch(
@@ -102,6 +113,7 @@ export function useAuthorLibrary(accumulatePages: MaybeRefOrGetter<boolean>) {
       loadMoreError.value = "";
 
       if (!shouldAccumulate) {
+        accumulating.value = false;
         loadedVideos.value = loadedLibrary.videos;
         loadedPlaylists.value = loadedLibrary.playlists;
         loadedPage.value = loadedLibrary.pagination.page;
@@ -109,6 +121,7 @@ export function useAuthorLibrary(accumulatePages: MaybeRefOrGetter<boolean>) {
         return;
       }
 
+      accumulating.value = true;
       try {
         const libraries = await Promise.all(
           Array.from({ length: requestedPage }, (_, index) =>
@@ -131,7 +144,10 @@ export function useAuthorLibrary(accumulatePages: MaybeRefOrGetter<boolean>) {
         if (cancelled) return;
         loadMoreError.value = apiErrorMessage(caught, "Could not load more videos");
       } finally {
-        if (!cancelled) loadingMore.value = false;
+        if (!cancelled) {
+          accumulating.value = false;
+          loadingMore.value = false;
+        }
       }
     },
     { immediate: true },
