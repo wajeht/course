@@ -48,6 +48,10 @@ function library(): LibraryDto {
 
 async function mountPalette() {
   vi.spyOn(api, "getLibrary").mockResolvedValue(library());
+  vi.spyOn(api, "getVideo").mockResolvedValue({
+    playlist: null,
+    video: { ...library().videos[0]!, chapters: [] },
+  });
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -92,6 +96,11 @@ describe("VideoSearchPalette", () => {
       { page: 1, pageSize: 20, query: "memory" },
       expect.any(AbortSignal),
     );
+
+    await dialogElement<HTMLElement>('[role="option"]').trigger("pointerenter");
+    await vi.waitFor(() =>
+      expect(api.getVideo).toHaveBeenCalledWith(videoId, expect.any(AbortSignal)),
+    );
   });
 
   it("sends an unselected query to the Videos page", async () => {
@@ -121,6 +130,9 @@ describe("VideoSearchPalette", () => {
     const selected = dialogElement<HTMLElement>('[role="option"][aria-selected="true"]');
     expect(selected.classes()).toContain("bg-pine");
     expect(selected.classes()).toContain("border-belt");
+    await vi.waitFor(() =>
+      expect(api.getVideo).toHaveBeenCalledWith(videoId, expect.any(AbortSignal)),
+    );
     await dialogElement<HTMLFormElement>("dialog form").trigger("submit");
     await flushPromises();
 
