@@ -127,13 +127,22 @@ onBeforeUnmount(() => descriptionObserver?.disconnect());
       :aria-expanded="expanded"
       @click="toggleExpanded"
     >
-      {{ disclosureLabel }}
-      <span
-        class="text-base transition-transform duration-150"
+      <span>{{ disclosureLabel }}</span>
+      <svg
+        viewBox="0 0 12 12"
+        fill="none"
+        class="h-3 w-3 shrink-0 transition-transform duration-150"
         :class="expanded ? 'rotate-180' : ''"
         aria-hidden="true"
-        >⌄</span
       >
+        <path
+          d="M2 4L6 8L10 4"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
     </AppButton>
   </section>
 </template>
