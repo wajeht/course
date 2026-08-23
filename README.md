@@ -16,10 +16,12 @@ The filesystem is the source of truth:
 /videos/
 ├── Standalone video.mp4
 ├── Standalone video.mp4.json
+├── Standalone video.jpg
 └── Saved playlist/
     ├── playlist.json
     ├── cover.jpg
     ├── 01 - First video.mp4
+    ├── 01 - First video.jpg
     └── Section name/
         └── 01 - Next video.mkv
 ```
@@ -29,6 +31,9 @@ The filesystem is the source of truth:
 - One nested folder inside a playlist is a playlist section.
 - Deeper folders are ignored and reported during scans.
 - Number prefixes set natural order and are removed from display titles.
+- Playlist covers are `cover.jpg`, `cover.png`, or `cover.webp` in the playlist folder, or a `cover` path in `playlist.json`.
+- Video covers are a sidecar `cover` path, `Video.mp4.jpg`, or `Video.jpg` next to the file.
+- Videos without a cover get a generated poster stored in the data directory. The video folder is never changed.
 
 Supported video files include MP4, M4V, MKV, WebM, MOV, AVI, MPEG, and MPG. The app watches the folder and also supports manual and scheduled scans.
 

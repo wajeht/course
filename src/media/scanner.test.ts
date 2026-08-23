@@ -9,6 +9,7 @@ import { createTemporaryDirectory, createTestDatabase } from "../test/resources.
 import { createLibraryRepository } from "./library.repository.js";
 import type { VideoProbe } from "./probe.js";
 import { createScanner } from "./scanner.js";
+import { createThumbnailCache } from "./thumbnails.js";
 
 const monitorStops: Array<() => void> = [];
 
@@ -147,6 +148,117 @@ describe("media scanner", () => {
     await expect(
       database.connection("video_authors").count({ count: "author_id" }).first(),
     ).resolves.toMatchObject({ count: 1 });
+  });
+
+  it("indexes conventional video covers and cover.jpg playlists", async () => {
+    const { root, dataDirectory } = await createScannerDirectories();
+    await fs.writeFile(path.join(root, "Standalone.mp4"), "standalone");
+    await fs.writeFile(path.join(root, "Standalone.mp4.webp"), "sidecar-cover");
+    const playlistDirectory = path.join(root, "Playlist");
+    await fs.mkdir(playlistDirectory);
+    await fs.writeFile(path.join(playlistDirectory, "poster.png"), "ignored");
+    await fs.writeFile(path.join(playlistDirectory, "cover.jpg"), "playlist-cover");
+    await fs.writeFile(path.join(playlistDirectory, "01 - Start.mp4"), "start");
+    await fs.writeFile(path.join(playlistDirectory, "01 - Start.jpg"), "start-cover");
+    await fs.writeFile(path.join(playlistDirectory, "02 - Finish.mp4"), "finish");
+
+    const configuration = createConfiguration({
+      APP_ENV: "testing",
+      VIDEOS_DIR: root,
+      DATA_DIR: dataDirectory,
+    });
+    const database = await createTestDatabase(configuration);
+    const scanner = createScanner({
+      configuration,
+      repository: createLibraryRepository(database.connection),
+      logger: createLogger(),
+      probe: async (filename) => probeResult((await fs.stat(filename)).size),
+    });
+
+    await scanner.scanLibrary();
+    const playlist = await database.connection("playlists").select("cover_path").first();
+    const videos = await database
+      .connection("videos")
+      .orderBy("title")
+      .select("title", "cover_path");
+
+    expect(playlist).toMatchObject({ cover_path: "Playlist/cover.jpg" });
+    expect(videos).toEqual([
+      { title: "Finish", cover_path: null },
+      { title: "Standalone", cover_path: "Standalone.mp4.webp" },
+      { title: "Start", cover_path: "Playlist/01 - Start.jpg" },
+    ]);
+  });
+
+  it("prefers a sidecar cover over conventional image files", async () => {
+    const { root, dataDirectory } = await createScannerDirectories();
+    await fs.writeFile(path.join(root, "Talk.mp4"), "talk");
+    await fs.writeFile(path.join(root, "Talk.jpg"), "conventional");
+    await fs.writeFile(path.join(root, "poster.png"), "explicit");
+    await fs.writeFile(
+      path.join(root, "Talk.mp4.json"),
+      JSON.stringify({ version: 1, cover: "poster.png" }),
+    );
+
+    const configuration = createConfiguration({
+      APP_ENV: "testing",
+      VIDEOS_DIR: root,
+      DATA_DIR: dataDirectory,
+    });
+    const database = await createTestDatabase(configuration);
+    const scanner = createScanner({
+      configuration,
+      repository: createLibraryRepository(database.connection),
+      logger: createLogger(),
+      probe: async (filename) => probeResult((await fs.stat(filename)).size),
+    });
+
+    await scanner.scanLibrary();
+    await expect(database.connection("videos").pluck("cover_path")).resolves.toEqual([
+      "poster.png",
+    ]);
+  });
+
+  it("generates thumbnails for uncovered videos during a scan", async () => {
+    const { root, dataDirectory } = await createScannerDirectories();
+    await fs.writeFile(path.join(root, "Talk.mp4"), "talk");
+    await fs.writeFile(path.join(root, "Talk.jpg"), "cover");
+    await fs.writeFile(path.join(root, "Bare.mp4"), "bare");
+    const configuration = createConfiguration({
+      APP_ENV: "testing",
+      VIDEOS_DIR: root,
+      DATA_DIR: dataDirectory,
+    });
+    const database = await createTestDatabase(configuration);
+    const generate = vi.fn(async (_source: string, destination: string) => {
+      await fs.mkdir(path.dirname(destination), { recursive: true });
+      await fs.writeFile(destination, "generated");
+    });
+    const scanner = createScanner({
+      configuration,
+      repository: createLibraryRepository(database.connection),
+      logger: createLogger(),
+      probe: async (filename) => probeResult((await fs.stat(filename)).size),
+      thumbnails: createThumbnailCache({
+        configuration,
+        logger: createLogger(),
+        generate,
+      }),
+    });
+
+    await scanner.scanLibrary();
+    const videos = await database.connection("videos").orderBy("title").select("id", "title");
+    const bare = videos.find((video: { title: string }) => video.title === "Bare");
+    const talk = videos.find((video: { title: string }) => video.title === "Talk");
+
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(generate.mock.calls[0]?.[0]).toContain("Bare.mp4");
+    await expect(
+      fs.readFile(path.join(dataDirectory, "thumbnails", `${bare.id}.jpg`), "utf8"),
+    ).resolves.toBe("generated");
+    await expect(
+      fs.access(path.join(dataDirectory, "thumbnails", `${talk.id}.jpg`)),
+    ).rejects.toMatchObject({ code: "ENOENT" });
   });
 
   it("preserves skipped videos and invalidates conversions only when media changes", async () => {

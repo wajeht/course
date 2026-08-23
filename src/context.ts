@@ -16,6 +16,7 @@ import {
 import { createConversionManager, type ConversionManager } from "./media/conversion.js";
 import { createConversionRepository } from "./media/conversion.repository.js";
 import { createScanner, type Scanner } from "./media/scanner.js";
+import { createThumbnailCache } from "./media/thumbnails.js";
 import { createPlaybackService, type PlaybackService } from "./playback/playback.service.js";
 import { createProgressRepository } from "./progress/progress.repository.js";
 import { createProgressService, type ProgressService } from "./progress/progress.service.js";
@@ -45,18 +46,25 @@ export async function createContext(
   await Promise.all([
     fs.mkdir(configuration.media.dataDirectory, { recursive: true }),
     fs.mkdir(configuration.media.hlsDirectory, { recursive: true }),
+    fs.mkdir(configuration.media.thumbnailsDirectory, { recursive: true }),
   ]);
   const database = await createDatabase(configuration, logger);
   const auth = createAuthService(createAuthRepository(database.connection), configuration);
   const scannerLibraryRepository = createLibraryRepository(database.connection);
   const libraryRepository = createLibraryApiRepository(database.connection);
   const settings = createSettingsService(createSettingsRepository(database.connection));
-  const library = createLibraryService(libraryRepository, settings);
+  const thumbnails = createThumbnailCache({ configuration, logger });
+  const library = createLibraryService(libraryRepository, settings, thumbnails);
   const progress = createProgressService(
     createProgressRepository(database.connection),
     libraryRepository,
   );
-  const scanner = createScanner({ configuration, repository: scannerLibraryRepository, logger });
+  const scanner = createScanner({
+    configuration,
+    repository: scannerLibraryRepository,
+    logger,
+    thumbnails,
+  });
   const conversions = createConversionManager({
     repository: createConversionRepository(database.connection),
     library: libraryRepository,

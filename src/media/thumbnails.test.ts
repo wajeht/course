@@ -1,0 +1,136 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+
+import { describe, expect, it, vi } from "vitest";
+
+import { createConfiguration } from "../config.js";
+import { createLogger } from "../logger.js";
+import { createTemporaryDirectory } from "../test/resources.js";
+import {
+  createThumbnailCache,
+  thumbnailPath,
+  thumbnailSeekSeconds,
+  type ThumbnailGenerator,
+} from "./thumbnails.js";
+import type { VideoRecord } from "./types.js";
+
+const videoA = "a".repeat(24);
+const videoB = "b".repeat(24);
+
+function videoRecord(id: string, filename: string, coverPath: string | null = null): VideoRecord {
+  return {
+    id,
+    path: filename,
+    playlistId: null,
+    playlistSectionId: null,
+    title: filename,
+    description: "",
+    tags: [],
+    coverPath,
+    sourceProvider: null,
+    sourceUrl: null,
+    sortOrder: 0,
+    durationSeconds: 60,
+    sizeBytes: 100,
+    container: "mp4",
+    videoCodec: "h264",
+    audioCodec: "aac",
+    browserCompatible: true,
+    modifiedAt: "2026-08-21T00:00:00.000Z",
+  };
+}
+
+async function createCache(generate?: ThumbnailGenerator) {
+  const directory = await createTemporaryDirectory("video-thumbnails-");
+  const videosDirectory = path.join(directory, "videos");
+  const dataDirectory = path.join(directory, "data");
+  await Promise.all([
+    fs.mkdir(videosDirectory, { recursive: true }),
+    fs.mkdir(dataDirectory, { recursive: true }),
+  ]);
+  await fs.writeFile(path.join(videosDirectory, "A.mp4"), "video-a");
+  await fs.writeFile(path.join(videosDirectory, "B.mp4"), "video-b");
+  const configuration = createConfiguration({
+    APP_ENV: "testing",
+    VIDEOS_DIR: videosDirectory,
+    DATA_DIR: dataDirectory,
+  });
+  const logger = createLogger();
+  const warn = vi.spyOn(logger, "warn");
+  const cache = createThumbnailCache({
+    configuration,
+    logger,
+    generate:
+      generate ??
+      (async (_source, destination) => {
+        await fs.mkdir(path.dirname(destination), { recursive: true });
+        await fs.writeFile(destination, "thumb");
+      }),
+  });
+  return { cache, configuration, warn };
+}
+
+describe("thumbnails", () => {
+  it("seeks ten percent into the video, capped at three seconds", () => {
+    expect(thumbnailSeekSeconds(0.5)).toBe(0);
+    expect(thumbnailSeekSeconds(5)).toBe(0.5);
+    expect(thumbnailSeekSeconds(60)).toBe(3);
+  });
+
+  it("generates posters for uncovered videos and skips authored covers", async () => {
+    const generate = vi.fn<ThumbnailGenerator>(async (_source, destination) => {
+      await fs.mkdir(path.dirname(destination), { recursive: true });
+      await fs.writeFile(destination, "thumb");
+    });
+    const { cache, configuration } = await createCache(generate);
+
+    await cache.synchronize([videoRecord(videoA, "A.mp4"), videoRecord(videoB, "B.mp4", "B.jpg")]);
+
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(generate.mock.calls[0]?.[0]).toContain("A.mp4");
+    await expect(
+      fs.readFile(thumbnailPath(configuration.media.thumbnailsDirectory, videoA), "utf8"),
+    ).resolves.toBe("thumb");
+    await expect(cache.listThumbnailIds()).resolves.toEqual(new Set([videoA]));
+  });
+
+  it("reuses a current thumbnail and regenerates when the source changes", async () => {
+    const generate = vi.fn<ThumbnailGenerator>(async (_source, destination, _duration, _ffmpeg) => {
+      await fs.mkdir(path.dirname(destination), { recursive: true });
+      await fs.writeFile(destination, `thumb-${generate.mock.calls.length}`);
+    });
+    const { cache } = await createCache(generate);
+    const video = videoRecord(videoA, "A.mp4");
+
+    await cache.synchronize([video]);
+    await cache.synchronize([video]);
+    expect(generate).toHaveBeenCalledTimes(1);
+
+    await cache.synchronize([{ ...video, sizeBytes: 200 }]);
+    expect(generate).toHaveBeenCalledTimes(2);
+  });
+
+  it("prunes thumbnails for videos that left the library", async () => {
+    const { cache, configuration } = await createCache();
+    await cache.synchronize([videoRecord(videoA, "A.mp4"), videoRecord(videoB, "B.mp4")]);
+    await cache.synchronize([videoRecord(videoA, "A.mp4")]);
+
+    await expect(cache.listThumbnailIds()).resolves.toEqual(new Set([videoA]));
+    await expect(
+      fs.access(thumbnailPath(configuration.media.thumbnailsDirectory, videoB)),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  it("swallows generation failures without failing the scan", async () => {
+    const { cache, warn } = await createCache(async () => {
+      throw new Error("FFmpeg failed");
+    });
+
+    await expect(cache.synchronize([videoRecord(videoA, "A.mp4")])).resolves.toBeUndefined();
+    await expect(cache.listThumbnailIds()).resolves.toEqual(new Set());
+    expect(warn).toHaveBeenCalledWith(
+      "Could not generate thumbnail",
+      expect.objectContaining({ videoId: videoA }),
+    );
+  });
+});
