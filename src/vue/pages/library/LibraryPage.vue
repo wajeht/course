@@ -50,7 +50,7 @@ const displayedVideos = computed(() =>
       />
       <div
         data-testid="library-layout"
-        class="mt-6 grid grid-cols-[240px_minmax(0,1fr)] items-start gap-8 max-[760px]:mt-1 max-[760px]:grid-cols-1"
+        class="mt-6 grid grid-cols-[240px_minmax(0,1fr)] items-start gap-8 max-[760px]:mt-1 max-[760px]:grid-cols-1 max-[760px]:gap-1"
       >
         <LibraryFiltersToolbar
           v-model:author="selectedAuthor"

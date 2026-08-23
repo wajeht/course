@@ -90,6 +90,9 @@ test("uses responsive library filters and a mobile drawer", async ({ page }) => 
   const mobileClientWidth = await page.evaluate(() => document.documentElement.clientWidth);
   expect(mobileFilterBox.x).toBe(0);
   expect(mobileFilterBox.width).toBe(mobileClientWidth);
+  const actionsBox = (await actions.boundingBox())!;
+  const firstVideoBox = (await page.locator("article").first().boundingBox())!;
+  expect(Math.round(firstVideoBox.y - (actionsBox.y + actionsBox.height))).toBe(24);
 
   await page.getByTestId("library-layout").evaluate((element) => {
     element.style.minHeight = "1800px";
