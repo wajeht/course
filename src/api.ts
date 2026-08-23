@@ -10,12 +10,12 @@ import { createSettingsRouter } from "./settings/settings.routes.js";
 
 export function createApiRouter(context: AppContext) {
   return new Hono()
-    .route("/auth", createAuthRouter(context))
+    .route("/", createAuthRouter(context))
     .use("*", createRequireAuth(context))
-    .route("/library", createLibraryRouter(context))
-    .route("/videos", createVideoRouter(context))
-    .route("/progress", createProgressRouter(context))
-    .route("/playback", createPlaybackRouter(context))
-    .route("/settings", createSettingsRouter(context))
-    .route("/scan", createScanRouter(context));
+    .route("/", createLibraryRouter(context))
+    .route("/", createVideoRouter(context))
+    .route("/", createProgressRouter(context))
+    .route("/", createPlaybackRouter(context))
+    .route("/", createSettingsRouter(context))
+    .route("/", createScanRouter(context));
 }

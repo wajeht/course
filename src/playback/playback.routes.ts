@@ -19,6 +19,7 @@ const requireSameOrigin: MiddlewareHandler = async (c, next) => {
 
 export function createPlaybackRouter(context: AppContext) {
   return new Hono()
+    .basePath("/playback")
     .post("/:videoId", zValidator("param", playbackParametersSchema), async (c) => {
       const playback = await context.playback.preparePlayback(c.req.valid("param").videoId);
       return playback

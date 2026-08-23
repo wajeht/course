@@ -10,13 +10,15 @@ import {
 } from "./library.schema.js";
 
 export function createLibraryRouter(context: AppContext) {
-  return new Hono().get("/", zValidator("query", libraryQuerySchema), async (c) =>
-    c.json(libraryResponseSchema.parse(await context.library.getLibrary(c.req.valid("query")))),
-  );
+  return new Hono()
+    .basePath("/library")
+    .get("/", zValidator("query", libraryQuerySchema), async (c) =>
+      c.json(libraryResponseSchema.parse(await context.library.getLibrary(c.req.valid("query")))),
+    );
 }
 
 export function createVideoRouter(context: AppContext) {
-  return new Hono().get(
+  return new Hono().basePath("/videos").get(
     "/:videoId",
     zValidator("param", videoParametersSchema, (result, c) => {
       if (!result.success) return c.json({ message: "Video not found" }, 404);

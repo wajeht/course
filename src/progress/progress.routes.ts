@@ -10,6 +10,7 @@ import {
 
 export function createProgressRouter(context: AppContext) {
   return new Hono()
+    .basePath("/progress")
     .post("/videos/:videoId/open", zValidator("param", progressParametersSchema), async (c) => {
       const opened = await context.progress.openVideo(c.req.valid("param").videoId);
       return opened ? c.json({ opened: true }) : c.json({ message: "Video not found" }, 404);

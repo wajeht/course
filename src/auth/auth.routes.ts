@@ -113,6 +113,7 @@ export function createAuthRouter(context: AppContext) {
   const configuration = context.configuration;
 
   return new Hono()
+    .basePath("/auth")
     .get("/me", async (c) => {
       const authenticated = Boolean(await readSession(c, context));
       const passwordConfigured = await context.auth.isPasswordConfigured();
