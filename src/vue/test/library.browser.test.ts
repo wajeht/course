@@ -79,8 +79,8 @@ test("uses responsive library filters and a mobile drawer", async ({ page }) => 
   await expect(filterColumn).toHaveCSS("top", "66px");
   await expect(filterColumn).toHaveCSS("background-color", "rgb(245, 246, 242)");
   await expect(filterColumn).toHaveCSS("box-shadow", "none");
-  await expect(filterColumn).toHaveCSS("padding-top", "12px");
-  await expect(filterColumn).toHaveCSS("padding-bottom", "12px");
+  await expect(filterColumn).toHaveCSS("padding-top", "20px");
+  await expect(filterColumn).toHaveCSS("padding-bottom", "20px");
 
   const headingBox = (await page.getByRole("heading", { level: 1 }).boundingBox())!;
   const searchBox = (await search.boundingBox())!;
