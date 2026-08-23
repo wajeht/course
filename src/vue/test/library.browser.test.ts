@@ -232,6 +232,6 @@ test("loads more author videos on mobile and restores them from the URL", async 
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect(page.getByText("First author video", { exact: true })).toBeHidden();
   await expect(page.getByText("Second author video", { exact: true })).toBeVisible();
-  await expect(playlistLink).toBeHidden();
+  await expect(playlistLink).toBeVisible();
   await expect(page.getByText("Page 2 of 2")).toBeVisible();
 });

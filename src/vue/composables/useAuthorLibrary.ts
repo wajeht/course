@@ -103,7 +103,7 @@ export function useAuthorLibrary(accumulatePages: MaybeRefOrGetter<boolean>) {
 
       if (!shouldAccumulate) {
         loadedVideos.value = loadedLibrary.videos;
-        loadedPlaylists.value = requestedPage === 1 ? loadedLibrary.playlists : [];
+        loadedPlaylists.value = loadedLibrary.playlists;
         loadedPage.value = loadedLibrary.pagination.page;
         loadingMore.value = false;
         return;
