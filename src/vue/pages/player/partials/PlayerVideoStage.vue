@@ -7,14 +7,13 @@ import AppButton from "@/components/ui/AppButton.vue";
 import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import { playerLocation } from "@/router.js";
 
-const props = defineProps<{
+defineProps<{
   ended: boolean;
   error: string;
   loading: boolean;
   nextVideo?: VideoDto;
   playback: PlaybackResult | null;
   retrying: boolean;
-  list?: string | null;
 }>();
 const emit = defineEmits<{
   ended: [];
@@ -88,7 +87,7 @@ defineExpose({ video });
       <AppButton
         v-if="nextVideo"
         :as="IntentRouterLink"
-        :to="playerLocation(nextVideo.id, list)"
+        :to="playerLocation(nextVideo.id, nextVideo.playlistId)"
         :prefetch="() => prefetch.video(nextVideo!.id)"
         class="mt-5"
         variant="inverse"

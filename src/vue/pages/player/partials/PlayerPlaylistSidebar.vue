@@ -51,7 +51,6 @@ const titleId = `playlist-title-${useId()}`;
           :video="video"
           :index="index"
           :active="video.id === activeVideoId"
-          :list="playlist.id"
           sidebar
         />
       </section>
