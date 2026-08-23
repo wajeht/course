@@ -85,7 +85,7 @@ test("uses responsive video details and places the playlist below them on mobile
   });
 
   await page.setViewportSize({ width: 1800, height: 900 });
-  await page.goto(`/videos/${videoId}`);
+  await page.goto(`/videos/${videoId}?list=${playlistId}`);
   const title = page.getByRole("heading", { name: videoTitle });
   await expect(title).toBeVisible();
   expect((await title.boundingBox())?.width).toBeGreaterThan(1000);

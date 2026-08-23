@@ -2,18 +2,25 @@
 import type { VideoDto } from "@/api.js";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
+import { playerLocation } from "@/router.js";
 import { durationText } from "@/utils.js";
 
 withDefaults(
-  defineProps<{ video: VideoDto; index: number; active?: boolean; sidebar?: boolean }>(),
-  { active: false, sidebar: false },
+  defineProps<{
+    video: VideoDto;
+    index: number;
+    active?: boolean;
+    sidebar?: boolean;
+    list?: string | null;
+  }>(),
+  { active: false, sidebar: false, list: null },
 );
 const prefetch = useRoutePrefetch();
 </script>
 
 <template>
   <IntentRouterLink
-    :to="{ name: 'player', params: { videoId: video.id } }"
+    :to="playerLocation(video.id, list)"
     :prefetch="() => prefetch.video(video.id)"
     class="grid items-center border-b border-[#e7eae7] py-2 transition-colors last:border-b-0 hover:bg-[#f4f7f4]"
     :class="[

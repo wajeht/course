@@ -69,6 +69,14 @@ export function notFoundLocation(path: string): RouteLocationRaw {
   return { name: "not-found", params: { pathMatch: path.split("/").filter(Boolean) } };
 }
 
+export function playerLocation(videoId: string, list?: string | null): RouteLocationRaw {
+  return {
+    name: "player",
+    params: { videoId },
+    query: list ? { list } : {},
+  };
+}
+
 router.afterEach((route, _from, failure) => {
   if (failure) return;
   clearFrontendError();

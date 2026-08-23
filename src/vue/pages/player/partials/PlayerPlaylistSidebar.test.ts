@@ -56,7 +56,7 @@ async function mountSidebar(resetting = false) {
     history: createMemoryHistory(),
     routes: [{ path: "/videos/:videoId", name: "player", component: { template: "<div />" } }],
   });
-  await router.push(`/videos/${videoId}`);
+  await router.push(`/videos/${videoId}?list=${playlistId}`);
   await router.isReady();
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return mount(PlayerPlaylistSidebar, {
@@ -72,6 +72,9 @@ describe("PlayerPlaylistSidebar", () => {
 
     expect(panel.attributes("aria-labelledby")).toBe(wrapper.get("h2").attributes("id"));
     expect(wrapper.find('[aria-label="Close playlist"]').exists()).toBe(false);
+    expect(wrapper.get(`a[href="/videos/${videoId}?list=${playlistId}"]`).text()).toContain(
+      "Example video",
+    );
   });
 
   it("keeps the playlist reset action in an overflow menu", async () => {

@@ -61,7 +61,7 @@ interface MountPlayerOptions {
   preparePlayback?: (id: string) => Promise<PlaybackResult>;
 }
 
-async function mountPlayer(options: MountPlayerOptions = {}) {
+async function mountPlayer(options: MountPlayerOptions & { path?: string } = {}) {
   vi.spyOn(api, "getVideo").mockImplementation(
     options.getVideo ?? (async () => ({ video: { ...video }, playlist })),
   );
@@ -86,6 +86,7 @@ async function mountPlayer(options: MountPlayerOptions = {}) {
     },
     template: `
       <p data-video-title>{{ player.video.value?.title }}</p>
+      <p data-playlist-id>{{ player.playlist.value?.id ?? "" }}</p>
       <button data-reset-video @click="player.resetProgress">Reset video</button>
       <button data-reset-playlist @click="player.resetPlaylistProgress">Reset playlist</button>
     `,
@@ -97,7 +98,7 @@ async function mountPlayer(options: MountPlayerOptions = {}) {
       { path: "/:pathMatch(.*)*", name: "not-found", component: { template: "<div />" } },
     ],
   });
-  await router.push(`/videos/${videoId}`);
+  await router.push(options.path ?? `/videos/${videoId}`);
   await router.isReady();
   const confirmation = createConfirmation();
   const toast = createToast();
@@ -129,7 +130,9 @@ describe("useVideoPlayer", () => {
 
   it("reports a failed playlist progress reset", async () => {
     vi.spyOn(api, "resetPlaylist").mockRejectedValue(new ApiError("Playlist reset failed", 500));
-    const { confirmation, toast, wrapper } = await mountPlayer();
+    const { confirmation, toast, wrapper } = await mountPlayer({
+      path: `/videos/${videoId}?list=${playlistId}`,
+    });
 
     await wrapper.get("[data-reset-playlist]").trigger("click");
     confirmation.accept();
@@ -138,6 +141,25 @@ describe("useVideoPlayer", () => {
     expect(toast.toasts.value).toEqual([
       expect.objectContaining({ kind: "error", message: "Playlist reset failed" }),
     ]);
+    wrapper.unmount();
+  });
+
+  it("shows playlist context only when the list query matches", async () => {
+    const { router, wrapper } = await mountPlayer();
+
+    expect(wrapper.get("[data-playlist-id]").text()).toBe("");
+
+    await router.replace({ query: { list: playlistId } });
+    await flushPromises();
+
+    expect(wrapper.get("[data-playlist-id]").text()).toBe(playlistId);
+    expect(api.getVideo).toHaveBeenCalledTimes(1);
+
+    await router.replace({ query: { list: "9".repeat(24) } });
+    await flushPromises();
+
+    expect(wrapper.get("[data-playlist-id]").text()).toBe("");
+    expect(api.getVideo).toHaveBeenCalledTimes(1);
     wrapper.unmount();
   });
 

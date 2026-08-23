@@ -19,7 +19,7 @@ import { useScreenWakeLock } from "@/composables/useScreenWakeLock.js";
 import { useToast } from "@/composables/useToast.js";
 import { useVideoPlayback } from "@/composables/useVideoPlayback.js";
 import { queryKeys, videoQueryOptions } from "@/queries.js";
-import { notFoundLocation } from "@/router.js";
+import { notFoundLocation, playerLocation } from "@/router.js";
 import { setPageTitle } from "@/utils.js";
 
 export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
@@ -27,7 +27,7 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const video = ref<VideoDetailDto | null>(null);
-  const playlist = ref<PlaylistDetailDto | null>(null);
+  const loadedPlaylist = ref<PlaylistDetailDto | null>(null);
   const loading = shallowRef(true);
   const ended = shallowRef(false);
   const currentTime = shallowRef(0);
@@ -64,14 +64,21 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
     },
   );
 
+  const playlist = computed(() => {
+    const list = route.query.list;
+    const loaded = loadedPlaylist.value;
+    if (typeof list !== "string" || !loaded || list !== loaded.id) return null;
+    return loaded;
+  });
   const playlistVideos = computed(
     () => playlist.value?.sections.flatMap((section) => section.videos) ?? [],
   );
   const resetPlaylist = useAsyncAction(
     async (playlistId: string) => {
       const activeVideo = video.value;
+      const activePlaylist = playlist.value;
       if (
-        playlist.value?.id !== playlistId ||
+        activePlaylist?.id !== playlistId ||
         !activeVideo ||
         !progress.isSessionFor(activeVideo.id)
       )
@@ -84,8 +91,8 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
         item.progressPercent = 0;
         item.completed = false;
       }
-      playlist.value.completedCount = 0;
-      playlist.value.progressPercent = 0;
+      activePlaylist.completedCount = 0;
+      activePlaylist.progressPercent = 0;
       activeVideo.positionSeconds = 0;
       activeVideo.progressPercent = 0;
       activeVideo.completed = false;
@@ -136,7 +143,7 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
     ]);
   }
   function navigate(target: VideoDto | undefined) {
-    if (target) void router.push({ name: "player", params: { videoId: target.id } });
+    if (target) void router.push(playerLocation(target.id, playlist.value?.id));
   }
 
   useMediaSession(element, mediaMetadata, {
@@ -181,7 +188,7 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
       await invalidateLibrary();
       if (!playback.isCurrentRequest(requestId)) return;
       video.value = detail.video;
-      playlist.value = detail.playlist;
+      loadedPlaylist.value = detail.playlist;
       setPageTitle(detail.video.title);
       progress.startSession(detail.video.id, detail.video.positionSeconds);
       await playback.applyPlayback(playbackResult, videoId, requestId);
@@ -305,7 +312,7 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
     onPause,
     onTimeUpdate,
     playback: computed(() => playback.playback.value),
-    playlist: computed(() => playlist.value),
+    playlist,
     resetPlaylistProgress,
     resetProgress,
     resettingPlaylist: computed(() => resetPlaylist.pending.value),
