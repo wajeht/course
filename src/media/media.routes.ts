@@ -110,10 +110,6 @@ export function createMediaRouter(context: AppContext) {
         const cover = await trySendCover(c, videosDirectory, playlist.cover_path);
         if (cover) return cover;
       }
-      if (playlist.first_video_cover_path) {
-        const cover = await trySendCover(c, videosDirectory, playlist.first_video_cover_path);
-        if (cover) return cover;
-      }
       if (playlist.first_video_id) {
         const cover = await trySendCover(
           c,
@@ -133,11 +129,6 @@ export function createMediaRouter(context: AppContext) {
     async (c) => {
       const video = await context.libraryRepository.findVideo(c.req.valid("param").videoId);
       if (!video) return c.body(null, 404);
-      const videosDirectory = context.configuration.media.videosDirectory;
-      if (video.cover_path) {
-        const cover = await trySendCover(c, videosDirectory, video.cover_path);
-        if (cover) return cover;
-      }
       const thumbnail = await trySendCover(
         c,
         context.configuration.media.thumbnailsDirectory,

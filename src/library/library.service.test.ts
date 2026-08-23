@@ -247,17 +247,13 @@ describe("library service", () => {
 
     const library = await service.getLibrary();
     expect(library.videos.find((video) => video.id === videoA)?.coverUrl).toBeNull();
-    expect(library.videos.find((video) => video.id === videoB)?.coverUrl).toBe(
-      `/covers/videos/${videoB}`,
-    );
+    expect(library.videos.find((video) => video.id === videoB)?.coverUrl).toBeNull();
     expect(library.videos.find((video) => video.id === standaloneVideo)?.coverUrl).toBe(
       `/covers/videos/${standaloneVideo}`,
     );
     expect(library.playlists.find((playlist) => playlist.id === playlistA)?.coverUrl).toBe(
       `/covers/playlists/${playlistA}`,
     );
-    expect(library.playlists.find((playlist) => playlist.id === playlistB)?.coverUrl).toBe(
-      `/covers/playlists/${playlistB}`,
-    );
+    expect(library.playlists.find((playlist) => playlist.id === playlistB)?.coverUrl).toBeNull();
   });
 });

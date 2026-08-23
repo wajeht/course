@@ -133,7 +133,7 @@ function videoDto(row: VideoRow, thumbnailIds: Set<string>): VideoDto {
     authors: mergeNames(stringList(row.authors_json), stringList(row.playlist_authors_json)),
     tags: mergeNames(stringList(row.tags_json), stringList(row.playlist_tags_json)),
     source: sourceDto(row.source_provider, row.source_url),
-    coverUrl: row.cover_path || thumbnailIds.has(row.id) ? `/covers/videos/${row.id}` : null,
+    coverUrl: thumbnailIds.has(row.id) ? `/covers/videos/${row.id}` : null,
     durationSeconds: Number(row.duration_seconds),
     positionSeconds: position,
     completed: Boolean(row.completed),
@@ -152,9 +152,7 @@ function playlistDto(row: PlaylistRow, thumbnailIds: Set<string>): PlaylistDto {
     tags: stringList(row.tags_json),
     source: sourceDto(row.source_provider, row.source_url),
     coverUrl:
-      row.cover_path ||
-      row.first_video_cover_path ||
-      (row.first_video_id != null && thumbnailIds.has(row.first_video_id))
+      row.cover_path || (row.first_video_id != null && thumbnailIds.has(row.first_video_id))
         ? `/covers/playlists/${row.id}`
         : null,
     videoCount,
