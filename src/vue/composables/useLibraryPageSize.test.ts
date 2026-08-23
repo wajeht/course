@@ -70,9 +70,10 @@ describe("useLibraryPageSize", () => {
     await vi.waitFor(() => expect(pageSize.disabled.value).toBe(false));
     await queryClient.fetchQuery(libraryQueryOptions({ page: 2 }, api));
 
-    pageSize.libraryPageSize.value = 48;
-    await vi.waitFor(() => expect(api.updateSettings).toHaveBeenCalledWith(48));
-    await vi.waitFor(() => expect(router.currentRoute.value.query).toEqual({ q: "term" }));
+    await pageSize.setLibraryPageSize(48);
+
+    expect(api.updateSettings).toHaveBeenCalledWith(48);
+    expect(router.currentRoute.value.query).toEqual({ q: "term" });
     expect(queryClient.getQueryState(queryKeys.libraryList({ page: 2 }))?.isInvalidated).toBe(true);
     expect(queryClient.getQueryData(queryKeys.settings)).toEqual({ libraryPageSize: 48 });
     expect(pageSize.libraryPageSize.value).toBe(48);
@@ -85,7 +86,7 @@ describe("useLibraryPageSize", () => {
 
     await vi.waitFor(() => expect(pageSize.error.value).toBe("Could not load settings"));
     expect(pageSize.disabled.value).toBe(true);
-    pageSize.libraryPageSize.value = 48;
+    await pageSize.setLibraryPageSize(48);
     expect(api.updateSettings).not.toHaveBeenCalled();
     expect(pageSize.libraryPageSize.value).toBe(24);
     stop();
@@ -96,8 +97,8 @@ describe("useLibraryPageSize", () => {
     const { pageSize, stop } = await setup();
     await vi.waitFor(() => expect(pageSize.disabled.value).toBe(false));
 
-    pageSize.libraryPageSize.value = 48;
-    await vi.waitFor(() => expect(pageSize.error.value).toBe("Could not save library settings"));
+    await pageSize.setLibraryPageSize(48);
+    expect(pageSize.error.value).toBe("Could not save library settings");
     expect(pageSize.libraryPageSize.value).toBe(24);
     stop();
   });

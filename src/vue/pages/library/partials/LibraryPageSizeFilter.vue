@@ -30,12 +30,11 @@ const selected = defineModel<LibraryPageSize>({ required: true });
       <li v-for="size in LIBRARY_PAGE_SIZES" :key="size">
         <label class="flex cursor-pointer items-center gap-2.5 text-pine-deep max-[760px]:min-h-11">
           <input
-            :checked="selected === size"
+            v-model="selected"
             type="radio"
             :name="name"
             :value="size"
             class="h-4 w-4 border-line text-pine focus-visible:ring-pine"
-            @change="selected = size"
           />
           <span>{{ size }}</span>
         </label>

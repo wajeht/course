@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
-import { computed, shallowRef, watch } from "vue";
+import { computed, readonly, shallowRef, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { api, apiErrorMessage, type LibraryPageSize } from "@/api.js";
@@ -36,12 +36,6 @@ export function useLibraryPageSize() {
     { immediate: true },
   );
 
-  const libraryPageSize = computed({
-    get: () => selectedSize.value,
-    set: (value) => {
-      void savePageSize(value);
-    },
-  });
   const disabled = computed(
     () =>
       settingsRequest.isPending.value || !settingsRequest.data.value || saveAction.pending.value,
@@ -53,7 +47,7 @@ export function useLibraryPageSize() {
     return apiErrorMessage(caught, "Could not load settings");
   });
 
-  async function savePageSize(value: LibraryPageSize): Promise<void> {
+  async function setLibraryPageSize(value: LibraryPageSize): Promise<void> {
     const current = settingsRequest.data.value?.libraryPageSize;
     if (!current || value === current) return;
     selectedSize.value = value;
@@ -64,7 +58,7 @@ export function useLibraryPageSize() {
   return {
     disabled,
     error,
-    libraryPageSize,
-    pending: saveAction.pending,
+    libraryPageSize: readonly(selectedSize),
+    setLibraryPageSize,
   };
 }
