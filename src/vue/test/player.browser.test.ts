@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const videoId = "c".repeat(24);
 const playlistId = "d".repeat(24);
+const shortDescriptionVideoId = "e".repeat(24);
 
 async function authenticate(page: Page): Promise<void> {
   const password = "playwright-password";
@@ -135,4 +136,55 @@ test("uses responsive video details and places the playlist below them on mobile
   const detailsBox = await page.getByRole("region", { name: videoTitle }).boundingBox();
   const playlistBox = await playlistPanel.boundingBox();
   expect(playlistBox?.y).toBeGreaterThan((detailsBox?.y ?? 0) + (detailsBox?.height ?? 0));
+});
+
+test("does not collapse a short wrapped video description", async ({ page }) => {
+  await authenticate(page);
+
+  const description =
+    "Dr. Seth Capehart examines how modern routines can undermine energy, sleep, metabolic health, and recovery, and discusses practical ways to reduce stress and improve long-term health.";
+  await page.route(`**/api/videos/${shortDescriptionVideoId}`, async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        video: {
+          authors: ["Seth Capehart MD"],
+          chapters: [],
+          completed: false,
+          coverUrl: null,
+          description,
+          durationSeconds: 120,
+          id: shortDescriptionVideoId,
+          playlistId: null,
+          playlistSectionId: null,
+          playlistSectionTitle: null,
+          playlistTitle: null,
+          positionSeconds: 0,
+          progressPercent: 0,
+          source: null,
+          tags: [],
+          title: "Modern Life Is A Disease",
+        },
+        playlist: null,
+      }),
+    });
+  });
+  await page.route(`**/api/playback/${shortDescriptionVideoId}`, async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ kind: "direct", url: "/media/short-description.mp4" }),
+    });
+  });
+  await page.route(`**/api/progress/videos/${shortDescriptionVideoId}/open`, async (route) => {
+    await route.fulfill({ contentType: "application/json", body: JSON.stringify({}) });
+  });
+  await page.route("**/media/short-description.mp4", async (route) => {
+    await route.fulfill({ contentType: "video/mp4", body: "" });
+  });
+
+  await page.setViewportSize({ width: 820, height: 1000 });
+  await page.goto(`/videos/${shortDescriptionVideoId}`);
+
+  await expect(page.getByText(description)).toBeVisible();
+  await expect(page.locator("button[aria-controls^='video-details-']")).toHaveCount(0);
 });

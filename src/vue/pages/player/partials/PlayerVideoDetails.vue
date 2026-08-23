@@ -104,7 +104,7 @@ onBeforeUnmount(() => descriptionObserver?.disconnect());
         v-if="video.description"
         ref="description"
         class="max-w-[780px] text-sm leading-relaxed text-white/62"
-        :class="expanded ? '' : 'max-[860px]:line-clamp-2'"
+        :class="expanded ? '' : 'max-[860px]:line-clamp-4'"
       >
         {{ video.description }}
       </p>
