@@ -24,9 +24,7 @@ vi.mock("@/api.js", async (importOriginal) => {
         status: "complete",
         warnings: [],
       })),
-      getSettings: vi.fn(async () => ({ libraryPageSize: 24 })),
       rescanLibrary: vi.fn(),
-      updateSettings: vi.fn(async (libraryPageSize) => ({ libraryPageSize })),
     },
   };
 });
@@ -45,7 +43,7 @@ function mountLibraryPage() {
 }
 
 describe("settings/LibraryPage", () => {
-  it("renders library status and display settings", async () => {
+  it("renders library status without display settings", async () => {
     const wrapper = mountLibraryPage();
     await flushPromises();
 
@@ -53,8 +51,7 @@ describe("settings/LibraryPage", () => {
     expect(refreshCard.get("header h2").text()).toBe("Refresh library");
     expect(refreshCard.text()).toContain("12 playlists · 215 videos");
     expect(refreshCard.get("[data-scan-controls]").classes()).toContain("flex-col");
-    expect(wrapper.get("[data-library-display-form]").classes()).toContain("flex-col");
-    expect(wrapper.get("#settings-library-panel").text()).toContain("Videos per page");
+    expect(wrapper.get("#settings-library-panel").text()).not.toContain("Videos per page");
     expect(wrapper.get("#settings-library-panel").classes()).toEqual(
       expect.arrayContaining(["grid", "gap-[clamp(18px,2vw,30px)]"]),
     );
@@ -111,17 +108,5 @@ describe("settings/LibraryPage", () => {
     expect(wrapper.text()).toContain("Could not load library status");
     expect(wrapper.text()).toContain("Library status unavailable");
     expect(wrapper.text()).not.toContain("Library status is loading…");
-  });
-
-  it("disables library settings when their saved value cannot be loaded", async () => {
-    vi.mocked(api.getSettings).mockRejectedValueOnce(new Error("Could not load settings"));
-    vi.mocked(api.updateSettings).mockClear();
-    const wrapper = mountLibraryPage();
-    await flushPromises();
-
-    expect(wrapper.get("select").attributes("disabled")).toBeDefined();
-    expect(wrapper.get('button[type="submit"]').attributes("disabled")).toBeDefined();
-    await wrapper.get("form").trigger("submit");
-    expect(api.updateSettings).not.toHaveBeenCalled();
   });
 });

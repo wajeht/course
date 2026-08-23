@@ -6,10 +6,12 @@ import AppButton from "@/components/ui/AppButton.vue";
 import AppDrawer from "@/components/ui/AppDrawer.vue";
 import AppInput from "@/components/ui/AppInput.vue";
 import PanelCard from "@/components/ui/PanelCard.vue";
+import { useLibraryPageSize } from "@/composables/useLibraryPageSize.js";
 import LibraryFilterGroup from "@/pages/library/partials/LibraryFilterGroup.vue";
+import LibraryPageSizeFilter from "@/pages/library/partials/LibraryPageSizeFilter.vue";
 import LibraryPlaylistFilter from "@/pages/library/partials/LibraryPlaylistFilter.vue";
 
-type FilterType = "author" | "tag" | "view";
+type FilterType = "author" | "pageSize" | "tag" | "view";
 
 const props = defineProps<{
   authors: LibraryDto["authors"];
@@ -21,10 +23,12 @@ const author = defineModel<string[]>("author", { required: true });
 const query = defineModel<string>("query", { required: true });
 const tag = defineModel<string[]>("tag", { required: true });
 const view = defineModel<string>("view", { required: true });
+const { disabled: pageSizeDisabled, error: pageSizeError, libraryPageSize } = useLibraryPageSize();
 
 const activeMobilePanel = shallowRef<FilterType | null>(null);
 const mobilePanelTitle = computed(() => {
   if (activeMobilePanel.value === "author") return "Authors";
+  if (activeMobilePanel.value === "pageSize") return "Videos per page";
   if (activeMobilePanel.value === "tag") return "Tags";
   return "View";
 });
@@ -40,6 +44,11 @@ const mobileFilterButtons = computed(() => [
     type: "author" as const,
   },
   { active: tag.value.length > 0, label: selectionLabel("Tags", tag.value), type: "tag" as const },
+  {
+    active: false,
+    label: `${libraryPageSize.value} per page`,
+    type: "pageSize" as const,
+  },
 ]);
 const mobilePanelValue = computed({
   get: () => {
@@ -101,6 +110,14 @@ function togglePanel(panel: FilterType): void {
           :options="tags"
         />
       </PanelCard>
+      <PanelCard :elevated="false" padding="compact">
+        <LibraryPageSizeFilter
+          v-model="libraryPageSize"
+          :disabled="pageSizeDisabled"
+          :error="pageSizeError"
+          name="library-desktop-page-size"
+        />
+      </PanelCard>
     </aside>
 
     <div class="hidden max-[760px]:block">
@@ -157,6 +174,14 @@ function togglePanel(panel: FilterType): void {
         label="Authors"
         name="library-mobile-author"
         :options="props.authors"
+      />
+      <LibraryPageSizeFilter
+        v-else-if="activeMobilePanel === 'pageSize'"
+        v-model="libraryPageSize"
+        hide-label
+        :disabled="pageSizeDisabled"
+        :error="pageSizeError"
+        name="library-mobile-page-size"
       />
       <LibraryFilterGroup
         v-else

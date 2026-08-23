@@ -122,10 +122,22 @@ test("uses responsive library filters and a mobile drawer", async ({ page }) => 
   await page.keyboard.press("Escape");
   await expect(drawer).toHaveCount(0);
 
+  const pageSizeButton = page.locator('[data-mobile-filter="pageSize"]');
+  await expect(pageSizeButton).toHaveText("24 per page");
+  await pageSizeButton.click();
+  const pageSizeDrawer = page.getByRole("dialog", { name: "Videos per page" });
+  await expect(pageSizeDrawer).toBeVisible();
+  await expect(pageSizeDrawer.getByRole("radio", { name: "24" })).toBeChecked();
+  await expect(pageSizeDrawer.getByRole("radio", { name: "12" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(pageSizeDrawer).toHaveCount(0);
+
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect(search).toBeHidden();
   await expect(actions).toBeHidden();
   await expect(page.getByRole("group", { name: "Authors" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Videos per page" })).toBeVisible();
+  await expect(page.locator('input[name="library-desktop-page-size"][value="24"]')).toBeChecked();
 });
 
 test("loads more videos on mobile and keeps the page in the URL", async ({ page }) => {

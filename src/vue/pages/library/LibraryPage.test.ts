@@ -13,7 +13,12 @@ vi.mock("@/api.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/api.js")>();
   return {
     ...actual,
-    api: { ...actual.api, getLibrary: vi.fn() },
+    api: {
+      ...actual.api,
+      getLibrary: vi.fn(),
+      getSettings: vi.fn(async () => ({ libraryPageSize: 24 })),
+      updateSettings: vi.fn(async (libraryPageSize) => ({ libraryPageSize })),
+    },
   };
 });
 
@@ -170,5 +175,16 @@ describe("LibraryPage", () => {
       q: "term",
       tag: "Archive",
     });
+  });
+
+  it("saves videos per page from the library filters and returns to page 1", async () => {
+    const { router, wrapper } = await mountLibraryPage("/videos?page=2");
+
+    await wrapper.get('input[name="library-desktop-page-size"][value="12"]').setValue();
+    await flushPromises();
+
+    expect(api.updateSettings).toHaveBeenCalledWith(12);
+    expect(router.currentRoute.value.query).toEqual({});
+    expect(wrapper.get("aside").text()).toContain("Videos per page");
   });
 });
