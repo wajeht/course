@@ -64,8 +64,11 @@ function library(): LibraryDto {
   };
 }
 
-async function mountLibraryPage(path = "/videos") {
-  vi.mocked(api.getLibrary).mockResolvedValue(library());
+async function mountLibraryPage(
+  path = "/videos",
+  getLibrary: typeof api.getLibrary = async () => library(),
+) {
+  vi.mocked(api.getLibrary).mockImplementation(getLibrary);
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -112,5 +115,35 @@ describe("LibraryPage", () => {
     await flushPromises();
 
     expect(router.currentRoute.value.query).toEqual({});
+  });
+
+  it("prefetches the next video page on pagination hover", async () => {
+    const getLibrary = vi.fn(async (filters) => ({
+      ...library(),
+      pagination: {
+        page: filters?.page ?? 1,
+        pageSize: 24,
+        totalPages: 2,
+        totalVideos: 25,
+      },
+    }));
+    const { router, wrapper } = await mountLibraryPage(
+      "/videos?q=term&author=Example&tag=Archive",
+      getLibrary,
+    );
+
+    await wrapper.get('nav[aria-label="Pages"] button:last-of-type').trigger("pointerenter");
+
+    await vi.waitFor(() =>
+      expect(getLibrary).toHaveBeenCalledWith(
+        { author: ["Example"], page: 2, query: "term", tag: ["Archive"] },
+        expect.any(AbortSignal),
+      ),
+    );
+    expect(router.currentRoute.value.query).toEqual({
+      author: "Example",
+      q: "term",
+      tag: "Archive",
+    });
   });
 });

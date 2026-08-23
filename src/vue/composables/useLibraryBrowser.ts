@@ -179,6 +179,12 @@ export function useLibraryBrowser(options: UseLibraryBrowserOptions = {}) {
     });
   }
 
+  function prefetchPage(nextPage: number): void {
+    void queryClient.prefetchQuery(
+      libraryQueryOptions({ ...filters.value, page: Math.max(1, nextPage) }, api),
+    );
+  }
+
   async function loadMore(): Promise<void> {
     if (loadingMore.value || !canLoadMore.value) return;
 
@@ -228,6 +234,7 @@ export function useLibraryBrowser(options: UseLibraryBrowserOptions = {}) {
     loadMoreError: readonly(loadMoreError),
     loadingMore: readonly(loadingMore),
     page,
+    prefetchPage,
     query,
     refreshing: computed(() => request.isFetching.value && !request.isPending.value),
     selectedAuthor,

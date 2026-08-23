@@ -122,4 +122,27 @@ describe("AuthorPage", () => {
     expect(wrapper.text()).toContain("Guest video");
     expect(wrapper.text()).not.toContain("Example video");
   });
+
+  it("prefetches the next author page on pagination hover", async () => {
+    const getLibrary = vi.fn(async (filters) => ({
+      ...authorLibrary(),
+      pagination: {
+        page: filters?.page ?? 1,
+        pageSize: 24,
+        totalPages: 2,
+        totalVideos: 25,
+      },
+    }));
+    const { router, wrapper } = await mountAuthorPage(getLibrary);
+
+    await wrapper.get('nav[aria-label="Pages"] button:last-of-type').trigger("pointerenter");
+
+    await vi.waitFor(() =>
+      expect(getLibrary).toHaveBeenCalledWith(
+        { author: ["Jane Smith"], page: 2 },
+        expect.any(AbortSignal),
+      ),
+    );
+    expect(router.currentRoute.value.query).toEqual({});
+  });
 });
