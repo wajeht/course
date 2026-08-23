@@ -71,9 +71,31 @@ test("uses responsive library filters and a mobile drawer", async ({ page }) => 
   const search = page.getByTestId("mobile-library-search");
   const actions = page.getByTestId("mobile-filter-actions");
   const authorButton = page.locator('[data-mobile-filter="author"]');
+  const filterColumn = page.getByTestId("library-filter-column");
   await expect(search).toBeVisible();
   await expect(actions).toBeVisible();
   await expect(authorButton).toBeVisible();
+  await expect(filterColumn).toHaveCSS("position", "sticky");
+  await expect(filterColumn).toHaveCSS("top", "66px");
+  await expect(filterColumn).toHaveCSS("background-color", "rgb(245, 246, 242)");
+  await expect(filterColumn).toHaveCSS("box-shadow", "none");
+  await expect(filterColumn).toHaveCSS("padding-top", "12px");
+  await expect(filterColumn).toHaveCSS("padding-bottom", "12px");
+
+  const headingBox = (await page.getByRole("heading", { level: 1 }).boundingBox())!;
+  const searchBox = (await search.boundingBox())!;
+  expect(Math.round(searchBox.x)).toBe(Math.round(headingBox.x));
+  const mobileFilterBox = (await filterColumn.boundingBox())!;
+  const mobileClientWidth = await page.evaluate(() => document.documentElement.clientWidth);
+  expect(mobileFilterBox.x).toBe(0);
+  expect(mobileFilterBox.width).toBe(mobileClientWidth);
+
+  await page.getByTestId("library-layout").evaluate((element) => {
+    element.style.minHeight = "1800px";
+  });
+  await page.evaluate(() => window.scrollTo(0, 500));
+  await expect.poll(async () => Math.round((await filterColumn.boundingBox())!.y)).toBe(66);
+  await page.evaluate(() => window.scrollTo(0, 0));
 
   await authorButton.click();
   const drawer = page.getByRole("dialog", { name: "Authors" });
