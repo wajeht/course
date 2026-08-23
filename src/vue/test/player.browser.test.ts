@@ -85,11 +85,16 @@ test("uses responsive video details and places the playlist below them on mobile
   });
 
   await page.setViewportSize({ width: 1800, height: 900 });
-  await page.goto(`/videos/${videoId}?list=${playlistId}`);
   const title = page.getByRole("heading", { name: videoTitle });
+  const playlistPanel = page.getByRole("complementary", { name: "Saved Collection" });
+
+  await page.goto(`/videos/${videoId}`);
+  await expect(title).toBeVisible();
+  await expect(playlistPanel).toHaveCount(0);
+
+  await page.goto(`/videos/${videoId}?list=${playlistId}`);
   await expect(title).toBeVisible();
   expect((await title.boundingBox())?.width).toBeGreaterThan(1000);
-  const playlistPanel = page.getByRole("complementary", { name: "Saved Collection" });
   const playlistVideos = playlistPanel.locator(":scope > div");
   await expect(playlistPanel).toBeVisible();
   await expect(page.getByRole("button", { name: "Summary" })).toBeVisible();
