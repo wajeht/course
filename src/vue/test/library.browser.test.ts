@@ -156,3 +156,62 @@ test("loads more videos on mobile and keeps the page in the URL", async ({ page 
   await expect(page.getByText("Second video", { exact: true })).toBeVisible();
   await expect(page.getByText("Page 2 of 2")).toBeVisible();
 });
+
+test("loads more author videos on mobile and restores them from the URL", async ({ page }) => {
+  await authenticate(page);
+  await page.route("**/api/library**", async (route) => {
+    const requestedPage = Number(new URL(route.request().url()).searchParams.get("page") ?? "1");
+    const id = String(requestedPage + 2).repeat(24);
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        authors: [{ name: "Gordon Ryan", videoCount: 2 }],
+        continueWatching: [],
+        pagination: { page: requestedPage, pageSize: 1, totalPages: 2, totalVideos: 2 },
+        playlists: [],
+        tags: [],
+        videos: [
+          {
+            authors: ["Gordon Ryan"],
+            completed: false,
+            coverUrl: null,
+            description: "",
+            durationSeconds: 60,
+            id,
+            playlistId: null,
+            playlistSectionId: null,
+            playlistSectionTitle: null,
+            playlistTitle: null,
+            positionSeconds: 0,
+            progressPercent: 0,
+            source: null,
+            tags: [],
+            title: requestedPage === 2 ? "Second author video" : "First author video",
+          },
+        ],
+      }),
+    });
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/authors/Gordon%20Ryan");
+  await expect(page.getByText("First author video", { exact: true })).toBeVisible();
+
+  const loadMore = page.getByTestId("load-more-author-videos");
+  await expect(loadMore).toHaveText("Load more");
+  await loadMore.click();
+
+  await expect(page.getByText("First author video", { exact: true })).toBeVisible();
+  await expect(page.getByText("Second author video", { exact: true })).toBeVisible();
+  await expect(loadMore).toHaveCount(0);
+  await expect(page).toHaveURL(/page=2/);
+
+  await page.reload();
+  await expect(page.getByText("First author video", { exact: true })).toBeVisible();
+  await expect(page.getByText("Second author video", { exact: true })).toBeVisible();
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expect(page.getByText("First author video", { exact: true })).toBeHidden();
+  await expect(page.getByText("Second author video", { exact: true })).toBeVisible();
+  await expect(page.getByText("Page 2 of 2")).toBeVisible();
+});

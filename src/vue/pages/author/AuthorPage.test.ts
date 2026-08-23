@@ -3,7 +3,7 @@
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises, mount } from "@vue/test-utils";
 import { createMemoryHistory, createRouter } from "vue-router";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { api, type LibraryDto } from "@/api.js";
 
@@ -19,6 +19,22 @@ vi.mock("@/api.js", async (importOriginal) => {
 
 const playlistId = "1".repeat(24);
 const videoId = "2".repeat(24);
+
+afterEach(() => vi.unstubAllGlobals());
+
+function useMobileViewport(): void {
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn((query: string) => ({
+      addEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+      matches: query === "(max-width: 600px)",
+      media: query,
+      onchange: null,
+      removeEventListener: vi.fn(),
+    })),
+  );
+}
 
 function authorLibrary(): LibraryDto {
   return {
@@ -144,5 +160,39 @@ describe("AuthorPage", () => {
       ),
     );
     expect(router.currentRoute.value.query).toEqual({});
+  });
+
+  it("loads more author videos on mobile and keeps the page in the URL", async () => {
+    useMobileViewport();
+    const getLibrary = vi.fn(async (filters) => {
+      const requestedPage = filters?.page ?? 1;
+      return {
+        ...authorLibrary(),
+        pagination: {
+          page: requestedPage,
+          pageSize: 1,
+          totalPages: 2,
+          totalVideos: 2,
+        },
+        videos: [
+          {
+            ...authorLibrary().videos[0]!,
+            id: String(requestedPage + 2).repeat(24),
+            title: requestedPage === 2 ? "Second author video" : "First author video",
+          },
+        ],
+      };
+    });
+    const { router, wrapper } = await mountAuthorPage(getLibrary);
+
+    expect(wrapper.text()).toContain("First author video");
+    const loadMore = wrapper.get('[data-testid="load-more-author-videos"]');
+    await loadMore.trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("First author video");
+    expect(wrapper.text()).toContain("Second author video");
+    expect(wrapper.find('[data-testid="load-more-author-videos"]').exists()).toBe(false);
+    expect(router.currentRoute.value.query).toEqual({ page: "2" });
   });
 });
