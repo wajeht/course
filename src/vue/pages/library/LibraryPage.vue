@@ -26,6 +26,7 @@ const {
   loading,
   loadingMore,
   page,
+  prefetchPage,
   query,
   refreshing,
   selectedAuthor,
@@ -100,6 +101,7 @@ const displayedVideos = computed(() =>
             :page="page"
             :total-pages="library.pagination.totalPages"
             @change="setPage"
+            @prefetch="prefetchPage"
           />
           <AlertMessage
             v-if="selectedView === 'videos' && loadMoreError"

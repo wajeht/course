@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useQuery } from "@tanstack/vue-query";
+import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import { computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
@@ -17,6 +17,7 @@ import { setPageTitle } from "@/utils.js";
 
 const route = useRoute();
 const router = useRouter();
+const queryClient = useQueryClient();
 const authorName = computed(() => String(route.params.authorName));
 const page = computed(() => {
   const value = typeof route.query.page === "string" ? Number.parseInt(route.query.page, 10) : 1;
@@ -43,6 +44,12 @@ function pageQuery(nextPage: number) {
 
 function setPage(nextPage: number): void {
   void router.push({ query: pageQuery(Math.max(1, nextPage)) });
+}
+
+function prefetchPage(nextPage: number): void {
+  void queryClient.prefetchQuery(
+    libraryQueryOptions({ author: [authorName.value], page: Math.max(1, nextPage) }),
+  );
 }
 
 watch(
@@ -98,6 +105,7 @@ watch(
           :page="page"
           :total-pages="library.pagination.totalPages"
           @change="setPage"
+          @prefetch="prefetchPage"
         />
       </section>
     </section>
