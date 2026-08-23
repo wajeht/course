@@ -122,6 +122,12 @@ test("uses responsive video details and places the playlist below them on mobile
   const actionsBox = await actions.boundingBox();
   expect(actionsBox?.x).toBeGreaterThan(titleBox?.x ?? 0);
 
+  const disclosureTextBox = await expand.locator("span").boundingBox();
+  const disclosureIconBox = await expand.locator("svg").boundingBox();
+  const disclosureTextCenter = (disclosureTextBox?.y ?? 0) + (disclosureTextBox?.height ?? 0) / 2;
+  const disclosureIconCenter = (disclosureIconBox?.y ?? 0) + (disclosureIconBox?.height ?? 0) / 2;
+  expect(Math.abs(disclosureTextCenter - disclosureIconCenter)).toBeLessThanOrEqual(1);
+
   await expand.click();
   await expect(page.getByRole("button", { name: "Summary" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Show fewer" })).toBeVisible();
