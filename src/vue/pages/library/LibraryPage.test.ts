@@ -109,6 +109,28 @@ describe("LibraryPage", () => {
     ).toBe("Open Saved Collection");
   });
 
+  it("opens playlist videos with list context", async () => {
+    const playlistVideoId = "3".repeat(24);
+    const { wrapper } = await mountLibraryPage("/videos", async () => ({
+      ...library(),
+      videos: [
+        {
+          ...library().videos[0]!,
+          id: playlistVideoId,
+          playlistId,
+          playlistTitle: "Saved Collection",
+          title: "Playlist video",
+        },
+      ],
+    }));
+
+    expect(
+      wrapper
+        .get(`a[href="/videos/${playlistVideoId}?list=${playlistId}"]`)
+        .attributes("aria-label"),
+    ).toBe("Play Playlist video");
+  });
+
   it("clears search, author, tag, view, and page together", async () => {
     const { router, wrapper } = await mountLibraryPage(
       "/videos?q=term&author=Example&tag=Archive&view=playlists&page=2",
