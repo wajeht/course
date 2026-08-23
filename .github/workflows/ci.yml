@@ -55,8 +55,8 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64
           push: false
-          cache-from: type=gha,scope=course-pr-amd64
-          cache-to: type=gha,mode=max,scope=course-pr-amd64
+          cache-from: type=gha,scope=videos-pr-amd64
+          cache-to: type=gha,mode=max,scope=videos-pr-amd64
 
   release:
     name: Release
@@ -96,7 +96,7 @@ jobs:
       - name: Generate image tags
         id: meta
         run: |
-          IMAGE=ghcr.io/${{ github.repository_owner }}/course
+          IMAGE=ghcr.io/${{ github.repository_owner }}/videos
           IMAGE=$(echo "$IMAGE" | tr '[:upper:]' '[:lower:]')
 
           EXISTING_TAG=$(git tag --points-at "$GITHUB_SHA" --sort=-v:refname | sed -n -E '/^v[0-9]+\.[0-9]+\.[0-9]+$/p' | sed -n '1p')
@@ -187,9 +187,9 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           build-args: APP_VERSION=${{ steps.meta.outputs.version }}
           cache-from: |
-            type=gha,scope=course-release-amd64
-            type=gha,scope=course-pr-amd64
-          cache-to: type=gha,mode=max,scope=course-release-amd64
+            type=gha,scope=videos-release-amd64
+            type=gha,scope=videos-pr-amd64
+          cache-to: type=gha,mode=max,scope=videos-release-amd64
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
@@ -204,10 +204,10 @@ jobs:
     needs: release
     uses: wajeht/docker-cd-deploy-workflow/.github/workflows/deploy.yaml@970a4d7bd568e096d091fbec3371019c763def1f # v0.0.26
     with:
-      app-path: apps/course
-      service-name: course
+      app-path: apps/videos
+      service-name: videos
       tag: ${{ needs.release.outputs.version }}
-      url: https://course.jaw.dev
+      url: https://videos.jaw.dev
     secrets:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
@@ -277,8 +277,8 @@ jobs:
       deployments: write
     uses: wajeht/docker-cd-deploy-workflow/.github/workflows/temp-deploy.yaml@970a4d7bd568e096d091fbec3371019c763def1f # v0.0.26
     with:
-      app-path: apps/course
-      service-name: course
+      app-path: apps/videos
+      service-name: videos
       tag: ${{ needs.temp-build.outputs.tag }}
       auth-middleware: ${{ contains(github.event.pull_request.labels.*.name, 'temp-deploy-with-auth') && 'oauth2-admin@file' || '' }}
     secrets:
@@ -297,6 +297,6 @@ jobs:
       deployments: write
     uses: wajeht/docker-cd-deploy-workflow/.github/workflows/temp-cleanup.yaml@970a4d7bd568e096d091fbec3371019c763def1f # v0.0.26
     with:
-      app-path: apps/course
+      app-path: apps/videos
     secrets:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}

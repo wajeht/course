@@ -16,7 +16,7 @@ const appVersion = __APP_VERSION__;
     .
     <a
       class="font-semibold text-pine underline-offset-4 hover:underline"
-      :href="`https://github.com/wajeht/course/releases/tag/v${appVersion}`"
+      :href="`https://github.com/wajeht/videos/releases/tag/v${appVersion}`"
       target="_blank"
       rel="noreferrer"
       :aria-label="`View release v${appVersion} on GitHub (opens in a new tab)`"
