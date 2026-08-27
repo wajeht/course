@@ -12,6 +12,7 @@ import { createRequireAuth } from "../auth/auth.routes.js";
 import { playlistParametersSchema, videoParametersSchema } from "../library/library.schema.js";
 import { resolveContainedPath } from "./path.js";
 import { parseByteRange } from "./range.js";
+import { chapterThumbnailRelativePath, thumbnailRelativePath } from "./thumbnails.js";
 
 const hlsParametersSchema = z.object({
   videoId: videoParametersSchema.shape.videoId,
@@ -43,6 +44,12 @@ function coverContentType(filename: string): string {
   if (extension === ".png") return "image/png";
   if (extension === ".webp") return "image/webp";
   return "image/jpeg";
+}
+
+function thumbnailRevision(value: string | undefined): number | null {
+  if (!value || !/^\d+$/.test(value)) return null;
+  const revision = Number(value);
+  return Number.isSafeInteger(revision) ? revision : null;
 }
 
 async function sendCoverImage(c: Context, filename: string): Promise<Response> {
@@ -116,10 +123,12 @@ export function createMediaRouter(context: AppContext) {
         if (cover) return cover;
       }
       if (playlist.first_video_id) {
+        const revision = thumbnailRevision(c.req.query("t"));
+        if (revision === null) return c.body(null, 404);
         const cover = await trySendCover(
           c,
           context.configuration.media.thumbnailsDirectory,
-          `${playlist.first_video_id}.jpg`,
+          thumbnailRelativePath(playlist.first_video_id, revision),
         );
         if (cover) return cover;
       }
@@ -135,10 +144,12 @@ export function createMediaRouter(context: AppContext) {
       const { videoId, startSeconds } = c.req.valid("param");
       const video = await context.libraryRepository.findVideo(videoId);
       if (!video) return c.body(null, 404);
+      const revision = thumbnailRevision(c.req.query("t"));
+      if (revision === null) return c.body(null, 404);
       const thumbnail = await trySendCover(
         c,
         context.configuration.media.thumbnailsDirectory,
-        `${videoId}.c${startSeconds}.jpg`,
+        chapterThumbnailRelativePath(videoId, revision, startSeconds),
       );
       if (thumbnail) return thumbnail;
       return c.body(null, 404);
@@ -152,10 +163,12 @@ export function createMediaRouter(context: AppContext) {
     async (c) => {
       const video = await context.libraryRepository.findVideo(c.req.valid("param").videoId);
       if (!video) return c.body(null, 404);
+      const revision = thumbnailRevision(c.req.query("t"));
+      if (revision === null) return c.body(null, 404);
       const thumbnail = await trySendCover(
         c,
         context.configuration.media.thumbnailsDirectory,
-        `${video.id}.jpg`,
+        thumbnailRelativePath(video.id, revision),
       );
       if (thumbnail) return thumbnail;
       return c.body(null, 404);

@@ -9,7 +9,7 @@ import { createTemporaryDirectory, createTestDatabase } from "../test/resources.
 import { createLibraryRepository } from "./library.repository.js";
 import type { VideoProbe } from "./probe.js";
 import { createScanner } from "./scanner.js";
-import { createThumbnailCache } from "./thumbnails.js";
+import { createThumbnailCache, thumbnailPath } from "./thumbnails.js";
 
 const monitorStops: Array<() => void> = [];
 
@@ -260,29 +260,45 @@ describe("media scanner", () => {
       await fs.mkdir(path.dirname(destination), { recursive: true });
       await fs.writeFile(destination, "generated");
     });
+    const thumbnails = createThumbnailCache({
+      configuration,
+      logger: createLogger(),
+      generate,
+    });
     const scanner = createScanner({
       configuration,
       repository: createLibraryRepository(database.connection),
       logger: createLogger(),
       probe: async (filename) => probeResult((await fs.stat(filename)).size),
-      thumbnails: createThumbnailCache({
-        configuration,
-        logger: createLogger(),
-        generate,
-      }),
+      thumbnails,
     });
 
     await scanner.scanLibrary();
     const videos = await database.connection("videos").orderBy("title").select("id", "title");
     const bare = videos.find((video: { title: string }) => video.title === "Bare");
     const talk = videos.find((video: { title: string }) => video.title === "Talk");
+    const index = await thumbnails.listThumbnailIndex();
 
     expect(generate).toHaveBeenCalledTimes(2);
     await expect(
-      fs.readFile(path.join(dataDirectory, "thumbnails", `${bare.id}.jpg`), "utf8"),
+      fs.readFile(
+        thumbnailPath(
+          configuration.media.thumbnailsDirectory,
+          bare.id,
+          index.revisions.get(bare.id)!,
+        ),
+        "utf8",
+      ),
     ).resolves.toBe("generated");
     await expect(
-      fs.readFile(path.join(dataDirectory, "thumbnails", `${talk.id}.jpg`), "utf8"),
+      fs.readFile(
+        thumbnailPath(
+          configuration.media.thumbnailsDirectory,
+          talk.id,
+          index.revisions.get(talk.id)!,
+        ),
+        "utf8",
+      ),
     ).resolves.toBe("generated");
   });
 
