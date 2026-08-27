@@ -219,7 +219,10 @@ describe("library service", () => {
     });
 
     await expect(createService().getVideo(videoA)).resolves.toMatchObject({
-      video: { title: "Guard Study", chapters: [{ title: "Introduction", startSeconds: 0 }] },
+      video: {
+        title: "Guard Study",
+        chapters: [{ title: "Introduction", startSeconds: 0, thumbnailUrl: null }],
+      },
       playlist: { title: "Saved Collection", sections: [{ title: "Videos" }] },
     });
     await expect(createService().getVideo(standaloneVideo)).resolves.toMatchObject({
@@ -241,7 +244,8 @@ describe("library service", () => {
         getLibraryPageSize: async () => 24,
       },
       {
-        listThumbnailIds: async () => new Set([standaloneVideo]),
+        listThumbnailRevisions: async () => new Map([[standaloneVideo, 1]]),
+        listChapterStarts: async () => [],
       },
     );
 
@@ -249,10 +253,10 @@ describe("library service", () => {
     expect(library.videos.find((video) => video.id === videoA)?.coverUrl).toBeNull();
     expect(library.videos.find((video) => video.id === videoB)?.coverUrl).toBeNull();
     expect(library.videos.find((video) => video.id === standaloneVideo)?.coverUrl).toBe(
-      `/covers/videos/${standaloneVideo}?v=2`,
+      `/covers/videos/${standaloneVideo}?t=1`,
     );
     expect(library.playlists.find((playlist) => playlist.id === playlistA)?.coverUrl).toBe(
-      `/covers/playlists/${playlistA}?v=2`,
+      `/covers/playlists/${playlistA}?t=cover`,
     );
     expect(library.playlists.find((playlist) => playlist.id === playlistB)?.coverUrl).toBeNull();
   });

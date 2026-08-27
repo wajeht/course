@@ -28,6 +28,8 @@ export interface LibraryRepository {
   ): Promise<void>;
   getRootEntries(): Promise<StoredRootEntry[]>;
   getVideos(): Promise<VideoRecord[]>;
+  getVideo(videoId: string): Promise<VideoRecord | undefined>;
+  getChapters(): Promise<Array<{ videoId: string; startSeconds: number; sortOrder: number }>>;
   getLibraryCounts(): Promise<LibraryCounts>;
 }
 
@@ -123,6 +125,20 @@ export function createLibraryRepository(database: Knex): LibraryRepository {
     async getVideos() {
       const rows = await database("videos").select();
       return rows.map(videoRecord);
+    },
+
+    async getVideo(videoId) {
+      const row = await database("videos").where({ id: videoId }).first();
+      return row ? videoRecord(row) : undefined;
+    },
+
+    async getChapters() {
+      const rows = await database("chapters").select("video_id", "start_seconds", "sort_order");
+      return rows.map((row) => ({
+        videoId: String(row.video_id),
+        startSeconds: Number(row.start_seconds),
+        sortOrder: Number(row.sort_order),
+      }));
     },
 
     async getLibraryCounts() {

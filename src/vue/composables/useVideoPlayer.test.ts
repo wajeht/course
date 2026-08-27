@@ -59,6 +59,7 @@ afterEach(() => vi.restoreAllMocks());
 interface MountPlayerOptions {
   getVideo?: (id: string, signal?: AbortSignal) => Promise<VideoPlayerDetailDto>;
   preparePlayback?: (id: string) => Promise<PlaybackResult>;
+  regenerateVideoThumbnail?: (id: string) => Promise<void>;
 }
 
 async function mountPlayer(options: MountPlayerOptions & { path?: string } = {}) {
@@ -67,6 +68,9 @@ async function mountPlayer(options: MountPlayerOptions & { path?: string } = {})
   );
   vi.spyOn(api, "preparePlayback").mockImplementation(
     options.preparePlayback ?? (async () => ({ kind: "direct" as const, url: "/media/video" })),
+  );
+  vi.spyOn(api, "regenerateVideoThumbnail").mockImplementation(
+    options.regenerateVideoThumbnail ?? (async () => undefined),
   );
   vi.spyOn(api, "openVideo").mockResolvedValue();
 
@@ -87,6 +91,7 @@ async function mountPlayer(options: MountPlayerOptions & { path?: string } = {})
     template: `
       <p data-video-title>{{ player.video.value?.title }}</p>
       <p data-playlist-id>{{ player.playlist.value?.id ?? "" }}</p>
+      <button data-regenerate @click="player.regenerateThumbnail">Regenerate thumbnail</button>
       <button data-reset-video @click="player.resetProgress">Reset video</button>
       <button data-reset-playlist @click="player.resetPlaylistProgress">Reset playlist</button>
     `,
@@ -114,6 +119,33 @@ async function mountPlayer(options: MountPlayerOptions & { path?: string } = {})
 }
 
 describe("useVideoPlayer", () => {
+  it("refreshes the current video after regenerating its thumbnails", async () => {
+    let requestCount = 0;
+    const { toast, wrapper } = await mountPlayer({
+      getVideo: async () => {
+        const initialRequest = requestCount++ === 0;
+        return {
+          video: {
+            ...video,
+            coverUrl: initialRequest ? "/covers/old" : "/covers/new",
+            title: initialRequest ? "Example video" : "Updated video",
+          },
+          playlist,
+        };
+      },
+    });
+
+    await wrapper.get("[data-regenerate]").trigger("click");
+    await flushPromises();
+
+    expect(api.regenerateVideoThumbnail).toHaveBeenCalledWith(videoId);
+    expect(wrapper.get("[data-video-title]").text()).toBe("Updated video");
+    expect(toast.toasts.value).toContainEqual(
+      expect.objectContaining({ kind: "success", message: "Thumbnail updated" }),
+    );
+    wrapper.unmount();
+  });
+
   it("reports a failed video progress reset", async () => {
     vi.spyOn(api, "resetVideo").mockRejectedValue(new ApiError("Video reset failed", 500));
     const { confirmation, toast, wrapper } = await mountPlayer();

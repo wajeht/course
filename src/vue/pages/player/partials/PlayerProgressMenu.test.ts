@@ -26,4 +26,23 @@ describe("PlayerProgressMenu", () => {
     expect(wrapper.emitted("reset")).toHaveLength(1);
     expect(wrapper.find('[role="menu"]').exists()).toBe(false);
   });
+
+  it("regenerates the current video thumbnail from the overflow menu", async () => {
+    const wrapper = mount(PlayerProgressMenu, {
+      props: {
+        label: "Video actions",
+        resetLabel: "Reset progress",
+        regenerateLabel: "Regenerate thumbnail",
+        resetting: false,
+        regenerating: false,
+      },
+    });
+
+    await wrapper.get('[aria-label="Video actions"]').trigger("click");
+    const items = wrapper.findAll('[role="menuitem"]');
+    expect(items[0]?.text()).toBe("Regenerate thumbnail");
+    await items[0]?.trigger("click");
+
+    expect(wrapper.emitted("regenerate")).toHaveLength(1);
+  });
 });

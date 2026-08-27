@@ -17,6 +17,7 @@ export interface ThumbnailMeta {
   modifiedAt: string;
   sizeBytes: number;
   version: number;
+  chapterStarts: number[];
 }
 
 export type ThumbnailGenerator = (
@@ -26,10 +27,17 @@ export type ThumbnailGenerator = (
   ffmpegPath: string,
 ) => Promise<void>;
 
+export interface ThumbnailChapter {
+  videoId: string;
+  startSeconds: number;
+  sortOrder?: number;
+}
+
 export interface ThumbnailCache {
-  thumbnailPath(videoId: string): string;
-  listThumbnailIds(): Promise<Set<string>>;
-  synchronize(videos: VideoRecord[], chapterSeeks?: Map<string, number>): Promise<void>;
+  listThumbnailRevisions(): Promise<Map<string, number>>;
+  listChapterStarts(videoId: string): Promise<number[]>;
+  synchronize(videos: VideoRecord[], chapters?: ThumbnailChapter[]): Promise<void>;
+  regenerate(video: VideoRecord, chapters?: ThumbnailChapter[]): Promise<void>;
 }
 
 export function thumbnailSeekSeconds(durationSeconds: number): number {
@@ -39,12 +47,12 @@ export function thumbnailSeekSeconds(durationSeconds: number): number {
 }
 
 export function chapterThumbnailSeeks(
-  chapters: Array<{ videoId: string; startSeconds: number; sortOrder: number }>,
+  chapters: Array<{ videoId: string; startSeconds: number; sortOrder?: number }>,
 ): Map<string, number> {
   const grouped = new Map<string, Array<{ startSeconds: number; sortOrder: number }>>();
   for (const chapter of chapters) {
     const list = grouped.get(chapter.videoId) ?? [];
-    list.push(chapter);
+    list.push({ startSeconds: chapter.startSeconds, sortOrder: chapter.sortOrder ?? 0 });
     grouped.set(chapter.videoId, list);
   }
   const seeks = new Map<string, number>();
@@ -58,6 +66,14 @@ export function chapterThumbnailSeeks(
 
 export function thumbnailPath(directory: string, videoId: string): string {
   return path.join(directory, `${videoId}.jpg`);
+}
+
+export function chapterThumbnailPath(
+  directory: string,
+  videoId: string,
+  startSeconds: number,
+): string {
+  return path.join(directory, `${videoId}.c${startSeconds}.jpg`);
 }
 
 export async function generateThumbnail(
@@ -113,9 +129,30 @@ export function createThumbnailCache({
     }
   }
 
-  async function isCurrent(video: VideoRecord): Promise<boolean> {
+  function chaptersByVideo(chapters: ThumbnailChapter[]): Map<string, number[]> {
+    const starts = new Map<string, number[]>();
+    for (const chapter of chapters) {
+      const list = starts.get(chapter.videoId) ?? [];
+      list.push(chapter.startSeconds);
+      starts.set(chapter.videoId, list);
+    }
+    for (const [videoId, list] of starts) {
+      starts.set(
+        videoId,
+        [...new Set(list)].sort((left, right) => left - right),
+      );
+    }
+    return starts;
+  }
+
+  async function isCurrent(video: VideoRecord, chapterStarts: number[]): Promise<boolean> {
     try {
-      await fs.access(thumbnailPath(directory, video.id));
+      await Promise.all([
+        fs.access(thumbnailPath(directory, video.id)),
+        ...chapterStarts.map((startSeconds) =>
+          fs.access(chapterThumbnailPath(directory, video.id, startSeconds)),
+        ),
+      ]);
     } catch {
       return false;
     }
@@ -123,36 +160,111 @@ export function createThumbnailCache({
     return (
       meta?.version === thumbnailCacheVersion &&
       meta.modifiedAt === video.modifiedAt &&
-      meta.sizeBytes === video.sizeBytes
+      meta.sizeBytes === video.sizeBytes &&
+      sameNumberList(meta.chapterStarts ?? [], chapterStarts)
     );
   }
 
   async function removeThumbnail(videoId: string): Promise<void> {
-    await Promise.all([
-      fs.rm(thumbnailPath(directory, videoId), { force: true }),
-      fs.rm(metaPath(videoId), { force: true }),
-    ]);
+    let existing: string[] = [];
+    try {
+      existing = await fs.readdir(directory);
+    } catch {
+      existing = [];
+    }
+    await Promise.all(
+      existing
+        .filter((name) => thumbnailOwnerId(name) === videoId)
+        .map((name) => fs.rm(path.join(directory, name), { force: true })),
+    );
+  }
+
+  async function writeVideoThumbnails(
+    video: VideoRecord,
+    chapterStarts: number[],
+    chapterSeeks: Map<string, number>,
+  ): Promise<void> {
+    const source = await resolveContainedPath(configuration.media.videosDirectory, video.path);
+    const seekSeconds = Math.min(
+      chapterSeeks.get(video.id) ?? thumbnailSeekSeconds(video.durationSeconds),
+      Math.max(0, video.durationSeconds - 1),
+    );
+    await generate(
+      source,
+      thumbnailPath(directory, video.id),
+      seekSeconds,
+      configuration.media.ffmpegPath,
+    );
+    for (const startSeconds of chapterStarts) {
+      await generate(
+        source,
+        chapterThumbnailPath(directory, video.id, startSeconds),
+        Math.min(startSeconds, Math.max(0, video.durationSeconds - 1)),
+        configuration.media.ffmpegPath,
+      );
+    }
+    let existing: string[] = [];
+    try {
+      existing = await fs.readdir(directory);
+    } catch {
+      existing = [];
+    }
+    const keep = new Set(chapterStarts);
+    await Promise.all(
+      existing
+        .filter((name) => {
+          const startSeconds = chapterStartFromName(video.id, name);
+          return startSeconds !== null && !keep.has(startSeconds);
+        })
+        .map((name) => fs.rm(path.join(directory, name), { force: true })),
+    );
+    await fs.writeFile(
+      metaPath(video.id),
+      JSON.stringify({
+        modifiedAt: video.modifiedAt,
+        sizeBytes: video.sizeBytes,
+        version: thumbnailCacheVersion,
+        chapterStarts,
+      } satisfies ThumbnailMeta),
+    );
   }
 
   return {
-    thumbnailPath: (videoId) => thumbnailPath(directory, videoId),
-
-    async listThumbnailIds() {
+    async listThumbnailRevisions() {
       try {
         const entries = await fs.readdir(directory);
-        return new Set(
-          entries.flatMap((name) => {
-            const videoId = thumbnailVideoId(name);
-            return videoId && name.endsWith(".jpg") ? [videoId] : [];
+        const revisions = new Map<string, number>();
+        await Promise.all(
+          entries.map(async (name) => {
+            const videoId = posterVideoId(name);
+            if (!videoId) return;
+            const statistics = await fs.stat(path.join(directory, name));
+            revisions.set(videoId, Math.round(statistics.mtimeMs));
           }),
         );
+        return revisions;
       } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === "ENOENT") return new Set();
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") return new Map();
         throw error;
       }
     },
 
-    async synchronize(videos, chapterSeeks = new Map<string, number>()) {
+    async listChapterStarts(videoId) {
+      try {
+        const entries = await fs.readdir(directory);
+        return entries
+          .flatMap((name) => {
+            const startSeconds = chapterStartFromName(videoId, name);
+            return startSeconds === null ? [] : [startSeconds];
+          })
+          .sort((left, right) => left - right);
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+        throw error;
+      }
+    },
+
+    async synchronize(videos, chapters = []) {
       await fs.mkdir(directory, { recursive: true });
       const retained = new Set(videos.map((video) => video.id));
       let existing: string[] = [];
@@ -162,40 +274,23 @@ export function createThumbnailCache({
         if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
       }
       for (const name of existing) {
-        const videoId = thumbnailVideoId(name);
+        const videoId = thumbnailOwnerId(name);
         if (videoId && !retained.has(videoId))
           await fs.rm(path.join(directory, name), { force: true });
       }
 
+      const startsByVideo = chaptersByVideo(chapters);
+      const chapterSeeks = chapterThumbnailSeeks(chapters);
       const stale = [];
       for (const video of videos) {
-        if (!(await isCurrent(video))) stale.push(video);
+        if (!(await isCurrent(video, startsByVideo.get(video.id) ?? []))) stale.push(video);
       }
       if (stale.length === 0) return;
 
       logger.info("Generating video thumbnails", { count: stale.length });
       await mapLimit(stale, thumbnailConcurrency, async (video) => {
         try {
-          const source = await resolveContainedPath(
-            configuration.media.videosDirectory,
-            video.path,
-          );
-          const seekSeconds =
-            chapterSeeks.get(video.id) ?? thumbnailSeekSeconds(video.durationSeconds);
-          await generate(
-            source,
-            thumbnailPath(directory, video.id),
-            Math.min(seekSeconds, Math.max(0, video.durationSeconds - 1)),
-            configuration.media.ffmpegPath,
-          );
-          await fs.writeFile(
-            metaPath(video.id),
-            JSON.stringify({
-              modifiedAt: video.modifiedAt,
-              sizeBytes: video.sizeBytes,
-              version: thumbnailCacheVersion,
-            } satisfies ThumbnailMeta),
-          );
+          await writeVideoThumbnails(video, startsByVideo.get(video.id) ?? [], chapterSeeks);
         } catch (error) {
           logger.warn("Could not generate thumbnail", {
             videoId: video.id,
@@ -206,12 +301,36 @@ export function createThumbnailCache({
         }
       });
     },
+
+    async regenerate(video, chapters = []) {
+      await fs.mkdir(directory, { recursive: true });
+      await writeVideoThumbnails(
+        video,
+        chaptersByVideo(chapters).get(video.id) ?? chapters.map((chapter) => chapter.startSeconds),
+        chapterThumbnailSeeks(chapters.length ? chapters : []),
+      );
+    },
   };
 }
 
-function thumbnailVideoId(filename: string): string | null {
-  const match = /^([a-f0-9]{24})\.(jpg|json)$/.exec(filename);
+function posterVideoId(filename: string): string | null {
+  const match = /^([a-f0-9]{24})\.jpg$/.exec(filename);
   return match?.[1] ?? null;
+}
+
+function thumbnailOwnerId(filename: string): string | null {
+  const match = /^([a-f0-9]{24})(?:\.c\d+)?\.(jpg|json)$/.exec(filename);
+  return match?.[1] ?? null;
+}
+
+function chapterStartFromName(videoId: string, filename: string): number | null {
+  const match = new RegExp(`^${videoId}\\.c(\\d+)\\.jpg$`).exec(filename);
+  return match ? Number(match[1]) : null;
+}
+
+function sameNumberList(left: number[], right: number[]): boolean {
+  if (left.length !== right.length) return false;
+  return left.every((value, index) => value === right[index]);
 }
 
 async function mapLimit<T>(

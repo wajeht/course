@@ -18,16 +18,39 @@ export function createLibraryRouter(context: AppContext) {
 }
 
 export function createVideoRouter(context: AppContext) {
-  return new Hono().basePath("/videos").get(
-    "/:videoId",
-    zValidator("param", videoParametersSchema, (result, c) => {
-      if (!result.success) return c.json({ message: "Video not found" }, 404);
-    }),
-    async (c) => {
-      const video = await context.library.getVideo(c.req.valid("param").videoId);
-      return video
-        ? c.json(videoDetailEnvelopeSchema.parse(video))
-        : c.json({ message: "Video not found" }, 404);
-    },
-  );
+  return new Hono()
+    .basePath("/videos")
+    .get(
+      "/:videoId",
+      zValidator("param", videoParametersSchema, (result, c) => {
+        if (!result.success) return c.json({ message: "Video not found" }, 404);
+      }),
+      async (c) => {
+        const video = await context.library.getVideo(c.req.valid("param").videoId);
+        return video
+          ? c.json(videoDetailEnvelopeSchema.parse(video))
+          : c.json({ message: "Video not found" }, 404);
+      },
+    )
+    .post(
+      "/:videoId/thumbnail",
+      zValidator("param", videoParametersSchema, (result, c) => {
+        if (!result.success) return c.json({ message: "Video not found" }, 404);
+      }),
+      async (c) => {
+        const videoId = c.req.valid("param").videoId;
+        const video = await context.scannerLibraryRepository.getVideo(videoId);
+        if (!video) return c.json({ message: "Video not found" }, 404);
+        const chapters = await context.libraryRepository.listVideoChapters(videoId);
+        await context.thumbnails.regenerate(
+          video,
+          chapters.map((chapter) => ({
+            videoId,
+            startSeconds: Number(chapter.start_seconds),
+            sortOrder: Number(chapter.sort_order),
+          })),
+        );
+        return c.body(null, 204);
+      },
+    );
 }

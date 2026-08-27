@@ -18,6 +18,11 @@ const hlsParametersSchema = z.object({
   filename: z.string().regex(/^(?:index\.m3u8|segment-\d{5}\.ts)$/),
 });
 
+const chapterCoverParametersSchema = z.object({
+  videoId: videoParametersSchema.shape.videoId,
+  startSeconds: z.coerce.number().int().nonnegative(),
+});
+
 const videoContentTypes: Record<string, string> = {
   ".mp4": "video/mp4",
   ".m4v": "video/x-m4v",
@@ -118,6 +123,24 @@ export function createMediaRouter(context: AppContext) {
         );
         if (cover) return cover;
       }
+      return c.body(null, 404);
+    },
+  );
+
+  app.get(
+    "/covers/videos/:videoId/chapters/:startSeconds",
+    requireAuth,
+    zValidator("param", chapterCoverParametersSchema),
+    async (c) => {
+      const { videoId, startSeconds } = c.req.valid("param");
+      const video = await context.libraryRepository.findVideo(videoId);
+      if (!video) return c.body(null, 404);
+      const thumbnail = await trySendCover(
+        c,
+        context.configuration.media.thumbnailsDirectory,
+        `${videoId}.c${startSeconds}.jpg`,
+      );
+      if (thumbnail) return thumbnail;
       return c.body(null, 404);
     },
   );

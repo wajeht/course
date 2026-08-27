@@ -6,9 +6,9 @@ import { describe, expect, it } from "vitest";
 import ChapterList from "./ChapterList.vue";
 
 const chapters = [
-  { title: "Introduction", startSeconds: 0 },
-  { title: "Escapes Overview", startSeconds: 416 },
-  { title: "General Reflections", startSeconds: 2_617 },
+  { title: "Introduction", startSeconds: 0, thumbnailUrl: null },
+  { title: "Escapes Overview", startSeconds: 416, thumbnailUrl: "/covers/videos/a/chapters/416" },
+  { title: "General Reflections", startSeconds: 2_617, thumbnailUrl: null },
 ];
 
 describe("ChapterList", () => {
@@ -36,5 +36,12 @@ describe("ChapterList", () => {
     await wrapper.findAll("button")[2]?.trigger("click");
 
     expect(wrapper.emitted("seek")).toEqual([[2_617]]);
+  });
+
+  it("renders a chapter thumbnail when present", () => {
+    const wrapper = mount(ChapterList, { props: { chapters, currentTime: 0 } });
+    const image = wrapper.get("img");
+
+    expect(image.attributes("src")).toBe("/covers/videos/a/chapters/416");
   });
 });

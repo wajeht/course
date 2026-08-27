@@ -20,8 +20,9 @@ const props = defineProps<{
   currentTime: number;
   video: VideoDetailDto | null;
   resetting: boolean;
+  regenerating?: boolean;
 }>();
-defineEmits<{ reset: []; seek: [startSeconds: number] }>();
+defineEmits<{ reset: []; regenerate: []; seek: [startSeconds: number] }>();
 
 const expanded = shallowRef(false);
 const descriptionTruncated = shallowRef(false);
@@ -90,8 +91,11 @@ onBeforeUnmount(() => descriptionObserver?.disconnect());
       <PlayerProgressMenu
         label="Video actions"
         reset-label="Reset progress"
+        regenerate-label="Regenerate thumbnail"
         :resetting="resetting"
+        :regenerating="regenerating"
         @reset="$emit('reset')"
+        @regenerate="$emit('regenerate')"
       />
     </header>
 

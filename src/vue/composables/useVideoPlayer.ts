@@ -39,6 +39,28 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
     await invalidateProgress();
   });
   const retry = useAsyncAction(async (videoId: string) => playback.retryPlayback(videoId));
+  const regenerate = useAsyncAction(
+    async (videoId: string) => {
+      await api.regenerateVideoThumbnail(videoId);
+      if (video.value?.id !== videoId) return;
+      await Promise.all([
+        invalidateLibrary(),
+        queryClient.invalidateQueries({ queryKey: queryKeys.video(videoId) }),
+      ]);
+      const detail = await queryClient.fetchQuery(videoQueryOptions(videoId));
+      if (video.value?.id !== videoId) return;
+      video.value = detail.video;
+    },
+    {
+      errorMessage: "Could not regenerate thumbnail",
+      onError: (caught) => {
+        toast.error(apiErrorMessage(caught, "Could not regenerate thumbnail"));
+      },
+      onSuccess: () => {
+        toast.success("Thumbnail updated");
+      },
+    },
+  );
   const reset = useAsyncAction(
     async (videoId: string) => {
       if (video.value?.id !== videoId || !progress.isSessionFor(videoId)) return false;
@@ -260,6 +282,9 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
     });
     if (confirmed && video.value?.id === id) await reset.run(id);
   }
+  async function regenerateThumbnail() {
+    if (video.value) await regenerate.run(video.value.id);
+  }
   async function resetPlaylistProgress() {
     const id = playlist.value?.id;
     if (!id) return;
@@ -313,6 +338,8 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
     onTimeUpdate,
     playback: computed(() => playback.playback.value),
     playlist,
+    regenerateThumbnail,
+    regenerating: computed(() => regenerate.pending.value),
     resetPlaylistProgress,
     resetProgress,
     resettingPlaylist: computed(() => resetPlaylist.pending.value),

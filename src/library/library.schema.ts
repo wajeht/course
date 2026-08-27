@@ -43,6 +43,7 @@ export const videoResponseSchema = z.object({
 export const chapterResponseSchema = z.object({
   title: z.string(),
   startSeconds: z.number().int().nonnegative(),
+  thumbnailUrl: z.string().nullable(),
 });
 
 export const videoDetailResponseSchema = videoResponseSchema.extend({
