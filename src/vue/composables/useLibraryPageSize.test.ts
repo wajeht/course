@@ -65,7 +65,7 @@ afterEach(() => {
 });
 
 describe("useLibraryPageSize", () => {
-  it("saves on change, returns to page 1, and refreshes the library", async () => {
+  it("saves on change, preserves the current URL, and refreshes the library", async () => {
     const { pageSize, queryClient, router, stop } = await setup("/videos?page=2&q=term");
     await vi.waitFor(() => expect(pageSize.disabled.value).toBe(false));
     await queryClient.fetchQuery(libraryQueryOptions({ page: 2 }, api));
@@ -73,7 +73,7 @@ describe("useLibraryPageSize", () => {
     await pageSize.setLibraryPageSize(48);
 
     expect(api.updateSettings).toHaveBeenCalledWith(48);
-    expect(router.currentRoute.value.query).toEqual({ q: "term" });
+    expect(router.currentRoute.value.query).toEqual({ page: "2", q: "term" });
     expect(queryClient.getQueryState(queryKeys.libraryList({ page: 2 }))?.isInvalidated).toBe(true);
     expect(queryClient.getQueryData(queryKeys.settings)).toEqual({ libraryPageSize: 48 });
     expect(pageSize.libraryPageSize.value).toBe(48);

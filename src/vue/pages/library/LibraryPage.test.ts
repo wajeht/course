@@ -210,6 +210,11 @@ describe("LibraryPage", () => {
         expect.any(AbortSignal),
       ),
     );
+    getLibrary.mockClear();
+    await wrapper.get('input[name="library-desktop-author"][value="Example"]').setValue(true);
+    await flushPromises();
+
+    expect(getLibrary).not.toHaveBeenCalled();
 
     await wrapper
       .get('input[name="library-desktop-tag"][value="Archive"]')
@@ -219,7 +224,7 @@ describe("LibraryPage", () => {
     await vi.waitFor(() =>
       expect(getLibrary).toHaveBeenCalledWith(
         {
-          author: ["Current Author"],
+          author: ["Current Author", "Example"],
           page: 2,
           query: "term",
           tag: ["Current Tag", "Archive"],
@@ -228,7 +233,7 @@ describe("LibraryPage", () => {
       ),
     );
     expect(router.currentRoute.value.query).toEqual({
-      author: "Current Author",
+      author: ["Current Author", "Example"],
       page: "2",
       q: "term",
       tag: "Current Tag",
@@ -236,6 +241,13 @@ describe("LibraryPage", () => {
   });
 
   it("prefetches view and page-size hovers with the current URL parameters", async () => {
+    let finishPageSizeSave!: (settings: { libraryPageSize: 48 }) => void;
+    vi.mocked(api.updateSettings).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishPageSizeSave = resolve;
+        }),
+    );
     const getLibrary = vi.fn(async (filters) => ({
       ...library(),
       pagination: {
@@ -268,6 +280,18 @@ describe("LibraryPage", () => {
         expect.any(AbortSignal),
       ),
     );
+    getLibrary.mockClear();
+    await wrapper.get('input[name="library-desktop-view"][value="playlists"]').setValue();
+    await flushPromises();
+
+    expect(getLibrary).not.toHaveBeenCalled();
+    expect(router.currentRoute.value.query).toEqual({
+      author: "Current Author",
+      page: "2",
+      q: "term",
+      tag: "Current Tag",
+      view: "playlists",
+    });
 
     getLibrary.mockClear();
     await wrapper
@@ -287,22 +311,39 @@ describe("LibraryPage", () => {
         expect.any(AbortSignal),
       ),
     );
+    getLibrary.mockClear();
+    await wrapper.get('input[name="library-desktop-page-size"][value="48"]').setValue();
+    await flushPromises();
+
+    expect(getLibrary).not.toHaveBeenCalled();
     expect(router.currentRoute.value.query).toEqual({
       author: "Current Author",
       page: "2",
       q: "term",
       tag: "Current Tag",
+      view: "playlists",
     });
+
+    finishPageSizeSave({ libraryPageSize: 48 });
+    await flushPromises();
   });
 
-  it("saves videos per page from the library filters and returns to page 1", async () => {
-    const { router, wrapper } = await mountLibraryPage("/videos?page=2");
+  it("saves videos per page from the library filters and preserves the current page", async () => {
+    const { router, wrapper } = await mountLibraryPage("/videos?page=2", async (filters) => ({
+      ...library(),
+      pagination: {
+        page: filters?.page ?? 1,
+        pageSize: filters?.pageSize ?? 24,
+        totalPages: 2,
+        totalVideos: 25,
+      },
+    }));
 
     await wrapper.get('input[name="library-desktop-page-size"][value="12"]').setValue();
     await flushPromises();
 
     expect(api.updateSettings).toHaveBeenCalledWith(12);
-    expect(router.currentRoute.value.query).toEqual({});
+    expect(router.currentRoute.value.query).toEqual({ page: "2" });
     expect(wrapper.get("aside").text()).toContain("Videos per page");
   });
 });
