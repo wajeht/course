@@ -36,14 +36,23 @@ async function logout(): Promise<void> {
   <StandardPageLayout
     class="min-[601px]:flex min-[601px]:min-h-[calc(100vh-66px)] min-[601px]:flex-col min-[601px]:pb-10"
   >
-    <PageHeader eyebrow="Videos settings" title="Settings" />
+    <PageHeader eyebrow="Videos settings" title="Settings">
+      <template #aside>
+        <span
+          class="inline-flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1.5 font-mono text-[.64rem] tracking-[.08em] text-muted uppercase"
+        >
+          <span class="h-1.5 w-1.5 rounded-full bg-pine" aria-hidden="true" />
+          Private server
+        </span>
+      </template>
+    </PageHeader>
 
     <AlertMessage v-if="logoutAction.errorMessage.value" class="mt-8" size="lg">
       {{ logoutAction.errorMessage.value }}
     </AlertMessage>
 
     <div
-      class="mt-6 grid grid-cols-[240px_minmax(0,1fr)] items-start gap-8 max-[760px]:grid-cols-1"
+      class="mt-6 grid grid-cols-[210px_minmax(0,1fr)] items-start gap-[clamp(28px,3vw,48px)] max-[760px]:grid-cols-1 max-[760px]:gap-5"
       data-settings-layout
     >
       <div class="grid gap-[clamp(18px,2vw,30px)]">

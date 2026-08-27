@@ -41,12 +41,12 @@ const sections = computed(() =>
 <template>
   <PanelCard
     as="nav"
-    class="p-8 max-[760px]:p-0"
+    class="p-6 max-[760px]:rounded-[8px] max-[760px]:p-1"
     :elevated="false"
     padding="none"
     aria-label="Settings sections"
   >
-    <div class="grid gap-1 max-[760px]:grid-cols-2 max-[760px]:gap-0">
+    <div class="grid gap-1 max-[760px]:grid-cols-2">
       <IntentRouterLink
         v-for="section in sections"
         :id="`settings-${section.value}-link`"
@@ -54,8 +54,7 @@ const sections = computed(() =>
         :to="{ name: section.routeName }"
         :prefetch="section.prefetch"
         :class="[
-          'flex h-10 w-full items-center rounded-[7px] px-3.5 text-left text-[.82rem] font-bold transition-[background,color] duration-[160ms] max-[760px]:justify-center max-[760px]:rounded-none max-[760px]:px-0',
-          section.value === 'access' ? 'max-[760px]:border-l max-[760px]:border-line' : '',
+          'flex h-10 w-full items-center rounded-[7px] px-3.5 text-left text-[.82rem] font-bold transition-[background,color] duration-[160ms] max-[760px]:justify-center max-[760px]:px-0',
           section.stateClasses,
         ]"
         :aria-controls="`settings-${section.value}-panel`"

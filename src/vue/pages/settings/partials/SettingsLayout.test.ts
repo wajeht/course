@@ -58,8 +58,9 @@ describe("SettingsLayout", () => {
     expect(pageHeader.get("h1").text()).toBe("Settings");
     expect(pageHeader.text()).toContain("Videos settings");
     expect(wrapper.get("[data-settings-layout]").classes()).toEqual(
-      expect.arrayContaining(["grid-cols-[240px_minmax(0,1fr)]", "max-[760px]:grid-cols-1"]),
+      expect.arrayContaining(["grid-cols-[210px_minmax(0,1fr)]", "max-[760px]:grid-cols-1"]),
     );
+    expect(pageHeader.text()).toContain("Private server");
     expect(wrapper.get('[aria-label="Settings sections"]').text()).toContain("LibraryAccess");
     expect(wrapper.get("[data-settings-page]").element.tagName).toBe("SECTION");
     expect(wrapper.get("[data-mobile-sign-out]").text()).toBe("Sign out");
