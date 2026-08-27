@@ -127,6 +127,64 @@ export function createScanner({
     }
   }
 
+  async function synchronizeSnapshot(
+    entryPaths: string[] | undefined,
+    scanWarnings: ScanWarning[],
+    existingVideos: VideoRecord[],
+    entries: LibraryEntry[],
+  ): Promise<void> {
+    if (!entryPaths) {
+      const built = await buildLibrarySnapshot(
+        configuration,
+        scanWarnings,
+        probe,
+        existingVideos,
+        entries,
+      );
+      await repository.synchronizeLibrary(built.snapshot);
+      replaceEntryWarnings(null, scanWarnings);
+      return;
+    }
+
+    const storedEntries = await repository.getRootEntries();
+    const currentPaths = new Set(entries.map((entry) => entry.path));
+    const storedPaths = new Set(storedEntries.map((entry) => entry.path));
+    const synchronizedPaths = new Set(entryPaths);
+    for (const entry of entries) {
+      if (!storedPaths.has(entry.path)) synchronizedPaths.add(entry.path);
+    }
+    for (const entry of storedEntries) {
+      if (!currentPaths.has(entry.path)) synchronizedPaths.add(entry.path);
+    }
+    const built = await buildLibrarySnapshot(
+      configuration,
+      scanWarnings,
+      probe,
+      existingVideos,
+      entries,
+      synchronizedPaths,
+    );
+    await repository.synchronizeEntries(
+      built.snapshot,
+      [...synchronizedPaths].map(identifier),
+      built.rootOrder,
+    );
+    replaceEntryWarnings(synchronizedPaths, scanWarnings);
+  }
+
+  async function synchronizeThumbnails(): Promise<void> {
+    if (!thumbnails) return;
+    try {
+      const [videos, chapters] = await Promise.all([
+        repository.getVideos(),
+        repository.getChapters(),
+      ]);
+      await thumbnails.synchronize(videos, chapters);
+    } catch (error) {
+      logger.warn("Thumbnail synchronization failed", { error: logCause(error) });
+    }
+  }
+
   async function scanOnce(entryPaths?: string[]): Promise<ScanStatus> {
     const startedAt = new Date().toISOString();
     const scanWarnings: ScanWarning[] = [];
@@ -146,54 +204,8 @@ export function createScanner({
         readLibraryEntries(configuration),
         repository.getVideos(),
       ]);
-      if (entryPaths) {
-        const storedEntries = await repository.getRootEntries();
-        const currentPaths = new Set(entries.map((entry) => entry.path));
-        const storedPaths = new Set(storedEntries.map((entry) => entry.path));
-        const synchronizedPaths = new Set(entryPaths);
-        for (const entry of entries) {
-          if (!storedPaths.has(entry.path)) synchronizedPaths.add(entry.path);
-        }
-        for (const entry of storedEntries) {
-          if (!currentPaths.has(entry.path)) synchronizedPaths.add(entry.path);
-        }
-        const built = await buildLibrarySnapshot(
-          configuration,
-          scanWarnings,
-          probe,
-          existingVideos,
-          entries,
-          synchronizedPaths,
-        );
-        await repository.synchronizeEntries(
-          built.snapshot,
-          [...synchronizedPaths].map(identifier),
-          built.rootOrder,
-        );
-        replaceEntryWarnings(synchronizedPaths, scanWarnings);
-      } else {
-        const built = await buildLibrarySnapshot(
-          configuration,
-          scanWarnings,
-          probe,
-          existingVideos,
-          entries,
-        );
-        await repository.synchronizeLibrary(built.snapshot);
-        replaceEntryWarnings(null, scanWarnings);
-      }
-
-      if (thumbnails) {
-        try {
-          const [videos, chapters] = await Promise.all([
-            repository.getVideos(),
-            repository.getChapters(),
-          ]);
-          await thumbnails.synchronize(videos, chapters);
-        } catch (error) {
-          logger.warn("Thumbnail synchronization failed", { error: logCause(error) });
-        }
-      }
+      await synchronizeSnapshot(entryPaths, scanWarnings, existingVideos, entries);
+      await synchronizeThumbnails();
 
       const counts = await repository.getLibraryCounts();
       const complete: ScanStatus = {
@@ -667,23 +679,44 @@ async function findPlaylistCover(
   requestedCover: string | undefined,
   warnings: ScanWarning[],
 ): Promise<string | null> {
-  if (requestedCover) {
-    const warningPath = `${playlistPath}/${posixPath(requestedCover)}`;
-    const requestedPath = path.resolve(playlistDirectory, requestedCover);
-    const relative = path.relative(playlistDirectory, requestedPath);
-    if (relative.startsWith("..") || path.isAbsolute(relative)) {
-      warnings.push({ path: warningPath, message: "Cover path leaves the playlist directory" });
-    } else if (!coverExtensions.has(path.extname(requestedPath).toLowerCase())) {
-      warnings.push({ path: warningPath, message: "Cover must be a JPG, PNG, or WebP image" });
-    } else {
-      try {
-        if ((await fs.stat(requestedPath)).isFile()) return requestedPath;
-      } catch {
-        warnings.push({ path: warningPath, message: "Configured cover does not exist" });
-      }
-    }
-  }
+  const requestedPath = await findRequestedPlaylistCover(
+    playlistDirectory,
+    playlistPath,
+    requestedCover,
+    warnings,
+  );
+  if (requestedPath) return requestedPath;
 
+  return findDefaultPlaylistCover(playlistDirectory, entries);
+}
+
+async function findRequestedPlaylistCover(
+  playlistDirectory: string,
+  playlistPath: string,
+  requestedCover: string | undefined,
+  warnings: ScanWarning[],
+): Promise<string | null> {
+  if (!requestedCover) return null;
+  const warningPath = `${playlistPath}/${posixPath(requestedCover)}`;
+  const requestedPath = path.resolve(playlistDirectory, requestedCover);
+  const relative = path.relative(playlistDirectory, requestedPath);
+  if (relative.startsWith("..") || path.isAbsolute(relative)) {
+    warnings.push({ path: warningPath, message: "Cover path leaves the playlist directory" });
+    return null;
+  }
+  if (!coverExtensions.has(path.extname(requestedPath).toLowerCase())) {
+    warnings.push({ path: warningPath, message: "Cover must be a JPG, PNG, or WebP image" });
+    return null;
+  }
+  try {
+    return (await fs.stat(requestedPath)).isFile() ? requestedPath : null;
+  } catch {
+    warnings.push({ path: warningPath, message: "Configured cover does not exist" });
+    return null;
+  }
+}
+
+function findDefaultPlaylistCover(playlistDirectory: string, entries: Dirent[]): string | null {
   for (const name of playlistCoverNames) {
     for (const extension of coverExtensionOrder) {
       const entry = entries.find(

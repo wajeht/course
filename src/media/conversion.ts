@@ -25,6 +25,15 @@ export interface ConversionManager {
   recoverConversions(): Promise<void>;
 }
 
+async function writeProgressAfter(
+  previousWrite: Promise<void>,
+  onProgress: (progress: number) => Promise<void>,
+  progress: number,
+): Promise<void> {
+  await previousWrite;
+  await onProgress(progress);
+}
+
 export function createFfmpegConversionExecutor(configuration: Configuration): ConversionExecutor {
   return async (video, onProgress) => {
     const source = await resolveContainedPath(configuration.media.videosDirectory, video.path);
@@ -112,7 +121,7 @@ export function createFfmpegConversionExecutor(configuration: Configuration): Co
           );
           if (progress >= lastProgress + 2) {
             lastProgress = progress;
-            progressWrites = progressWrites.then(() => onProgress(progress));
+            progressWrites = writeProgressAfter(progressWrites, onProgress, progress);
           }
         }
       });

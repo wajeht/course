@@ -71,11 +71,9 @@ export function createAuth(
       state.status = result.authenticated ? "authenticated" : "unauthenticated";
     } catch (caught) {
       state.status = "error";
-      state.error = controller.signal.aborted
-        ? "Session check timed out. Try again."
-        : caught instanceof Error
-          ? caught.message
-          : "Could not verify your session";
+      if (controller.signal.aborted) state.error = "Session check timed out. Try again.";
+      else if (caught instanceof Error) state.error = caught.message;
+      else state.error = "Could not verify your session";
     } finally {
       clearTimeout(timeout);
     }

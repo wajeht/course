@@ -1,5 +1,6 @@
 import type { ErrorHandler, MiddlewareHandler, NotFoundHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { ZodError } from "zod";
 
 import type { AppEnvironment } from "./config.js";
@@ -34,8 +35,9 @@ export function createMiddleware(logger: Logger, environment: AppEnvironment): A
         ? c.json({ message: "Resource not found" }, 404)
         : c.text("Not found", 404),
     onError: (error, c) => {
-      const status =
-        error instanceof HTTPException ? error.status : error instanceof ZodError ? 400 : 500;
+      let status: ContentfulStatusCode = 500;
+      if (error instanceof HTTPException) status = error.status;
+      else if (error instanceof ZodError) status = 400;
       if (status >= 500) logger.error("request failed", { error, path: c.req.path });
       const message =
         status === 500 && environment === "production"
