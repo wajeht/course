@@ -154,6 +154,16 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
         }
       : null,
   );
+  const posterUrl = computed(() => {
+    const detail = video.value;
+    if (!detail) return undefined;
+    let chapterThumbnail: string | null = null;
+    for (const chapter of detail.chapters) {
+      if (chapter.startSeconds > currentTime.value) break;
+      chapterThumbnail = chapter.thumbnailUrl;
+    }
+    return chapterThumbnail ?? detail.coverUrl ?? undefined;
+  });
 
   function invalidateLibrary() {
     return queryClient.invalidateQueries({ queryKey: queryKeys.library, refetchType: "none" });
@@ -211,6 +221,8 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
       if (!playback.isCurrentRequest(requestId)) return;
       video.value = detail.video;
       loadedPlaylist.value = detail.playlist;
+      const timestamp = queryTimestamp();
+      currentTime.value = timestamp ?? (!detail.video.completed ? detail.video.positionSeconds : 0);
       setPageTitle(detail.video.title);
       progress.startSession(detail.video.id, detail.video.positionSeconds);
       await playback.applyPlayback(playbackResult, videoId, requestId);
@@ -312,7 +324,9 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
     () => route.query.t,
     () => {
       const timestamp = queryTimestamp();
-      if (timestamp !== null && element.value?.readyState) seek(timestamp);
+      if (timestamp === null) return;
+      if (element.value?.readyState) seek(timestamp);
+      else currentTime.value = timestamp;
     },
   );
   window.addEventListener("pagehide", saveOnExit);
@@ -338,6 +352,7 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
     onTimeUpdate,
     playback: computed(() => playback.playback.value),
     playlist,
+    posterUrl,
     regenerateThumbnail,
     regenerating: computed(() => regenerate.pending.value),
     resetPlaylistProgress,

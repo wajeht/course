@@ -29,6 +29,7 @@ const player = useVideoPlayer(media);
           :loading="player.loading.value"
           :next-video="player.nextVideo.value"
           :playback="player.playback.value"
+          :poster="player.posterUrl.value"
           :retrying="player.retrying.value"
           @ended="player.markComplete"
           @loaded-metadata="player.applyResume"
