@@ -87,7 +87,7 @@ function handleClick(event: MouseEvent): void {
     :class="[
       variant === 'unstyled'
         ? 'cursor-pointer disabled:cursor-not-allowed disabled:opacity-55'
-        : 'inline-flex cursor-pointer items-center justify-center gap-2 rounded-[7px] border font-[750] transition-[transform,background,border-color] duration-[160ms] disabled:cursor-not-allowed disabled:opacity-55',
+        : 'inline-flex cursor-pointer items-center justify-center gap-2 rounded-[5px] border font-[750] transition-[transform,background,border-color] duration-[160ms] disabled:cursor-not-allowed disabled:opacity-55',
       variant === 'unstyled' ? '' : sizeClasses,
       variantClasses,
       block ? 'w-full' : '',

@@ -25,7 +25,7 @@ const triggerClasses = computed(() =>
     : "text-white/58 hover:bg-white/8 hover:text-white focus-visible:outline-belt-light",
 );
 const panelClasses = computed(() =>
-  props.tone === "light" ? "border-line bg-white" : "border-white/12 bg-[#1b231f]",
+  props.tone === "light" ? "border-line bg-white" : "border-white/12 bg-[#242a32]",
 );
 const itemClasses = computed(() =>
   props.tone === "light"

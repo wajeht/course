@@ -31,23 +31,32 @@ function forwardSetup(password: string, confirmPassword: string, setupToken?: st
 </script>
 
 <template>
-  <main class="min-h-screen bg-canvas lg:grid lg:grid-cols-[1fr_2fr]">
+  <main class="min-h-screen bg-canvas lg:grid lg:grid-cols-[minmax(360px,0.82fr)_minmax(0,1.48fr)]">
     <aside
-      class="hidden min-h-screen items-center justify-center overflow-hidden bg-pine-deep bg-[radial-gradient(circle_at_83%_20%,rgb(196_147_63_/_16%),transparent_30%),repeating-linear-gradient(90deg,transparent_0_52px,rgb(255_255_255_/_2%)_52px_53px)] px-12 text-white lg:order-2 lg:flex"
-      aria-label="A private, opinionated, self-hosted video library."
+      class="relative hidden min-h-screen items-center justify-center overflow-hidden bg-pine-deep bg-[radial-gradient(circle_at_78%_18%,rgb(213_139_59_/_9%),transparent_26%),repeating-linear-gradient(90deg,transparent_0_55px,rgb(255_255_255_/_2.5%)_55px_56px)] px-12 text-white lg:order-2 lg:flex"
+      aria-label="A private video archive that stays on your server."
     >
+      <div
+        class="absolute inset-x-0 top-0 h-2 bg-[repeating-linear-gradient(90deg,rgb(8_13_22_/_72%)_0_9px,transparent_9px_16px)]"
+        aria-hidden="true"
+      />
       <div class="w-full max-w-[720px]">
-        <AppLogo class="mb-12 text-white" />
+        <div class="mb-14 flex items-center justify-between gap-8">
+          <AppLogo class="text-white" />
+          <span class="font-mono text-[.65rem] tracking-[.16em] text-white/50 uppercase"
+            >Personal archive · local server</span
+          >
+        </div>
         <div aria-hidden="true">
           <p
-            class="font-display text-[clamp(4rem,6.4vw,8rem)] font-black leading-[0.82] tracking-[-0.025em] uppercase"
+            class="font-display text-[clamp(4.4rem,7vw,8.5rem)] font-black leading-[0.8] tracking-[-0.035em] uppercase"
           >
-            <span class="block text-white/45">A private,</span>
-            <span class="block text-white">opinionated,</span>
-            <span class="block text-belt-light">self-hosted</span>
+            <span class="block text-white/42">The archive</span>
+            <span class="block text-white">stays</span>
+            <span class="block text-white">home.</span>
           </p>
-          <p class="mt-8 max-w-xl text-xl font-medium tracking-[0.12em] text-white/60 uppercase">
-            video library.
+          <p class="mt-9 max-w-xl text-lg leading-7 font-medium text-white/62">
+            Your videos, playlists, and watch progress—served from your own machine.
           </p>
         </div>
       </div>
@@ -57,10 +66,14 @@ function forwardSetup(password: string, confirmPassword: string, setupToken?: st
       class="grid min-h-screen grid-rows-[1fr_auto] px-5 py-8 lg:order-1 lg:border-r lg:border-pine/10 lg:px-8 lg:py-10 xl:px-[clamp(36px,3.5vw,60px)]"
     >
       <PanelCard
-        class="w-full max-w-[430px] place-self-center lg:max-w-[420px] lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none"
+        class="w-full max-w-[430px] place-self-center lg:max-w-[400px] lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none"
         padding="none"
       >
-        <header class="bg-pine-deep px-8 py-7 text-white lg:hidden">
+        <header class="relative bg-pine-deep px-8 py-7 text-white lg:hidden">
+          <span
+            class="absolute inset-x-0 top-0 h-1.5 bg-[repeating-linear-gradient(90deg,rgb(8_13_22_/_72%)_0_7px,transparent_7px_13px)]"
+            aria-hidden="true"
+          />
           <AppLogo />
           <p class="mt-3 text-sm leading-6 text-white/68">
             {{

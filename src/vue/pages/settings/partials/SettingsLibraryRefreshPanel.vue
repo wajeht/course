@@ -116,7 +116,7 @@ async function rescanLibrary(): Promise<void> {
         </div>
         <div
           v-if="scanStatus?.warnings.length"
-          class="mt-5 rounded-[7px] border border-belt/25 bg-[#fffaf0] p-4"
+          class="mt-5 rounded-[7px] border border-belt/25 bg-[#fff6e9] p-4"
         >
           <p class="text-[.78rem] leading-5 text-muted">
             Review these files, correct each listed problem, then refresh the library.

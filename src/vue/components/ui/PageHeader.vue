@@ -17,13 +17,13 @@ withDefaults(
     <div>
       <p
         v-if="eyebrow"
-        class="mb-[9px] text-[.68rem] font-extrabold tracking-[.18em] text-belt-ink uppercase"
+        class="mb-[9px] font-mono text-[.66rem] font-extrabold tracking-[.16em] text-belt-ink uppercase"
       >
         {{ eyebrow }}
       </p>
       <component
         :is="`h${headingLevel}`"
-        class="font-display text-[clamp(1.9rem,3vw,2.7rem)] font-[750] tracking-[-.035em]"
+        class="font-display text-[clamp(2rem,3.2vw,3rem)] leading-[.96] font-black tracking-[-.035em] uppercase"
       >
         {{ title }}
       </component>

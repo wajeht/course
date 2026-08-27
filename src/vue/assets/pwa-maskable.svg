@@ -1,18 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#153326" />
+  <rect width="512" height="512" fill="#12161c" />
   <g transform="translate(51.2 51.2) scale(.8)">
     <rect
       x="80"
       y="136"
       width="352"
       height="240"
-      rx="40"
+      rx="32"
       fill="none"
-      stroke="#f5f6f2"
+      stroke="#f2f3f1"
       stroke-width="32"
     />
-    <rect x="144" y="192" width="40" height="128" rx="8" fill="#e4c57f" />
-    <rect x="216" y="192" width="40" height="128" rx="8" fill="#e4c57f" />
-    <rect x="288" y="192" width="40" height="128" rx="8" fill="#e4c57f" />
+    <rect x="120" y="168" width="64" height="40" rx="8" fill="#d58b3b" />
+    <rect x="328" y="168" width="64" height="40" rx="8" fill="#d58b3b" />
+    <rect x="120" y="304" width="64" height="40" rx="8" fill="#d58b3b" />
+    <rect x="328" y="304" width="64" height="40" rx="8" fill="#d58b3b" />
+    <path d="M224 204 312 256l-88 52z" fill="#f2f3f1" />
   </g>
 </svg>

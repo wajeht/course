@@ -22,7 +22,7 @@ const paddingClasses = computed(
     })[props.padding],
 );
 const surfaceClasses = computed(() => {
-  if (props.variant === "subtle") return "border-dashed border-[#bfc8c2] bg-white/55";
+  if (props.variant === "subtle") return "border-dashed border-[#b9bec3] bg-white/55";
   return ["border-line bg-white", props.elevated ? "shadow-card" : ""];
 });
 </script>
@@ -31,7 +31,7 @@ const surfaceClasses = computed(() => {
   <component
     :is="as"
     v-bind="$attrs"
-    :class="['overflow-hidden rounded-[10px] border', surfaceClasses, paddingClasses]"
+    :class="['overflow-hidden rounded-[8px] border', surfaceClasses, paddingClasses]"
   >
     <slot />
   </component>

@@ -21,7 +21,7 @@ const titleId = `playlist-title-${useId()}`;
 <template>
   <aside
     v-if="playlist"
-    class="sticky top-0 flex h-[calc(100vh-66px)] flex-col border-l border-[#2d3732] bg-[#f8f9f6] text-ink max-[860px]:static max-[860px]:mx-[clamp(20px,3vw,50px)] max-[860px]:mb-10 max-[860px]:h-auto max-[860px]:w-auto max-[860px]:overflow-hidden max-[860px]:rounded-[7px] max-[860px]:border max-[860px]:border-line max-[600px]:mx-3"
+    class="sticky top-0 flex h-[calc(100vh-66px)] flex-col border-l border-[#343b44] bg-porcelain text-ink max-[860px]:static max-[860px]:mx-[clamp(20px,3vw,50px)] max-[860px]:mb-10 max-[860px]:h-auto max-[860px]:w-auto max-[860px]:overflow-hidden max-[860px]:rounded-[7px] max-[860px]:border max-[860px]:border-line max-[600px]:mx-3"
     :aria-labelledby="titleId"
   >
     <header class="flex items-start justify-between border-b border-line px-5 py-5">

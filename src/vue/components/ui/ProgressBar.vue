@@ -14,7 +14,7 @@ withDefaults(
   <div>
     <div
       class="relative overflow-hidden rounded-[2px]"
-      :class="[compact ? 'h-1.5' : 'h-[9px]', light ? 'bg-white/18' : 'bg-[#cdd4cf]']"
+      :class="[compact ? 'h-1.5' : 'h-[9px]', light ? 'bg-white/18' : 'bg-[#c8cdd1]']"
     >
       <span
         class="absolute inset-y-0 left-0 bg-linear-to-r from-belt to-belt-light transition-[width] duration-[350ms]"

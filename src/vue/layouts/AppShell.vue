@@ -15,12 +15,12 @@ const isPlayer = computed(() => route.meta.shell === "player");
 <template>
   <div
     class="min-h-screen max-[600px]:pb-[calc(68px+env(safe-area-inset-bottom))]"
-    :class="isPlayer ? 'max-[600px]:bg-[#111714]' : ''"
+    :class="isPlayer ? 'max-[600px]:bg-[#12161c]' : ''"
   >
     <header
       class="z-40 flex h-[calc(66px+env(safe-area-inset-top))] items-center justify-between border-b border-white/12 px-[4vw] pt-[env(safe-area-inset-top)] text-white max-[860px]:px-[22px]"
       :class="
-        isPlayer ? 'relative bg-[#111714]' : 'sticky top-0 bg-pine-deep/[.96] backdrop-blur-[14px]'
+        isPlayer ? 'relative bg-[#12161c]' : 'sticky top-0 bg-pine-deep/[.97] backdrop-blur-[14px]'
       "
     >
       <IntentRouterLink
@@ -72,7 +72,7 @@ const isPlayer = computed(() => route.meta.shell === "player");
     </header>
     <slot />
     <nav
-      class="fixed right-0 bottom-0 left-0 z-50 hidden border-t border-white/12 bg-pine-deep/[.98] px-3 pt-1.5 pb-[max(6px,env(safe-area-inset-bottom))] text-white shadow-[0_-12px_35px_rgb(10_25_18_/_18%)] backdrop-blur-[14px] max-[600px]:grid max-[600px]:grid-cols-3"
+      class="fixed right-0 bottom-0 left-0 z-50 hidden border-t border-white/12 bg-pine-deep/[.98] px-3 pt-1.5 pb-[max(6px,env(safe-area-inset-bottom))] text-white shadow-[0_-12px_35px_rgb(18_22_28_/_24%)] backdrop-blur-[14px] max-[600px]:grid max-[600px]:grid-cols-3"
       aria-label="Mobile navigation"
     >
       <IntentRouterLink

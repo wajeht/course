@@ -19,15 +19,15 @@ const prefetch = useRoutePrefetch();
   <IntentRouterLink
     :to="playerLocation(video.id, video.playlistId)"
     :prefetch="() => prefetch.video(video.id)"
-    class="grid items-center border-b border-[#e7eae7] py-2 transition-colors last:border-b-0 hover:bg-[#f4f7f4]"
+    class="grid items-center border-b border-[#e1e4e6] py-2 transition-colors last:border-b-0 hover:bg-[#e9ebed]"
     :class="[
       sidebar
         ? 'min-h-14 grid-cols-[28px_minmax(0,1fr)_30px] gap-2 px-3'
         : 'min-h-[62px] grid-cols-[42px_minmax(0,1fr)_auto_42px] gap-3 px-4 max-[600px]:grid-cols-[31px_minmax(0,1fr)_32px] max-[600px]:gap-[7px] max-[600px]:px-[10px]',
-      active && 'bg-[#f4f7f4] shadow-[inset_4px_0_#c4933f]',
+      active && 'bg-[#e9ebed] shadow-[inset_4px_0_#d58b3b]',
     ]"
   >
-    <span class="font-mono text-[.72rem] text-[#9da6a1]">
+    <span class="font-mono text-[.72rem] text-[#858c94]">
       {{ String(index + 1).padStart(2, "0") }}
     </span>
     <span class="min-w-0 overflow-hidden text-[.8rem] font-semibold text-ellipsis">

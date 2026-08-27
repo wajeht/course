@@ -39,7 +39,9 @@ function submit(): void {
 
 <template>
   <form class="px-8 py-8 lg:p-0" @submit.prevent="submit">
-    <h1 class="font-display text-2xl font-extrabold lg:text-[2.4rem] lg:leading-none">
+    <h1
+      class="font-display text-3xl font-black tracking-[-.025em] uppercase lg:text-[2.4rem] lg:leading-none"
+    >
       {{ isSetup ? "Set up your library" : "Welcome back" }}
     </h1>
     <p class="mt-3 hidden text-sm leading-6 text-muted lg:block">
