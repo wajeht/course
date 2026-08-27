@@ -20,6 +20,13 @@ export const libraryQuerySchema = z.object({
 export const playlistParametersSchema = z.object({ playlistId: identifierSchema });
 export const videoParametersSchema = z.object({ videoId: identifierSchema });
 
+export const thumbnailRegenerationResponseSchema = z.discriminatedUnion("status", [
+  z.object({ status: z.literal("idle") }),
+  z.object({ status: z.literal("running") }),
+  z.object({ status: z.literal("complete"), revision: z.number().int().nonnegative() }),
+  z.object({ status: z.literal("failed"), message: z.string() }),
+]);
+
 const sourceResponseSchema = z.object({ provider: z.string(), url: z.url() }).nullable();
 
 export const videoResponseSchema = z.object({

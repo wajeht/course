@@ -108,16 +108,28 @@ describe("application", () => {
     const cookie = login.headers.get("set-cookie")?.split(";")[0];
     expect(cookie).toBeTruthy();
 
-    const regenerate = vi.spyOn(context.thumbnails, "regenerate").mockResolvedValue();
+    const regenerate = vi
+      .spyOn(context.thumbnails, "startRegeneration")
+      .mockReturnValue({ status: "running" });
     const regenerateResponse = await app.request(`/api/videos/${"b".repeat(24)}/thumbnail`, {
       method: "POST",
       headers: { cookie: cookie!, origin: "http://localhost" },
     });
-    expect(regenerateResponse.status).toBe(204);
+    expect(regenerateResponse.status).toBe(202);
+    await expect(regenerateResponse.json()).resolves.toEqual({ status: "running" });
     expect(regenerate).toHaveBeenCalledWith(
       expect.objectContaining({ id: "b".repeat(24), path: "playlist/video.mp4" }),
       [{ videoId: "b".repeat(24), startSeconds: 0, sortOrder: 0 }],
     );
+    vi.spyOn(context.thumbnails, "regenerationStatus").mockReturnValue({
+      status: "complete",
+      revision: 1,
+    });
+    const regenerationStatus = await app.request(`/api/videos/${"b".repeat(24)}/thumbnail`, {
+      headers: { cookie: cookie! },
+    });
+    expect(regenerationStatus.status).toBe(200);
+    await expect(regenerationStatus.json()).resolves.toEqual({ status: "complete", revision: 1 });
 
     const response = await app.request(`/media/${"b".repeat(24)}`, {
       headers: { range: "bytes=2-5", cookie: cookie! },

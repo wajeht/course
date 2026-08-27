@@ -91,7 +91,7 @@ onBeforeUnmount(() => descriptionObserver?.disconnect());
       <PlayerProgressMenu
         label="Video actions"
         reset-label="Reset progress"
-        regenerate-label="Regenerate thumbnail"
+        regenerate-label="Regenerate thumbnails"
         :resetting="resetting"
         :regenerating="regenerating"
         @reset="$emit('reset')"

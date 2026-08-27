@@ -10,6 +10,7 @@ import type {
   VideoDetailDto,
 } from "../library/library.service";
 import type { ScanStatus } from "../media/types";
+import type { ThumbnailRegenerationStatus } from "../media/thumbnails";
 import type { PlaybackResult } from "../playback/playback.service";
 import type { LibraryPageSize, SettingsDto } from "../settings/settings.service";
 
@@ -39,6 +40,13 @@ export type {
   VideoDetailDto,
   VideoDto,
 };
+
+const thumbnailPollMilliseconds = 500;
+const thumbnailPollLimit = 1_200;
+
+function wait(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
 
 export class ApiError extends Error {
   constructor(
@@ -126,10 +134,24 @@ export const api = {
     );
   },
   async regenerateVideoThumbnail(videoId: string): Promise<void> {
-    const response = await apiClient.api.videos[":videoId"].thumbnail.$post({
-      param: { videoId },
-    });
-    if (!response.ok) await expectProtectedJson(response);
+    let status = await expectProtectedJson<ThumbnailRegenerationStatus>(
+      await apiClient.api.videos[":videoId"].thumbnail.$post({
+        param: { videoId },
+      }),
+    );
+    for (let attempt = 0; attempt < thumbnailPollLimit; attempt += 1) {
+      if (status.status === "complete") return;
+      if (status.status === "failed" || status.status === "idle") {
+        throw new ApiError("Could not regenerate thumbnails", 500);
+      }
+      await wait(thumbnailPollMilliseconds);
+      status = await expectProtectedJson<ThumbnailRegenerationStatus>(
+        await apiClient.api.videos[":videoId"].thumbnail.$get({
+          param: { videoId },
+        }),
+      );
+    }
+    throw new ApiError("Thumbnail regeneration timed out", 408);
   },
   async preparePlayback(videoId: string): Promise<PlaybackResult> {
     return expectProtectedJson<PlaybackResult>(

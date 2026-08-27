@@ -162,7 +162,7 @@ describe("useVideoPlayer", () => {
     expect(api.regenerateVideoThumbnail).toHaveBeenCalledWith(videoId);
     expect(wrapper.get("[data-video-title]").text()).toBe("Updated video");
     expect(toast.toasts.value).toContainEqual(
-      expect.objectContaining({ kind: "success", message: "Thumbnail updated" }),
+      expect.objectContaining({ kind: "success", message: "Thumbnails updated" }),
     );
     wrapper.unmount();
   });
