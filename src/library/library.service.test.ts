@@ -257,12 +257,9 @@ describe("library service", () => {
     });
   });
 
-  it("keeps playlist covers on playlists and video thumbnails on videos", async () => {
+  it("keeps playlist covers off individual videos", async () => {
     await database.connection("playlists").where({ id: playlistA }).update({
       cover_path: "Saved Collection/cover.jpg",
-    });
-    await database.connection("videos").where({ id: videoB }).update({
-      cover_path: "Documentaries/Video.jpg",
     });
     const service = createLibraryService(
       createLibraryApiRepository(database.connection),

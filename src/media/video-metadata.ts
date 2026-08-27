@@ -16,7 +16,6 @@ const videoMetadataSchema = z
     version: z.literal(1),
     title: metadataNameSchema.optional(),
     description: z.string().trim().optional(),
-    cover: metadataNameSchema.optional(),
     authors: metadataNamesSchema.optional(),
     tags: metadataNamesSchema.optional(),
     source: sourceMetadataSchema.optional(),

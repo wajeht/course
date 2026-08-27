@@ -20,7 +20,6 @@ function video(id: string, sortOrder: number): VideoRecord {
     title: id,
     description: "",
     tags: [],
-    coverPath: null,
     sourceProvider: null,
     sourceUrl: null,
     sortOrder,

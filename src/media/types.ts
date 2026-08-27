@@ -26,7 +26,6 @@ export interface VideoRecord {
   title: string;
   description: string;
   tags: string[];
-  coverPath: string | null;
   sourceProvider: string | null;
   sourceUrl: string | null;
   sortOrder: number;
