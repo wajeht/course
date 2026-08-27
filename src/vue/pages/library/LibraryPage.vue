@@ -58,10 +58,20 @@ const displayedVideos = computed(() =>
         eyebrow="Your archive"
         :title="selectedView === 'playlists' ? 'Playlists' : 'All videos'"
         :heading-level="1"
-      />
+      >
+        <template #actions>
+          <span class="font-mono text-[.68rem] tracking-[.08em] text-muted uppercase">
+            {{
+              selectedView === "playlists"
+                ? `${library.playlists.length} collections`
+                : `${library.pagination.totalVideos} videos`
+            }}
+          </span>
+        </template>
+      </PageHeader>
       <div
         data-testid="library-layout"
-        class="mt-6 grid grid-cols-[240px_minmax(0,1fr)] items-start gap-8 max-[760px]:mt-1 max-[760px]:grid-cols-1 max-[760px]:gap-1"
+        class="mt-6 grid grid-cols-[220px_minmax(0,1fr)] items-start gap-[clamp(28px,3vw,48px)] max-[760px]:mt-1 max-[760px]:grid-cols-1 max-[760px]:gap-1"
       >
         <LibraryFiltersToolbar
           v-model:author="selectedAuthor"

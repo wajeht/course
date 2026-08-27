@@ -10,7 +10,7 @@ import LibraryFilterGroup from "@/pages/library/partials/LibraryFilterGroup.vue"
 import LibraryPageSizeFilter from "@/pages/library/partials/LibraryPageSizeFilter.vue";
 import LibraryPlaylistFilter from "@/pages/library/partials/LibraryPlaylistFilter.vue";
 
-type FilterType = "author" | "pageSize" | "tag" | "view";
+type FilterType = "author" | "pageSize" | "tag";
 
 const props = defineProps<{
   authors: LibraryDto["authors"];
@@ -36,14 +36,9 @@ const mobilePanelTitle = computed(() => {
   if (activeMobilePanel.value === "author") return "Authors";
   if (activeMobilePanel.value === "pageSize") return "Videos per page";
   if (activeMobilePanel.value === "tag") return "Tags";
-  return "View";
+  return "Tags";
 });
 const mobileFilterButtons = computed(() => [
-  {
-    active: true,
-    label: view.value === "playlists" ? "Playlists" : "All videos",
-    type: "view" as const,
-  },
   {
     active: author.value.length > 0,
     label: selectionLabel("Authors", author.value),
@@ -142,6 +137,25 @@ function togglePanel(panel: FilterType): void {
         :placeholder="view === 'playlists' ? 'Search playlists' : 'Search videos'"
         type="search"
       />
+      <div
+        data-testid="mobile-library-view"
+        class="mb-3 grid grid-cols-2 rounded-[8px] border border-line bg-white p-1"
+        aria-label="Library view"
+      >
+        <button
+          v-for="option in ['videos', 'playlists'] as const"
+          :key="option"
+          type="button"
+          class="min-h-10 rounded-[5px] px-3 font-display text-xs font-black tracking-[.08em] uppercase transition-colors"
+          :class="view === option ? 'bg-pine-deep text-white' : 'text-muted hover:text-pine-deep'"
+          :aria-pressed="view === option"
+          @pointerenter="emit('prefetchView', option)"
+          @focus="emit('prefetchView', option)"
+          @click="view = option"
+        >
+          {{ option }}
+        </button>
+      </div>
       <div data-testid="mobile-filter-actions" class="flex flex-wrap gap-2">
         <AppButton
           v-for="button in mobileFilterButtons"
@@ -173,15 +187,8 @@ function togglePanel(panel: FilterType): void {
       :close-label="`Close ${mobilePanelTitle.toLowerCase()} filters`"
       @close="activeMobilePanel = null"
     >
-      <LibraryPlaylistFilter
-        v-if="activeMobilePanel === 'view'"
-        v-model="view"
-        hide-label
-        name="library-mobile-view"
-        @prefetch="emit('prefetchView', $event)"
-      />
       <LibraryFilterGroup
-        v-else-if="activeMobilePanel === 'author'"
+        v-if="activeMobilePanel === 'author'"
         v-model="mobilePanelValue"
         all-label="No authors"
         hide-label

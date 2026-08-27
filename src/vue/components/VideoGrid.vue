@@ -10,7 +10,7 @@ defineProps<{ videos: DeepReadonly<LibraryDto["videos"]>; loading?: boolean }>()
 <template>
   <div
     v-if="loading"
-    class="grid grid-cols-4 gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[600px]:grid-cols-1"
+    class="grid grid-cols-4 gap-[clamp(18px,2vw,30px)] max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[600px]:gap-x-3 max-[600px]:gap-y-6"
     aria-label="Loading videos"
     role="status"
   >
@@ -18,7 +18,7 @@ defineProps<{ videos: DeepReadonly<LibraryDto["videos"]>; loading?: boolean }>()
   </div>
   <div
     v-else
-    class="grid grid-cols-4 gap-x-[clamp(18px,2vw,30px)] gap-y-8 max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[600px]:grid-cols-1"
+    class="grid grid-cols-4 gap-x-[clamp(18px,2vw,30px)] gap-y-8 max-[1120px]:grid-cols-3 max-[860px]:grid-cols-2 max-[600px]:gap-x-3 max-[600px]:gap-y-6"
   >
     <VideoCard v-for="video in videos" :key="video.id" :video="video" />
   </div>

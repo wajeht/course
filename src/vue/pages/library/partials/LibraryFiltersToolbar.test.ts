@@ -34,13 +34,16 @@ describe("LibraryFiltersToolbar", () => {
   it("places mobile filter actions after search and opens the author drawer", async () => {
     const wrapper = mountToolbar();
     const search = wrapper.get('[data-testid="mobile-library-search"]');
+    const view = wrapper.get('[data-testid="mobile-library-view"]');
     const actions = wrapper.get('[data-testid="mobile-filter-actions"]');
-    const viewButton = wrapper.get('[data-mobile-filter="view"]');
 
     expect(
-      search.element.compareDocumentPosition(actions.element) & Node.DOCUMENT_POSITION_FOLLOWING,
+      search.element.compareDocumentPosition(view.element) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect(viewButton.classes()).toEqual(expect.arrayContaining(["bg-pine", "text-white"]));
+    expect(
+      view.element.compareDocumentPosition(actions.element) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(view.get('button[aria-pressed="true"]').text()).toBe("videos");
 
     const authorButton = wrapper.get('[data-mobile-filter="author"]');
     expect(authorButton.classes()).toEqual(expect.arrayContaining(["bg-white", "text-pine"]));
@@ -62,22 +65,16 @@ describe("LibraryFiltersToolbar", () => {
     expect(authorButton.classes()).toEqual(expect.arrayContaining(["bg-pine", "text-white"]));
   });
 
-  it("switches the mobile view through the drawer", async () => {
+  it("switches the mobile view through the segmented control", async () => {
     const wrapper = mountToolbar();
 
-    await wrapper.get('[data-mobile-filter="view"]').trigger("click");
-
-    const playlists = document.body.querySelector<HTMLInputElement>(
-      'dialog[open] input[name="library-mobile-view"][value="playlists"]',
-    );
-    expect(playlists).not.toBeNull();
-    await new DOMWrapper(playlists!).setValue();
+    const playlists = wrapper.get('[data-testid="mobile-library-view"] button:last-child');
+    await playlists.trigger("click");
 
     expect(wrapper.emitted("update:view")?.at(-1)).toEqual(["playlists"]);
     await wrapper.setProps({ view: "playlists" });
-    const viewButton = wrapper.get('[data-mobile-filter="view"]');
-    expect(viewButton.text()).toBe("Playlists");
-    expect(viewButton.classes()).toEqual(expect.arrayContaining(["bg-pine", "text-white"]));
+    expect(playlists.attributes("aria-pressed")).toBe("true");
+    expect(playlists.classes()).toEqual(expect.arrayContaining(["bg-pine-deep", "text-white"]));
   });
 
   it("emits a new videos-per-page value from the desktop radios", async () => {
