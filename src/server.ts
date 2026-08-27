@@ -4,6 +4,7 @@ import { serve, type ServerType } from "@hono/node-server";
 
 import { createApp } from "./app.js";
 import { createContext, type AppContext } from "./context.js";
+import { logCause } from "./logger.js";
 
 export interface ServerInfo {
   server: ServerType;
@@ -20,13 +21,13 @@ async function runStartupTasks(context: AppContext): Promise<void> {
         error: scan.error,
       });
   } catch (error) {
-    context.logger.error("Startup library scan failed", { error });
+    context.logger.error("Startup library scan failed", { error: logCause(error) });
   }
 
   try {
     await context.conversions.recoverConversions();
   } catch (error) {
-    context.logger.error("Conversion recovery failed", { error });
+    context.logger.error("Conversion recovery failed", { error: logCause(error) });
   }
 }
 
@@ -57,7 +58,7 @@ export async function startServer(context: AppContext): Promise<ServerInfo> {
   try {
     stopMonitoring = context.scanner.startMonitoring();
   } catch (error) {
-    context.logger.warn("Library monitoring unavailable", { error });
+    context.logger.warn("Library monitoring unavailable", { error: logCause(error) });
   }
 
   const startupTasks = scheduleStartupTasks(context);
@@ -89,7 +90,7 @@ async function runApplication(): Promise<void> {
       clearTimeout(timeout);
       process.exit(0);
     } catch (error) {
-      context.logger.error("Graceful shutdown failed", { error });
+      context.logger.error("Graceful shutdown failed", { error: logCause(error) });
       process.exit(1);
     }
   };
@@ -102,7 +103,7 @@ async function runApplication(): Promise<void> {
     process.exit(1);
   });
   process.on("unhandledRejection", (error) => {
-    context.logger.error("Unhandled rejection", { error });
+    context.logger.error("Unhandled rejection", { error: logCause(error) });
     process.exit(1);
   });
 }

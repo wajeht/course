@@ -1,4 +1,12 @@
-export type LogFields = Record<string, unknown>;
+export type LogValue = boolean | Error | null | number | string | undefined;
+export type LogFields = Record<string, LogValue>;
+
+interface SerializedError {
+  cause: LogValue | SerializedError;
+  message: string;
+  name: string;
+  stack?: string;
+}
 
 export interface Logger {
   debug(message: string, fields?: LogFields): void;
@@ -7,13 +15,19 @@ export interface Logger {
   error(message: string, fields?: LogFields): void;
 }
 
-function errorValue(value: unknown): unknown {
+export function logCause(cause: unknown): LogValue {
+  if (cause instanceof Error) return cause;
+  if (cause === undefined || cause === null) return cause;
+  return String(cause);
+}
+
+function errorValue(value: LogValue): LogValue | SerializedError {
   if (!(value instanceof Error)) return value;
   return {
     name: value.name,
     message: value.message,
     stack: value.stack,
-    cause: errorValue(value.cause),
+    cause: errorValue(logCause(value.cause)),
   };
 }
 

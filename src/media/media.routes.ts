@@ -8,35 +8,34 @@ import { Hono, type Context } from "hono";
 import { z } from "zod";
 
 import type { AppContext } from "../context.js";
+import { hasErrorCode } from "../errors.js";
 import { createRequireAuth } from "../auth/auth.routes.js";
 import { playlistParametersSchema, videoParametersSchema } from "../library/library.schema.js";
 import { resolveContainedPath } from "./path.js";
 import { parseByteRange } from "./range.js";
 import { chapterThumbnailRelativePath, thumbnailRelativePath } from "./thumbnails.js";
 
-const hlsParametersSchema = z.object({
-  videoId: videoParametersSchema.shape.videoId,
+const hlsParametersSchema = videoParametersSchema.extend({
   filename: z.string().regex(/^(?:index\.m3u8|segment-\d{5}\.ts)$/),
 });
 
-const chapterCoverParametersSchema = z.object({
-  videoId: videoParametersSchema.shape.videoId,
+const chapterCoverParametersSchema = videoParametersSchema.extend({
   startSeconds: z.coerce.number().int().nonnegative(),
 });
 
-const videoContentTypes: Record<string, string> = {
-  ".mp4": "video/mp4",
-  ".m4v": "video/x-m4v",
-  ".webm": "video/webm",
-  ".mov": "video/quicktime",
-  ".mkv": "video/x-matroska",
-  ".avi": "video/x-msvideo",
-  ".mpeg": "video/mpeg",
-  ".mpg": "video/mpeg",
-};
+const videoContentTypes = new Map([
+  [".mp4", "video/mp4"],
+  [".m4v", "video/x-m4v"],
+  [".webm", "video/webm"],
+  [".mov", "video/quicktime"],
+  [".mkv", "video/x-matroska"],
+  [".avi", "video/x-msvideo"],
+  [".mpeg", "video/mpeg"],
+  [".mpg", "video/mpeg"],
+]);
 
-function createFileBody(filename: string, range?: { start: number; end: number }): ReadableStream {
-  return Readable.toWeb(createReadStream(filename, range)) as ReadableStream;
+function createFileBody(filename: string, range?: { start: number; end: number }) {
+  return Readable.toWeb(createReadStream(filename, range));
 }
 
 function coverContentType(filename: string): string {
@@ -69,7 +68,7 @@ async function trySendCover(
   try {
     return await sendCoverImage(c, await resolveContainedPath(root, relativePath));
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    if (hasErrorCode(error, "ENOENT")) return null;
     throw error;
   }
 }
@@ -87,7 +86,7 @@ export function createMediaRouter(context: AppContext) {
     );
     const statistics = await fs.stat(filename);
     const contentType =
-      videoContentTypes[path.extname(filename).toLowerCase()] ?? "application/octet-stream";
+      videoContentTypes.get(path.extname(filename).toLowerCase()) ?? "application/octet-stream";
     c.header("Accept-Ranges", "bytes");
     c.header("Content-Type", contentType);
     c.header("Cache-Control", "private, no-store");
@@ -195,7 +194,7 @@ export function createMediaRouter(context: AppContext) {
         c.header("Content-Length", String(statistics.size));
         return c.body(createFileBody(file));
       } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === "ENOENT") return c.body(null, 404);
+        if (hasErrorCode(error, "ENOENT")) return c.body(null, 404);
         throw error;
       }
     },

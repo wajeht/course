@@ -3,25 +3,12 @@
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises, mount } from "@vue/test-utils";
 import { createMemoryHistory, createRouter } from "vue-router";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { api, type LibraryDto } from "@/api.js";
 import { queryKeys } from "@/queries.js";
 
 import LibraryPage from "./LibraryPage.vue";
-
-vi.mock("@/api.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/api.js")>();
-  return {
-    ...actual,
-    api: {
-      ...actual.api,
-      getLibrary: vi.fn(),
-      getSettings: vi.fn(async () => ({ libraryPageSize: 24 })),
-      updateSettings: vi.fn(async (libraryPageSize) => ({ libraryPageSize })),
-    },
-  };
-});
 
 const playlistId = "1".repeat(24);
 const videoId = "2".repeat(24);
@@ -93,6 +80,16 @@ async function mountLibraryPage(
 }
 
 describe("LibraryPage", () => {
+  beforeEach(() => {
+    vi.spyOn(api, "getLibrary");
+    vi.spyOn(api, "getSettings").mockResolvedValue({ libraryPageSize: 24 });
+    vi.spyOn(api, "updateSettings").mockImplementation(async (libraryPageSize) => ({
+      libraryPageSize,
+    }));
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
   it("shows videos by default and only playlist cards in the playlists view", async () => {
     const { router, wrapper } = await mountLibraryPage();
 

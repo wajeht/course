@@ -67,8 +67,8 @@ watch(
 );
 
 onMounted(() => {
-  if (typeof ResizeObserver !== "undefined") {
-    descriptionObserver = new ResizeObserver(measureDescriptionOverflow);
+  if ("ResizeObserver" in globalThis) {
+    descriptionObserver = new globalThis.ResizeObserver(measureDescriptionOverflow);
   }
   observeDescription();
 });

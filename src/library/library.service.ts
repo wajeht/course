@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import type {
   ChapterRow,
   FilterCountRow,
@@ -103,9 +105,10 @@ export interface ThumbnailLookup {
 }
 
 type ThumbnailLookupIndex = Awaited<ReturnType<ThumbnailLookup["listThumbnailIndex"]>>;
+const stringListSchema = z.array(z.string());
 
 function stringList(value: string | null): string[] {
-  return value ? (JSON.parse(value) as string[]) : [];
+  return value ? stringListSchema.parse(JSON.parse(value)) : [];
 }
 
 function mergeNames(...lists: string[][]): string[] {

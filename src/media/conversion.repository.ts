@@ -19,20 +19,29 @@ export interface ConversionRepository {
   listPendingVideoIds(): Promise<string[]>;
 }
 
+interface ConversionRow {
+  error: string | null;
+  progress: number;
+  status: ConversionState;
+  video_id: string;
+}
+
+type ConversionUpdate = Partial<Pick<ConversionRow, "error" | "progress" | "status">>;
+
 export function createConversionRepository(database: Knex): ConversionRepository {
-  async function updateConversion(videoId: string, values: Record<string, unknown>): Promise<void> {
-    await database("conversions").where({ video_id: videoId }).update(values);
+  async function updateConversion(videoId: string, values: ConversionUpdate): Promise<void> {
+    await database<ConversionRow>("conversions").where({ video_id: videoId }).update(values);
   }
 
   return {
     async getConversion(videoId) {
-      const row = await database("conversions").where({ video_id: videoId }).first();
+      const row = await database<ConversionRow>("conversions").where({ video_id: videoId }).first();
       if (!row) return null;
       return {
-        videoId: row.video_id as string,
-        status: row.status as ConversionState,
+        videoId: row.video_id,
+        status: row.status,
         progress: Number(row.progress),
-        error: row.error as string | null,
+        error: row.error,
       };
     },
     async queueConversion(videoId) {
@@ -60,10 +69,10 @@ export function createConversionRepository(database: Knex): ConversionRepository
       }),
     markFailed: (videoId, error) => updateConversion(videoId, { status: "failed", error }),
     async listPendingVideoIds() {
-      const rows = await database("conversions")
+      const rows = await database<ConversionRow>("conversions")
         .whereIn("status", ["queued", "converting"])
         .select("video_id");
-      return rows.map((row) => row.video_id as string);
+      return rows.map((row) => row.video_id);
     },
   };
 }

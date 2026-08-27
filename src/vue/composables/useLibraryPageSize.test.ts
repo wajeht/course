@@ -3,24 +3,11 @@
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { createApp, effectScope } from "vue";
 import { createMemoryHistory, createRouter } from "vue-router";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { api, type LibraryDto } from "@/api.js";
 import { useLibraryPageSize } from "@/composables/useLibraryPageSize.js";
 import { libraryQueryOptions, queryKeys } from "@/queries.js";
-
-vi.mock("@/api.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/api.js")>();
-  return {
-    ...actual,
-    api: {
-      ...actual.api,
-      getLibrary: vi.fn(async () => library()),
-      getSettings: vi.fn(async () => ({ libraryPageSize: 24 })),
-      updateSettings: vi.fn(async (libraryPageSize) => ({ libraryPageSize })),
-    },
-  };
-});
 
 function library(): LibraryDto {
   return {
@@ -58,11 +45,15 @@ async function setup(path = "/videos") {
   };
 }
 
-afterEach(() => {
-  vi.mocked(api.getLibrary).mockClear();
-  vi.mocked(api.getSettings).mockClear();
-  vi.mocked(api.updateSettings).mockClear();
+beforeEach(() => {
+  vi.spyOn(api, "getLibrary").mockImplementation(async () => library());
+  vi.spyOn(api, "getSettings").mockResolvedValue({ libraryPageSize: 24 });
+  vi.spyOn(api, "updateSettings").mockImplementation(async (libraryPageSize) => ({
+    libraryPageSize,
+  }));
 });
+
+afterEach(() => vi.restoreAllMocks());
 
 describe("useLibraryPageSize", () => {
   it("saves on change, preserves the current URL, and refreshes the library", async () => {

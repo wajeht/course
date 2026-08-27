@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { VNode } from "vue";
+
 import AlertMessage from "@/components/ui/AlertMessage.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppFooter from "@/components/ui/AppFooter.vue";
@@ -10,7 +12,7 @@ import StandardPageLayout from "@/layouts/StandardPageLayout.vue";
 import SettingsNavigation from "@/pages/settings/partials/SettingsNavigation.vue";
 
 defineSlots<{
-  default(): unknown;
+  default(): VNode[];
 }>();
 
 const auth = useAuth();

@@ -1,4 +1,5 @@
 import { hc } from "hono/client";
+import { z } from "zod";
 
 import type { AppType } from "../app";
 import type {
@@ -43,6 +44,7 @@ export type {
 
 const thumbnailPollMilliseconds = 500;
 const thumbnailPollLimit = 1_200;
+const errorResponseSchema = z.object({ message: z.string().optional() });
 
 function wait(milliseconds: number, signal?: AbortSignal): Promise<void> {
   if (!signal) return new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -73,27 +75,27 @@ export class ApiError extends Error {
   }
 }
 
-export function apiErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof ApiError && error.message.trim() ? error.message : fallback;
+export function apiErrorMessage(cause: unknown, fallback: string): string {
+  return cause instanceof ApiError && cause.message.trim() ? cause.message : fallback;
 }
 
-export function isLibraryResourceNotFound(error: unknown): error is ApiError {
-  return error instanceof ApiError && (error.status === 400 || error.status === 404);
+export function isLibraryResourceNotFound(cause: unknown): cause is ApiError {
+  return cause instanceof ApiError && (cause.status === 400 || cause.status === 404);
 }
 
 export async function expectJson<T>(response: Response, notifyUnauthorized = false): Promise<T> {
-  const body = (await response.json()) as T | { message?: string };
+  const body: unknown = await response.json();
   if (!response.ok) {
-    if (notifyUnauthorized && response.status === 401 && typeof window !== "undefined") {
-      window.dispatchEvent(new Event("videos:unauthorized"));
+    if (notifyUnauthorized && response.status === 401 && "window" in globalThis) {
+      globalThis.window.dispatchEvent(new Event("videos:unauthorized"));
     }
+    const errorBody = errorResponseSchema.safeParse(body);
     throw new ApiError(
-      "message" in (body as object)
-        ? ((body as { message?: string }).message ?? "Request failed")
-        : "Request failed",
+      errorBody.success ? (errorBody.data.message ?? "Request failed") : "Request failed",
       response.status,
     );
   }
+  // SAFETY: The Hono client derives successful response contracts from AppType in this same build.
   return body as T;
 }
 

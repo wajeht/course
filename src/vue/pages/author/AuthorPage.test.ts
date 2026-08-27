@@ -3,24 +3,20 @@
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises, mount } from "@vue/test-utils";
 import { createMemoryHistory, createRouter } from "vue-router";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { api, type LibraryDto } from "@/api.js";
 
 import AuthorPage from "./AuthorPage.vue";
 
-vi.mock("@/api.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/api.js")>();
-  return {
-    ...actual,
-    api: { ...actual.api, getLibrary: vi.fn() },
-  };
-});
-
 const playlistId = "1".repeat(24);
 const videoId = "2".repeat(24);
 
-afterEach(() => vi.unstubAllGlobals());
+beforeEach(() => vi.spyOn(api, "getLibrary"));
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 function useMobileViewport(): void {
   vi.stubGlobal(
@@ -206,7 +202,7 @@ describe("AuthorPage", () => {
 
   it("does not show a stale load-more error after navigating to another author", async () => {
     useMobileViewport();
-    let rejectJanePage!: (reason?: unknown) => void;
+    let rejectJanePage!: (cause?: unknown) => void;
     const pendingJanePage = new Promise<LibraryDto>((_resolve, reject) => {
       rejectJanePage = reject;
     });

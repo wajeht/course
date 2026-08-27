@@ -27,8 +27,8 @@ export function useMediaSession(
   metadata: ComputedRef<VideoMediaMetadata | null>,
   navigation: MediaSessionNavigation = {},
 ): void {
-  if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
-  const session = navigator.mediaSession;
+  if (!("navigator" in globalThis) || !("mediaSession" in globalThis.navigator)) return;
+  const session = globalThis.navigator.mediaSession;
   let attachedVideo: HTMLVideoElement | null = null;
 
   function setHandler(action: MediaSessionAction, handler: MediaSessionActionHandler | null): void {
@@ -111,11 +111,11 @@ export function useMediaSession(
   watch(
     metadata,
     (value) => {
-      if (!value || typeof MediaMetadata === "undefined") {
+      if (!value || !("MediaMetadata" in globalThis)) {
         session.metadata = null;
         return;
       }
-      session.metadata = new MediaMetadata({
+      session.metadata = new globalThis.MediaMetadata({
         title: value.title,
         artist: value.artist,
         album: value.album,

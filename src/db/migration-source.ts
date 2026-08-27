@@ -2,8 +2,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import type { Knex } from "knex";
+import { z } from "zod";
 
 const sourceExtensions = new Set([".js", ".ts"]);
+const migrationSchema = z.object({
+  up: z.custom<Knex.Migration["up"]>((value) => value instanceof Function),
+  down: z.custom<Knex.Migration["down"]>((value) => value instanceof Function),
+});
 
 export function createMigrationSource(directory: string): Knex.MigrationSource<string> {
   const files = new Map<string, string>();
@@ -33,16 +38,13 @@ export function createMigrationSource(directory: string): Knex.MigrationSource<s
 
     async getMigration(migration: string): Promise<Knex.Migration> {
       const file = files.get(migration) ?? migration;
-      const module = (await import(path.join(directory, file))) as {
-        up?: Knex.Migration["up"];
-        down?: Knex.Migration["down"];
-        default?: Knex.Migration;
-      };
+      const module = await import(path.join(directory, file));
       const loaded = module.default ?? module;
-      if (typeof loaded.up !== "function" || typeof loaded.down !== "function") {
+      const result = migrationSchema.safeParse(loaded);
+      if (!result.success) {
         throw new TypeError(`Migration ${migration} must export up and down functions`);
       }
-      return loaded as Knex.Migration;
+      return result.data;
     },
   };
 }

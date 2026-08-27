@@ -4,6 +4,14 @@ import { api, type AuthStateDto } from "@/api.js";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "error";
 
+interface AuthControllerState {
+  error: string;
+  passwordConfigured: boolean;
+  setupEnabled: boolean;
+  setupTokenRequired: boolean;
+  status: AuthStatus;
+}
+
 interface AuthClient {
   changePassword(
     currentPassword: string,
@@ -23,13 +31,7 @@ export interface AuthController {
   login(password: string): Promise<void>;
   logout(): Promise<void>;
   setupPassword(password: string, confirmPassword: string, setupToken?: string): Promise<void>;
-  state: Readonly<{
-    error: string;
-    passwordConfigured: boolean;
-    setupEnabled: boolean;
-    setupTokenRequired: boolean;
-    status: AuthStatus;
-  }>;
+  state: Readonly<AuthControllerState>;
 }
 
 export const authKey: InjectionKey<AuthController> = Symbol("videos-auth");
@@ -38,8 +40,8 @@ export function createAuth(
   client: AuthClient = api,
   checkTimeoutMilliseconds = 10_000,
 ): AuthController {
-  const state = reactive({
-    status: "loading" as AuthStatus,
+  const state = reactive<AuthControllerState>({
+    status: "loading",
     passwordConfigured: false,
     setupEnabled: false,
     setupTokenRequired: false,
@@ -52,8 +54,8 @@ export function createAuth(
     state.error = "Your session expired. Sign in again.";
   }
 
-  if (typeof window !== "undefined") {
-    window.addEventListener("videos:unauthorized", handleUnauthorized);
+  if ("window" in globalThis) {
+    globalThis.window.addEventListener("videos:unauthorized", handleUnauthorized);
   }
 
   async function initialize(): Promise<void> {
@@ -103,8 +105,8 @@ export function createAuth(
   return {
     changePassword: client.changePassword,
     dispose: () => {
-      if (typeof window !== "undefined") {
-        window.removeEventListener("videos:unauthorized", handleUnauthorized);
+      if ("window" in globalThis) {
+        globalThis.window.removeEventListener("videos:unauthorized", handleUnauthorized);
       }
     },
     initialize,

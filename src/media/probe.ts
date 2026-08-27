@@ -2,6 +2,8 @@ import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
 
+import { z } from "zod";
+
 const execFileAsync = promisify(execFile);
 
 export const videoExtensions = new Set([
@@ -15,20 +17,22 @@ export const videoExtensions = new Set([
   ".mpg",
 ]);
 
-interface ProbeStream {
-  codec_type?: string;
-  codec_name?: string;
-  duration?: string;
-}
+const probeStreamSchema = z.object({
+  codec_type: z.string().optional(),
+  codec_name: z.string().optional(),
+  duration: z.string().optional(),
+});
 
-interface ProbeOutput {
-  streams?: ProbeStream[];
-  format?: {
-    duration?: string;
-    format_name?: string;
-    size?: string;
-  };
-}
+const probeOutputSchema = z.object({
+  streams: z.array(probeStreamSchema).optional(),
+  format: z
+    .object({
+      duration: z.string().optional(),
+      format_name: z.string().optional(),
+      size: z.string().optional(),
+    })
+    .optional(),
+});
 
 export interface VideoProbe {
   durationSeconds: number;
@@ -60,7 +64,7 @@ export async function probeVideo(filename: string, ffprobePath: string): Promise
     ["-v", "error", "-show_format", "-show_streams", "-of", "json", filename],
     { encoding: "utf8", maxBuffer: 5 * 1024 * 1024, timeout: 30_000 },
   );
-  const output = JSON.parse(stdout) as ProbeOutput;
+  const output = probeOutputSchema.parse(JSON.parse(stdout));
   const videoStream = output.streams?.find((stream) => stream.codec_type === "video");
   const audioStream = output.streams?.find((stream) => stream.codec_type === "audio");
   const durationSeconds = Number(output.format?.duration ?? videoStream?.duration);

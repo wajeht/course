@@ -12,7 +12,7 @@ export function useModalDialog(open: () => boolean, requestClose: () => void) {
     const element = dialog.value;
     if (!element || element.open) return;
     restoreFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    if (typeof element.showModal === "function") element.showModal();
+    if (element.showModal instanceof Function) element.showModal();
     else element.setAttribute("open", "");
     stackToken = modalStack.register(requestClose);
     void nextTick(() => element.querySelector<HTMLElement>("[autofocus]")?.focus());
@@ -20,7 +20,7 @@ export function useModalDialog(open: () => boolean, requestClose: () => void) {
 
   function closeDialog(): void {
     const element = dialog.value;
-    if (element?.open && typeof element.close === "function") element.close();
+    if (element?.open && element.close instanceof Function) element.close();
     else element?.removeAttribute("open");
     if (stackToken) modalStack.unregister(stackToken);
     stackToken = null;

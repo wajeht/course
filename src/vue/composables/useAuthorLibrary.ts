@@ -14,7 +14,9 @@ export function useAuthorLibrary(accumulatePages: MaybeRefOrGetter<boolean>) {
   const accumulatePagesRef = toRef(accumulatePages);
   const authorName = computed(() => String(route.params.authorName));
   const page = computed(() => {
-    const value = typeof route.query.page === "string" ? Number.parseInt(route.query.page, 10) : 1;
+    const queryPage = route.query.page;
+    const pageValue = Array.isArray(queryPage) ? queryPage[0] : queryPage;
+    const value = pageValue ? Number.parseInt(pageValue, 10) : 1;
     return Number.isInteger(value) && value > 0 ? value : 1;
   });
   const filters = computed(() => ({ author: [authorName.value], page: page.value }));

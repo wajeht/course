@@ -282,10 +282,9 @@ export function createLibraryApiRepository(database: Knex): LibraryRepository {
     async countVideos(filters = {}) {
       const queryBuilder = database("videos")
         .leftJoin("playlists", "playlists.id", "videos.playlist_id")
-        .countDistinct({ video_count: "videos.id" })
-        .first();
+        .countDistinct({ video_count: "videos.id" });
       applyVideoFilters(queryBuilder, filters);
-      const row = (await queryBuilder) as { video_count?: number | string } | undefined;
+      const row = await queryBuilder.first<{ video_count?: number | string }>();
       return Number(row?.video_count ?? 0);
     },
 
@@ -343,10 +342,10 @@ export function createLibraryApiRepository(database: Knex): LibraryRepository {
             )
             .as("effective_authors"),
         )
-        .select(database.raw("MIN(name) as name"))
+        .select<FilterCountRow[]>(database.raw("MIN(name) as name"))
         .countDistinct("video_id as video_count")
         .groupByRaw("name COLLATE NOCASE")
-        .orderByRaw("name COLLATE NOCASE") as unknown as FilterCountRow[];
+        .orderByRaw("name COLLATE NOCASE");
     },
 
     async listTags() {
@@ -365,10 +364,10 @@ export function createLibraryApiRepository(database: Knex): LibraryRepository {
             )
             .as("effective_tags"),
         )
-        .select(database.raw("MIN(name) as name"))
+        .select<FilterCountRow[]>(database.raw("MIN(name) as name"))
         .countDistinct("video_id as video_count")
         .groupByRaw("name COLLATE NOCASE")
-        .orderByRaw("name COLLATE NOCASE") as unknown as FilterCountRow[];
+        .orderByRaw("name COLLATE NOCASE");
     },
 
     listContinueWatching() {

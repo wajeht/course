@@ -8,7 +8,12 @@ import {
   watch,
   type MaybeRefOrGetter,
 } from "vue";
-import { useRoute, useRouter, type LocationQueryRaw } from "vue-router";
+import {
+  useRoute,
+  useRouter,
+  type LocationQueryRaw,
+  type LocationQueryValue,
+} from "vue-router";
 
 import {
   api,
@@ -19,9 +24,10 @@ import {
 } from "@/api.js";
 import { libraryQueryOptions } from "@/queries.js";
 
-function strings(value: unknown): string[] {
-  const values = typeof value === "string" ? [value] : Array.isArray(value) ? value : [];
-  return [...new Set(values.filter((item): item is string => typeof item === "string" && !!item))];
+function strings(value: LocationQueryValue | LocationQueryValue[] | undefined): string[] {
+  if (value === undefined) return [];
+  const values = Array.isArray(value) ? value : [value];
+  return [...new Set(values.filter((item): item is string => item !== null && item.length > 0))];
 }
 
 function emptyLibrary(): LibraryDto {
@@ -48,7 +54,10 @@ export function useLibraryBrowser(options: UseLibraryBrowserOptions = {}) {
   const queryClient = useQueryClient();
   const accumulatePagesRef = toRef(accumulatePages);
   const pageSizeRef = toRef(pageSize);
-  const routeSearch = computed(() => (typeof route.query.q === "string" ? route.query.q : ""));
+  const routeSearch = computed(() => {
+    const value = route.query.q;
+    return Array.isArray(value) ? (value[0] ?? "") : (value ?? "");
+  });
   const query = shallowRef(routeSearch.value);
   const page = computed(() => Math.max(1, Number(route.query.page) || 1));
 

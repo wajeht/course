@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 
 import { z } from "zod";
 
+import { hasErrorCode } from "../errors.js";
 import { metadataNameSchema, metadataNamesSchema, sourceMetadataSchema } from "./metadata.js";
 
 const chapterSchema = z
@@ -43,12 +44,12 @@ export async function readVideoMetadata(videoFilename: string): Promise<{
   const sidecarFilename = `${videoFilename}.json`;
   try {
     const contents = await fs.readFile(sidecarFilename, "utf8");
-    const result = videoMetadataSchema.safeParse(JSON.parse(contents) as unknown);
+    const result = videoMetadataSchema.safeParse(JSON.parse(contents));
     return result.success
       ? { metadata: result.data, warning: null }
       : { metadata: null, warning: result.error.message };
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+    if (hasErrorCode(error, "ENOENT")) {
       return { metadata: null, warning: null };
     }
     return {

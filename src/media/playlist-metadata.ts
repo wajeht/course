@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { z } from "zod";
 
+import { hasErrorCode } from "../errors.js";
 import { metadataNameSchema, metadataNamesSchema, sourceMetadataSchema } from "./metadata.js";
 
 const playlistMetadataSchema = z
@@ -25,12 +26,12 @@ export async function readPlaylistMetadata(playlistDirectory: string): Promise<{
 }> {
   try {
     const contents = await fs.readFile(path.join(playlistDirectory, "playlist.json"), "utf8");
-    const result = playlistMetadataSchema.safeParse(JSON.parse(contents) as unknown);
+    const result = playlistMetadataSchema.safeParse(JSON.parse(contents));
     return result.success
       ? { metadata: result.data, warning: null }
       : { metadata: null, warning: result.error.message };
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+    if (hasErrorCode(error, "ENOENT")) {
       return { metadata: null, warning: null };
     }
     return {

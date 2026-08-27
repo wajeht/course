@@ -110,7 +110,7 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
   const playlist = computed(() => {
     const list = route.query.list;
     const loaded = loadedPlaylist.value;
-    if (typeof list !== "string" || !loaded || list !== loaded.id) return null;
+    if (Array.isArray(list) || !list || !loaded || list !== loaded.id) return null;
     return loaded;
   });
   const playlistVideos = computed(
@@ -207,8 +207,10 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
   usePauseVideoOnHidden(element);
 
   function queryTimestamp(): number | null {
-    if (typeof route.query.t !== "string" || !route.query.t.trim()) return null;
-    const seconds = Number(route.query.t);
+    const queryValue = route.query.t;
+    const timestamp = Array.isArray(queryValue) ? queryValue[0] : queryValue;
+    if (!timestamp?.trim()) return null;
+    const seconds = Number(timestamp);
     return Number.isFinite(seconds) && seconds >= 0 ? seconds : null;
   }
   function seek(seconds: number) {

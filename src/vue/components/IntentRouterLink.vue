@@ -6,7 +6,7 @@ import { useIntentPrefetch } from "@/composables/useIntentPrefetch.js";
 defineOptions({ inheritAttrs: false });
 
 const props = defineProps<{
-  prefetch: () => Promise<unknown>;
+  prefetch: () => Promise<void>;
   to: RouteLocationRaw;
 }>();
 

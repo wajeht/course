@@ -1,7 +1,7 @@
 import { onScopeDispose, watch, type Ref } from "vue";
 
 export function useScreenWakeLock(video: Ref<HTMLVideoElement | null>): void {
-  if (typeof navigator === "undefined" || !("wakeLock" in navigator)) return;
+  if (!("navigator" in globalThis) || !("wakeLock" in globalThis.navigator)) return;
   let attachedVideo: HTMLVideoElement | null = null;
   let sentinel: WakeLockSentinel | null = null;
   let disposed = false;
@@ -26,7 +26,7 @@ export function useScreenWakeLock(video: Ref<HTMLVideoElement | null>): void {
     sentinel = null;
     requesting = true;
     try {
-      const acquired = await navigator.wakeLock.request("screen");
+      const acquired = await globalThis.navigator.wakeLock.request("screen");
       if (!shouldStayAwake()) {
         await releaseSentinel(acquired);
         return;

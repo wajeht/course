@@ -8,7 +8,8 @@ import { promisify } from "node:util";
 import { z } from "zod";
 
 import type { Configuration } from "../config.js";
-import type { Logger } from "../logger.js";
+import { hasErrorCode } from "../errors.js";
+import { logCause, type Logger } from "../logger.js";
 import { resolveContainedPath } from "./path.js";
 import type { VideoRecord } from "./types.js";
 
@@ -184,7 +185,7 @@ export function createThumbnailCache({
       );
       return parsed.success ? parsed.data : null;
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT" || error instanceof SyntaxError) {
+      if (hasErrorCode(error, "ENOENT") || error instanceof SyntaxError) {
         return null;
       }
       throw error;
@@ -217,7 +218,7 @@ export function createThumbnailCache({
       ]);
       return true;
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+      if (hasErrorCode(error, "ENOENT")) return false;
       throw error;
     }
   }
@@ -227,7 +228,7 @@ export function createThumbnailCache({
     try {
       entries = await fs.readdir(directory, { withFileTypes: true });
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      if (hasErrorCode(error, "ENOENT")) {
         loaded = true;
         return;
       }
@@ -280,7 +281,7 @@ export function createThumbnailCache({
     try {
       entries = await fs.readdir(directory);
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
+      if (hasErrorCode(error, "ENOENT")) return;
       throw error;
     }
     await Promise.all(
@@ -301,7 +302,7 @@ export function createThumbnailCache({
       }
       return ids;
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") return new Set();
+      if (hasErrorCode(error, "ENOENT")) return new Set();
       throw error;
     }
   }
@@ -347,7 +348,10 @@ export function createThumbnailCache({
           .map((name) => fs.rm(path.join(directory, name), { force: true })),
       );
     } catch (error) {
-      logger.warn("Could not prune old thumbnail revisions", { videoId, error });
+      logger.warn("Could not prune old thumbnail revisions", {
+        videoId,
+        error: logCause(error),
+      });
     }
   }
 
@@ -447,7 +451,7 @@ export function createThumbnailCache({
           logger.warn("Could not generate thumbnail", {
             videoId: video.id,
             path: video.path,
-            error,
+            error: logCause(error),
           });
         }
       });
@@ -465,7 +469,7 @@ export function createThumbnailCache({
           logger.warn("Could not regenerate thumbnail", {
             videoId: video.id,
             path: video.path,
-            error,
+            error: logCause(error),
           });
           jobs.set(video.id, { status: "failed", message: "Could not regenerate thumbnails" });
         },

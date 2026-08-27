@@ -4,7 +4,7 @@ import { apiErrorMessage } from "@/api.js";
 
 interface AsyncActionOptions<TResult> {
   errorMessage?: string;
-  onError?: (error: unknown) => void;
+  onError?: (cause: unknown) => void;
   onSuccess?: (result: TResult) => void | Promise<void>;
 }
 

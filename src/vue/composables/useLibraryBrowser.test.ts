@@ -3,15 +3,10 @@
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { createApp, effectScope, isReadonly } from "vue";
 import { createMemoryHistory, createRouter } from "vue-router";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { api, type LibraryDto, type LibraryFilters } from "@/api.js";
 import { useLibraryBrowser } from "@/composables/useLibraryBrowser.js";
-
-vi.mock("@/api.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/api.js")>();
-  return { ...actual, api: { ...actual.api, getLibrary: vi.fn() } };
-});
 
 function library(title: string, page: number): LibraryDto {
   const id = String(page).repeat(24);
@@ -69,7 +64,8 @@ async function setup(path = "/videos") {
   };
 }
 
-afterEach(() => vi.mocked(api.getLibrary).mockReset());
+beforeEach(() => vi.spyOn(api, "getLibrary"));
+afterEach(() => vi.restoreAllMocks());
 
 describe("useLibraryBrowser", () => {
   it("appends videos and stores the loaded page in the URL", async () => {

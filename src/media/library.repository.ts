@@ -1,4 +1,5 @@
 import type { Knex } from "knex";
+import { z } from "zod";
 
 import type { LibrarySnapshot, VideoRecord } from "./types.js";
 
@@ -18,6 +19,28 @@ export interface LibraryCounts {
   playlistCount: number;
   videoCount: number;
 }
+
+interface StoredVideoRow {
+  audio_codec: string | null;
+  browser_compatible: boolean | number;
+  container: string;
+  description: string;
+  duration_seconds: number;
+  id: string;
+  modified_at: string;
+  path: string;
+  playlist_id: string | null;
+  playlist_section_id: string | null;
+  size_bytes: number;
+  sort_order: number;
+  source_provider: string | null;
+  source_url: string | null;
+  tags_json: string;
+  title: string;
+  video_codec: string;
+}
+
+const storedTagsSchema = z.array(z.string());
 
 export interface LibraryRepository {
   synchronizeLibrary(snapshot: LibrarySnapshot): Promise<void>;
@@ -123,12 +146,12 @@ export function createLibraryRepository(database: Knex): LibraryRepository {
     },
 
     async getVideos() {
-      const rows = await database("videos").select();
+      const rows = await database<StoredVideoRow>("videos").select();
       return rows.map(videoRecord);
     },
 
     async getVideo(videoId) {
-      const row = await database("videos").where({ id: videoId }).first();
+      const row = await database<StoredVideoRow>("videos").where({ id: videoId }).first();
       return row ? videoRecord(row) : undefined;
     },
 
@@ -154,7 +177,7 @@ export function createLibraryRepository(database: Knex): LibraryRepository {
   };
 }
 
-function videoRecord(row: Record<string, unknown>): VideoRecord {
+function videoRecord(row: StoredVideoRow): VideoRecord {
   return {
     id: String(row.id),
     path: String(row.path),
@@ -162,7 +185,7 @@ function videoRecord(row: Record<string, unknown>): VideoRecord {
     playlistSectionId: row.playlist_section_id === null ? null : String(row.playlist_section_id),
     title: String(row.title),
     description: String(row.description),
-    tags: JSON.parse(String(row.tags_json)) as string[],
+    tags: storedTagsSchema.parse(JSON.parse(row.tags_json)),
     sourceProvider: row.source_provider === null ? null : String(row.source_provider),
     sourceUrl: row.source_url === null ? null : String(row.source_url),
     sortOrder: Number(row.sort_order),

@@ -4,13 +4,15 @@ import { fileURLToPath, URL } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import vue from "@vitejs/plugin-vue";
 import { defineConfig } from "vitest/config";
+import { z } from "zod";
 
 import { configuration } from "./src/config.js";
 
 const projectRoot = fileURLToPath(new URL(".", import.meta.url));
-const { version } = JSON.parse(
-  readFileSync(new URL("./package.json", import.meta.url), "utf8"),
-) as { version: string };
+const packageSchema = z.object({ version: z.string() });
+const { version } = packageSchema.parse(
+  JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8")),
+);
 const appVersion = (process.env.APP_VERSION?.trim() || version).replace(/^v/, "");
 
 export default defineConfig({

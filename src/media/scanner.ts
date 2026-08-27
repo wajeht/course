@@ -5,7 +5,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import type { Configuration } from "../config.js";
-import type { Logger } from "../logger.js";
+import { logCause, type Logger } from "../logger.js";
 import type { LibraryRepository, RootEntryOrder } from "./library.repository.js";
 import { normalizeMetadataName } from "./metadata.js";
 import { displayName, naturalOrder } from "./names.js";
@@ -191,7 +191,7 @@ export function createScanner({
           ]);
           await thumbnails.synchronize(videos, chapters);
         } catch (error) {
-          logger.warn("Thumbnail synchronization failed", { error });
+          logger.warn("Thumbnail synchronization failed", { error: logCause(error) });
         }
       }
 
@@ -219,7 +219,7 @@ export function createScanner({
         error: error instanceof Error ? error.message : "Media scan failed",
       };
       currentScanStatus = failed;
-      logger.error("Media scan failed", { error });
+      logger.error("Media scan failed", { error: logCause(error) });
       return failed;
     }
   }
@@ -308,7 +308,9 @@ export function createScanner({
         watcherActive = false;
         if (debounce) clearTimeout(debounce);
         watcher.close();
-        logger.warn("Library watcher unavailable; scheduled scans will continue", { error });
+        logger.warn("Library watcher unavailable; scheduled scans will continue", {
+          error: logCause(error),
+        });
       });
 
       return () => {

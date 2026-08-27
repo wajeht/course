@@ -5,7 +5,7 @@ import path from "node:path";
 
 import type { Configuration } from "../config.js";
 import type { LibraryRepository, VideoRow } from "../library/library.repository.js";
-import type { Logger } from "../logger.js";
+import { logCause, type Logger } from "../logger.js";
 import type { ConversionRepository, StoredConversion } from "./conversion.repository.js";
 import { resolveContainedPath } from "./path.js";
 
@@ -179,7 +179,7 @@ export function createConversionManager(options: {
         } catch (error) {
           const message = error instanceof Error ? error.message : "Conversion failed";
           await options.repository.markFailed(videoId, message);
-          options.logger.error("Video conversion failed", { videoId, error });
+          options.logger.error("Video conversion failed", { videoId, error: logCause(error) });
         } finally {
           scheduled.delete(videoId);
         }

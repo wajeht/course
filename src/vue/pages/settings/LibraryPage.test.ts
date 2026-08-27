@@ -2,32 +2,12 @@
 
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises, mount } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { api } from "@/api.js";
 import { toastKey } from "@/composables/useToast.js";
 
 import LibraryPage from "./LibraryPage.vue";
-
-vi.mock("@/api.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/api.js")>();
-  return {
-    ...actual,
-    api: {
-      ...actual.api,
-      getScanStatus: vi.fn(async () => ({
-        completedAt: "2026-08-12T00:00:00.000Z",
-        playlistCount: 12,
-        error: null,
-        videoCount: 215,
-        startedAt: "2026-08-12T00:00:00.000Z",
-        status: "complete",
-        warnings: [],
-      })),
-      rescanLibrary: vi.fn(),
-    },
-  };
-});
 
 function mountLibraryPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -35,7 +15,7 @@ function mountLibraryPage() {
     global: {
       plugins: [[VueQueryPlugin, { queryClient }]],
       provide: {
-        [toastKey as symbol]: { success: vi.fn() },
+        [toastKey]: { success: vi.fn() },
       },
       stubs: { SettingsLayout: { template: "<slot />" } },
     },
@@ -44,8 +24,27 @@ function mountLibraryPage() {
 
 describe("settings/LibraryPage", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.spyOn(api, "getScanStatus").mockResolvedValue({
+      completedAt: "2026-08-12T00:00:00.000Z",
+      playlistCount: 12,
+      error: null,
+      videoCount: 215,
+      startedAt: "2026-08-12T00:00:00.000Z",
+      status: "complete",
+      warnings: [],
+    });
+    vi.spyOn(api, "rescanLibrary").mockResolvedValue({
+      status: "idle",
+      startedAt: null,
+      completedAt: null,
+      playlistCount: 0,
+      videoCount: 0,
+      warnings: [],
+      error: null,
+    });
   });
+
+  afterEach(() => vi.restoreAllMocks());
 
   it("renders library status without display settings", async () => {
     const wrapper = mountLibraryPage();
