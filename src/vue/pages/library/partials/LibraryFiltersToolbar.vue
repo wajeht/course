@@ -19,7 +19,12 @@ const props = defineProps<{
   pageSizeError?: string;
   tags: LibraryDto["tags"];
 }>();
-const emit = defineEmits<{ clear: [] }>();
+const emit = defineEmits<{
+  clear: [];
+  prefetch: [name: "author" | "tag", selection: string[]];
+  prefetchPageSize: [pageSize: LibraryPageSize];
+  prefetchView: [view: "videos" | "playlists"];
+}>();
 const author = defineModel<string[]>("author", { required: true });
 const query = defineModel<string>("query", { required: true });
 const tag = defineModel<string[]>("tag", { required: true });
@@ -91,7 +96,11 @@ function togglePanel(panel: FilterType): void {
         >Clear filters</AppButton
       >
       <PanelCard :elevated="false" padding="compact">
-        <LibraryPlaylistFilter v-model="view" name="library-desktop-view" />
+        <LibraryPlaylistFilter
+          v-model="view"
+          name="library-desktop-view"
+          @prefetch="emit('prefetchView', $event)"
+        />
       </PanelCard>
       <PanelCard :elevated="false" padding="compact">
         <LibraryFilterGroup
@@ -100,6 +109,7 @@ function togglePanel(panel: FilterType): void {
           label="Authors"
           name="library-desktop-author"
           :options="authors"
+          @prefetch="emit('prefetch', 'author', $event)"
         />
       </PanelCard>
       <PanelCard :elevated="false" padding="compact">
@@ -109,6 +119,7 @@ function togglePanel(panel: FilterType): void {
           label="Tags"
           name="library-desktop-tag"
           :options="tags"
+          @prefetch="emit('prefetch', 'tag', $event)"
         />
       </PanelCard>
       <PanelCard :elevated="false" padding="compact">
@@ -117,6 +128,7 @@ function togglePanel(panel: FilterType): void {
           :disabled="pageSizeDisabled"
           :error="pageSizeError"
           name="library-desktop-page-size"
+          @prefetch="emit('prefetchPageSize', $event)"
         />
       </PanelCard>
     </aside>
@@ -166,6 +178,7 @@ function togglePanel(panel: FilterType): void {
         v-model="view"
         hide-label
         name="library-mobile-view"
+        @prefetch="emit('prefetchView', $event)"
       />
       <LibraryFilterGroup
         v-else-if="activeMobilePanel === 'author'"
@@ -175,6 +188,7 @@ function togglePanel(panel: FilterType): void {
         label="Authors"
         name="library-mobile-author"
         :options="props.authors"
+        @prefetch="emit('prefetch', 'author', $event)"
       />
       <LibraryPageSizeFilter
         v-else-if="activeMobilePanel === 'pageSize'"
@@ -183,6 +197,7 @@ function togglePanel(panel: FilterType): void {
         :disabled="pageSizeDisabled"
         :error="pageSizeError"
         name="library-mobile-page-size"
+        @prefetch="emit('prefetchPageSize', $event)"
       />
       <LibraryFilterGroup
         v-else
@@ -192,6 +207,7 @@ function togglePanel(panel: FilterType): void {
         label="Tags"
         name="library-mobile-tag"
         :options="props.tags"
+        @prefetch="emit('prefetch', 'tag', $event)"
       />
     </AppDrawer>
   </div>

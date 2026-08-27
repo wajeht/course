@@ -14,6 +14,7 @@ const props = withDefaults(
   }>(),
   { collapsedLimit: 10, hideLabel: false },
 );
+const emit = defineEmits<{ prefetch: [selection: string[]] }>();
 const selected = defineModel<string[]>({ required: true });
 const expanded = shallowRef(false);
 const allOptions = computed(() => {
@@ -25,6 +26,13 @@ const allOptions = computed(() => {
 const visible = computed(() =>
   expanded.value ? allOptions.value : allOptions.value.slice(0, props.collapsedLimit),
 );
+
+function prefetchOption(name: string): void {
+  const selection = selected.value.includes(name)
+    ? selected.value.filter((selectedName) => selectedName !== name)
+    : [...selected.value, name];
+  emit("prefetch", selection);
+}
 </script>
 
 <template>
@@ -41,13 +49,18 @@ const visible = computed(() =>
     <p v-if="!visible.length" class="text-[.82rem] text-muted">{{ allLabel }}</p>
     <ul v-else class="space-y-2 text-[.86rem]">
       <li v-for="option in visible" :key="option.name">
-        <label class="flex cursor-pointer items-center gap-2.5 text-pine-deep max-[760px]:min-h-11">
+        <label
+          class="flex cursor-pointer items-center gap-2.5 text-pine-deep max-[760px]:min-h-11"
+          @pointerenter="prefetchOption(option.name)"
+        >
           <input
             v-model="selected"
             type="checkbox"
             :name="name"
             :value="option.name"
             class="h-4 w-4 rounded border-line text-pine focus-visible:ring-pine"
+            @focus="prefetchOption(option.name)"
+            @pointerdown="prefetchOption(option.name)"
           />
           <span>{{ option.name }} ({{ option.videoCount }})</span>
         </label>

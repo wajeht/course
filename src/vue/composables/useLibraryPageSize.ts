@@ -12,6 +12,7 @@ export function useLibraryPageSize() {
   const queryClient = useQueryClient();
   const settingsRequest = useQuery(settingsQueryOptions());
   const selectedSize = shallowRef<LibraryPageSize>(24);
+  const pageSizeOverride = shallowRef<LibraryPageSize>();
   const saveAction = useAsyncAction(
     (libraryPageSize: LibraryPageSize) => api.updateSettings(libraryPageSize),
     {
@@ -51,14 +52,19 @@ export function useLibraryPageSize() {
     const current = settingsRequest.data.value?.libraryPageSize;
     if (!current || value === current) return;
     selectedSize.value = value;
+    pageSizeOverride.value = value;
     const result = await saveAction.run(value);
-    if (result === undefined) selectedSize.value = current;
+    if (result === undefined) {
+      selectedSize.value = current;
+      pageSizeOverride.value = undefined;
+    }
   }
 
   return {
     disabled,
     error,
     libraryPageSize: readonly(selectedSize),
+    pageSizeOverride: readonly(pageSizeOverride),
     setLibraryPageSize,
   };
 }

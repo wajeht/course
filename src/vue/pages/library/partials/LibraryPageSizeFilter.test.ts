@@ -19,6 +19,19 @@ describe("LibraryPageSizeFilter", () => {
     expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual([48]);
   });
 
+  it("emits immediate prefetch intent for the hovered page size", async () => {
+    const wrapper = mount(LibraryPageSizeFilter, {
+      props: { modelValue: 24 },
+    });
+
+    await wrapper
+      .get('input[value="48"]')
+      .element.closest("label")!
+      .dispatchEvent(new PointerEvent("pointerenter"));
+
+    expect(wrapper.emitted("prefetch")).toEqual([[48]]);
+  });
+
   it("disables the options and shows save errors", () => {
     const wrapper = mount(LibraryPageSizeFilter, {
       props: {

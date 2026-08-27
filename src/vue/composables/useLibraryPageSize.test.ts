@@ -77,6 +77,7 @@ describe("useLibraryPageSize", () => {
     expect(queryClient.getQueryState(queryKeys.libraryList({ page: 2 }))?.isInvalidated).toBe(true);
     expect(queryClient.getQueryData(queryKeys.settings)).toEqual({ libraryPageSize: 48 });
     expect(pageSize.libraryPageSize.value).toBe(48);
+    expect(pageSize.pageSizeOverride.value).toBe(48);
     stop();
   });
 
@@ -100,6 +101,7 @@ describe("useLibraryPageSize", () => {
     await pageSize.setLibraryPageSize(48);
     expect(pageSize.error.value).toBe("Could not save library settings");
     expect(pageSize.libraryPageSize.value).toBe(24);
+    expect(pageSize.pageSizeOverride.value).toBeUndefined();
     stop();
   });
 });

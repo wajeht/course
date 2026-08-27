@@ -16,6 +16,13 @@ import LibraryFiltersToolbar from "@/pages/library/partials/LibraryFiltersToolba
 
 const isMobile = useMediaQuery("(max-width: 600px)");
 const {
+  disabled: pageSizeDisabled,
+  error: pageSizeError,
+  libraryPageSize,
+  pageSizeOverride,
+  setLibraryPageSize,
+} = useLibraryPageSize();
+const {
   canLoadMore,
   clearFilters,
   error,
@@ -27,20 +34,17 @@ const {
   loading,
   loadingMore,
   page,
+  prefetchFilter,
   prefetchPage,
+  prefetchPageSize,
+  prefetchView,
   query,
   refreshing,
   selectedAuthor,
   selectedTag,
   selectedView,
   setPage,
-} = useLibraryBrowser({ accumulatePages: isMobile });
-const {
-  disabled: pageSizeDisabled,
-  error: pageSizeError,
-  libraryPageSize,
-  setLibraryPageSize,
-} = useLibraryPageSize();
+} = useLibraryBrowser({ accumulatePages: isMobile, pageSize: pageSizeOverride });
 const displayedVideos = computed(() =>
   isMobile.value ? loadedVideos.value : library.value.videos,
 );
@@ -73,6 +77,9 @@ const displayedVideos = computed(() =>
           :page-size-error="pageSizeError"
           :tags="library.tags"
           @clear="clearFilters"
+          @prefetch="prefetchFilter"
+          @prefetch-page-size="prefetchPageSize"
+          @prefetch-view="prefetchView"
           @update:page-size="setLibraryPageSize"
         />
         <div class="min-w-0">
