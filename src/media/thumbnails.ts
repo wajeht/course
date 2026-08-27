@@ -33,9 +33,13 @@ export interface ThumbnailChapter {
   sortOrder?: number;
 }
 
+export interface ThumbnailIndex {
+  revisions: Map<string, number>;
+  chapterStartsByVideo: Map<string, number[]>;
+}
+
 export interface ThumbnailCache {
-  listThumbnailRevisions(): Promise<Map<string, number>>;
-  listChapterStarts(videoId: string): Promise<number[]>;
+  listThumbnailIndex(): Promise<ThumbnailIndex>;
   synchronize(videos: VideoRecord[], chapters?: ThumbnailChapter[]): Promise<void>;
   regenerate(video: VideoRecord, chapters?: ThumbnailChapter[]): Promise<void>;
 }
@@ -230,36 +234,34 @@ export function createThumbnailCache({
   }
 
   return {
-    async listThumbnailRevisions() {
+    async listThumbnailIndex() {
       try {
         const entries = await fs.readdir(directory);
         const revisions = new Map<string, number>();
+        const chapterStartsByVideo = new Map<string, number[]>();
         await Promise.all(
           entries.map(async (name) => {
             const videoId = posterVideoId(name);
-            if (!videoId) return;
-            const statistics = await fs.stat(path.join(directory, name));
-            revisions.set(videoId, Math.round(statistics.mtimeMs));
+            if (videoId) {
+              const statistics = await fs.stat(path.join(directory, name));
+              revisions.set(videoId, Math.round(statistics.mtimeMs));
+              return;
+            }
+            const chapter = chapterThumbnailFromName(name);
+            if (!chapter) return;
+            const starts = chapterStartsByVideo.get(chapter.videoId) ?? [];
+            starts.push(chapter.startSeconds);
+            chapterStartsByVideo.set(chapter.videoId, starts);
           }),
         );
-        return revisions;
+        for (const starts of chapterStartsByVideo.values()) {
+          starts.sort((left, right) => left - right);
+        }
+        return { revisions, chapterStartsByVideo };
       } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === "ENOENT") return new Map();
-        throw error;
-      }
-    },
-
-    async listChapterStarts(videoId) {
-      try {
-        const entries = await fs.readdir(directory);
-        return entries
-          .flatMap((name) => {
-            const startSeconds = chapterStartFromName(videoId, name);
-            return startSeconds === null ? [] : [startSeconds];
-          })
-          .sort((left, right) => left - right);
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+          return { revisions: new Map(), chapterStartsByVideo: new Map() };
+        }
         throw error;
       }
     },
@@ -324,8 +326,15 @@ function thumbnailOwnerId(filename: string): string | null {
 }
 
 function chapterStartFromName(videoId: string, filename: string): number | null {
-  const match = new RegExp(`^${videoId}\\.c(\\d+)\\.jpg$`).exec(filename);
-  return match ? Number(match[1]) : null;
+  const chapter = chapterThumbnailFromName(filename);
+  return chapter?.videoId === videoId ? chapter.startSeconds : null;
+}
+
+function chapterThumbnailFromName(
+  filename: string,
+): { videoId: string; startSeconds: number } | null {
+  const match = /^([a-f0-9]{24})\.c(\d+)\.jpg$/.exec(filename);
+  return match ? { videoId: match[1]!, startSeconds: Number(match[2]) } : null;
 }
 
 function sameNumberList(left: number[], right: number[]): boolean {
