@@ -32,6 +32,9 @@ const rescanAction = useAsyncAction(() => api.rescanLibrary(), {
     if (status.status === "complete") toast.success("Library refreshed");
   },
 });
+const refreshing = computed(
+  () => rescanAction.pending.value || scanStatus.value?.status === "scanning",
+);
 const scanError = computed(() => {
   if (rescanAction.errorMessage.value) return rescanAction.errorMessage.value;
   if (scanStatus.value?.status === "failed") {
@@ -132,7 +135,7 @@ async function rescanLibrary(): Promise<void> {
       </div>
       <AppButton
         class="self-end max-[600px]:w-full"
-        :loading="rescanAction.pending.value"
+        :loading="refreshing"
         loading-label="Refreshing…"
         @click="rescanLibrary"
       >

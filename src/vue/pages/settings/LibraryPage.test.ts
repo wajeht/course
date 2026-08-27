@@ -2,7 +2,7 @@
 
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises, mount } from "@vue/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { api } from "@/api.js";
 import { toastKey } from "@/composables/useToast.js";
@@ -43,6 +43,10 @@ function mountLibraryPage() {
 }
 
 describe("settings/LibraryPage", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("renders library status without display settings", async () => {
     const wrapper = mountLibraryPage();
     await flushPromises();
@@ -108,5 +112,26 @@ describe("settings/LibraryPage", () => {
     expect(wrapper.text()).toContain("Could not load library status");
     expect(wrapper.text()).toContain("Library status unavailable");
     expect(wrapper.text()).not.toContain("Library status is loading…");
+  });
+
+  it("disables refresh while the library is already refreshing", async () => {
+    vi.mocked(api.getScanStatus).mockResolvedValueOnce({
+      completedAt: null,
+      playlistCount: 0,
+      error: null,
+      videoCount: 0,
+      startedAt: "2026-08-12T00:00:00.000Z",
+      status: "scanning",
+      warnings: [],
+    });
+    const wrapper = mountLibraryPage();
+    await flushPromises();
+
+    const refreshButton = wrapper.get('button[aria-busy="true"]');
+    expect(refreshButton.attributes()).toHaveProperty("disabled");
+    expect(refreshButton.text()).toContain("Refreshing…");
+
+    await refreshButton.trigger("click");
+    expect(api.rescanLibrary).not.toHaveBeenCalled();
   });
 });
