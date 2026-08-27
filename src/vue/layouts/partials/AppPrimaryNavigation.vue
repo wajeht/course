@@ -15,10 +15,14 @@ defineProps<{
 
 const prefetch = useRoutePrefetch();
 const { online } = useNetworkStatus();
+type NavigationPrefetch =
+  | typeof prefetch.home
+  | typeof prefetch.settingsLibrary
+  | typeof prefetch.videos;
 const navigationItems: ReadonlyArray<{
   iconPath: string;
   label: string;
-  prefetch: () => Promise<unknown>;
+  prefetch: NavigationPrefetch;
   to: RouteLocationRaw;
   value: NavigationValue;
 }> = [
