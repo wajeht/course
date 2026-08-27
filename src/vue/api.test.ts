@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  api,
   ApiError,
   apiErrorMessage,
   expectJson,
@@ -15,6 +16,7 @@ const unauthorized = vi.fn();
 afterEach(() => {
   window.removeEventListener("videos:unauthorized", unauthorized);
   unauthorized.mockReset();
+  vi.unstubAllGlobals();
 });
 
 describe("API response handling", () => {
@@ -62,5 +64,24 @@ describe("API response handling", () => {
       "Could not sign in",
     );
     expect(apiErrorMessage(new ApiError("", 500), "Request failed")).toBe("Request failed");
+  });
+
+  it("stops thumbnail polling when the request is aborted", async () => {
+    const request = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ status: "running" }), {
+        status: 202,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", request);
+    const controller = new AbortController();
+
+    const regeneration = api.regenerateVideoThumbnail("a".repeat(24), controller.signal);
+    const rejection = expect(regeneration).rejects.toMatchObject({ name: "AbortError" });
+    await vi.waitFor(() => expect(request).toHaveBeenCalledOnce());
+    controller.abort();
+
+    await rejection;
+    expect(request).toHaveBeenCalledOnce();
   });
 });

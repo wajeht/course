@@ -44,8 +44,24 @@ export type {
 const thumbnailPollMilliseconds = 500;
 const thumbnailPollLimit = 1_200;
 
-function wait(milliseconds: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+function wait(milliseconds: number, signal?: AbortSignal): Promise<void> {
+  if (!signal) return new Promise((resolve) => setTimeout(resolve, milliseconds));
+  const abortSignal = signal;
+  return new Promise((resolve, reject) => {
+    if (abortSignal.aborted) {
+      reject(abortSignal.reason);
+      return;
+    }
+    const timeout = setTimeout(() => {
+      abortSignal.removeEventListener("abort", cancel);
+      resolve();
+    }, milliseconds);
+    function cancel(): void {
+      clearTimeout(timeout);
+      reject(abortSignal.reason);
+    }
+    abortSignal.addEventListener("abort", cancel, { once: true });
+  });
 }
 
 export class ApiError extends Error {
@@ -133,22 +149,24 @@ export const api = {
       await apiClient.api.videos[":videoId"].$get({ param: { videoId } }, { init: { signal } }),
     );
   },
-  async regenerateVideoThumbnail(videoId: string): Promise<void> {
+  async regenerateVideoThumbnail(videoId: string, signal?: AbortSignal): Promise<void> {
     let status = await expectProtectedJson<ThumbnailRegenerationStatus>(
-      await apiClient.api.videos[":videoId"].thumbnail.$post({
-        param: { videoId },
-      }),
+      await apiClient.api.videos[":videoId"].thumbnail.$post(
+        { param: { videoId } },
+        { init: { signal } },
+      ),
     );
     for (let attempt = 0; attempt < thumbnailPollLimit; attempt += 1) {
       if (status.status === "complete") return;
       if (status.status === "failed" || status.status === "idle") {
         throw new ApiError("Could not regenerate thumbnails", 500);
       }
-      await wait(thumbnailPollMilliseconds);
+      await wait(thumbnailPollMilliseconds, signal);
       status = await expectProtectedJson<ThumbnailRegenerationStatus>(
-        await apiClient.api.videos[":videoId"].thumbnail.$get({
-          param: { videoId },
-        }),
+        await apiClient.api.videos[":videoId"].thumbnail.$get(
+          { param: { videoId } },
+          { init: { signal } },
+        ),
       );
     }
     throw new ApiError("Thumbnail regeneration timed out", 408);
