@@ -45,7 +45,7 @@
     "@playwright/test": "1.62.1",
     "@tailwindcss/vite": "4.3.3",
     "@types/better-sqlite3": "9.6.0",
-    "@types/node": "26.2.0",
+    "@types/node": "26.3.0",
     "@vitejs/plugin-vue": "6.0.8",
     "@vitest/coverage-v8": "4.1.11",
     "@vue/test-utils": "2.4.11",
