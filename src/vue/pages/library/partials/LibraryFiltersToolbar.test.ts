@@ -89,6 +89,34 @@ describe("LibraryFiltersToolbar", () => {
     expect(wrapper.emitted("update:pageSize")?.at(-1)).toEqual([48]);
   });
 
+  it("forwards immediate prefetch intent for every library filter", async () => {
+    const wrapper = mountToolbar();
+
+    await wrapper
+      .get('input[name="library-desktop-view"][value="playlists"]')
+      .element.closest("label")!
+      .dispatchEvent(new PointerEvent("pointerenter"));
+    await wrapper
+      .get('input[name="library-desktop-author"][value="Example Author"]')
+      .element.closest("label")!
+      .dispatchEvent(new PointerEvent("pointerenter"));
+    await wrapper
+      .get('input[name="library-desktop-tag"][value="Example Tag"]')
+      .element.closest("label")!
+      .dispatchEvent(new PointerEvent("pointerenter"));
+    await wrapper
+      .get('input[name="library-desktop-page-size"][value="48"]')
+      .element.closest("label")!
+      .dispatchEvent(new PointerEvent("pointerenter"));
+
+    expect(wrapper.emitted("prefetchView")).toEqual([["playlists"]]);
+    expect(wrapper.emitted("prefetch")).toEqual([
+      ["author", ["Example Author"]],
+      ["tag", ["Example Tag"]],
+    ]);
+    expect(wrapper.emitted("prefetchPageSize")).toEqual([[48]]);
+  });
+
   it("opens videos per page in the mobile sheet and emits on select", async () => {
     const wrapper = mountToolbar();
 

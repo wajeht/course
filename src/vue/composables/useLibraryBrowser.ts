@@ -10,7 +10,13 @@ import {
 } from "vue";
 import { useRoute, useRouter, type LocationQueryRaw } from "vue-router";
 
-import { api, apiErrorMessage, type LibraryDto, type LibraryFilters } from "@/api.js";
+import {
+  api,
+  apiErrorMessage,
+  type LibraryDto,
+  type LibraryFilters,
+  type LibraryPageSize,
+} from "@/api.js";
 import { libraryQueryOptions } from "@/queries.js";
 
 function strings(value: unknown): string[] {
@@ -32,14 +38,16 @@ function emptyLibrary(): LibraryDto {
 interface UseLibraryBrowserOptions {
   accumulatePages?: MaybeRefOrGetter<boolean>;
   debounceMilliseconds?: number;
+  pageSize?: MaybeRefOrGetter<LibraryPageSize | undefined>;
 }
 
 export function useLibraryBrowser(options: UseLibraryBrowserOptions = {}) {
-  const { accumulatePages = false, debounceMilliseconds = 150 } = options;
+  const { accumulatePages = false, debounceMilliseconds = 150, pageSize } = options;
   const route = useRoute();
   const router = useRouter();
   const queryClient = useQueryClient();
   const accumulatePagesRef = toRef(accumulatePages);
+  const pageSizeRef = toRef(pageSize);
   const routeSearch = computed(() => (typeof route.query.q === "string" ? route.query.q : ""));
   const query = shallowRef(routeSearch.value);
   const page = computed(() => Math.max(1, Number(route.query.page) || 1));
@@ -78,6 +86,7 @@ export function useLibraryBrowser(options: UseLibraryBrowserOptions = {}) {
     author: selectedAuthor.value.length ? selectedAuthor.value : undefined,
     tag: selectedTag.value.length ? selectedTag.value : undefined,
     page: page.value,
+    pageSize: pageSizeRef.value,
   }));
   const request = useQuery(computed(() => libraryQueryOptions(filters.value, api)));
   const library = computed(() => request.data.value ?? emptyLibrary());
@@ -185,6 +194,28 @@ export function useLibraryBrowser(options: UseLibraryBrowserOptions = {}) {
     );
   }
 
+  function prefetchFilter(name: "author" | "tag", selection: string[]): void {
+    void queryClient.prefetchQuery(
+      libraryQueryOptions(
+        {
+          ...filters.value,
+          [name]: selection.length ? selection : undefined,
+        },
+        api,
+      ),
+    );
+  }
+
+  function prefetchPageSize(nextPageSize: LibraryPageSize): void {
+    void queryClient.prefetchQuery(
+      libraryQueryOptions({ ...filters.value, pageSize: nextPageSize }, api),
+    );
+  }
+
+  function prefetchView(): void {
+    void queryClient.prefetchQuery(libraryQueryOptions(filters.value, api));
+  }
+
   async function loadMore(): Promise<void> {
     if (loadingMore.value || !canLoadMore.value) return;
 
@@ -234,7 +265,10 @@ export function useLibraryBrowser(options: UseLibraryBrowserOptions = {}) {
     loadMoreError: readonly(loadMoreError),
     loadingMore: readonly(loadingMore),
     page,
+    prefetchFilter,
     prefetchPage,
+    prefetchPageSize,
+    prefetchView,
     query,
     refreshing: computed(() => request.isFetching.value && !request.isPending.value),
     selectedAuthor,

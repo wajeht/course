@@ -12,6 +12,7 @@ withDefaults(
   }>(),
   { disabled: false, error: "", hideLabel: false, name: "library-page-size" },
 );
+const emit = defineEmits<{ prefetch: [pageSize: LibraryPageSize] }>();
 const selected = defineModel<LibraryPageSize>({ required: true });
 </script>
 
@@ -28,13 +29,18 @@ const selected = defineModel<LibraryPageSize>({ required: true });
     </legend>
     <ul class="space-y-2 text-[.86rem]">
       <li v-for="size in LIBRARY_PAGE_SIZES" :key="size">
-        <label class="flex cursor-pointer items-center gap-2.5 text-pine-deep max-[760px]:min-h-11">
+        <label
+          class="flex cursor-pointer items-center gap-2.5 text-pine-deep max-[760px]:min-h-11"
+          @pointerenter="emit('prefetch', size)"
+        >
           <input
             v-model="selected"
             type="radio"
             :name="name"
             :value="size"
             class="h-4 w-4 border-line text-pine focus-visible:ring-pine"
+            @focus="emit('prefetch', size)"
+            @pointerdown="emit('prefetch', size)"
           />
           <span>{{ size }}</span>
         </label>

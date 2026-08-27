@@ -19,4 +19,17 @@ describe("LibraryPlaylistFilter", () => {
 
     expect(wrapper.emitted("update:modelValue")).toEqual([["playlists"]]);
   });
+
+  it("emits immediate prefetch intent for the hovered view", async () => {
+    const wrapper = mount(LibraryPlaylistFilter, {
+      props: { modelValue: "videos" },
+    });
+
+    await wrapper
+      .get('input[value="playlists"]')
+      .element.closest("label")!
+      .dispatchEvent(new PointerEvent("pointerenter"));
+
+    expect(wrapper.emitted("prefetch")).toEqual([["playlists"]]);
+  });
 });

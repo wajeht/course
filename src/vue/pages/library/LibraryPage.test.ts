@@ -6,6 +6,7 @@ import { createMemoryHistory, createRouter } from "vue-router";
 import { describe, expect, it, vi } from "vitest";
 
 import { api, type LibraryDto } from "@/api.js";
+import { queryKeys } from "@/queries.js";
 
 import LibraryPage from "./LibraryPage.vue";
 
@@ -27,7 +28,7 @@ const videoId = "2".repeat(24);
 
 function library(): LibraryDto {
   return {
-    authors: [],
+    authors: [{ name: "Example", videoCount: 1 }],
     continueWatching: [],
     pagination: { page: 1, pageSize: 24, totalPages: 1, totalVideos: 1 },
     playlists: [
@@ -46,7 +47,7 @@ function library(): LibraryDto {
         videoCount: 1,
       },
     ],
-    tags: [],
+    tags: [{ name: "Archive", videoCount: 1 }],
     videos: [
       {
         authors: [],
@@ -88,7 +89,7 @@ async function mountLibraryPage(
     global: { plugins: [[VueQueryPlugin, { queryClient }], router] },
   });
   await flushPromises();
-  return { router, wrapper };
+  return { queryClient, router, wrapper };
 }
 
 describe("LibraryPage", () => {
@@ -174,6 +175,123 @@ describe("LibraryPage", () => {
       author: "Example",
       q: "term",
       tag: "Archive",
+    });
+  });
+
+  it("prefetches hovered author and tag options with the other active filter", async () => {
+    const getLibrary = vi.fn(async (filters) => ({
+      ...library(),
+      pagination: {
+        page: filters?.page ?? 1,
+        pageSize: filters?.pageSize ?? 24,
+        totalPages: 3,
+        totalVideos: 60,
+      },
+    }));
+    const { router, wrapper } = await mountLibraryPage(
+      "/videos?author=Current+Author&tag=Current+Tag&q=term&page=2",
+      getLibrary,
+    );
+    getLibrary.mockClear();
+
+    await wrapper
+      .get('input[name="library-desktop-author"][value="Example"]')
+      .element.closest("label")!
+      .dispatchEvent(new PointerEvent("pointerenter"));
+
+    await vi.waitFor(() =>
+      expect(getLibrary).toHaveBeenCalledWith(
+        {
+          author: ["Current Author", "Example"],
+          page: 2,
+          query: "term",
+          tag: ["Current Tag"],
+        },
+        expect.any(AbortSignal),
+      ),
+    );
+
+    await wrapper
+      .get('input[name="library-desktop-tag"][value="Archive"]')
+      .element.closest("label")!
+      .dispatchEvent(new PointerEvent("pointerenter"));
+
+    await vi.waitFor(() =>
+      expect(getLibrary).toHaveBeenCalledWith(
+        {
+          author: ["Current Author"],
+          page: 2,
+          query: "term",
+          tag: ["Current Tag", "Archive"],
+        },
+        expect.any(AbortSignal),
+      ),
+    );
+    expect(router.currentRoute.value.query).toEqual({
+      author: "Current Author",
+      page: "2",
+      q: "term",
+      tag: "Current Tag",
+    });
+  });
+
+  it("prefetches view and page-size hovers with the current URL parameters", async () => {
+    const getLibrary = vi.fn(async (filters) => ({
+      ...library(),
+      pagination: {
+        page: filters?.page ?? 1,
+        pageSize: filters?.pageSize ?? 24,
+        totalPages: 3,
+        totalVideos: 60,
+      },
+    }));
+    const { queryClient, router, wrapper } = await mountLibraryPage(
+      "/videos?author=Current+Author&tag=Current+Tag&q=term&page=2",
+      getLibrary,
+    );
+
+    await queryClient.invalidateQueries({ queryKey: queryKeys.library, refetchType: "none" });
+    getLibrary.mockClear();
+    await wrapper
+      .get('input[name="library-desktop-view"][value="playlists"]')
+      .element.closest("label")!
+      .dispatchEvent(new PointerEvent("pointerenter"));
+
+    await vi.waitFor(() =>
+      expect(getLibrary).toHaveBeenCalledWith(
+        {
+          author: ["Current Author"],
+          page: 2,
+          query: "term",
+          tag: ["Current Tag"],
+        },
+        expect.any(AbortSignal),
+      ),
+    );
+
+    getLibrary.mockClear();
+    await wrapper
+      .get('input[name="library-desktop-page-size"][value="48"]')
+      .element.closest("label")!
+      .dispatchEvent(new PointerEvent("pointerenter"));
+
+    await vi.waitFor(() =>
+      expect(getLibrary).toHaveBeenCalledWith(
+        {
+          author: ["Current Author"],
+          page: 2,
+          pageSize: 48,
+          query: "term",
+          tag: ["Current Tag"],
+        },
+        expect.any(AbortSignal),
+      ),
+    );
+    expect(router.currentRoute.value.query).toEqual({
+      author: "Current Author",
+      page: "2",
+      q: "term",
+      tag: "Current Tag",
     });
   });
 
