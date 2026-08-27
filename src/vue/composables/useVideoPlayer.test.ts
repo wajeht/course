@@ -91,6 +91,7 @@ async function mountPlayer(options: MountPlayerOptions & { path?: string } = {})
     template: `
       <p data-video-title>{{ player.video.value?.title }}</p>
       <p data-playlist-id>{{ player.playlist.value?.id ?? "" }}</p>
+      <p data-poster>{{ player.posterUrl.value ?? "" }}</p>
       <button data-regenerate @click="player.regenerateThumbnail">Regenerate thumbnail</button>
       <button data-reset-video @click="player.resetProgress">Reset video</button>
       <button data-reset-playlist @click="player.resetPlaylistProgress">Reset playlist</button>
@@ -119,6 +120,26 @@ async function mountPlayer(options: MountPlayerOptions & { path?: string } = {})
 }
 
 describe("useVideoPlayer", () => {
+  it("uses the thumbnail for the chapter containing the resume position", async () => {
+    const { wrapper } = await mountPlayer({
+      getVideo: async () => ({
+        video: {
+          ...video,
+          coverUrl: "/covers/video",
+          positionSeconds: 95,
+          chapters: [
+            { title: "Introduction", startSeconds: 0, thumbnailUrl: "/covers/chapter-0" },
+            { title: "Technique", startSeconds: 90, thumbnailUrl: "/covers/chapter-90" },
+          ],
+        },
+        playlist,
+      }),
+    });
+
+    expect(wrapper.get("[data-poster]").text()).toBe("/covers/chapter-90");
+    wrapper.unmount();
+  });
+
   it("refreshes the current video after regenerating its thumbnails", async () => {
     let requestCount = 0;
     const { toast, wrapper } = await mountPlayer({

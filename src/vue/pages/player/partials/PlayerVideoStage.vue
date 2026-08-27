@@ -13,6 +13,7 @@ defineProps<{
   loading: boolean;
   nextVideo?: VideoDto;
   playback: PlaybackResult | null;
+  poster?: string;
   retrying: boolean;
 }>();
 const emit = defineEmits<{
@@ -36,6 +37,7 @@ defineExpose({ video });
       class="h-full w-full object-contain"
       controls
       playsinline
+      :poster="poster"
       @loadedmetadata="emit('loadedMetadata')"
       @timeupdate="emit('timeUpdate')"
       @pause="emit('pause')"
