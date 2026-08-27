@@ -28,6 +28,7 @@ describe("database schema", () => {
     ]);
     await expect(database.connection("knex_migrations").pluck("name")).resolves.toEqual([
       "202608160001_create_schema.js",
+      "202608270001_drop_video_cover.js",
     ]);
 
     await expect(database.connection("playlists").columnInfo()).resolves.not.toHaveProperty(
@@ -38,6 +39,9 @@ describe("database schema", () => {
     );
     await expect(database.connection("playlists").columnInfo()).resolves.not.toHaveProperty(
       "cover_origin",
+    );
+    await expect(database.connection("videos").columnInfo()).resolves.not.toHaveProperty(
+      "cover_path",
     );
     await expect(database.connection("conversions").columnInfo()).resolves.toEqual(
       expect.objectContaining({

@@ -16,12 +16,10 @@ The filesystem is the source of truth:
 /videos/
 ├── Standalone video.mp4
 ├── Standalone video.mp4.json
-├── Standalone video.jpg
 └── Saved playlist/
     ├── playlist.json
     ├── cover.jpg
     ├── 01 - First video.mp4
-    ├── 01 - First video.jpg
     └── Section name/
         └── 01 - Next video.mkv
 ```
@@ -32,7 +30,7 @@ The filesystem is the source of truth:
 - Deeper folders are ignored and reported during scans.
 - Number prefixes set natural order and are removed from display titles.
 - Playlist cards use `cover.jpg` or `playlist.jpg` in the playlist folder, or a `cover` path in `playlist.json`. Otherwise they use the first video’s generated thumbnail.
-- Individual videos always use a generated poster. Sidecar `cover` fields and `cover.jpg` stay on playlist cards only.
+- Individual videos use generated posters and chapter thumbnails.
 - Generated posters are stored in the data directory. The video folder is never changed.
 
 Supported video files include MP4, M4V, MKV, WebM, MOV, AVI, MPEG, and MPG. The app watches the folder and also supports manual and scheduled scans.

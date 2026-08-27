@@ -551,13 +551,6 @@ async function appendVideo(options: AppendVideoOptions): Promise<void> {
       existing && existing.modifiedAt === modifiedAt && existing.sizeBytes === fileStats.size
         ? existing
         : await options.probe(options.absolutePath, options.ffprobePath);
-    const coverPath = await findVideoCover(
-      options.absolutePath,
-      options.root,
-      sidecarPath,
-      metadata?.cover,
-      options.warnings,
-    );
     options.snapshot.videos.push({
       id: videoId,
       path: relativePath,
@@ -566,7 +559,6 @@ async function appendVideo(options: AppendVideoOptions): Promise<void> {
       title: metadata?.title ?? displayName(path.basename(options.absolutePath)),
       description: metadata?.description ?? "",
       tags: metadata?.tags ?? [],
-      coverPath,
       sourceProvider: metadata?.source?.provider ?? null,
       sourceUrl: metadata?.source?.url ?? null,
       sortOrder: options.sortOrder,
@@ -674,67 +666,6 @@ async function findPlaylistCover(
           item.name.slice(0, -extension.length).toLowerCase() === name,
       );
       if (entry) return path.join(playlistDirectory, entry.name);
-    }
-  }
-  return null;
-}
-
-async function findVideoCover(
-  videoFilename: string,
-  root: string,
-  sidecarPath: string,
-  requestedCover: string | undefined,
-  warnings: ScanWarning[],
-): Promise<string | null> {
-  if (requestedCover) {
-    const videoDirectory = path.dirname(videoFilename);
-    const requestedPath = path.resolve(videoDirectory, requestedCover);
-    const relative = path.relative(videoDirectory, requestedPath);
-    if (relative.startsWith("..") || path.isAbsolute(relative)) {
-      warnings.push({ path: sidecarPath, message: "Cover path leaves the video directory" });
-      return null;
-    }
-    if (!coverExtensions.has(path.extname(requestedPath).toLowerCase())) {
-      warnings.push({ path: sidecarPath, message: "Cover must be a JPG, PNG, or WebP image" });
-      return null;
-    }
-    try {
-      if ((await fs.stat(requestedPath)).isFile()) {
-        return posixPath(path.relative(root, requestedPath));
-      }
-    } catch {
-      warnings.push({ path: sidecarPath, message: "Configured cover does not exist" });
-    }
-    return null;
-  }
-
-  return findConventionVideoCover(videoFilename, root);
-}
-
-async function findConventionVideoCover(
-  videoFilename: string,
-  root: string,
-): Promise<string | null> {
-  const videoDirectory = path.dirname(videoFilename);
-  const basename = path.basename(videoFilename);
-  const stem = basename.slice(0, -path.extname(basename).length);
-  let files: Map<string, string>;
-  try {
-    files = new Map(
-      (await fs.readdir(videoDirectory, { withFileTypes: true }))
-        .filter((entry) => entry.isFile())
-        .map((entry) => [entry.name.toLowerCase(), entry.name]),
-    );
-  } catch {
-    return null;
-  }
-
-  for (const name of [basename, stem]) {
-    for (const extension of coverExtensionOrder) {
-      const actualName = files.get(`${name.toLowerCase()}${extension}`);
-      if (actualName) {
-        return posixPath(path.relative(root, path.join(videoDirectory, actualName)));
-      }
     }
   }
   return null;

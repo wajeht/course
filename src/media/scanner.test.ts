@@ -40,13 +40,11 @@ describe("media scanner", () => {
   it("indexes standalone videos and filesystem-derived playlists", async () => {
     const { root, dataDirectory } = await createScannerDirectories();
     await fs.writeFile(path.join(root, "01 - Standalone.mp4"), "standalone");
-    await fs.writeFile(path.join(root, "standalone.jpg"), "cover");
     await fs.writeFile(
       path.join(root, "01 - Standalone.mp4.json"),
       JSON.stringify({
         version: 1,
         title: "Saved Video",
-        cover: "standalone.jpg",
         authors: ["Video Author"],
         tags: ["Archive"],
         source: { provider: "YouTube", url: "https://youtube.com/watch?v=example" },
@@ -92,7 +90,7 @@ describe("media scanner", () => {
       .connection("videos")
       .orderByRaw("playlist_id IS NOT NULL")
       .orderBy("sort_order")
-      .select("title", "playlist_id", "playlist_section_id", "cover_path", "tags_json");
+      .select("title", "playlist_id", "playlist_section_id", "tags_json");
 
     expect(status).toMatchObject({ status: "complete", playlistCount: 1, videoCount: 4 });
     expect(status.warnings).toEqual([
@@ -110,28 +108,24 @@ describe("media scanner", () => {
         title: "Saved Video",
         playlist_id: null,
         playlist_section_id: null,
-        cover_path: "standalone.jpg",
         tags_json: '["Archive"]',
       },
       {
         title: "Start",
         playlist_id: playlist.id,
         playlist_section_id: null,
-        cover_path: null,
         tags_json: "[]",
       },
       {
         title: "Finish",
         playlist_id: playlist.id,
         playlist_section_id: null,
-        cover_path: null,
         tags_json: "[]",
       },
       {
         title: "Technique",
         playlist_id: playlist.id,
         playlist_section_id: expect.any(String),
-        cover_path: null,
         tags_json: "[]",
       },
     ]);
@@ -150,16 +144,14 @@ describe("media scanner", () => {
     ).resolves.toMatchObject({ count: 1 });
   });
 
-  it("indexes conventional video covers and cover.jpg playlists", async () => {
+  it("indexes cover.jpg playlists", async () => {
     const { root, dataDirectory } = await createScannerDirectories();
     await fs.writeFile(path.join(root, "Standalone.mp4"), "standalone");
-    await fs.writeFile(path.join(root, "Standalone.mp4.webp"), "sidecar-cover");
     const playlistDirectory = path.join(root, "Playlist");
     await fs.mkdir(playlistDirectory);
     await fs.writeFile(path.join(playlistDirectory, "poster.png"), "ignored");
     await fs.writeFile(path.join(playlistDirectory, "cover.jpg"), "playlist-cover");
     await fs.writeFile(path.join(playlistDirectory, "01 - Start.mp4"), "start");
-    await fs.writeFile(path.join(playlistDirectory, "01 - Start.jpg"), "start-cover");
     await fs.writeFile(path.join(playlistDirectory, "02 - Finish.mp4"), "finish");
 
     const configuration = createConfiguration({
@@ -177,17 +169,7 @@ describe("media scanner", () => {
 
     await scanner.scanLibrary();
     const playlist = await database.connection("playlists").select("cover_path").first();
-    const videos = await database
-      .connection("videos")
-      .orderBy("title")
-      .select("title", "cover_path");
-
     expect(playlist).toMatchObject({ cover_path: "Playlist/cover.jpg" });
-    expect(videos).toEqual([
-      { title: "Finish", cover_path: null },
-      { title: "Standalone", cover_path: "Standalone.mp4.webp" },
-      { title: "Start", cover_path: "Playlist/01 - Start.jpg" },
-    ]);
   });
 
   it("indexes playlist.jpg when cover.jpg is absent", async () => {
@@ -213,35 +195,6 @@ describe("media scanner", () => {
     await scanner.scanLibrary();
     await expect(database.connection("playlists").pluck("cover_path")).resolves.toEqual([
       "Playlist/playlist.jpg",
-    ]);
-  });
-
-  it("prefers a sidecar cover over conventional image files", async () => {
-    const { root, dataDirectory } = await createScannerDirectories();
-    await fs.writeFile(path.join(root, "Talk.mp4"), "talk");
-    await fs.writeFile(path.join(root, "Talk.jpg"), "conventional");
-    await fs.writeFile(path.join(root, "poster.png"), "explicit");
-    await fs.writeFile(
-      path.join(root, "Talk.mp4.json"),
-      JSON.stringify({ version: 1, cover: "poster.png" }),
-    );
-
-    const configuration = createConfiguration({
-      APP_ENV: "testing",
-      VIDEOS_DIR: root,
-      DATA_DIR: dataDirectory,
-    });
-    const database = await createTestDatabase(configuration);
-    const scanner = createScanner({
-      configuration,
-      repository: createLibraryRepository(database.connection),
-      logger: createLogger(),
-      probe: async (filename) => probeResult((await fs.stat(filename)).size),
-    });
-
-    await scanner.scanLibrary();
-    await expect(database.connection("videos").pluck("cover_path")).resolves.toEqual([
-      "poster.png",
     ]);
   });
 

@@ -14,7 +14,6 @@ export interface PlaylistRow {
   total_duration: number;
   next_video_id: string;
   first_video_id: string | null;
-  first_video_cover_path: string | null;
 }
 
 export interface VideoRow {
@@ -22,7 +21,6 @@ export interface VideoRow {
   path: string;
   playlist_id: string | null;
   playlist_title: string | null;
-  playlist_cover_path: string | null;
   playlist_tags_json: string | null;
   playlist_authors_json: string;
   playlist_section_id: string | null;
@@ -31,7 +29,6 @@ export interface VideoRow {
   description: string;
   tags_json: string;
   authors_json: string;
-  cover_path: string | null;
   source_provider: string | null;
   source_url: string | null;
   duration_seconds: number;
@@ -88,14 +85,12 @@ const videoSelect = [
   "videos.path",
   "videos.playlist_id",
   "playlists.title as playlist_title",
-  "playlists.cover_path as playlist_cover_path",
   "playlists.tags_json as playlist_tags_json",
   "videos.playlist_section_id",
   "playlist_sections.title as playlist_section_title",
   "videos.title",
   "videos.description",
   "videos.tags_json",
-  "videos.cover_path",
   "videos.source_provider",
   "videos.source_url",
   "videos.duration_seconds",
@@ -201,15 +196,6 @@ export function createLibraryApiRepository(database: Knex): LibraryRepository {
             ORDER BY candidate.sort_order
             LIMIT 1
           ) AS first_video_id
-        `),
-        database.raw(`
-          (
-            SELECT candidate.cover_path
-            FROM videos AS candidate
-            WHERE candidate.playlist_id = playlists.id
-            ORDER BY candidate.sort_order
-            LIMIT 1
-          ) AS first_video_cover_path
         `),
       )
       .groupBy("playlists.id")
