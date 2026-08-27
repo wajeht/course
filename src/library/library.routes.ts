@@ -5,6 +5,7 @@ import type { AppContext } from "../context.js";
 import {
   libraryQuerySchema,
   libraryResponseSchema,
+  thumbnailRegenerationResponseSchema,
   videoDetailEnvelopeSchema,
   videoParametersSchema,
 } from "./library.schema.js";
@@ -42,7 +43,7 @@ export function createVideoRouter(context: AppContext) {
         const video = await context.scannerLibraryRepository.getVideo(videoId);
         if (!video) return c.json({ message: "Video not found" }, 404);
         const chapters = await context.libraryRepository.listVideoChapters(videoId);
-        await context.thumbnails.regenerate(
+        const status = context.thumbnails.startRegeneration(
           video,
           chapters.map((chapter) => ({
             videoId,
@@ -50,7 +51,22 @@ export function createVideoRouter(context: AppContext) {
             sortOrder: Number(chapter.sort_order),
           })),
         );
-        return c.body(null, 204);
+        return c.json(thumbnailRegenerationResponseSchema.parse(status), 202);
+      },
+    )
+    .get(
+      "/:videoId/thumbnail",
+      zValidator("param", videoParametersSchema, (result, c) => {
+        if (!result.success) return c.json({ message: "Video not found" }, 404);
+      }),
+      async (c) => {
+        const videoId = c.req.valid("param").videoId;
+        if (!(await context.scannerLibraryRepository.getVideo(videoId))) {
+          return c.json({ message: "Video not found" }, 404);
+        }
+        return c.json(
+          thumbnailRegenerationResponseSchema.parse(context.thumbnails.regenerationStatus(videoId)),
+        );
       },
     );
 }

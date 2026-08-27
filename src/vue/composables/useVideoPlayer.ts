@@ -52,12 +52,12 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
       video.value = detail.video;
     },
     {
-      errorMessage: "Could not regenerate thumbnail",
+      errorMessage: "Could not regenerate thumbnails",
       onError: (caught) => {
-        toast.error(apiErrorMessage(caught, "Could not regenerate thumbnail"));
+        toast.error(apiErrorMessage(caught, "Could not regenerate thumbnails"));
       },
       onSuccess: () => {
-        toast.success("Thumbnail updated");
+        toast.success("Thumbnails updated");
       },
     },
   );

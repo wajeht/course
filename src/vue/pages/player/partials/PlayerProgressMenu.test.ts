@@ -32,7 +32,7 @@ describe("PlayerProgressMenu", () => {
       props: {
         label: "Video actions",
         resetLabel: "Reset progress",
-        regenerateLabel: "Regenerate thumbnail",
+        regenerateLabel: "Regenerate thumbnails",
         resetting: false,
         regenerating: false,
       },
@@ -40,7 +40,7 @@ describe("PlayerProgressMenu", () => {
 
     await wrapper.get('[aria-label="Video actions"]').trigger("click");
     const items = wrapper.findAll('[role="menuitem"]');
-    expect(items[0]?.text()).toBe("Regenerate thumbnail");
+    expect(items[0]?.text()).toBe("Regenerate thumbnails");
     await items[0]?.trigger("click");
 
     expect(wrapper.emitted("regenerate")).toHaveLength(1);
