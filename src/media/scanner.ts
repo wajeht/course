@@ -10,7 +10,7 @@ import type { LibraryRepository, RootEntryOrder } from "./library.repository.js"
 import { normalizeMetadataName } from "./metadata.js";
 import { displayName, naturalOrder } from "./names.js";
 import { posixPath } from "./path.js";
-import { readPlaylistMetadata } from "./playlist-metadata.js";
+import { readPlaylistMetadata, type PlaylistMetadata } from "./playlist-metadata.js";
 import { probeVideo, videoExtensions, type VideoProbe } from "./probe.js";
 import type { ThumbnailCache } from "./thumbnails.js";
 import type {
@@ -22,7 +22,7 @@ import type {
   VideoAuthorRecord,
   VideoRecord,
 } from "./types.js";
-import { readVideoMetadata } from "./video-metadata.js";
+import { readVideoMetadata, type VideoMetadata } from "./video-metadata.js";
 
 const coverExtensionOrder = [".jpg", ".jpeg", ".png", ".webp"] as const;
 const coverExtensions = new Set<string>(coverExtensionOrder);
@@ -510,6 +510,15 @@ async function appendPlaylist(options: AppendPlaylistOptions): Promise<void> {
   }
 
   if (videoFileCount === 0) return;
+  appendPlaylistRecord(options, metadata, playlistCover);
+}
+
+function appendPlaylistRecord(
+  options: AppendPlaylistOptions,
+  metadata: PlaylistMetadata | null,
+  playlistCover: string | null,
+): void {
+  const { entry, root, snapshot } = options;
   snapshot.playlists.push({
     id: entry.id,
     path: entry.path,
@@ -553,53 +562,69 @@ async function appendVideo(options: AppendVideoOptions): Promise<void> {
       existing && existing.modifiedAt === modifiedAt && existing.sizeBytes === fileStats.size
         ? existing
         : await options.probe(options.absolutePath, options.ffprobePath);
-    options.snapshot.videos.push({
-      id: videoId,
-      path: relativePath,
-      playlistId: options.playlistId,
-      playlistSectionId: options.playlistSectionId,
-      title: metadata?.title ?? displayName(path.basename(options.absolutePath)),
-      description: metadata?.description ?? "",
-      tags: metadata?.tags ?? [],
-      sourceProvider: metadata?.source?.provider ?? null,
-      sourceUrl: metadata?.source?.url ?? null,
-      sortOrder: options.sortOrder,
-      durationSeconds: probeResult.durationSeconds,
-      sizeBytes: probeResult.sizeBytes,
-      container: probeResult.container,
-      videoCodec: probeResult.videoCodec,
-      audioCodec: probeResult.audioCodec,
-      browserCompatible: probeResult.browserCompatible,
-      modifiedAt,
-    });
-    appendAuthors(
-      metadata?.authors ?? [],
-      videoId,
-      "video",
-      options.snapshot,
-      options.authorsByName,
-    );
-    for (const [chapterIndex, chapter] of (metadata?.chapters ?? []).entries()) {
-      if (chapter.startSeconds >= probeResult.durationSeconds) {
-        options.warnings.push({
-          path: sidecarPath,
-          message: `Chapter “${chapter.title}” starts outside ${path.basename(options.absolutePath)}`,
-        });
-        continue;
-      }
-      options.snapshot.chapters.push({
-        id: identifier(`${relativePath}\0${chapter.startSeconds}`),
-        videoId,
-        title: chapter.title,
-        startSeconds: chapter.startSeconds,
-        sortOrder: chapterIndex,
-      });
-    }
+    appendVideoRecord(options, relativePath, videoId, metadata, probeResult, modifiedAt);
+    appendVideoChapters(options, relativePath, videoId, sidecarPath, metadata, probeResult);
   } catch (error) {
     options.snapshot.skippedVideoIds.push(videoId);
     options.warnings.push({
       path: relativePath,
       message: error instanceof Error ? error.message : "Could not inspect video",
+    });
+  }
+}
+
+function appendVideoRecord(
+  options: AppendVideoOptions,
+  relativePath: string,
+  videoId: string,
+  metadata: VideoMetadata | null,
+  probeResult: VideoProbe,
+  modifiedAt: string,
+): void {
+  options.snapshot.videos.push({
+    id: videoId,
+    path: relativePath,
+    playlistId: options.playlistId,
+    playlistSectionId: options.playlistSectionId,
+    title: metadata?.title ?? displayName(path.basename(options.absolutePath)),
+    description: metadata?.description ?? "",
+    tags: metadata?.tags ?? [],
+    sourceProvider: metadata?.source?.provider ?? null,
+    sourceUrl: metadata?.source?.url ?? null,
+    sortOrder: options.sortOrder,
+    durationSeconds: probeResult.durationSeconds,
+    sizeBytes: probeResult.sizeBytes,
+    container: probeResult.container,
+    videoCodec: probeResult.videoCodec,
+    audioCodec: probeResult.audioCodec,
+    browserCompatible: probeResult.browserCompatible,
+    modifiedAt,
+  });
+  appendAuthors(metadata?.authors ?? [], videoId, "video", options.snapshot, options.authorsByName);
+}
+
+function appendVideoChapters(
+  options: AppendVideoOptions,
+  relativePath: string,
+  videoId: string,
+  sidecarPath: string,
+  metadata: VideoMetadata | null,
+  probeResult: VideoProbe,
+): void {
+  for (const [chapterIndex, chapter] of (metadata?.chapters ?? []).entries()) {
+    if (chapter.startSeconds >= probeResult.durationSeconds) {
+      options.warnings.push({
+        path: sidecarPath,
+        message: `Chapter “${chapter.title}” starts outside ${path.basename(options.absolutePath)}`,
+      });
+      continue;
+    }
+    options.snapshot.chapters.push({
+      id: identifier(`${relativePath}\0${chapter.startSeconds}`),
+      videoId,
+      title: chapter.title,
+      startSeconds: chapter.startSeconds,
+      sortOrder: chapterIndex,
     });
   }
 }
