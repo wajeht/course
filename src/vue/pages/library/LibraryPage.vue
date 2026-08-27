@@ -59,7 +59,7 @@ const displayedVideos = computed(() =>
         :title="selectedView === 'playlists' ? 'Playlists' : 'All videos'"
         :heading-level="1"
       >
-        <template #actions>
+        <template #aside>
           <span class="font-mono text-[.68rem] tracking-[.08em] text-muted uppercase">
             {{
               selectedView === "playlists"
