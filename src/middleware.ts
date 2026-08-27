@@ -12,10 +12,7 @@ interface AppMiddleware {
   requestLogger: MiddlewareHandler;
 }
 
-export function createMiddleware(
-  logger: Logger,
-  environment: AppEnvironment,
-): AppMiddleware {
+export function createMiddleware(logger: Logger, environment: AppEnvironment): AppMiddleware {
   return {
     requestLogger: async (c, next) => {
       const start = performance.now();

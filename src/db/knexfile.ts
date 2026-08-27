@@ -35,7 +35,8 @@ export function createKnexConfig(configuration: Configuration): Knex.Config {
           connection.pragma("temp_store = MEMORY");
           done(null, connection);
         } catch (cause) {
-          const error = cause instanceof Error ? cause : new Error("Could not configure database", { cause });
+          const error =
+            cause instanceof Error ? cause : new Error("Could not configure database", { cause });
           done(error, connection);
         }
       },

@@ -8,12 +8,7 @@ import {
   watch,
   type MaybeRefOrGetter,
 } from "vue";
-import {
-  useRoute,
-  useRouter,
-  type LocationQueryRaw,
-  type LocationQueryValue,
-} from "vue-router";
+import { useRoute, useRouter, type LocationQueryRaw, type LocationQueryValue } from "vue-router";
 
 import {
   api,
