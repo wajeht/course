@@ -12,6 +12,8 @@ import {
   createTestContext,
 } from "../test/resources.js";
 
+type JsonRequestBody = Record<string, boolean | null | number | string | undefined>;
+
 async function testApp(
   options: { maxAttempts?: number; idleTimeoutMs?: number; dataDirectory?: string } = {},
 ) {
@@ -34,13 +36,12 @@ async function closeContext(context: AppContext): Promise<void> {
   await closeTestDatabase(context.database);
 }
 
-function jsonRequest(method: string, body: object, cookie?: string): RequestInit {
+function jsonRequest(method: string, body: JsonRequestBody, cookie?: string): RequestInit {
+  const headers = new Headers({ "content-type": "application/json" });
+  if (cookie) headers.set("cookie", cookie);
   return {
     method,
-    headers: {
-      "content-type": "application/json",
-      ...(cookie ? { cookie } : {}),
-    },
+    headers,
     body: JSON.stringify(body),
   };
 }

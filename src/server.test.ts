@@ -1,6 +1,5 @@
 import { once } from "node:events";
 import fs from "node:fs/promises";
-import type { AddressInfo } from "node:net";
 import path from "node:path";
 
 import { describe, expect, it, vi } from "vitest";
@@ -48,7 +47,9 @@ describe("server", () => {
     const info = await startServer(context);
     try {
       if (!info.server.listening) await once(info.server, "listening");
-      const { port } = info.server.address() as AddressInfo;
+      const address = info.server.address();
+      if (!address || !("port" in address)) throw new Error("Server did not bind a TCP port");
+      const { port } = address;
       const response = await fetch(`http://127.0.0.1:${port}/healthz`);
 
       expect(response.status).toBe(200);

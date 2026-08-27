@@ -74,16 +74,16 @@ async function mountPlayer(options: MountPlayerOptions & { path?: string } = {})
   );
   vi.spyOn(api, "openVideo").mockResolvedValue();
 
-  const media = {
-    canPlayType: vi.fn(() => ""),
-    currentTime: 30,
-    duration: 120,
-    load: vi.fn(),
-    pause: vi.fn(),
-    readyState: 1,
-    removeAttribute: vi.fn(),
-    src: "",
-  } as unknown as HTMLVideoElement;
+  const media = document.createElement("video");
+  Object.defineProperties(media, {
+    currentTime: { configurable: true, value: 30, writable: true },
+    duration: { configurable: true, value: 120 },
+    readyState: { configurable: true, value: 1 },
+  });
+  vi.spyOn(media, "canPlayType").mockReturnValue("");
+  vi.spyOn(media, "load").mockImplementation(() => undefined);
+  vi.spyOn(media, "pause").mockImplementation(() => undefined);
+  vi.spyOn(media, "removeAttribute");
   const component = defineComponent({
     setup() {
       return { player: useVideoPlayer(shallowRef(media)) };
@@ -112,7 +112,7 @@ async function mountPlayer(options: MountPlayerOptions & { path?: string } = {})
   const wrapper = mount(component, {
     global: {
       plugins: [[VueQueryPlugin, { queryClient }], router],
-      provide: { [confirmationKey as symbol]: confirmation, [toastKey as symbol]: toast },
+      provide: { [confirmationKey]: confirmation, [toastKey]: toast },
     },
   });
   await flushPromises();

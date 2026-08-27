@@ -54,7 +54,7 @@ async function mountAt(path: string, auth = createUnauthenticatedAuth()) {
   return mount(App, {
     global: {
       plugins: [router],
-      provide: { [authKey as symbol]: auth },
+      provide: { [authKey]: auth },
       stubs: {
         ConfirmDialog: true,
         ToastViewport: true,

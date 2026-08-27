@@ -33,7 +33,7 @@ describe("useScreenWakeLock", () => {
         },
       }),
     );
-    const video = wrapper.get("video").element as HTMLVideoElement;
+    const video = wrapper.get<HTMLVideoElement>("video").element;
     let paused = true;
     Object.defineProperty(video, "paused", { configurable: true, get: () => paused });
 
@@ -70,7 +70,7 @@ describe("useScreenWakeLock", () => {
         },
       }),
     );
-    const video = wrapper.get("video").element as HTMLVideoElement;
+    const video = wrapper.get<HTMLVideoElement>("video").element;
     Object.defineProperty(video, "paused", { configurable: true, value: false });
 
     video.dispatchEvent(new Event("play"));

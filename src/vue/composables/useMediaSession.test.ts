@@ -8,9 +8,9 @@ import { useMediaSession } from "./useMediaSession.js";
 
 const handlers = new Map<MediaSessionAction, MediaSessionActionHandler | null>();
 const setPositionState = vi.fn();
-const session = {
-  metadata: null as MediaMetadata | null,
-  playbackState: "none" as MediaSessionPlaybackState,
+const session: MediaSession = {
+  metadata: null,
+  playbackState: "none",
   setActionHandler: vi.fn((action: MediaSessionAction, handler: MediaSessionActionHandler | null) =>
     handlers.set(action, handler),
   ),
@@ -60,7 +60,7 @@ describe("useMediaSession", () => {
         },
       }),
     );
-    const video = wrapper.get("video").element as HTMLVideoElement;
+    const video = wrapper.get<HTMLVideoElement>("video").element;
     Object.defineProperties(video, {
       currentTime: { configurable: true, value: 20, writable: true },
       duration: { configurable: true, value: 120 },

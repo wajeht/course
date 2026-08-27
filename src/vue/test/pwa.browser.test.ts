@@ -1,4 +1,10 @@
 import { expect, test } from "@playwright/test";
+import { z } from "zod";
+
+const manifestSchema = z.object({
+  screenshots: z.array(z.object({ form_factor: z.string(), src: z.string() })),
+  shortcuts: z.array(z.object({ url: z.string() })),
+});
 
 test("keeps the install experience online-only", async ({ context, page }) => {
   const password = "playwright-password";
@@ -44,10 +50,7 @@ test("keeps the install experience online-only", async ({ context, page }) => {
   await expect(page).toHaveTitle("Videos");
   const manifestResponse = await page.request.get("/manifest.webmanifest");
   expect(manifestResponse.status()).toBe(200);
-  const manifest = (await manifestResponse.json()) as {
-    screenshots: Array<{ form_factor: string; src: string }>;
-    shortcuts: Array<{ url: string }>;
-  };
+  const manifest = manifestSchema.parse(await manifestResponse.json());
   expect(manifest.shortcuts.map((shortcut) => shortcut.url)).toEqual([
     "/videos",
     "/settings/library",

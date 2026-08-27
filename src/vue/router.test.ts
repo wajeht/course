@@ -1,12 +1,12 @@
 // @vitest-environment happy-dom
 
-import type { RouteLocationNormalizedLoaded } from "vue-router";
+import type { RouteLocationNormalized } from "vue-router";
 import { describe, expect, it } from "vitest";
 
 import { notFoundLocation, playerLocation, router } from "./router.js";
 
-function normalizedLocation(path: string): RouteLocationNormalizedLoaded {
-  return router.resolve(path) as RouteLocationNormalizedLoaded;
+function normalizedLocation(path: string): RouteLocationNormalized {
+  return router.resolve(path);
 }
 
 describe("router error pages", () => {

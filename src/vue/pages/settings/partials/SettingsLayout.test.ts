@@ -35,8 +35,8 @@ async function mountSettingsLayout() {
     global: {
       plugins: [router, [VueQueryPlugin, { queryClient }]],
       provide: {
-        [authKey as symbol]: { logout: vi.fn() },
-        [confirmationKey as symbol]: {
+        [authKey]: { logout: vi.fn() },
+        [confirmationKey]: {
           accept: vi.fn(),
           active: shallowRef(null),
           cancel: vi.fn(),

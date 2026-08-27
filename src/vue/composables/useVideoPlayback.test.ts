@@ -5,13 +5,12 @@ import type { PlaybackResult } from "@/api.js";
 import { useVideoPlayback } from "./useVideoPlayback.js";
 
 function videoElement() {
-  return {
-    canPlayType: vi.fn(() => ""),
-    load: vi.fn(),
-    pause: vi.fn(),
-    removeAttribute: vi.fn(),
-    src: "",
-  } as unknown as HTMLVideoElement;
+  const element = document.createElement("video");
+  vi.spyOn(element, "canPlayType").mockReturnValue("");
+  vi.spyOn(element, "load").mockImplementation(() => undefined);
+  vi.spyOn(element, "pause").mockImplementation(() => undefined);
+  vi.spyOn(element, "removeAttribute");
+  return element;
 }
 
 function playbackClient(result: PlaybackResult = { kind: "direct", url: "/media/video" }) {

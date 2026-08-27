@@ -12,8 +12,8 @@ function mountAccessPage() {
   return mount(AccessPage, {
     global: {
       provide: {
-        [authKey as symbol]: { changePassword: vi.fn() },
-        [toastKey as symbol]: { success: vi.fn() },
+        [authKey]: { changePassword: vi.fn() },
+        [toastKey]: { success: vi.fn() },
       },
       stubs: { SettingsLayout: { template: "<slot />" } },
     },

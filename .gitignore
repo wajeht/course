@@ -10,4 +10,3 @@ data/
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
-skills-lock.json

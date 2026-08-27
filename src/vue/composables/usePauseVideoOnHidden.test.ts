@@ -15,7 +15,7 @@ function mountVideo() {
       },
     }),
   );
-  const video = wrapper.get("video").element as HTMLVideoElement;
+  const video = wrapper.get<HTMLVideoElement>("video").element;
   Object.defineProperty(video, "paused", { configurable: true, value: false });
   const pause = vi.spyOn(video, "pause").mockImplementation(() => undefined);
   return { pause, video, wrapper };
