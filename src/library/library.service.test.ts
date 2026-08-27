@@ -204,9 +204,35 @@ describe("library service", () => {
       },
     ]);
 
-    const library = await createService().getLibrary();
+    const service = createLibraryService(
+      createLibraryApiRepository(database.connection),
+      { getLibraryPageSize: async () => 24 },
+      {
+        listThumbnailIndex: async () => ({
+          revisions: new Map([
+            [standaloneVideo, 1],
+            [videoA, 2],
+          ]),
+          chapterStartsByVideo: new Map([
+            [standaloneVideo, [0, 15]],
+            [videoA, [0]],
+          ]),
+        }),
+      },
+    );
+    const library = await service.getLibrary();
 
     expect(library.continueWatching.map((video) => video.id)).toEqual([standaloneVideo, videoA]);
+    expect(library.continueWatching.map((video) => video.coverUrl)).toEqual([
+      `/covers/videos/${standaloneVideo}/chapters/15?t=1`,
+      `/covers/videos/${videoA}/chapters/0?t=2`,
+    ]);
+    expect(library.videos.find((video) => video.id === standaloneVideo)?.coverUrl).toBe(
+      `/covers/videos/${standaloneVideo}/chapters/15?t=1`,
+    );
+    await expect(service.getVideo(standaloneVideo)).resolves.toMatchObject({
+      video: { coverUrl: `/covers/videos/${standaloneVideo}?t=1` },
+    });
   });
 
   it("returns chapters and optional playlist context for a video", async () => {
@@ -244,8 +270,10 @@ describe("library service", () => {
         getLibraryPageSize: async () => 24,
       },
       {
-        listThumbnailRevisions: async () => new Map([[standaloneVideo, 1]]),
-        listChapterStarts: async () => [],
+        listThumbnailIndex: async () => ({
+          revisions: new Map([[standaloneVideo, 1]]),
+          chapterStartsByVideo: new Map(),
+        }),
       },
     );
 

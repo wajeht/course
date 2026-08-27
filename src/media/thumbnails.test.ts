@@ -102,8 +102,8 @@ describe("thumbnails", () => {
     await expect(
       fs.readFile(thumbnailPath(configuration.media.thumbnailsDirectory, videoB), "utf8"),
     ).resolves.toBe("thumb");
-    const revisions = await cache.listThumbnailRevisions();
-    expect(new Set(revisions.keys())).toEqual(new Set([videoA, videoB]));
+    const thumbnails = await cache.listThumbnailIndex();
+    expect(new Set(thumbnails.revisions.keys())).toEqual(new Set([videoA, videoB]));
   });
 
   it("writes a poster for each chapter start time", async () => {
@@ -121,7 +121,8 @@ describe("thumbnails", () => {
       ],
     );
 
-    await expect(cache.listChapterStarts(videoA)).resolves.toEqual([0, 130]);
+    const index = await cache.listThumbnailIndex();
+    expect(index.chapterStartsByVideo).toEqual(new Map([[videoA, [0, 130]]]));
     await expect(
       fs.readFile(
         chapterThumbnailPath(configuration.media.thumbnailsDirectory, videoA, 130),
@@ -185,8 +186,8 @@ describe("thumbnails", () => {
     await cache.synchronize([videoRecord(videoA, "A.mp4"), videoRecord(videoB, "B.mp4")]);
     await cache.synchronize([videoRecord(videoA, "A.mp4")]);
 
-    const revisions = await cache.listThumbnailRevisions();
-    expect(new Set(revisions.keys())).toEqual(new Set([videoA]));
+    const thumbnails = await cache.listThumbnailIndex();
+    expect(new Set(thumbnails.revisions.keys())).toEqual(new Set([videoA]));
     await expect(
       fs.access(thumbnailPath(configuration.media.thumbnailsDirectory, videoB)),
     ).rejects.toMatchObject({ code: "ENOENT" });
@@ -198,7 +199,10 @@ describe("thumbnails", () => {
     });
 
     await expect(cache.synchronize([videoRecord(videoA, "A.mp4")])).resolves.toBeUndefined();
-    await expect(cache.listThumbnailRevisions()).resolves.toEqual(new Map());
+    await expect(cache.listThumbnailIndex()).resolves.toEqual({
+      revisions: new Map(),
+      chapterStartsByVideo: new Map(),
+    });
     expect(warn).toHaveBeenCalledWith(
       "Could not generate thumbnail",
       expect.objectContaining({ videoId: videoA }),

@@ -144,16 +144,6 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
   const nextVideo = computed(() =>
     currentIndex.value >= 0 ? playlistVideos.value[currentIndex.value + 1] : undefined,
   );
-  const mediaMetadata = computed(() =>
-    video.value
-      ? {
-          title: video.value.title,
-          artist: video.value.authors.join(", ") || "Videos",
-          album: playlist.value?.title ?? "Videos",
-          artwork: video.value.coverUrl ?? null,
-        }
-      : null,
-  );
   const posterUrl = computed(() => {
     const detail = video.value;
     if (!detail) return undefined;
@@ -164,6 +154,16 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
     }
     return chapterThumbnail ?? detail.coverUrl ?? undefined;
   });
+  const mediaMetadata = computed(() =>
+    video.value
+      ? {
+          title: video.value.title,
+          artist: video.value.authors.join(", ") || "Videos",
+          album: playlist.value?.title ?? "Videos",
+          artwork: posterUrl.value ?? null,
+        }
+      : null,
+  );
 
   function invalidateLibrary() {
     return queryClient.invalidateQueries({ queryKey: queryKeys.library, refetchType: "none" });

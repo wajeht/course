@@ -96,9 +96,13 @@ export interface LibrarySettings {
 }
 
 export interface ThumbnailLookup {
-  listThumbnailRevisions(): Promise<Map<string, number>>;
-  listChapterStarts(videoId: string): Promise<number[]>;
+  listThumbnailIndex(): Promise<{
+    revisions: Map<string, number>;
+    chapterStartsByVideo: Map<string, number[]>;
+  }>;
 }
+
+type ThumbnailLookupIndex = Awaited<ReturnType<ThumbnailLookup["listThumbnailIndex"]>>;
 
 function stringList(value: string | null): string[] {
   return value ? (JSON.parse(value) as string[]) : [];
@@ -122,12 +126,29 @@ function progressPercent(completed: number, total: number): number {
   return total === 0 ? 0 : Math.round((completed / total) * 100);
 }
 
-function thumbnailRevision(videoId: string, revisions: Map<string, number>): string | null {
+function videoCoverUrl(
+  videoId: string,
+  positionSeconds: number,
+  thumbnails: ThumbnailLookupIndex,
+): string | null {
+  const revision = thumbnails.revisions.get(videoId);
+  if (revision === undefined) return null;
+  let chapterStart: number | undefined;
+  for (const startSeconds of thumbnails.chapterStartsByVideo.get(videoId) ?? []) {
+    if (startSeconds > positionSeconds) break;
+    chapterStart = startSeconds;
+  }
+  return chapterStart === undefined
+    ? videoPosterUrl(videoId, thumbnails.revisions)
+    : `/covers/videos/${videoId}/chapters/${chapterStart}?t=${revision}`;
+}
+
+function videoPosterUrl(videoId: string, revisions: Map<string, number>): string | null {
   const revision = revisions.get(videoId);
   return revision === undefined ? null : `/covers/videos/${videoId}?t=${revision}`;
 }
 
-function videoDto(row: VideoRow, revisions: Map<string, number>): VideoDto {
+function videoDto(row: VideoRow, thumbnails: ThumbnailLookupIndex): VideoDto {
   const position = row.completed ? Number(row.duration_seconds) : Number(row.position_seconds ?? 0);
   return {
     id: row.id,
@@ -140,7 +161,7 @@ function videoDto(row: VideoRow, revisions: Map<string, number>): VideoDto {
     authors: mergeNames(stringList(row.authors_json), stringList(row.playlist_authors_json)),
     tags: mergeNames(stringList(row.tags_json), stringList(row.playlist_tags_json)),
     source: sourceDto(row.source_provider, row.source_url),
-    coverUrl: thumbnailRevision(row.id, revisions),
+    coverUrl: videoCoverUrl(row.id, position, thumbnails),
     durationSeconds: Number(row.duration_seconds),
     positionSeconds: position,
     completed: Boolean(row.completed),
@@ -201,13 +222,18 @@ export function createLibraryService(
   settings: LibrarySettings,
   thumbnails?: ThumbnailLookup,
 ): LibraryService {
-  async function thumbnailRevisions(): Promise<Map<string, number>> {
-    return (await thumbnails?.listThumbnailRevisions()) ?? new Map();
+  async function thumbnailIndex(): Promise<ThumbnailLookupIndex> {
+    return (
+      (await thumbnails?.listThumbnailIndex()) ?? {
+        revisions: new Map(),
+        chapterStartsByVideo: new Map(),
+      }
+    );
   }
 
   async function getPlaylist(
     playlistId: string,
-    revisions: Map<string, number>,
+    thumbnailLookup: ThumbnailLookupIndex,
   ): Promise<PlaylistDetailDto | null> {
     const [playlistRow, videoRows] = await Promise.all([
       repository.findPlaylist(playlistId),
@@ -223,10 +249,13 @@ export function createLibraryService(
         title: row.playlist_section_title ?? "Videos",
         videos: [],
       };
-      section.videos.push(videoDto(row, revisions));
+      section.videos.push(videoDto(row, thumbnailLookup));
       sectionMap.set(key, section);
     }
-    return { ...playlistDto(playlistRow, revisions), sections: [...sectionMap.values()] };
+    return {
+      ...playlistDto(playlistRow, thumbnailLookup.revisions),
+      sections: [...sectionMap.values()],
+    };
   }
 
   return {
@@ -242,40 +271,40 @@ export function createLibraryService(
       const totalPages = Math.ceil(totalVideos / pageSize);
       const page = totalPages === 0 ? 1 : Math.min(Math.max(1, requestedPage), totalPages);
 
-      const [videos, playlists, authors, tags, continuing, revisions] = await Promise.all([
+      const [videos, playlists, authors, tags, continuing, thumbnailLookup] = await Promise.all([
         repository.listVideos(videoFilters, { limit: pageSize, offset: (page - 1) * pageSize }),
         repository.listPlaylists(videoFilters),
         repository.listAuthors(),
         repository.listTags(),
         repository.listContinueWatching(),
-        thumbnailRevisions(),
+        thumbnailIndex(),
       ]);
       return {
-        videos: videos.map((row) => videoDto(row, revisions)),
-        playlists: playlists.map((row) => playlistDto(row, revisions)),
+        videos: videos.map((row) => videoDto(row, thumbnailLookup)),
+        playlists: playlists.map((row) => playlistDto(row, thumbnailLookup.revisions)),
         authors: authors.map(filterDto),
         tags: tags.map(filterDto),
-        continueWatching: continuing.map((row) => videoDto(row, revisions)),
+        continueWatching: continuing.map((row) => videoDto(row, thumbnailLookup)),
         pagination: { page, pageSize, totalVideos, totalPages },
       };
     },
     async getVideo(videoId) {
-      const [row, revisions] = await Promise.all([
+      const [row, thumbnailLookup] = await Promise.all([
         repository.findVideo(videoId),
-        thumbnailRevisions(),
+        thumbnailIndex(),
       ]);
       if (!row) return null;
-      const [chapters, playlist, chapterStarts] = await Promise.all([
+      const [chapters, playlist] = await Promise.all([
         repository.listVideoChapters(videoId),
-        row.playlist_id ? getPlaylist(row.playlist_id, revisions) : Promise.resolve(null),
-        thumbnails?.listChapterStarts(videoId) ?? Promise.resolve([]),
+        row.playlist_id ? getPlaylist(row.playlist_id, thumbnailLookup) : Promise.resolve(null),
       ]);
-      const starts = new Set(chapterStarts);
+      const starts = new Set(thumbnailLookup.chapterStartsByVideo.get(videoId) ?? []);
       return {
         video: {
-          ...videoDto(row, revisions),
+          ...videoDto(row, thumbnailLookup),
+          coverUrl: videoPosterUrl(videoId, thumbnailLookup.revisions),
           chapters: chapters.map((chapter) =>
-            chapterDto(chapter, videoId, starts, revisions.get(videoId)),
+            chapterDto(chapter, videoId, starts, thumbnailLookup.revisions.get(videoId)),
           ),
         },
         playlist,
