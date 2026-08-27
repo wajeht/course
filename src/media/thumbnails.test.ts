@@ -8,6 +8,7 @@ import { createLogger } from "../logger.js";
 import { createTemporaryDirectory } from "../test/resources.js";
 import {
   chapterThumbnailPath,
+  chapterThumbnailSeekSeconds,
   chapterThumbnailSeeks,
   createThumbnailCache,
   thumbnailPath,
@@ -19,7 +20,7 @@ import type { VideoRecord } from "./types.js";
 const videoA = "a".repeat(24);
 const videoB = "b".repeat(24);
 
-function videoRecord(id: string, filename: string, coverPath: string | null = null): VideoRecord {
+function videoRecord(id: string, filename: string): VideoRecord {
   return {
     id,
     path: filename,
@@ -28,7 +29,6 @@ function videoRecord(id: string, filename: string, coverPath: string | null = nu
     title: filename,
     description: "",
     tags: [],
-    coverPath,
     sourceProvider: null,
     sourceUrl: null,
     sortOrder: 0,
@@ -84,25 +84,41 @@ describe("thumbnails", () => {
         { videoId: videoA, startSeconds: 130, sortOrder: 1 },
       ]).get(videoA),
     ).toBe(130);
+    expect(chapterThumbnailSeekSeconds([0, 3, 30], 0, 60)).toBe(1.5);
+    expect(chapterThumbnailSeekSeconds([0, 3, 30], 1, 60)).toBe(5);
   });
 
-  it("generates posters even when a video has an authored cover", async () => {
+  it("generates posters for every video", async () => {
     const generate = vi.fn<ThumbnailGenerator>(async (_source, destination) => {
       await fs.mkdir(path.dirname(destination), { recursive: true });
       await fs.writeFile(destination, "thumb");
     });
     const { cache, configuration } = await createCache(generate);
 
-    await cache.synchronize([videoRecord(videoA, "A.mp4"), videoRecord(videoB, "B.mp4", "B.jpg")]);
+    await cache.synchronize([videoRecord(videoA, "A.mp4"), videoRecord(videoB, "B.mp4")], []);
 
     expect(generate).toHaveBeenCalledTimes(2);
-    await expect(
-      fs.readFile(thumbnailPath(configuration.media.thumbnailsDirectory, videoA), "utf8"),
-    ).resolves.toBe("thumb");
-    await expect(
-      fs.readFile(thumbnailPath(configuration.media.thumbnailsDirectory, videoB), "utf8"),
-    ).resolves.toBe("thumb");
     const thumbnails = await cache.listThumbnailIndex();
+    await expect(
+      fs.readFile(
+        thumbnailPath(
+          configuration.media.thumbnailsDirectory,
+          videoA,
+          thumbnails.revisions.get(videoA)!,
+        ),
+        "utf8",
+      ),
+    ).resolves.toBe("thumb");
+    await expect(
+      fs.readFile(
+        thumbnailPath(
+          configuration.media.thumbnailsDirectory,
+          videoB,
+          thumbnails.revisions.get(videoB)!,
+        ),
+        "utf8",
+      ),
+    ).resolves.toBe("thumb");
     expect(new Set(thumbnails.revisions.keys())).toEqual(new Set([videoA, videoB]));
   });
 
@@ -125,10 +141,15 @@ describe("thumbnails", () => {
     expect(index.chapterStartsByVideo).toEqual(new Map([[videoA, [0, 130]]]));
     await expect(
       fs.readFile(
-        chapterThumbnailPath(configuration.media.thumbnailsDirectory, videoA, 130),
+        chapterThumbnailPath(
+          configuration.media.thumbnailsDirectory,
+          videoA,
+          index.revisions.get(videoA)!,
+          130,
+        ),
         "utf8",
       ),
-    ).resolves.toBe(`${videoA}.c130.jpg`);
+    ).resolves.toBe("chapter-130.jpg");
   });
 
   it("reuses a current thumbnail and regenerates when the source changes", async () => {
@@ -139,12 +160,12 @@ describe("thumbnails", () => {
     const { cache } = await createCache(generate);
     const video = videoRecord(videoA, "A.mp4");
 
-    await cache.synchronize([video]);
-    await cache.synchronize([video]);
+    await cache.synchronize([video], []);
+    await cache.synchronize([video], []);
     expect(generate).toHaveBeenCalledTimes(1);
     expect(generate.mock.calls[0]?.[2]).toBe(25);
 
-    await cache.synchronize([{ ...video, sizeBytes: 200 }]);
+    await cache.synchronize([{ ...video, sizeBytes: 200 }], []);
     expect(generate).toHaveBeenCalledTimes(2);
   });
 
@@ -156,14 +177,29 @@ describe("thumbnails", () => {
     const { cache, configuration } = await createCache(generate);
     const video = videoRecord(videoA, "A.mp4");
     const chapters = [{ videoId: videoA, startSeconds: 30, sortOrder: 0 }];
-    const chapterPath = chapterThumbnailPath(configuration.media.thumbnailsDirectory, videoA, 30);
-
     await cache.synchronize([video], chapters);
+    const firstIndex = await cache.listThumbnailIndex();
+    const chapterPath = chapterThumbnailPath(
+      configuration.media.thumbnailsDirectory,
+      videoA,
+      firstIndex.revisions.get(videoA)!,
+      30,
+    );
     await fs.rm(chapterPath);
     await cache.synchronize([video], chapters);
 
     expect(generate).toHaveBeenCalledTimes(4);
-    await expect(fs.access(chapterPath)).resolves.toBeUndefined();
+    const secondIndex = await cache.listThumbnailIndex();
+    await expect(
+      fs.access(
+        chapterThumbnailPath(
+          configuration.media.thumbnailsDirectory,
+          videoA,
+          secondIndex.revisions.get(videoA)!,
+          30,
+        ),
+      ),
+    ).resolves.toBeUndefined();
   });
 
   it("forces regeneration of the poster and all chapter thumbnails", async () => {
@@ -181,15 +217,113 @@ describe("thumbnails", () => {
     expect(generate).toHaveBeenCalledTimes(4);
   });
 
+  it("keeps the current revision when replacement generation fails", async () => {
+    let replacement = false;
+    const generate = vi.fn<ThumbnailGenerator>(async (_source, destination) => {
+      if (replacement && path.basename(destination).startsWith("chapter-")) {
+        throw new Error("FFmpeg failed");
+      }
+      await fs.mkdir(path.dirname(destination), { recursive: true });
+      await fs.writeFile(destination, replacement ? "replacement" : "current");
+    });
+    const { cache, configuration } = await createCache(generate);
+    const video = videoRecord(videoA, "A.mp4");
+    const chapters = [{ videoId: videoA, startSeconds: 30, sortOrder: 0 }];
+
+    await cache.synchronize([video], chapters);
+    const before = await cache.listThumbnailIndex();
+    replacement = true;
+    await expect(cache.regenerate(video, chapters)).rejects.toThrow("FFmpeg failed");
+
+    const after = await cache.listThumbnailIndex();
+    expect(after).toEqual(before);
+    await expect(
+      fs.readFile(
+        thumbnailPath(
+          configuration.media.thumbnailsDirectory,
+          videoA,
+          before.revisions.get(videoA)!,
+        ),
+        "utf8",
+      ),
+    ).resolves.toBe("current");
+  });
+
+  it("treats malformed metadata as stale", async () => {
+    const generate = vi.fn<ThumbnailGenerator>(async (_source, destination) => {
+      await fs.mkdir(path.dirname(destination), { recursive: true });
+      await fs.writeFile(destination, "thumb");
+    });
+    const { configuration } = await createCache();
+    await fs.mkdir(path.join(configuration.media.thumbnailsDirectory, videoA), { recursive: true });
+    await fs.writeFile(
+      path.join(configuration.media.thumbnailsDirectory, videoA, "current.json"),
+      JSON.stringify({ version: 3, chapterStarts: "invalid" }),
+    );
+    const cache = createThumbnailCache({ configuration, logger: createLogger(), generate });
+
+    await cache.synchronize([videoRecord(videoA, "A.mp4")], []);
+
+    expect(generate).toHaveBeenCalledOnce();
+    expect((await cache.listThumbnailIndex()).revisions.has(videoA)).toBe(true);
+  });
+
+  it("coalesces regeneration requests and serializes scans for the same video", async () => {
+    let finishGeneration: () => void = () => {};
+    const blocked = new Promise<void>((resolve) => {
+      finishGeneration = resolve;
+    });
+    const generate = vi.fn<ThumbnailGenerator>(async (_source, destination) => {
+      await blocked;
+      await fs.mkdir(path.dirname(destination), { recursive: true });
+      await fs.writeFile(destination, "thumb");
+    });
+    const { cache } = await createCache(generate);
+    const video = videoRecord(videoA, "A.mp4");
+
+    expect(cache.startRegeneration(video, [])).toEqual({ status: "running" });
+    expect(cache.startRegeneration(video, [])).toEqual({ status: "running" });
+    const synchronization = cache.synchronize([video], []);
+    await vi.waitFor(() => expect(generate).toHaveBeenCalledOnce());
+    finishGeneration();
+    await synchronization;
+
+    await vi.waitFor(() =>
+      expect(cache.regenerationStatus(videoA)).toEqual({
+        status: "complete",
+        revision: expect.any(Number),
+      }),
+    );
+    expect(generate).toHaveBeenCalledOnce();
+  });
+
+  it("serves repeated index reads from its in-memory snapshot", async () => {
+    const { cache } = await createCache();
+    await cache.synchronize([videoRecord(videoA, "A.mp4")], []);
+    const readDirectory = vi.spyOn(fs, "readdir");
+
+    await cache.listThumbnailIndex();
+    await cache.listThumbnailIndex();
+
+    expect(readDirectory).not.toHaveBeenCalled();
+  });
+
   it("prunes thumbnails for videos that left the library", async () => {
     const { cache, configuration } = await createCache();
-    await cache.synchronize([videoRecord(videoA, "A.mp4"), videoRecord(videoB, "B.mp4")]);
-    await cache.synchronize([videoRecord(videoA, "A.mp4")]);
+    await cache.synchronize([videoRecord(videoA, "A.mp4"), videoRecord(videoB, "B.mp4")], []);
+    const before = await cache.listThumbnailIndex();
+    await cache.synchronize([videoRecord(videoA, "A.mp4")], []);
 
     const thumbnails = await cache.listThumbnailIndex();
     expect(new Set(thumbnails.revisions.keys())).toEqual(new Set([videoA]));
     await expect(
-      fs.access(thumbnailPath(configuration.media.thumbnailsDirectory, videoB)),
+      fs.access(
+        thumbnailPath(
+          configuration.media.thumbnailsDirectory,
+          videoB,
+          before.revisions.get(videoB)!,
+        ),
+      ),
     ).rejects.toMatchObject({ code: "ENOENT" });
   });
 
@@ -198,7 +332,7 @@ describe("thumbnails", () => {
       throw new Error("FFmpeg failed");
     });
 
-    await expect(cache.synchronize([videoRecord(videoA, "A.mp4")])).resolves.toBeUndefined();
+    await expect(cache.synchronize([videoRecord(videoA, "A.mp4")], [])).resolves.toBeUndefined();
     await expect(cache.listThumbnailIndex()).resolves.toEqual({
       revisions: new Map(),
       chapterStartsByVideo: new Map(),

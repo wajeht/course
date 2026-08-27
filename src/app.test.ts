@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createApp } from "./app.js";
 import { createConfiguration } from "./config.js";
 import { createTemporaryDirectory, createTestContext } from "./test/resources.js";
+import { chapterThumbnailPath, thumbnailCacheVersion, thumbnailPath } from "./media/thumbnails.js";
 
 describe("application", () => {
   it("serves health, byte ranges, and production routes", async () => {
@@ -138,23 +139,42 @@ describe("application", () => {
     });
     expect(missingVideoCover.status).toBe(404);
 
+    const revision = 123;
+    const videoId = "b".repeat(24);
+    await fs.mkdir(
+      path.dirname(thumbnailPath(configuration.media.thumbnailsDirectory, videoId, revision)),
+      {
+        recursive: true,
+      },
+    );
     await fs.writeFile(
-      path.join(configuration.media.thumbnailsDirectory, `${"b".repeat(24)}.jpg`),
+      thumbnailPath(configuration.media.thumbnailsDirectory, videoId, revision),
       "thumb",
     );
     await fs.writeFile(
-      path.join(configuration.media.thumbnailsDirectory, `${"b".repeat(24)}.c0.jpg`),
+      chapterThumbnailPath(configuration.media.thumbnailsDirectory, videoId, revision, 0),
       "chapter-thumb",
     );
-    const generated = await app.request(`/covers/videos/${"b".repeat(24)}`, {
+    await fs.writeFile(
+      path.join(configuration.media.thumbnailsDirectory, videoId, "current.json"),
+      JSON.stringify({
+        modifiedAt: now,
+        sizeBytes: 10,
+        version: thumbnailCacheVersion,
+        revision,
+        chapterStarts: [0],
+      }),
+    );
+    const generated = await app.request(`/covers/videos/${videoId}?t=${revision}`, {
       headers: { cookie: cookie! },
     });
     expect(generated.status).toBe(200);
     expect(await generated.text()).toBe("thumb");
 
-    const chapterThumbnail = await app.request(`/covers/videos/${"b".repeat(24)}/chapters/0`, {
-      headers: { cookie: cookie! },
-    });
+    const chapterThumbnail = await app.request(
+      `/covers/videos/${videoId}/chapters/0?t=${revision}`,
+      { headers: { cookie: cookie! } },
+    );
     expect(chapterThumbnail.status).toBe(200);
     expect(await chapterThumbnail.text()).toBe("chapter-thumb");
 
