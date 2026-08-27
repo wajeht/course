@@ -51,6 +51,8 @@
     "@vitest/coverage-v8": "4.1.11",
     "@vue/test-utils": "2.4.11",
     "concurrently": "10.0.5",
+    "eslint-plugin-regexp": "3.2.0",
+    "eslint-plugin-sonarjs": "4.2.0",
     "happy-dom": "20.11.6",
     "oxfmt": "0.64.0",
     "oxlint": "1.80.0",
