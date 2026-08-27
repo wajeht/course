@@ -54,6 +54,13 @@ describe("application", () => {
       browser_compatible: true,
       modified_at: now,
     });
+    await context.database.connection("chapters").insert({
+      id: "c".repeat(24),
+      video_id: "b".repeat(24),
+      title: "Introduction",
+      start_seconds: 0,
+      sort_order: 0,
+    });
     const app = createApp(context);
 
     expect(await (await app.request("/healthz")).json()).toEqual({ status: "ok" });
@@ -61,6 +68,14 @@ describe("application", () => {
     expect((await app.request(`/media/${"b".repeat(24)}`)).status).toBe(401);
     expect((await app.request(`/covers/playlists/${"a".repeat(24)}`)).status).toBe(401);
     expect((await app.request(`/hls/${"b".repeat(24)}/index.m3u8`)).status).toBe(401);
+    expect(
+      (
+        await app.request(`/api/videos/${"b".repeat(24)}/thumbnail`, {
+          method: "POST",
+          headers: { origin: "http://localhost" },
+        })
+      ).status,
+    ).toBe(401);
 
     const rejectedSetup = await app.request("/api/auth/password", {
       method: "POST",
@@ -92,6 +107,17 @@ describe("application", () => {
     const cookie = login.headers.get("set-cookie")?.split(";")[0];
     expect(cookie).toBeTruthy();
 
+    const regenerate = vi.spyOn(context.thumbnails, "regenerate").mockResolvedValue();
+    const regenerateResponse = await app.request(`/api/videos/${"b".repeat(24)}/thumbnail`, {
+      method: "POST",
+      headers: { cookie: cookie!, origin: "http://localhost" },
+    });
+    expect(regenerateResponse.status).toBe(204);
+    expect(regenerate).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "b".repeat(24), path: "playlist/video.mp4" }),
+      [{ videoId: "b".repeat(24), startSeconds: 0, sortOrder: 0 }],
+    );
+
     const response = await app.request(`/media/${"b".repeat(24)}`, {
       headers: { range: "bytes=2-5", cookie: cookie! },
     });
@@ -116,11 +142,21 @@ describe("application", () => {
       path.join(configuration.media.thumbnailsDirectory, `${"b".repeat(24)}.jpg`),
       "thumb",
     );
+    await fs.writeFile(
+      path.join(configuration.media.thumbnailsDirectory, `${"b".repeat(24)}.c0.jpg`),
+      "chapter-thumb",
+    );
     const generated = await app.request(`/covers/videos/${"b".repeat(24)}`, {
       headers: { cookie: cookie! },
     });
     expect(generated.status).toBe(200);
     expect(await generated.text()).toBe("thumb");
+
+    const chapterThumbnail = await app.request(`/covers/videos/${"b".repeat(24)}/chapters/0`, {
+      headers: { cookie: cookie! },
+    });
+    expect(chapterThumbnail.status).toBe(200);
+    expect(await chapterThumbnail.text()).toBe("chapter-thumb");
 
     const openVideo = vi.spyOn(context.progress, "openVideo");
     const videoDetail = await app.request(`/api/videos/${"b".repeat(24)}`, {
@@ -128,7 +164,17 @@ describe("application", () => {
     });
     expect(videoDetail.status).toBe(200);
     expect(await videoDetail.json()).toMatchObject({
-      video: { id: "b".repeat(24), title: "Video" },
+      video: {
+        id: "b".repeat(24),
+        title: "Video",
+        chapters: [
+          {
+            title: "Introduction",
+            startSeconds: 0,
+            thumbnailUrl: expect.stringContaining(`/covers/videos/${"b".repeat(24)}/chapters/0?t=`),
+          },
+        ],
+      },
       playlist: { id: "a".repeat(24), title: "Playlist" },
     });
 

@@ -28,6 +28,7 @@ export interface VideoDto {
 export interface ChapterDto {
   title: string;
   startSeconds: number;
+  thumbnailUrl: string | null;
 }
 
 export interface VideoDetailDto extends VideoDto {
@@ -95,7 +96,8 @@ export interface LibrarySettings {
 }
 
 export interface ThumbnailLookup {
-  listThumbnailIds(): Promise<Set<string>>;
+  listThumbnailRevisions(): Promise<Map<string, number>>;
+  listChapterStarts(videoId: string): Promise<number[]>;
 }
 
 function stringList(value: string | null): string[] {
@@ -120,7 +122,12 @@ function progressPercent(completed: number, total: number): number {
   return total === 0 ? 0 : Math.round((completed / total) * 100);
 }
 
-function videoDto(row: VideoRow, thumbnailIds: Set<string>): VideoDto {
+function thumbnailRevision(videoId: string, revisions: Map<string, number>): string | null {
+  const revision = revisions.get(videoId);
+  return revision === undefined ? null : `/covers/videos/${videoId}?t=${revision}`;
+}
+
+function videoDto(row: VideoRow, revisions: Map<string, number>): VideoDto {
   const position = row.completed ? Number(row.duration_seconds) : Number(row.position_seconds ?? 0);
   return {
     id: row.id,
@@ -133,7 +140,7 @@ function videoDto(row: VideoRow, thumbnailIds: Set<string>): VideoDto {
     authors: mergeNames(stringList(row.authors_json), stringList(row.playlist_authors_json)),
     tags: mergeNames(stringList(row.tags_json), stringList(row.playlist_tags_json)),
     source: sourceDto(row.source_provider, row.source_url),
-    coverUrl: thumbnailIds.has(row.id) ? `/covers/videos/${row.id}?v=2` : null,
+    coverUrl: thumbnailRevision(row.id, revisions),
     durationSeconds: Number(row.duration_seconds),
     positionSeconds: position,
     completed: Boolean(row.completed),
@@ -141,7 +148,15 @@ function videoDto(row: VideoRow, thumbnailIds: Set<string>): VideoDto {
   };
 }
 
-function playlistDto(row: PlaylistRow, thumbnailIds: Set<string>): PlaylistDto {
+function playlistCoverUrl(row: PlaylistRow, revisions: Map<string, number>): string | null {
+  if (row.cover_path) return `/covers/playlists/${row.id}?t=cover`;
+  if (row.first_video_id && revisions.has(row.first_video_id)) {
+    return `/covers/playlists/${row.id}?t=${revisions.get(row.first_video_id)}`;
+  }
+  return null;
+}
+
+function playlistDto(row: PlaylistRow, revisions: Map<string, number>): PlaylistDto {
   const videoCount = Number(row.video_count);
   const completedCount = Number(row.completed_count);
   return {
@@ -151,10 +166,7 @@ function playlistDto(row: PlaylistRow, thumbnailIds: Set<string>): PlaylistDto {
     authors: stringList(row.authors_json),
     tags: stringList(row.tags_json),
     source: sourceDto(row.source_provider, row.source_url),
-    coverUrl:
-      row.cover_path || (row.first_video_id != null && thumbnailIds.has(row.first_video_id))
-        ? `/covers/playlists/${row.id}?v=2`
-        : null,
+    coverUrl: playlistCoverUrl(row, revisions),
     videoCount,
     completedCount,
     progressPercent: progressPercent(completedCount, videoCount),
@@ -167,8 +179,21 @@ function filterDto(row: FilterCountRow): LibraryFilterDto {
   return { name: row.name, videoCount: Number(row.video_count) };
 }
 
-function chapterDto(row: ChapterRow): ChapterDto {
-  return { title: row.title, startSeconds: Number(row.start_seconds) };
+function chapterDto(
+  row: ChapterRow,
+  videoId: string,
+  chapterStarts: Set<number>,
+  revision: number | undefined,
+): ChapterDto {
+  const startSeconds = Number(row.start_seconds);
+  return {
+    title: row.title,
+    startSeconds,
+    thumbnailUrl:
+      chapterStarts.has(startSeconds) && revision !== undefined
+        ? `/covers/videos/${videoId}/chapters/${startSeconds}?t=${revision}`
+        : null,
+  };
 }
 
 export function createLibraryService(
@@ -176,13 +201,13 @@ export function createLibraryService(
   settings: LibrarySettings,
   thumbnails?: ThumbnailLookup,
 ): LibraryService {
-  async function thumbnailIds(): Promise<Set<string>> {
-    return (await thumbnails?.listThumbnailIds()) ?? new Set();
+  async function thumbnailRevisions(): Promise<Map<string, number>> {
+    return (await thumbnails?.listThumbnailRevisions()) ?? new Map();
   }
 
   async function getPlaylist(
     playlistId: string,
-    covers: Set<string>,
+    revisions: Map<string, number>,
   ): Promise<PlaylistDetailDto | null> {
     const [playlistRow, videoRows] = await Promise.all([
       repository.findPlaylist(playlistId),
@@ -198,10 +223,10 @@ export function createLibraryService(
         title: row.playlist_section_title ?? "Videos",
         videos: [],
       };
-      section.videos.push(videoDto(row, covers));
+      section.videos.push(videoDto(row, revisions));
       sectionMap.set(key, section);
     }
-    return { ...playlistDto(playlistRow, covers), sections: [...sectionMap.values()] };
+    return { ...playlistDto(playlistRow, revisions), sections: [...sectionMap.values()] };
   }
 
   return {
@@ -217,32 +242,42 @@ export function createLibraryService(
       const totalPages = Math.ceil(totalVideos / pageSize);
       const page = totalPages === 0 ? 1 : Math.min(Math.max(1, requestedPage), totalPages);
 
-      const [videos, playlists, authors, tags, continuing, covers] = await Promise.all([
+      const [videos, playlists, authors, tags, continuing, revisions] = await Promise.all([
         repository.listVideos(videoFilters, { limit: pageSize, offset: (page - 1) * pageSize }),
         repository.listPlaylists(videoFilters),
         repository.listAuthors(),
         repository.listTags(),
         repository.listContinueWatching(),
-        thumbnailIds(),
+        thumbnailRevisions(),
       ]);
       return {
-        videos: videos.map((row) => videoDto(row, covers)),
-        playlists: playlists.map((row) => playlistDto(row, covers)),
+        videos: videos.map((row) => videoDto(row, revisions)),
+        playlists: playlists.map((row) => playlistDto(row, revisions)),
         authors: authors.map(filterDto),
         tags: tags.map(filterDto),
-        continueWatching: continuing.map((row) => videoDto(row, covers)),
+        continueWatching: continuing.map((row) => videoDto(row, revisions)),
         pagination: { page, pageSize, totalVideos, totalPages },
       };
     },
     async getVideo(videoId) {
-      const [row, covers] = await Promise.all([repository.findVideo(videoId), thumbnailIds()]);
-      if (!row) return null;
-      const [chapters, playlist] = await Promise.all([
-        repository.listVideoChapters(videoId),
-        row.playlist_id ? getPlaylist(row.playlist_id, covers) : Promise.resolve(null),
+      const [row, revisions] = await Promise.all([
+        repository.findVideo(videoId),
+        thumbnailRevisions(),
       ]);
+      if (!row) return null;
+      const [chapters, playlist, chapterStarts] = await Promise.all([
+        repository.listVideoChapters(videoId),
+        row.playlist_id ? getPlaylist(row.playlist_id, revisions) : Promise.resolve(null),
+        thumbnails?.listChapterStarts(videoId) ?? Promise.resolve([]),
+      ]);
+      const starts = new Set(chapterStarts);
       return {
-        video: { ...videoDto(row, covers), chapters: chapters.map(chapterDto) },
+        video: {
+          ...videoDto(row, revisions),
+          chapters: chapters.map((chapter) =>
+            chapterDto(chapter, videoId, starts, revisions.get(videoId)),
+          ),
+        },
         playlist,
       };
     },

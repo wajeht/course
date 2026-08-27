@@ -7,6 +7,7 @@ import { createConfiguration } from "../config.js";
 import { createLogger } from "../logger.js";
 import { createTemporaryDirectory } from "../test/resources.js";
 import {
+  chapterThumbnailPath,
   chapterThumbnailSeeks,
   createThumbnailCache,
   thumbnailPath,
@@ -101,7 +102,32 @@ describe("thumbnails", () => {
     await expect(
       fs.readFile(thumbnailPath(configuration.media.thumbnailsDirectory, videoB), "utf8"),
     ).resolves.toBe("thumb");
-    await expect(cache.listThumbnailIds()).resolves.toEqual(new Set([videoA, videoB]));
+    const revisions = await cache.listThumbnailRevisions();
+    expect(new Set(revisions.keys())).toEqual(new Set([videoA, videoB]));
+  });
+
+  it("writes a poster for each chapter start time", async () => {
+    const generate = vi.fn<ThumbnailGenerator>(async (_source, destination) => {
+      await fs.mkdir(path.dirname(destination), { recursive: true });
+      await fs.writeFile(destination, path.basename(destination));
+    });
+    const { cache, configuration } = await createCache(generate);
+
+    await cache.synchronize(
+      [videoRecord(videoA, "A.mp4")],
+      [
+        { videoId: videoA, startSeconds: 0, sortOrder: 0 },
+        { videoId: videoA, startSeconds: 130, sortOrder: 1 },
+      ],
+    );
+
+    await expect(cache.listChapterStarts(videoA)).resolves.toEqual([0, 130]);
+    await expect(
+      fs.readFile(
+        chapterThumbnailPath(configuration.media.thumbnailsDirectory, videoA, 130),
+        "utf8",
+      ),
+    ).resolves.toBe(`${videoA}.c130.jpg`);
   });
 
   it("reuses a current thumbnail and regenerates when the source changes", async () => {
@@ -121,12 +147,46 @@ describe("thumbnails", () => {
     expect(generate).toHaveBeenCalledTimes(2);
   });
 
+  it("restores a missing chapter thumbnail", async () => {
+    const generate = vi.fn<ThumbnailGenerator>(async (_source, destination) => {
+      await fs.mkdir(path.dirname(destination), { recursive: true });
+      await fs.writeFile(destination, "thumb");
+    });
+    const { cache, configuration } = await createCache(generate);
+    const video = videoRecord(videoA, "A.mp4");
+    const chapters = [{ videoId: videoA, startSeconds: 30, sortOrder: 0 }];
+    const chapterPath = chapterThumbnailPath(configuration.media.thumbnailsDirectory, videoA, 30);
+
+    await cache.synchronize([video], chapters);
+    await fs.rm(chapterPath);
+    await cache.synchronize([video], chapters);
+
+    expect(generate).toHaveBeenCalledTimes(4);
+    await expect(fs.access(chapterPath)).resolves.toBeUndefined();
+  });
+
+  it("forces regeneration of the poster and all chapter thumbnails", async () => {
+    const generate = vi.fn<ThumbnailGenerator>(async (_source, destination) => {
+      await fs.mkdir(path.dirname(destination), { recursive: true });
+      await fs.writeFile(destination, `thumb-${generate.mock.calls.length}`);
+    });
+    const { cache } = await createCache(generate);
+    const video = videoRecord(videoA, "A.mp4");
+    const chapters = [{ videoId: videoA, startSeconds: 30, sortOrder: 0 }];
+
+    await cache.synchronize([video], chapters);
+    await cache.regenerate(video, chapters);
+
+    expect(generate).toHaveBeenCalledTimes(4);
+  });
+
   it("prunes thumbnails for videos that left the library", async () => {
     const { cache, configuration } = await createCache();
     await cache.synchronize([videoRecord(videoA, "A.mp4"), videoRecord(videoB, "B.mp4")]);
     await cache.synchronize([videoRecord(videoA, "A.mp4")]);
 
-    await expect(cache.listThumbnailIds()).resolves.toEqual(new Set([videoA]));
+    const revisions = await cache.listThumbnailRevisions();
+    expect(new Set(revisions.keys())).toEqual(new Set([videoA]));
     await expect(
       fs.access(thumbnailPath(configuration.media.thumbnailsDirectory, videoB)),
     ).rejects.toMatchObject({ code: "ENOENT" });
@@ -138,7 +198,7 @@ describe("thumbnails", () => {
     });
 
     await expect(cache.synchronize([videoRecord(videoA, "A.mp4")])).resolves.toBeUndefined();
-    await expect(cache.listThumbnailIds()).resolves.toEqual(new Set());
+    await expect(cache.listThumbnailRevisions()).resolves.toEqual(new Map());
     expect(warn).toHaveBeenCalledWith(
       "Could not generate thumbnail",
       expect.objectContaining({ videoId: videoA }),

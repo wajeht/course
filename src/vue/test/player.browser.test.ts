@@ -26,10 +26,10 @@ test("uses responsive video details and places the playlist below them on mobile
   const video = {
     authors: ["Example Author"],
     chapters: [
-      { startSeconds: 0, title: "Introduction" },
-      { startSeconds: 90, title: "Computer memory" },
-      { startSeconds: 180, title: "Pointers" },
-      { startSeconds: 270, title: "Summary" },
+      { startSeconds: 0, title: "Introduction", thumbnailUrl: null },
+      { startSeconds: 90, title: "Computer memory", thumbnailUrl: null },
+      { startSeconds: 180, title: "Pointers", thumbnailUrl: null },
+      { startSeconds: 270, title: "Summary", thumbnailUrl: null },
     ],
     completed: false,
     coverUrl: null,

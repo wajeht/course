@@ -40,7 +40,9 @@ const player = useVideoPlayer(media);
           :current-time="player.currentTime.value"
           :video="player.video.value"
           :resetting="player.resetting.value"
+          :regenerating="player.regenerating.value"
           @reset="player.resetProgress"
+          @regenerate="player.regenerateThumbnail"
           @seek="player.seekToChapter"
         />
       </div>

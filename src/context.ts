@@ -16,7 +16,7 @@ import {
 import { createConversionManager, type ConversionManager } from "./media/conversion.js";
 import { createConversionRepository } from "./media/conversion.repository.js";
 import { createScanner, type Scanner } from "./media/scanner.js";
-import { createThumbnailCache } from "./media/thumbnails.js";
+import { createThumbnailCache, type ThumbnailCache } from "./media/thumbnails.js";
 import { createPlaybackService, type PlaybackService } from "./playback/playback.service.js";
 import { createProgressRepository } from "./progress/progress.repository.js";
 import { createProgressService, type ProgressService } from "./progress/progress.service.js";
@@ -37,6 +37,7 @@ export interface AppContext {
   playback: PlaybackService;
   scanner: Scanner;
   conversions: ConversionManager;
+  thumbnails: ThumbnailCache;
 }
 
 export async function createContext(
@@ -86,5 +87,6 @@ export async function createContext(
     playback,
     scanner,
     conversions,
+    thumbnails,
   };
 }

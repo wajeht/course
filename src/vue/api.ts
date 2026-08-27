@@ -125,6 +125,12 @@ export const api = {
       await apiClient.api.videos[":videoId"].$get({ param: { videoId } }, { init: { signal } }),
     );
   },
+  async regenerateVideoThumbnail(videoId: string): Promise<void> {
+    const response = await apiClient.api.videos[":videoId"].thumbnail.$post({
+      param: { videoId },
+    });
+    if (!response.ok) await expectProtectedJson(response);
+  },
   async preparePlayback(videoId: string): Promise<PlaybackResult> {
     return expectProtectedJson<PlaybackResult>(
       await apiClient.api.playback[":videoId"].$post({ param: { videoId } }),

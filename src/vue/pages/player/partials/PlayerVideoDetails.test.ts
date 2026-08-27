@@ -35,10 +35,10 @@ describe("PlayerVideoDetails", () => {
         video: {
           ...video,
           chapters: [
-            { startSeconds: 0, title: "Introduction" },
-            { startSeconds: 90, title: "Memory" },
-            { startSeconds: 180, title: "Pointers" },
-            { startSeconds: 270, title: "Summary" },
+            { startSeconds: 0, title: "Introduction", thumbnailUrl: null },
+            { startSeconds: 90, title: "Memory", thumbnailUrl: null },
+            { startSeconds: 180, title: "Pointers", thumbnailUrl: null },
+            { startSeconds: 270, title: "Summary", thumbnailUrl: null },
           ],
           description: "A complete introduction to programming and computer memory.",
         },
@@ -66,9 +66,9 @@ describe("PlayerVideoDetails", () => {
         video: {
           ...video,
           chapters: [
-            { startSeconds: 0, title: "Introduction" },
-            { startSeconds: 90, title: "Memory" },
-            { startSeconds: 180, title: "Summary" },
+            { startSeconds: 0, title: "Introduction", thumbnailUrl: null },
+            { startSeconds: 90, title: "Memory", thumbnailUrl: null },
+            { startSeconds: 180, title: "Summary", thumbnailUrl: null },
           ],
           description: "A short description.",
         },
@@ -107,7 +107,10 @@ describe("PlayerVideoDetails", () => {
     });
 
     await wrapper.get('[aria-label="Video actions"]').trigger("click");
-    await wrapper.get('[role="menuitem"]').trigger("click");
+    const resetItem = wrapper
+      .findAll('[role="menuitem"]')
+      .find((item) => item.text() === "Reset progress");
+    await resetItem?.trigger("click");
 
     expect(wrapper.emitted("reset")).toHaveLength(1);
   });

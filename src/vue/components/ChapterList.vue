@@ -38,11 +38,20 @@ function timestampText(seconds: number): string {
     >
       <AppButton
         variant="unstyled"
-        class="group grid min-h-[54px] w-full cursor-pointer grid-cols-[52px_20px_minmax(0,1fr)] items-center gap-2 border-b border-l-4 border-white/10 px-3 text-left text-white transition-colors last:border-b-0 hover:bg-white/5 focus-visible:z-[1] focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-belt-light"
+        class="group grid min-h-[54px] w-full cursor-pointer grid-cols-[72px_52px_20px_minmax(0,1fr)] items-center gap-2 border-b border-l-4 border-white/10 px-3 text-left text-white transition-colors last:border-b-0 hover:bg-white/5 focus-visible:z-[1] focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-belt-light"
         :class="index === activeIndex ? 'border-l-belt bg-white/5' : 'border-l-transparent'"
         :aria-current="index === activeIndex ? 'true' : undefined"
         @click="emit('seek', chapter.startSeconds)"
       >
+        <span class="overflow-hidden rounded bg-white/8">
+          <img
+            v-if="chapter.thumbnailUrl"
+            class="h-10 w-full object-cover"
+            :src="chapter.thumbnailUrl"
+            alt=""
+          />
+          <span v-else class="block h-10 w-full" aria-hidden="true" />
+        </span>
         <span
           class="font-mono text-[.68rem] font-semibold tabular-nums"
           :class="index === activeIndex ? 'text-belt-light' : 'text-white/48'"

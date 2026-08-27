@@ -8,11 +8,13 @@ const props = withDefaults(
     label: string;
     resetLabel: string;
     resetting: boolean;
+    regenerateLabel?: string;
+    regenerating?: boolean;
     tone?: "dark" | "light";
   }>(),
-  { tone: "dark" },
+  { tone: "dark", regenerating: false },
 );
-const emit = defineEmits<{ reset: [] }>();
+const emit = defineEmits<{ reset: []; regenerate: [] }>();
 
 const open = shallowRef(false);
 const root = useTemplateRef<HTMLElement>("root");
@@ -53,6 +55,11 @@ function resetProgress(): void {
   emit("reset");
 }
 
+function regenerateThumbnail(): void {
+  close();
+  emit("regenerate");
+}
+
 onMounted(() => document.addEventListener("pointerdown", closeOnOutsidePointer));
 onBeforeUnmount(() => document.removeEventListener("pointerdown", closeOnOutsidePointer));
 </script>
@@ -83,6 +90,17 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", closeOnOutside
       class="absolute right-0 z-20 mt-2 min-w-44 rounded-[7px] border p-1"
       :class="panelClasses"
     >
+      <AppButton
+        v-if="regenerateLabel"
+        variant="unstyled"
+        role="menuitem"
+        class="flex w-full items-center gap-2 rounded-[5px] px-3 py-2 text-left text-sm focus-visible:outline-none"
+        :class="itemClasses"
+        :loading="regenerating"
+        loading-label="Updating…"
+        @click="regenerateThumbnail"
+        >{{ regenerateLabel }}</AppButton
+      >
       <AppButton
         variant="unstyled"
         role="menuitem"
