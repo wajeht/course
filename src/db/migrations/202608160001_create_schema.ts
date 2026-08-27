@@ -38,7 +38,6 @@ export async function up(knex: Knex): Promise<void> {
     table.text("title").notNullable();
     table.text("description").notNullable().defaultTo("");
     table.text("tags_json").notNullable().defaultTo("[]");
-    table.text("cover_path");
     table.text("source_provider");
     table.text("source_url");
     table.integer("sort_order").notNullable();
