@@ -69,15 +69,16 @@ test("uses responsive library filters and a mobile drawer", async ({ page }) => 
   await page.goto("/videos");
 
   const search = page.getByTestId("mobile-library-search");
+  const view = page.getByTestId("mobile-library-view");
   const actions = page.getByTestId("mobile-filter-actions");
-  const viewButton = page.locator('[data-mobile-filter="view"]');
+  const videosButton = view.getByRole("button", { name: "videos" });
   const authorButton = page.locator('[data-mobile-filter="author"]');
   const filterColumn = page.getByTestId("library-filter-column");
   await expect(search).toBeVisible();
   await expect(actions).toBeVisible();
   await expect(authorButton).toBeVisible();
-  await expect(viewButton).toHaveCSS("background-color", "rgb(41, 49, 60)");
-  await expect(viewButton).toHaveCSS("color", "rgb(255, 255, 255)");
+  await expect(videosButton).toHaveCSS("background-color", "rgb(18, 22, 28)");
+  await expect(videosButton).toHaveCSS("color", "rgb(255, 255, 255)");
   await expect(filterColumn).toHaveCSS("position", "sticky");
   await expect(filterColumn).toHaveCSS("top", "66px");
   await expect(filterColumn).toHaveCSS("background-color", "rgb(242, 243, 241)");
@@ -86,9 +87,10 @@ test("uses responsive library filters and a mobile drawer", async ({ page }) => 
   await expect(filterColumn).toHaveCSS("padding-bottom", "20px");
 
   const headingBox = (await page.getByRole("heading", { level: 1 }).boundingBox())!;
+  const countBox = (await page.getByText("1 videos", { exact: true }).boundingBox())!;
   const searchBox = (await search.boundingBox())!;
   expect(Math.round(searchBox.x)).toBe(Math.round(headingBox.x));
-  expect(Math.round(searchBox.y - (headingBox.y + headingBox.height))).toBe(24);
+  expect(Math.round(searchBox.y - (countBox.y + countBox.height))).toBe(24);
   const mobileFilterBox = (await filterColumn.boundingBox())!;
   const mobileClientWidth = await page.evaluate(() => document.documentElement.clientWidth);
   expect(mobileFilterBox.x).toBe(0);
