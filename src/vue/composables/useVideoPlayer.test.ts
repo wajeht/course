@@ -59,7 +59,7 @@ afterEach(() => vi.restoreAllMocks());
 interface MountPlayerOptions {
   getVideo?: (id: string, signal?: AbortSignal) => Promise<VideoPlayerDetailDto>;
   preparePlayback?: (id: string) => Promise<PlaybackResult>;
-  regenerateVideoThumbnail?: (id: string) => Promise<void>;
+  regenerateVideoThumbnail?: (id: string, signal?: AbortSignal) => Promise<void>;
 }
 
 async function mountPlayer(options: MountPlayerOptions & { path?: string } = {}) {
@@ -159,12 +159,59 @@ describe("useVideoPlayer", () => {
     await wrapper.get("[data-regenerate]").trigger("click");
     await flushPromises();
 
-    expect(api.regenerateVideoThumbnail).toHaveBeenCalledWith(videoId);
+    expect(api.regenerateVideoThumbnail).toHaveBeenCalledWith(videoId, expect.any(AbortSignal));
     expect(wrapper.get("[data-video-title]").text()).toBe("Updated video");
     expect(toast.toasts.value).toContainEqual(
       expect.objectContaining({ kind: "success", message: "Thumbnails updated" }),
     );
     wrapper.unmount();
+  });
+
+  it("cancels thumbnail polling when the player route changes", async () => {
+    const nextVideoId = "3".repeat(24);
+    let regenerationSignal: AbortSignal | undefined;
+    const { router, toast, wrapper } = await mountPlayer({
+      getVideo: async (id) => ({
+        video: { ...video, id, title: id === videoId ? video.title : "Next video" },
+        playlist: id === videoId ? playlist : null,
+      }),
+      regenerateVideoThumbnail: async (_id, signal) => {
+        regenerationSignal = signal;
+        await new Promise<void>((_resolve, reject) => {
+          signal?.addEventListener("abort", () => reject(signal.reason), { once: true });
+        });
+      },
+    });
+
+    await wrapper.get("[data-regenerate]").trigger("click");
+    await vi.waitFor(() => expect(regenerationSignal).toBeInstanceOf(AbortSignal));
+    await router.push(`/videos/${nextVideoId}`);
+    await vi.waitFor(() => expect(regenerationSignal?.aborted).toBe(true));
+    await flushPromises();
+
+    expect(toast.toasts.value).toEqual([]);
+    expect(wrapper.get("[data-video-title]").text()).toBe("Next video");
+    wrapper.unmount();
+  });
+
+  it("cancels thumbnail polling when the player unmounts", async () => {
+    let regenerationSignal: AbortSignal | undefined;
+    const { toast, wrapper } = await mountPlayer({
+      regenerateVideoThumbnail: async (_id, signal) => {
+        regenerationSignal = signal;
+        await new Promise<void>((_resolve, reject) => {
+          signal?.addEventListener("abort", () => reject(signal.reason), { once: true });
+        });
+      },
+    });
+
+    await wrapper.get("[data-regenerate]").trigger("click");
+    await vi.waitFor(() => expect(regenerationSignal).toBeInstanceOf(AbortSignal));
+    wrapper.unmount();
+    await vi.waitFor(() => expect(regenerationSignal?.aborted).toBe(true));
+    await flushPromises();
+
+    expect(toast.toasts.value).toEqual([]);
   });
 
   it("reports a failed video progress reset", async () => {

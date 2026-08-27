@@ -39,24 +39,45 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
     await invalidateProgress();
   });
   const retry = useAsyncAction(async (videoId: string) => playback.retryPlayback(videoId));
+  let regenerationController: AbortController | null = null;
+
+  function isCurrentVideo(videoId: string): boolean {
+    return String(route.params.videoId) === videoId && video.value?.id === videoId;
+  }
+
+  function cancelThumbnailRegeneration(): void {
+    regenerationController?.abort();
+  }
+
   const regenerate = useAsyncAction(
     async (videoId: string) => {
-      await api.regenerateVideoThumbnail(videoId);
-      if (video.value?.id !== videoId) return;
-      await Promise.all([
-        invalidateLibrary(),
-        queryClient.invalidateQueries({ queryKey: queryKeys.video(videoId) }),
-      ]);
-      const detail = await queryClient.fetchQuery(videoQueryOptions(videoId));
-      if (video.value?.id !== videoId) return;
-      video.value = detail.video;
+      const controller = new AbortController();
+      regenerationController = controller;
+      try {
+        await api.regenerateVideoThumbnail(videoId, controller.signal);
+        if (!isCurrentVideo(videoId)) return false;
+        await Promise.all([
+          invalidateLibrary(),
+          queryClient.invalidateQueries({ queryKey: queryKeys.video(videoId) }),
+        ]);
+        const detail = await queryClient.fetchQuery(videoQueryOptions(videoId));
+        if (!isCurrentVideo(videoId)) return false;
+        video.value = detail.video;
+        return true;
+      } catch (caught) {
+        if (controller.signal.aborted) return false;
+        throw caught;
+      } finally {
+        if (regenerationController === controller) regenerationController = null;
+      }
     },
     {
       errorMessage: "Could not regenerate thumbnails",
       onError: (caught) => {
         toast.error(apiErrorMessage(caught, "Could not regenerate thumbnails"));
       },
-      onSuccess: () => {
+      onSuccess: (updated) => {
+        if (!updated) return;
         toast.success("Thumbnails updated");
       },
     },
@@ -317,7 +338,10 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
 
   watch(
     () => route.params.videoId,
-    () => void loadPlayer(),
+    () => {
+      cancelThumbnailRegeneration();
+      void loadPlayer();
+    },
     { immediate: true },
   );
   watch(
@@ -332,6 +356,7 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
   window.addEventListener("pagehide", saveOnExit);
   document.addEventListener("visibilitychange", handleVisibility);
   onBeforeUnmount(() => {
+    cancelThumbnailRegeneration();
     if (ended.value) progress.stopSession();
     else void progress.finishSession(element.value?.currentTime);
     progress.clearSession();
