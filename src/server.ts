@@ -1,3 +1,5 @@
+import { pathToFileURL } from "node:url";
+
 import { serve, type ServerType } from "@hono/node-server";
 
 import { createApp } from "./app.js";
@@ -7,14 +9,39 @@ export interface ServerInfo {
   server: ServerType;
   context: AppContext;
   stopMonitoring: () => void;
+  startupTasks: Promise<void>;
+}
+
+async function runStartupTasks(context: AppContext): Promise<void> {
+  try {
+    const scan = await context.scanner.scanLibrary();
+    if (scan.status === "failed")
+      context.logger.warn("Using the previous library after startup scan failed", {
+        error: scan.error,
+      });
+  } catch (error) {
+    context.logger.error("Startup library scan failed", { error });
+  }
+
+  try {
+    await context.conversions.recoverConversions();
+  } catch (error) {
+    context.logger.error("Conversion recovery failed", { error });
+  }
+}
+
+function scheduleStartupTasks(context: AppContext): Promise<void> {
+  return new Promise((resolve) => {
+    setImmediate(() => {
+      void runStartupTasks(context).then(
+        () => resolve(),
+        () => resolve(),
+      );
+    });
+  });
 }
 
 export async function startServer(context: AppContext): Promise<ServerInfo> {
-  const scan = await context.scanner.scanLibrary();
-  if (scan.status === "failed")
-    context.logger.warn("Starting with the previous library", { error: scan.error });
-  await context.conversions.recoverConversions();
-  const stopMonitoring = context.scanner.startMonitoring();
   const app = createApp(context);
   const server = serve({
     fetch: app.fetch,
@@ -25,7 +52,16 @@ export async function startServer(context: AppContext): Promise<ServerInfo> {
     host: context.configuration.app.host,
     port: context.configuration.app.port,
   });
-  return { server, context, stopMonitoring };
+
+  let stopMonitoring = () => {};
+  try {
+    stopMonitoring = context.scanner.startMonitoring();
+  } catch (error) {
+    context.logger.warn("Library monitoring unavailable", { error });
+  }
+
+  const startupTasks = scheduleStartupTasks(context);
+  return { server, context, stopMonitoring, startupTasks };
 }
 
 export async function stopServer(info: ServerInfo): Promise<void> {
@@ -33,6 +69,7 @@ export async function stopServer(info: ServerInfo): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     info.server.close((error) => (error ? reject(error) : resolve()));
   });
+  await info.startupTasks;
   await info.context.database.close();
 }
 
@@ -70,6 +107,6 @@ async function runApplication(): Promise<void> {
   });
 }
 
-if (process.env.NODE_ENV !== "testing") {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   void runApplication();
 }
