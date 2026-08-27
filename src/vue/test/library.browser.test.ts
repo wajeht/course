@@ -76,11 +76,11 @@ test("uses responsive library filters and a mobile drawer", async ({ page }) => 
   await expect(search).toBeVisible();
   await expect(actions).toBeVisible();
   await expect(authorButton).toBeVisible();
-  await expect(viewButton).toHaveCSS("background-color", "rgb(36, 77, 59)");
+  await expect(viewButton).toHaveCSS("background-color", "rgb(41, 49, 60)");
   await expect(viewButton).toHaveCSS("color", "rgb(255, 255, 255)");
   await expect(filterColumn).toHaveCSS("position", "sticky");
   await expect(filterColumn).toHaveCSS("top", "66px");
-  await expect(filterColumn).toHaveCSS("background-color", "rgb(245, 246, 242)");
+  await expect(filterColumn).toHaveCSS("background-color", "rgb(242, 243, 241)");
   await expect(filterColumn).toHaveCSS("box-shadow", "none");
   await expect(filterColumn).toHaveCSS("padding-top", "20px");
   await expect(filterColumn).toHaveCSS("padding-bottom", "20px");
@@ -117,7 +117,7 @@ test("uses responsive library filters and a mobile drawer", async ({ page }) => 
   await authorButton.click();
   await drawer.getByRole("checkbox", { name: "Example Author (1)" }).check();
   await expect(page).toHaveURL(/author=Example(?:\+|%20)Author/);
-  await expect(authorButton).toHaveCSS("background-color", "rgb(36, 77, 59)");
+  await expect(authorButton).toHaveCSS("background-color", "rgb(41, 49, 60)");
   await expect(authorButton).toHaveCSS("color", "rgb(255, 255, 255)");
   await page.keyboard.press("Escape");
   await expect(drawer).toHaveCount(0);

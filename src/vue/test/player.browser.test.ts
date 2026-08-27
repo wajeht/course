@@ -115,13 +115,13 @@ test("uses responsive video details and places the playlist below them on mobile
     "visible",
   );
   expect(await playlistPanel.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(
-    "rgb(248, 249, 246)",
+    "rgb(242, 243, 241)",
   );
   expect(
     await page
       .getByRole("button", { name: "Introduction" })
       .evaluate((element) => getComputedStyle(element).backgroundColor),
-  ).not.toBe("rgb(248, 249, 246)");
+  ).not.toBe("rgb(242, 243, 241)");
   await expect(page.getByRole("button", { name: "Open playlist Saved Collection" })).toHaveCount(0);
 
   const titleBox = await title.boundingBox();

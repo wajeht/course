@@ -1,22 +1,23 @@
 @import "tailwindcss";
 
 @theme {
-  --color-porcelain: #f5f6f2;
-  --color-ink: #18201d;
-  --color-pine: #244d3b;
-  --color-pine-deep: #153326;
-  --color-mist: #dce6df;
-  --color-belt: #c4933f;
-  --color-belt-ink: #906826;
-  --color-belt-light: #e4c57f;
-  --color-clay: #a1483c;
-  --color-clay-deep: #873a31;
-  --color-clay-soft: #fff3f0;
-  --color-line: #d9ddd8;
-  --color-muted: #68716c;
-  --font-body: "Avenir Next", Avenir, "Helvetica Neue", sans-serif;
-  --font-display: "Avenir Next Condensed", "Arial Narrow", sans-serif;
-  --shadow-card: 0 18px 50px rgb(24 32 29 / 9%);
+  --color-canvas: #e9ebea;
+  --color-porcelain: #f2f3f1;
+  --color-ink: #20252b;
+  --color-pine: #29313c;
+  --color-pine-deep: #12161c;
+  --color-mist: #e4e7e9;
+  --color-belt: #d58b3b;
+  --color-belt-ink: #96591f;
+  --color-belt-light: #e5aa64;
+  --color-clay: #b74845;
+  --color-clay-deep: #943735;
+  --color-clay-soft: #faeceb;
+  --color-line: #d4d9de;
+  --color-muted: #69717a;
+  --font-body: "Helvetica Neue", "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-display: "Avenir Next Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --shadow-card: 0 18px 50px rgb(32 37 43 / 10%);
 }
 
 @layer base {
@@ -26,8 +27,8 @@
 
   body {
     @apply m-0 min-h-screen min-w-80 bg-porcelain font-body text-ink;
-    background-image: linear-gradient(90deg, rgb(36 77 59 / 2%) 1px, transparent 1px);
-    background-size: 42px 42px;
+    background-image: linear-gradient(90deg, rgb(41 49 60 / 2.2%) 1px, transparent 1px);
+    background-size: 56px 56px;
     font-synthesis: none;
     text-rendering: optimizeLegibility;
   }
@@ -36,6 +37,11 @@
   input,
   select {
     font: inherit;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--color-pine);
   }
 
   button,
@@ -54,6 +60,28 @@
   select:focus-visible,
   video:focus-visible {
     @apply outline-3 outline-offset-3 outline-belt-light;
+  }
+}
+
+@layer components {
+  .media-frame::before,
+  .media-frame::after {
+    position: absolute;
+    right: 0;
+    left: 0;
+    z-index: 2;
+    height: 6px;
+    background: repeating-linear-gradient(90deg, rgb(18 22 28 / 74%) 0 7px, transparent 7px 13px);
+    content: "";
+    pointer-events: none;
+  }
+
+  .media-frame::before {
+    top: 0;
+  }
+
+  .media-frame::after {
+    bottom: 0;
   }
 }
 

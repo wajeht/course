@@ -20,7 +20,7 @@ const to = computed(() => playerLocation(props.playlist.nextVideoId, props.playl
     <IntentRouterLink
       :to="to"
       :prefetch="() => prefetch.video(playlist.nextVideoId)"
-      class="relative block aspect-video overflow-hidden rounded-[10px] bg-mist"
+      class="media-frame relative block aspect-video overflow-hidden rounded-[8px] bg-mist shadow-[0_10px_26px_rgb(32_37_43_/_10%)] transition-[transform,box-shadow] duration-200 group-hover:-translate-y-1 group-hover:shadow-[0_18px_36px_rgb(32_37_43_/_16%)] motion-reduce:transition-none"
       :aria-label="`Open ${playlist.title}`"
     >
       <img
@@ -32,7 +32,7 @@ const to = computed(() => playerLocation(props.playlist.nextVideoId, props.playl
       />
       <VideoCoverPlaceholder v-else class="h-full w-full" :title="playlist.title" />
       <span
-        class="absolute right-0 bottom-0 flex h-full w-[38%] items-center justify-center bg-pine-deep/88 text-center text-[.7rem] font-bold text-white backdrop-blur-sm"
+        class="absolute top-1.5 right-1.5 bottom-1.5 flex w-[38%] items-center justify-center border-l border-white/18 bg-pine-deep/88 text-center font-mono text-[.66rem] font-bold tracking-[.06em] text-white uppercase backdrop-blur-sm"
       >
         {{ countText(playlist.videoCount, "video") }}
       </span>
@@ -44,7 +44,7 @@ const to = computed(() => playerLocation(props.playlist.nextVideoId, props.playl
         compact
       />
     </IntentRouterLink>
-    <h3 class="mt-3 line-clamp-2 text-[.92rem] leading-[1.3] font-bold">
+    <h3 class="mt-3 line-clamp-2 text-[.95rem] leading-[1.3] font-bold tracking-[-.01em]">
       <IntentRouterLink
         :to="to"
         :prefetch="() => prefetch.video(playlist.nextVideoId)"

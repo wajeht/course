@@ -20,7 +20,7 @@ const to = computed(() => playerLocation(props.video.id, props.video.playlistId)
     <IntentRouterLink
       :to="to"
       :prefetch="() => prefetch.video(video.id)"
-      class="relative block aspect-video overflow-hidden rounded-[10px] bg-mist"
+      class="media-frame relative block aspect-video overflow-hidden rounded-[8px] bg-mist shadow-[0_10px_26px_rgb(32_37_43_/_10%)] transition-[transform,box-shadow] duration-200 group-hover:-translate-y-1 group-hover:shadow-[0_18px_36px_rgb(32_37_43_/_16%)] motion-reduce:transition-none"
       :aria-label="`Play ${video.title}`"
     >
       <img
@@ -44,7 +44,7 @@ const to = computed(() => playerLocation(props.video.id, props.video.playlistId)
         compact
       />
     </IntentRouterLink>
-    <h3 class="mt-3 line-clamp-2 text-[.92rem] leading-[1.3] font-bold">
+    <h3 class="mt-3 line-clamp-2 text-[.95rem] leading-[1.3] font-bold tracking-[-.01em]">
       <IntentRouterLink :to="to" :prefetch="() => prefetch.video(video.id)" class="hover:text-pine">
         {{ video.title }}
       </IntentRouterLink>

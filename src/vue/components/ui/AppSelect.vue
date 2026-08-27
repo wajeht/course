@@ -18,7 +18,7 @@ const selectClasses = computed(
   () =>
     ({
       bare: "border-0 bg-transparent p-0 text-pine-deep outline-0",
-      dark: "border-white/16 bg-[#202824] text-white focus:border-belt-light",
+      dark: "border-white/16 bg-[#303741] text-white focus:border-belt-light",
       default: "border-line bg-white text-ink focus:border-pine",
     })[props.variant],
 );

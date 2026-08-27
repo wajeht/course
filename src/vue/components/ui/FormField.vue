@@ -18,7 +18,10 @@ const describedBy = computed(() => [helpId.value, errorId.value].filter(Boolean)
 
 <template>
   <div>
-    <label :for="inputId" class="block text-xs font-bold tracking-[.08em] text-pine uppercase">
+    <label
+      :for="inputId"
+      class="block font-mono text-[.7rem] font-bold tracking-[.08em] text-pine uppercase"
+    >
       {{ label }}<span v-if="required" class="text-clay" aria-hidden="true"> *</span>
     </label>
     <div class="mt-2">

@@ -30,9 +30,9 @@ const canReveal = computed(() => props.type === "password" && props.revealable);
 const inputClasses = computed(
   () =>
     ({
-      bare: "border-0 bg-transparent p-0 text-ink outline-0 placeholder:text-[#89918d]",
-      dark: "border-white/16 bg-[#202824] text-white placeholder:text-white/40 focus:border-belt-light",
-      default: "border-line bg-white text-ink placeholder:text-[#89918d] focus:border-pine",
+      bare: "border-0 bg-transparent p-0 text-ink outline-0 placeholder:text-[#858c94]",
+      dark: "border-white/16 bg-[#303741] text-white placeholder:text-white/40 focus:border-belt-light",
+      default: "border-line bg-white text-ink placeholder:text-[#858c94] focus:border-pine",
     })[props.variant],
 );
 
