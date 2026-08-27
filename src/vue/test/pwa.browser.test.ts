@@ -6,6 +6,14 @@ const manifestSchema = z.object({
   shortcuts: z.array(z.object({ url: z.string() })),
 });
 
+test("serves a branded launch screen before Vue mounts", async ({ page }) => {
+  const appShellResponse = await page.request.get("/");
+  expect(appShellResponse.status()).toBe(200);
+  const appShell = await appShellResponse.text();
+  expect(appShell).toContain('id="app-launch-screen"');
+  expect(appShell).toContain("Opening your library…");
+});
+
 test("keeps the install experience online-only", async ({ context, page }) => {
   const password = "playwright-password";
   const setup = await page.request.post("/api/auth/password", {
