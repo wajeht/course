@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="TPrefetchResult">
 import { RouterLink, type RouteLocationRaw } from "vue-router";
 
 import { useIntentPrefetch } from "@/composables/useIntentPrefetch.js";
@@ -6,7 +6,7 @@ import { useIntentPrefetch } from "@/composables/useIntentPrefetch.js";
 defineOptions({ inheritAttrs: false });
 
 const props = defineProps<{
-  prefetch: () => Promise<void>;
+  prefetch: () => Promise<TPrefetchResult>;
   to: RouteLocationRaw;
 }>();
 

@@ -6,7 +6,9 @@ import { describe, expect, it } from "vitest";
 import { notFoundLocation, playerLocation, router } from "./router.js";
 
 function normalizedLocation(path: string): RouteLocationNormalized {
-  return router.resolve(path);
+  const location = router.resolve(path);
+  if (location.name === null) throw new Error(`Expected ${path} to resolve to a named route`);
+  return { ...location, name: location.name };
 }
 
 describe("router error pages", () => {

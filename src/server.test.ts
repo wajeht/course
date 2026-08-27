@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { describe, expect, it, vi } from "vitest";
+import { z } from "zod";
 
 import { createConfiguration } from "./config.js";
 import { createContext } from "./context.js";
@@ -47,9 +48,7 @@ describe("server", () => {
     const info = await startServer(context);
     try {
       if (!info.server.listening) await once(info.server, "listening");
-      const address = info.server.address();
-      if (!address || !("port" in address)) throw new Error("Server did not bind a TCP port");
-      const { port } = address;
+      const { port } = z.object({ port: z.number() }).parse(info.server.address());
       const response = await fetch(`http://127.0.0.1:${port}/healthz`);
 
       expect(response.status).toBe(200);

@@ -34,8 +34,9 @@ const videoContentTypes = new Map([
   [".mpg", "video/mpeg"],
 ]);
 
-function createFileBody(filename: string, range?: { start: number; end: number }) {
-  return Readable.toWeb(createReadStream(filename, range));
+function createFileBody(filename: string, range?: { start: number; end: number }): ReadableStream {
+  // SAFETY: Node and DOM declare the same web ReadableStream runtime with incompatible ambient types.
+  return Readable.toWeb(createReadStream(filename, range)) as ReadableStream;
 }
 
 function coverContentType(filename: string): string {

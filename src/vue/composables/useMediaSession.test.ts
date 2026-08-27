@@ -11,6 +11,8 @@ const setPositionState = vi.fn();
 const session: MediaSession = {
   metadata: null,
   playbackState: "none",
+  setCameraActive: vi.fn(async () => undefined),
+  setMicrophoneActive: vi.fn(async () => undefined),
   setActionHandler: vi.fn((action: MediaSessionAction, handler: MediaSessionActionHandler | null) =>
     handlers.set(action, handler),
   ),

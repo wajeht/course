@@ -34,7 +34,7 @@ describe("useVideoPlayback", () => {
 
     await playback.applyPlayback({ kind: "direct", url: "/media/video" }, "video", requestId);
 
-    expect(element.src).toBe("/media/video");
+    expect(element.getAttribute("src")).toBe("/media/video");
     expect(element.load).toHaveBeenCalledOnce();
     expect(playback.playback.value).toEqual({ kind: "direct", url: "/media/video" });
   });
@@ -69,7 +69,7 @@ describe("useVideoPlayback", () => {
     await nextTick();
 
     expect(client.getConversionStatus).toHaveBeenCalledWith("video");
-    expect(element.src).toBe("/media/ready");
+    expect(element.getAttribute("src")).toBe("/media/ready");
   });
 
   it("hides technical errors when conversion status cannot be checked", async () => {

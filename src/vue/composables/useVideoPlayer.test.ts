@@ -294,7 +294,7 @@ describe("useVideoPlayer", () => {
     await flushPromises();
 
     expect(wrapper.get("[data-video-title]").text()).toBe("Next video");
-    expect(media.src).toBe(`/media/${nextVideoId}`);
+    expect(media.getAttribute("src")).toBe(`/media/${nextVideoId}`);
     expect(api.openVideo).toHaveBeenCalledTimes(1);
     expect(api.openVideo).toHaveBeenCalledWith(nextVideoId);
     wrapper.unmount();
