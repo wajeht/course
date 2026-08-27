@@ -65,7 +65,7 @@ export function useLibraryBrowser(options: UseLibraryBrowserOptions = {}) {
       get: () => strings(route.query[name]),
       set: (values: string[]) => {
         void router.push({
-          query: nextQuery({ [name]: values.length ? values : undefined, page: undefined }),
+          query: nextQuery({ [name]: values.length ? values : undefined }),
         });
       },
     });
@@ -77,7 +77,7 @@ export function useLibraryBrowser(options: UseLibraryBrowserOptions = {}) {
     get: () => (route.query.view === "playlists" ? "playlists" : "videos"),
     set: (view: string) => {
       void router.push({
-        query: nextQuery({ view: view === "playlists" ? "playlists" : undefined, page: undefined }),
+        query: nextQuery({ view: view === "playlists" ? "playlists" : undefined }),
       });
     },
   });

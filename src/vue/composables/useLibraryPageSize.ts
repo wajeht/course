@@ -1,14 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import { computed, readonly, shallowRef, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
 
 import { api, apiErrorMessage, type LibraryPageSize } from "@/api.js";
 import { useAsyncAction } from "@/composables/useAsyncAction.js";
 import { queryKeys, settingsQueryOptions } from "@/queries.js";
 
 export function useLibraryPageSize() {
-  const route = useRoute();
-  const router = useRouter();
   const queryClient = useQueryClient();
   const settingsRequest = useQuery(settingsQueryOptions());
   const selectedSize = shallowRef<LibraryPageSize>(24);
@@ -19,11 +16,6 @@ export function useLibraryPageSize() {
       errorMessage: "Could not save library settings",
       onSuccess: async (settings) => {
         queryClient.setQueryData(queryKeys.settings, settings);
-        if (route.query.page) {
-          const query = { ...route.query };
-          delete query.page;
-          await router.replace({ query });
-        }
         await queryClient.invalidateQueries({ queryKey: queryKeys.library });
       },
     },
