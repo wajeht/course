@@ -38,14 +38,15 @@ describe("AppShell", () => {
     const desktopNavigation = wrapper.get('nav[aria-label="Main navigation"]');
     const mobileNavigation = wrapper.get('nav[aria-label="Mobile navigation"]');
 
-    expect(desktopNavigation.classes()).toContain("max-[600px]:hidden");
+    expect(desktopNavigation.element.closest("aside")?.className).toContain("min-[1024px]:flex");
     expect(mobileNavigation.classes()).toContain("max-[600px]:grid");
     expect(wrapper.get("header").text()).toContain("Videos");
     expect(wrapper.get("header a > span > span:last-child").classes()).not.toContain(
       "max-[600px]:hidden",
     );
-    expect(mobileNavigation.findAll("svg")).toHaveLength(0);
+    expect(mobileNavigation.findAll("svg")).toHaveLength(3);
     expect(mobileNavigation.findAll("a")).toHaveLength(3);
+    expect(mobileNavigation.text()).toContain("Library");
     expect(mobileNavigation.get('a[href="/settings/library"]').attributes("aria-current")).toBe(
       "page",
     );
