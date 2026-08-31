@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
-import { mount } from "@vue/test-utils";
+import { mount, type VueWrapper } from "@vue/test-utils";
 import { createMemoryHistory, createRouter, type RouteRecordRaw } from "vue-router";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import AppShell from "./AppShell.vue";
 
@@ -21,15 +21,23 @@ const routes: RouteRecordRaw[] = [
   },
   { path: "/missing", component: { template: "<div />" } },
 ];
+const wrappers: VueWrapper[] = [];
+
+afterEach(() => {
+  for (const wrapper of wrappers) wrapper.unmount();
+  wrappers.length = 0;
+});
 
 async function mountShell(path: string) {
   const router = createRouter({ history: createMemoryHistory(), routes });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   await router.push(path);
   await router.isReady();
-  return mount(AppShell, {
+  const wrapper = mount(AppShell, {
     global: { plugins: [[VueQueryPlugin, { queryClient }], router] },
   });
+  wrappers.push(wrapper);
+  return wrapper;
 }
 
 describe("AppShell", () => {
@@ -42,6 +50,7 @@ describe("AppShell", () => {
     expect(mobileNavigation.classes()).toContain("max-[600px]:grid");
     expect(wrapper.get("header").text()).toContain("Videos");
     expect(wrapper.find('header button[aria-label="Search videos"]').exists()).toBe(false);
+    expect(document.body.querySelector('dialog[aria-label="Search videos"]')).toBeTruthy();
     expect(wrapper.get("header a > span > span:last-child").classes()).not.toContain(
       "max-[600px]:hidden",
     );
