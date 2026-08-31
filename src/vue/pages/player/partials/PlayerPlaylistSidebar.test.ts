@@ -60,7 +60,7 @@ async function mountSidebar(resetting = false) {
   await router.isReady();
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return mount(PlayerPlaylistSidebar, {
-    props: { activeVideoId: videoId, playlist, resetting },
+    props: { activeVideoId: videoId, autoplayNext: false, playlist, resetting },
     global: { plugins: [[VueQueryPlugin, { queryClient }], router] },
   });
 }
@@ -86,6 +86,18 @@ describe("PlayerPlaylistSidebar", () => {
     await wrapper.get('[role="menuitem"]').trigger("click");
 
     expect(wrapper.emitted("reset")).toHaveLength(1);
+  });
+
+  it("toggles autoplay for the playlist", async () => {
+    const wrapper = await mountSidebar();
+    const autoplay = wrapper.get('[role="switch"]');
+
+    expect(autoplay.attributes("aria-checked")).toBe("false");
+    expect(autoplay.text()).toContain("Off");
+
+    await autoplay.trigger("click");
+
+    expect(wrapper.emitted("autoplayChange")).toEqual([[true]]);
   });
 
   it("shows the pending reset state", async () => {

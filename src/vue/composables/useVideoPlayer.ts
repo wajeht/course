@@ -6,6 +6,7 @@ import {
   api,
   apiErrorMessage,
   isLibraryResourceNotFound,
+  type PlaybackResult,
   type PlaylistDetailDto,
   type VideoDetailDto,
   type VideoDto,
@@ -22,6 +23,8 @@ import { queryKeys, videoQueryOptions } from "@/queries.js";
 import { notFoundLocation, playerLocation } from "@/router.js";
 import { setPageTitle } from "@/utils.js";
 
+const autoplayNextStorageKey = "videos:autoplay-next";
+
 export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
   const route = useRoute();
   const router = useRouter();
@@ -31,6 +34,7 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
   const loading = shallowRef(true);
   const ended = shallowRef(false);
   const currentTime = shallowRef(0);
+  const autoplayNext = shallowRef(localStorage.getItem(autoplayNextStorageKey) === "true");
   const confirmation = useConfirm();
   const toast = useToast();
   const playback = useVideoPlayback(element, api);
@@ -40,6 +44,7 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
   });
   const retry = useAsyncAction(async (videoId: string) => playback.retryPlayback(videoId));
   let regenerationController: AbortController | null = null;
+  let autoplayVideoId: string | null = null;
 
   function isCurrentVideo(videoId: string): boolean {
     return String(route.params.videoId) === videoId && video.value?.id === videoId;
@@ -199,6 +204,29 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
     if (target) void router.push(playerLocation(target.id, target.playlistId));
   }
 
+  function setAutoplayNext(enabled: boolean): void {
+    autoplayNext.value = enabled;
+    if (enabled) localStorage.setItem(autoplayNextStorageKey, "true");
+    else localStorage.removeItem(autoplayNextStorageKey);
+  }
+
+  function prepareAutoplay(videoId: string): void {
+    const shouldAutoplay = autoplayVideoId === videoId;
+    if (autoplayVideoId && !shouldAutoplay) autoplayVideoId = null;
+    if (element.value) element.value.autoplay = shouldAutoplay;
+  }
+
+  async function startAutoplay(videoId: string, result: PlaybackResult): Promise<void> {
+    if (
+      autoplayVideoId !== videoId ||
+      !element.value ||
+      (result.kind !== "direct" && result.kind !== "hls")
+    )
+      return;
+    autoplayVideoId = null;
+    await element.value.play().catch(() => undefined);
+  }
+
   useMediaSession(element, mediaMetadata, {
     previous: () => navigate(previousVideo.value),
     next: () => navigate(nextVideo.value),
@@ -234,6 +262,7 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
     currentTime.value = 0;
     try {
       const videoId = String(route.params.videoId);
+      prepareAutoplay(videoId);
       const [detail, playbackResult] = await Promise.all([
         queryClient.fetchQuery(videoQueryOptions(videoId)),
         api.preparePlayback(videoId),
@@ -249,6 +278,7 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
       setPageTitle(detail.video.title);
       progress.startSession(detail.video.id, detail.video.positionSeconds);
       await playback.applyPlayback(playbackResult, videoId, requestId);
+      await startAutoplay(videoId, playbackResult);
     } catch (caught) {
       if (!playback.isCurrentRequest(requestId)) return;
       if (isLibraryResourceNotFound(caught)) {
@@ -295,6 +325,7 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
   }
   async function markComplete() {
     if (!video.value) return;
+    const autoplayTarget = autoplayNext.value ? nextVideo.value : undefined;
     try {
       await api.completeVideo(video.value.id);
       await invalidateProgress();
@@ -302,6 +333,10 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
       progress.stopSession();
       video.value.completed = true;
       video.value.progressPercent = 100;
+      if (autoplayTarget) {
+        autoplayVideoId = autoplayTarget.id;
+        await router.push(playerLocation(autoplayTarget.id, autoplayTarget.playlistId));
+      }
     } catch (caught) {
       playback.error.value = apiErrorMessage(caught, "Could not complete this video");
     }
@@ -369,6 +404,7 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
 
   return {
     applyResume,
+    autoplayNext: computed(() => autoplayNext.value),
     currentTime: computed(() => currentTime.value),
     ended: computed(() => ended.value),
     error: computed(() => playback.error.value),
@@ -394,6 +430,7 @@ export function useVideoPlayer(element: Ref<HTMLVideoElement | null>) {
       seek(seconds);
       void router.replace({ query: { ...route.query, t: String(seconds) } });
     },
+    setAutoplayNext,
     video: computed(() => video.value),
   };
 }
