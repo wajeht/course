@@ -93,6 +93,7 @@ test("searches videos globally with Command K", async ({ page }) => {
   await expect(result).toHaveCSS("border-left-color", "rgb(213, 139, 59)");
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await expect(palette).toHaveCSS("width", "350px");
   await expect(thumbnail).toHaveCSS("width", "72px");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
