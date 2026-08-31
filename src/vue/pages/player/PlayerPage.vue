@@ -50,8 +50,10 @@ const player = useVideoPlayer(media);
     </section>
     <PlayerPlaylistSidebar
       :active-video-id="player.video.value?.id"
+      :autoplay-next="player.autoplayNext.value"
       :playlist="player.playlist.value"
       :resetting="player.resettingPlaylist.value"
+      @autoplay-change="player.setAutoplayNext"
       @reset="player.resetPlaylistProgress"
     />
   </main>

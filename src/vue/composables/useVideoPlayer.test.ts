@@ -4,7 +4,7 @@ import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises, mount } from "@vue/test-utils";
 import { defineComponent, shallowRef } from "vue";
 import { createMemoryHistory, createRouter } from "vue-router";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   api,
@@ -54,6 +54,21 @@ const playlist: PlaylistDetailDto = {
   videoCount: 1,
 };
 
+function createStorage(): Storage {
+  const values = new Map<string, string>();
+  return {
+    get length() {
+      return values.size;
+    },
+    clear: () => values.clear(),
+    getItem: (key) => values.get(key) ?? null,
+    key: (index) => [...values.keys()][index] ?? null,
+    removeItem: (key) => values.delete(key),
+    setItem: (key, value) => values.set(key, value),
+  };
+}
+
+beforeEach(() => vi.stubGlobal("localStorage", createStorage()));
 afterEach(() => vi.restoreAllMocks());
 
 interface MountPlayerOptions {
@@ -73,6 +88,7 @@ async function mountPlayer(options: MountPlayerOptions & { path?: string } = {})
     options.regenerateVideoThumbnail ?? (async () => undefined),
   );
   vi.spyOn(api, "openVideo").mockResolvedValue();
+  vi.spyOn(api, "completeVideo").mockResolvedValue();
 
   const media = document.createElement("video");
   Object.defineProperties(media, {
@@ -83,6 +99,7 @@ async function mountPlayer(options: MountPlayerOptions & { path?: string } = {})
   vi.spyOn(media, "canPlayType").mockReturnValue("");
   vi.spyOn(media, "load").mockImplementation(() => undefined);
   vi.spyOn(media, "pause").mockImplementation(() => undefined);
+  vi.spyOn(media, "play").mockResolvedValue();
   vi.spyOn(media, "removeAttribute");
   const component = defineComponent({
     setup() {
@@ -92,6 +109,11 @@ async function mountPlayer(options: MountPlayerOptions & { path?: string } = {})
       <p data-video-title>{{ player.video.value?.title }}</p>
       <p data-playlist-id>{{ player.playlist.value?.id ?? "" }}</p>
       <p data-poster>{{ player.posterUrl.value ?? "" }}</p>
+      <p data-autoplay>{{ player.autoplayNext.value }}</p>
+      <button data-autoplay-toggle @click="player.setAutoplayNext(!player.autoplayNext.value)">
+        Toggle autoplay
+      </button>
+      <button data-complete @click="player.markComplete">Complete video</button>
       <button data-regenerate @click="player.regenerateThumbnail">Regenerate thumbnail</button>
       <button data-reset-video @click="player.resetProgress">Reset video</button>
       <button data-reset-playlist @click="player.resetPlaylistProgress">Reset playlist</button>
@@ -120,6 +142,51 @@ async function mountPlayer(options: MountPlayerOptions & { path?: string } = {})
 }
 
 describe("useVideoPlayer", () => {
+  it("persists the autoplay preference", async () => {
+    const { wrapper } = await mountPlayer();
+
+    expect(wrapper.get("[data-autoplay]").text()).toBe("false");
+
+    await wrapper.get("[data-autoplay-toggle]").trigger("click");
+
+    expect(wrapper.get("[data-autoplay]").text()).toBe("true");
+    expect(localStorage.getItem("videos:autoplay-next")).toBe("true");
+
+    await wrapper.get("[data-autoplay-toggle]").trigger("click");
+
+    expect(wrapper.get("[data-autoplay]").text()).toBe("false");
+    expect(localStorage.getItem("videos:autoplay-next")).toBeNull();
+    wrapper.unmount();
+  });
+
+  it("plays the next playlist video after completing the current one when autoplay is on", async () => {
+    const nextVideoId = "3".repeat(24);
+    const nextVideo: VideoDetailDto = { ...video, id: nextVideoId, title: "Next video" };
+    const twoVideoPlaylist: PlaylistDetailDto = {
+      ...playlist,
+      durationSeconds: 240,
+      sections: [{ id: null, title: "Videos", videos: [video, nextVideo] }],
+      videoCount: 2,
+    };
+    const { media, router, wrapper } = await mountPlayer({
+      path: `/videos/${videoId}?list=${playlistId}`,
+      getVideo: async (id) => ({
+        video: { ...(id === videoId ? video : nextVideo) },
+        playlist: twoVideoPlaylist,
+      }),
+    });
+
+    await wrapper.get("[data-autoplay-toggle]").trigger("click");
+    await wrapper.get("[data-complete]").trigger("click");
+    await vi.waitFor(() => expect(router.currentRoute.value.params.videoId).toBe(nextVideoId));
+    await flushPromises();
+
+    expect(router.currentRoute.value.query.list).toBe(playlistId);
+    expect(media.autoplay).toBe(true);
+    expect(media.play).toHaveBeenCalledOnce();
+    wrapper.unmount();
+  });
+
   it("uses the thumbnail for the chapter containing the resume position", async () => {
     const { wrapper } = await mountPlayer({
       getVideo: async () => ({
