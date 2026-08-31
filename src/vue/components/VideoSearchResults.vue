@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { VideoDto } from "@/api.js";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
+import VideoCoverPlaceholder from "@/components/VideoCoverPlaceholder.vue";
 import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import { playerLocation } from "@/router.js";
 
@@ -35,7 +36,7 @@ function videoContext(video: VideoDto): string {
           :id="`video-search-result-${video.id}`"
           :to="playerLocation(video.id, video.playlistId)"
           :prefetch="() => prefetch.video(video.id)"
-          class="grid min-h-[62px] grid-cols-[36px_minmax(0,1fr)] items-center rounded-[7px] border-l-4 px-3 py-2.5 focus-visible:outline-none"
+          class="grid min-h-[72px] grid-cols-[36px_96px_minmax(0,1fr)] items-center gap-x-3 rounded-[7px] border-l-4 px-3 py-2.5 focus-visible:outline-none max-[600px]:grid-cols-[28px_72px_minmax(0,1fr)] max-[600px]:gap-x-2 max-[600px]:px-2"
           :class="
             index === activeIndex
               ? 'border-belt bg-pine text-white'
@@ -51,6 +52,19 @@ function videoContext(video: VideoDto): string {
             :class="index === activeIndex ? 'text-white/60' : 'text-muted'"
           >
             {{ String(index + 1).padStart(2, "0") }}
+          </span>
+          <span
+            class="media-frame relative aspect-video w-24 overflow-hidden rounded-[5px] bg-mist max-[600px]:w-[72px]"
+            aria-hidden="true"
+          >
+            <img
+              v-if="video.coverUrl"
+              :src="video.coverUrl"
+              alt=""
+              class="h-full w-full object-cover"
+              loading="lazy"
+            />
+            <VideoCoverPlaceholder v-else class="h-full w-full" compact :title="video.title" />
           </span>
           <span class="min-w-0">
             <span
