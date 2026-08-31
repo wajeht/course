@@ -29,7 +29,7 @@ function library(): LibraryDto {
       {
         authors: ["Example Author"],
         completed: false,
-        coverUrl: null,
+        coverUrl: "/covers/memory.jpg",
         description: "",
         durationSeconds: 120,
         id: videoId,
@@ -95,6 +95,7 @@ describe("VideoSearchPalette", () => {
     await vi.waitFor(() => expect(document.body.textContent).toContain("Memory optimization"));
     expect(document.body.textContent).toContain("Example Author");
     expect(document.body.textContent).toContain("Example Playlist");
+    expect(document.body.querySelector('img[src="/covers/memory.jpg"]')).toBeTruthy();
     expect(api.getLibrary).toHaveBeenCalledWith(
       { page: 1, pageSize: 20, query: "memory" },
       expect.any(AbortSignal),
