@@ -87,7 +87,8 @@ test("uses responsive video details and places the playlist below them on mobile
   await page.setViewportSize({ width: 1800, height: 900 });
   const title = page.getByRole("heading", { name: videoTitle });
   const playlistPanel = page.getByRole("complementary", { name: "Saved Collection" });
-  const autoplay = page.getByRole("switch", { name: /Autoplay next/ });
+  const playlistActions = page.getByRole("button", { name: "Playlist actions" });
+  const autoplay = page.getByRole("menuitemcheckbox", { name: /Autoplay next video/ });
 
   await page.goto(`/videos/${videoId}`);
   await expect(title).toBeVisible();
@@ -98,10 +99,15 @@ test("uses responsive video details and places the playlist below them on mobile
   expect((await title.boundingBox())?.width).toBeGreaterThan(1000);
   const playlistVideos = playlistPanel.locator(":scope > div");
   await expect(playlistPanel).toBeVisible();
+  await playlistActions.click();
   await expect(autoplay).toBeVisible();
   await expect(autoplay).toHaveAttribute("aria-checked", "false");
+  await expect(autoplay).toContainText("Off");
   await autoplay.click();
   await expect(autoplay).toHaveAttribute("aria-checked", "true");
+  await expect(autoplay).toContainText("On");
+  await expect(playlistActions.locator(".player-progress-menu-autoplay-indicator")).toBeVisible();
+  await playlistActions.click();
   await expect(page.getByRole("button", { name: "Summary" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Show 1 more chapter" })).toBeHidden();
   expect(
@@ -116,6 +122,8 @@ test("uses responsive video details and places the playlist below them on mobile
   await expect(expand).toBeVisible();
   await expect(page.getByRole("button", { name: "Summary" })).toBeHidden();
   await expect(playlistPanel).toBeVisible();
+  await expect(playlistActions.locator(".player-progress-menu-autoplay-indicator")).toBeVisible();
+  await playlistActions.click();
   await expect(autoplay).toBeVisible();
   await expect(autoplay).toHaveAttribute("aria-checked", "true");
   expect(await playlistVideos.evaluate((element) => getComputedStyle(element).overflowY)).toBe(
