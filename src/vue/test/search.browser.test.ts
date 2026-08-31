@@ -17,7 +17,10 @@ async function authenticate(page: Page): Promise<void> {
 
 test("searches videos globally with Command K", async ({ page }) => {
   await authenticate(page);
+  let searchRequest: URL | undefined;
   await page.route("**/api/library**", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    if (requestUrl.searchParams.has("query")) searchRequest = requestUrl;
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -50,16 +53,30 @@ test("searches videos globally with Command K", async ({ page }) => {
   });
 
   await page.goto("/");
+  const palette = page.locator('dialog[aria-label="Search videos"]');
+  await expect(palette).toHaveCount(1);
   await page.keyboard.press("Meta+k");
-
-  const palette = page.getByRole("dialog", { name: "Search videos" });
   const input = palette.getByRole("combobox", { name: "Search video titles" });
   await expect(palette).toBeVisible();
   await expect(input).toBeFocused();
   await input.fill("memory");
-  await expect(palette.getByRole("option", { name: /Memory optimization/ })).toBeVisible();
+  const result = palette.getByRole("option", { name: /Memory optimization/ });
+  await expect(result).toBeVisible();
+  expect(searchRequest?.searchParams.get("query")).toBe("memory");
+  expect(searchRequest?.searchParams.get("page")).toBe("1");
+  expect(searchRequest?.searchParams.get("pageSize")).toBe("20");
 
-  await input.press("Enter");
+  await input.press("ArrowDown");
+  await expect(result).toHaveAttribute("aria-selected", "true");
+  await expect(result).toHaveCSS("background-color", "rgb(41, 49, 60)");
+  await expect(result).toHaveCSS("border-left-color", "rgb(213, 139, 59)");
+
+  await page.keyboard.press("Meta+k");
+  await page.keyboard.press("Meta+k");
+  await palette.getByRole("combobox", { name: "Search video titles" }).fill("memory");
+  await expect(result).toBeVisible();
+
+  await palette.getByRole("combobox", { name: "Search video titles" }).press("Enter");
   await expect(page).toHaveURL(/\/videos\?q=memory$/);
-  await expect(palette).toHaveCount(0);
+  await expect(palette).not.toBeVisible();
 });

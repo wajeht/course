@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
-import { DOMWrapper, flushPromises, mount } from "@vue/test-utils";
+import { DOMWrapper, flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { createMemoryHistory, createRouter } from "vue-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -10,6 +10,7 @@ import { api, type LibraryDto } from "@/api.js";
 import VideoSearchPalette from "./VideoSearchPalette.vue";
 
 const videoId = "2".repeat(24);
+const wrappers: VueWrapper[] = [];
 
 function dialogElement<T extends Element>(selector: string): DOMWrapper<T> {
   const element = document.body.querySelector<T>(selector);
@@ -67,12 +68,14 @@ async function mountPalette() {
     attachTo: document.body,
     global: { plugins: [[VueQueryPlugin, { queryClient }], router] },
   });
+  wrappers.push(wrapper);
   return { router, wrapper };
 }
 
 afterEach(() => {
+  for (const wrapper of wrappers) wrapper.unmount();
+  wrappers.length = 0;
   vi.restoreAllMocks();
-  document.body.innerHTML = "";
 });
 
 describe("VideoSearchPalette", () => {
@@ -134,8 +137,7 @@ describe("VideoSearchPalette", () => {
 
     await input.trigger("keydown", { key: "ArrowDown" });
     const selected = dialogElement<HTMLElement>('[role="option"][aria-selected="true"]');
-    expect(selected.classes()).toContain("bg-pine");
-    expect(selected.classes()).toContain("border-belt");
+    expect(selected.text()).toContain("01");
     await vi.waitFor(() =>
       expect(api.getVideo).toHaveBeenCalledWith(videoId, expect.any(AbortSignal)),
     );
@@ -145,6 +147,7 @@ describe("VideoSearchPalette", () => {
     expect(router.currentRoute.value).toMatchObject({
       name: "player",
       params: { videoId },
+      query: { list: "3".repeat(24) },
     });
   });
 });

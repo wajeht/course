@@ -49,6 +49,19 @@ export function libraryQueryOptions(
   });
 }
 
+export function videoSearchQueryOptions(
+  query: string,
+  active: boolean,
+  client: Pick<LibraryQueryClient, "getLibrary"> = api,
+) {
+  const normalizedQuery = query.trim();
+  return queryOptions({
+    ...libraryQueryOptions({ query: normalizedQuery, pageSize: 20 }, client),
+    enabled: active && normalizedQuery.length >= 2,
+    placeholderData: undefined,
+  });
+}
+
 export function videoQueryOptions(videoId: string) {
   return queryOptions({
     queryKey: queryKeys.video(videoId),
