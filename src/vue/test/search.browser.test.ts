@@ -58,8 +58,14 @@ test("searches videos globally with Command K", async ({ page }) => {
     });
   });
 
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   const palette = page.locator('dialog[aria-label="Search videos"]');
+  await expect(palette).toHaveCount(0);
+  await page.keyboard.press("Meta+k");
+  await expect(palette).toHaveCount(0);
+
+  await page.setViewportSize({ width: 1280, height: 900 });
   await expect(palette).toHaveCount(1);
   await page.keyboard.press("Meta+k");
   const input = palette.getByRole("combobox", {
@@ -91,13 +97,6 @@ test("searches videos globally with Command K", async ({ page }) => {
   await expect(result).toHaveAttribute("aria-selected", "true");
   await expect(result).toHaveCSS("background-color", "rgb(41, 49, 60)");
   await expect(result).toHaveCSS("border-left-color", "rgb(213, 139, 59)");
-
-  await page.setViewportSize({ width: 390, height: 844 });
-  await expect(palette).toHaveCSS("width", "350px");
-  await expect(thumbnail).toHaveCSS("width", "72px");
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
-    true,
-  );
 
   await page.keyboard.press("Meta+k");
   await page.keyboard.press("Meta+k");
