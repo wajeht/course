@@ -5,10 +5,12 @@ import { useRoute } from "vue-router";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import VideoSearchPalette from "@/components/VideoSearchPalette.vue";
 import AppLogo from "@/components/ui/AppLogo.vue";
+import { useMediaQuery } from "@/composables/useMediaQuery.js";
 import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 
 const route = useRoute();
 const prefetch = useRoutePrefetch();
+const desktopSearchEnabled = useMediaQuery("(min-width: 601px)");
 const activeNavigation = computed(() => route.meta.navigation);
 const isPlayer = computed(() => route.meta.shell === "player");
 </script>
@@ -71,7 +73,7 @@ const isPlayer = computed(() => route.meta.shell === "player");
         </IntentRouterLink>
       </nav>
     </header>
-    <VideoSearchPalette />
+    <VideoSearchPalette v-if="desktopSearchEnabled" />
     <slot />
     <nav
       class="fixed right-0 bottom-0 left-0 z-50 hidden border-t border-white/12 bg-pine-deep/[.98] px-3 pt-1.5 pb-[max(6px,env(safe-area-inset-bottom))] text-white shadow-[0_-12px_35px_rgb(18_22_28_/_24%)] backdrop-blur-[14px] max-[600px]:grid max-[600px]:grid-cols-3"

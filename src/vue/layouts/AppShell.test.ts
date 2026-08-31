@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
-import { mount, type VueWrapper } from "@vue/test-utils";
+import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { createMemoryHistory, createRouter, type RouteRecordRaw } from "vue-router";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import AppShell from "./AppShell.vue";
 
@@ -26,9 +26,25 @@ const wrappers: VueWrapper[] = [];
 afterEach(() => {
   for (const wrapper of wrappers) wrapper.unmount();
   wrappers.length = 0;
+  vi.unstubAllGlobals();
 });
 
-async function mountShell(path: string) {
+function useViewport(desktop: boolean): void {
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn((query: string) => ({
+      addEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+      matches: query === "(min-width: 601px)" && desktop,
+      media: query,
+      onchange: null,
+      removeEventListener: vi.fn(),
+    })),
+  );
+}
+
+async function mountShell(path: string, desktop = true) {
+  useViewport(desktop);
   const router = createRouter({ history: createMemoryHistory(), routes });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   await router.push(path);
@@ -37,6 +53,7 @@ async function mountShell(path: string) {
     global: { plugins: [[VueQueryPlugin, { queryClient }], router] },
   });
   wrappers.push(wrapper);
+  await flushPromises();
   return wrapper;
 }
 
@@ -69,6 +86,17 @@ describe("AppShell", () => {
 
     expect(mobileNavigation.get('a[href="/videos"]').attributes("aria-current")).toBe("page");
     expect(mobileNavigation.get('a[href="/"]').attributes("aria-current")).toBeUndefined();
+  });
+
+  it("does not mount global search on mobile", async () => {
+    await mountShell("/videos", false);
+
+    expect(document.body.querySelector('dialog[aria-label="Search videos"]')).toBeNull();
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true, cancelable: true }),
+    );
+    await flushPromises();
+    expect(document.body.querySelector('dialog[aria-label="Search videos"]')).toBeNull();
   });
 
   it("does not select a navigation item on an error page", async () => {
