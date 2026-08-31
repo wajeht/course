@@ -87,6 +87,7 @@ test("keeps the install experience online-only", async ({ context, page }) => {
     await context.setOffline(false);
   }
 
+  await page.setViewportSize({ width: 590, height: 844 });
   await page.goto("/settings/library");
   await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
   await expect(page).toHaveTitle("Library settings · Videos");
@@ -104,7 +105,9 @@ test("keeps the install experience online-only", async ({ context, page }) => {
   await expect(page.getByRole("status").filter({ hasText: "Library refreshed" })).toBeVisible();
 
   await page.getByRole("button", { name: "Sign out" }).click();
-  await expect(page.getByRole("dialog", { name: "Sign out?" })).toBeVisible();
+  const signOutDialog = page.getByRole("dialog", { name: "Sign out?" });
+  await expect(signOutDialog).toBeVisible();
+  await expect(signOutDialog).toHaveCSS("width", "550px");
   await page.getByRole("button", { name: "Cancel" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
 
