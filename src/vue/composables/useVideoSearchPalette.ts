@@ -71,8 +71,10 @@ export function useVideoSearchPalette() {
       debouncedQuery.value = value;
     }, 150);
   });
-  watch(suggestions, () => {
-    activeIndex.value = -1;
+  watch(suggestions, (videos) => {
+    activeIndex.value = videos.length ? 0 : -1;
+    const selected = videos[0];
+    if (selected) void prefetch.video(selected.id).catch(() => undefined);
   });
   onScopeDispose(() => clearTimeout(searchTimer));
 

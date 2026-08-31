@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import VideoSearchFooter from "@/components/VideoSearchFooter.vue";
 import VideoSearchResults from "@/components/VideoSearchResults.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppInput from "@/components/ui/AppInput.vue";
@@ -27,7 +28,7 @@ const { handleBackdrop, handleCancel } = useModalDialog(() => open.value, closeP
     <dialog
       ref="dialog"
       aria-label="Search videos"
-      class="mx-auto mt-[12vh] max-h-[min(640px,76vh)] w-[min(640px,calc(100%-32px))] overflow-hidden rounded-[12px] border border-line bg-white p-0 text-ink shadow-[0_24px_80px_rgb(18_22_28_/_36%)] backdrop:bg-[#12161c]/45 max-[600px]:mt-[max(12px,env(safe-area-inset-top))] max-[600px]:w-[calc(100%-24px)]"
+      class="mx-auto mt-[12vh] max-h-[min(640px,76vh)] w-[min(720px,calc(100%-32px))] overflow-hidden rounded-[12px] border border-line bg-white p-0 text-ink shadow-[0_24px_80px_rgb(18_22_28_/_36%)] backdrop:bg-[#12161c]/45 max-[600px]:mt-[max(12px,env(safe-area-inset-top))] max-[600px]:w-[calc(100%-24px)]"
       @cancel="handleCancel"
       @click="handleBackdrop"
     >
@@ -38,14 +39,14 @@ const { handleBackdrop, handleCancel } = useModalDialog(() => open.value, closeP
               v-model="query"
               variant="bare"
               class="h-10 text-base"
-              aria-label="Search video titles"
+              aria-label="Search videos, authors, playlists, and tags"
               aria-controls="video-search-results"
               :aria-activedescendant="activeResultId"
               :aria-expanded="searchStarted"
               aria-autocomplete="list"
               autocomplete="off"
               autofocus
-              placeholder="Search video titles"
+              placeholder="Search videos, authors, playlists, and tags"
               role="combobox"
               @keydown.down.prevent="moveSelection(1)"
               @keydown.up.prevent="moveSelection(-1)"
@@ -63,25 +64,16 @@ const { handleBackdrop, handleCancel } = useModalDialog(() => open.value, closeP
           </div>
 
           <VideoSearchResults
-            v-if="searchStarted"
             :active-index="activeIndex"
             :error
             :loading
+            :started="searchStarted"
             :videos="suggestions"
             @activate="activateResult"
             @close="closePalette"
           />
 
-          <footer
-            class="flex items-center gap-5 border-t border-line px-5 py-3 text-[.68rem] text-muted max-[600px]:hidden"
-          >
-            <span><kbd class="font-mono">↑↓</kbd> Select</span>
-            <span>
-              <kbd class="font-mono">Enter</kbd>
-              {{ activeIndex >= 0 ? "Open" : "Search all" }}
-            </span>
-            <span class="ml-auto"><kbd class="font-mono">Esc</kbd> Close</span>
-          </footer>
+          <VideoSearchFooter :has-query="Boolean(query.trim())" :selected="activeIndex >= 0" />
         </form>
       </section>
     </dialog>

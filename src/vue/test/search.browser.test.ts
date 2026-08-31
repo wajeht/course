@@ -47,8 +47,8 @@ test("searches videos globally with Command K", async ({ page }) => {
             playlistSectionId: null,
             playlistSectionTitle: null,
             playlistTitle: null,
-            positionSeconds: 0,
-            progressPercent: 0,
+            positionSeconds: 30,
+            progressPercent: 25,
             source: null,
             tags: [],
             title: "Memory optimization",
@@ -62,15 +62,23 @@ test("searches videos globally with Command K", async ({ page }) => {
   const palette = page.locator('dialog[aria-label="Search videos"]');
   await expect(palette).toHaveCount(1);
   await page.keyboard.press("Meta+k");
-  const input = palette.getByRole("combobox", { name: "Search video titles" });
+  const input = palette.getByRole("combobox", {
+    name: "Search videos, authors, playlists, and tags",
+  });
   await expect(palette).toBeVisible();
+  await expect(palette).toHaveCSS("width", "720px");
   await expect(input).toBeFocused();
+  await expect(palette.getByText("Find videos by title, author, playlist, or tag.")).toBeVisible();
   await input.fill("memory");
   const result = palette.getByRole("option", { name: /Memory optimization/ });
   await expect(result).toBeVisible();
   const thumbnail = result.locator('img[src="/covers/search.jpg"]');
   await expect(thumbnail).toBeVisible();
   await expect(thumbnail).toHaveCSS("width", "96px");
+  await expect(result.getByText("2m", { exact: true })).toBeVisible();
+  await expect(result.getByText("Video progress: 25%", { exact: true })).toHaveText(
+    "Video progress: 25%",
+  );
   const thumbnailBox = await thumbnail.boundingBox();
   const titleBox = await result.getByText("Memory optimization", { exact: true }).boundingBox();
   expect(thumbnailBox).not.toBeNull();
@@ -80,7 +88,6 @@ test("searches videos globally with Command K", async ({ page }) => {
   expect(searchRequest?.searchParams.get("page")).toBe("1");
   expect(searchRequest?.searchParams.get("pageSize")).toBe("20");
 
-  await input.press("ArrowDown");
   await expect(result).toHaveAttribute("aria-selected", "true");
   await expect(result).toHaveCSS("background-color", "rgb(41, 49, 60)");
   await expect(result).toHaveCSS("border-left-color", "rgb(213, 139, 59)");
@@ -93,10 +100,14 @@ test("searches videos globally with Command K", async ({ page }) => {
 
   await page.keyboard.press("Meta+k");
   await page.keyboard.press("Meta+k");
-  await palette.getByRole("combobox", { name: "Search video titles" }).fill("memory");
+  await palette
+    .getByRole("combobox", { name: "Search videos, authors, playlists, and tags" })
+    .fill("memory");
   await expect(result).toBeVisible();
 
-  await palette.getByRole("combobox", { name: "Search video titles" }).press("Enter");
-  await expect(page).toHaveURL(/\/videos\?q=memory$/);
+  await palette
+    .getByRole("combobox", { name: "Search videos, authors, playlists, and tags" })
+    .press("Enter");
+  await expect(page).toHaveURL(new RegExp(`/videos/${videoId}$`));
   await expect(palette).not.toBeVisible();
 });
