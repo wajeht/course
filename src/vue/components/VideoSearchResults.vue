@@ -2,13 +2,16 @@
 import type { VideoDto } from "@/api.js";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import VideoCoverPlaceholder from "@/components/VideoCoverPlaceholder.vue";
+import ProgressBar from "@/components/ui/ProgressBar.vue";
 import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import { playerLocation } from "@/router.js";
+import { durationText } from "@/utils.js";
 
 defineProps<{
   activeIndex: number;
   error: string;
   loading: boolean;
+  started: boolean;
   videos: VideoDto[];
 }>();
 const emit = defineEmits<{ activate: [index: number]; close: [] }>();
@@ -19,6 +22,15 @@ function videoContext(video: VideoDto): string {
     ...new Set([...video.authors, ...(video.playlistTitle ? [video.playlistTitle] : [])]),
   ].join(" · ");
 }
+
+function videoOptionLabel(video: VideoDto): string {
+  let progress = "";
+  if (video.completed) progress = "Completed";
+  else if (video.progressPercent > 0) progress = `${video.progressPercent}% watched`;
+  return [video.title, videoContext(video), durationText(video.durationSeconds), progress]
+    .filter(Boolean)
+    .join(", ");
+}
 </script>
 
 <template>
@@ -27,7 +39,11 @@ function videoContext(video: VideoDto): string {
     class="max-h-[min(480px,60vh)] overflow-y-auto px-2 py-2"
     aria-live="polite"
   >
-    <p v-if="loading" class="px-3 py-3 text-sm text-muted">Searching videos…</p>
+    <div v-if="!started" class="grid min-h-28 place-content-center px-6 text-center">
+      <p class="text-sm font-bold text-ink">Search your library</p>
+      <p class="mt-1 text-xs text-muted">Find videos by title, author, playlist, or tag.</p>
+    </div>
+    <p v-else-if="loading" class="px-3 py-3 text-sm text-muted">Searching videos…</p>
     <p v-else-if="error" class="px-3 py-3 text-sm text-clay">{{ error }}</p>
     <p v-else-if="!videos.length" class="px-3 py-3 text-sm text-muted">No matching videos</p>
     <ul v-else aria-label="Video search results" role="listbox">
@@ -43,6 +59,7 @@ function videoContext(video: VideoDto): string {
               : 'border-transparent hover:bg-mist'
           "
           role="option"
+          :aria-label="videoOptionLabel(video)"
           :aria-selected="index === activeIndex"
           @click="emit('close')"
           @pointerenter="emit('activate', index)"
@@ -55,7 +72,6 @@ function videoContext(video: VideoDto): string {
           </span>
           <span
             class="media-frame relative aspect-video w-24 overflow-hidden rounded-[5px] bg-mist max-[600px]:w-[72px]"
-            aria-hidden="true"
           >
             <img
               v-if="video.coverUrl"
@@ -65,6 +81,17 @@ function videoContext(video: VideoDto): string {
               loading="lazy"
             />
             <VideoCoverPlaceholder v-else class="h-full w-full" compact :title="video.title" />
+            <span
+              class="absolute right-1 bottom-1 rounded bg-black/80 px-1 py-0.5 font-mono text-[.58rem] text-white"
+            >
+              {{ durationText(video.durationSeconds) }}
+            </span>
+            <ProgressBar
+              v-if="video.progressPercent > 0"
+              class="absolute right-0 bottom-0 left-0"
+              :value="video.progressPercent"
+              compact
+            />
           </span>
           <span class="min-w-0">
             <span
