@@ -81,18 +81,21 @@ describe("PlayerPlaylistSidebar", () => {
     const wrapper = await mountSidebar();
 
     await wrapper.get('[aria-label="Playlist actions"]').trigger("click");
-    expect(wrapper.get('[role="menuitem"]').text()).toBe("Reset playlist progress");
+    expect(wrapper.findAll('[role="menuitem"]')[0]?.text()).toBe("Reset playlist progress");
 
-    await wrapper.get('[role="menuitem"]').trigger("click");
+    await wrapper.findAll('[role="menuitem"]')[0]?.trigger("click");
 
     expect(wrapper.emitted("reset")).toHaveLength(1);
   });
 
-  it("toggles autoplay for the playlist", async () => {
+  it("toggles autoplay from the playlist actions menu", async () => {
     const wrapper = await mountSidebar();
-    const autoplay = wrapper.get('[role="switch"]');
+
+    await wrapper.get('[aria-label="Playlist actions"]').trigger("click");
+    const autoplay = wrapper.get('[role="menuitemcheckbox"]');
 
     expect(autoplay.attributes("aria-checked")).toBe("false");
+    expect(autoplay.text()).toContain("Autoplay next video");
     expect(autoplay.text()).toContain("Off");
 
     await autoplay.trigger("click");

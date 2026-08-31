@@ -8,13 +8,19 @@ const props = withDefaults(
     label: string;
     resetLabel: string;
     resetting: boolean;
+    autoplayEnabled?: boolean;
+    autoplayLabel?: string;
     regenerateLabel?: string;
     regenerating?: boolean;
     tone?: "dark" | "light";
   }>(),
-  { tone: "dark", regenerating: false },
+  { autoplayEnabled: false, tone: "dark", regenerating: false },
 );
-const emit = defineEmits<{ reset: []; regenerate: [] }>();
+const emit = defineEmits<{
+  autoplayChange: [enabled: boolean];
+  reset: [];
+  regenerate: [];
+}>();
 
 const open = shallowRef(false);
 const root = useTemplateRef<HTMLElement>("root");
@@ -81,15 +87,36 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", closeOnOutside
         <span class="player-progress-menu-dot h-1 w-1 rounded-full bg-current" />
         <span class="player-progress-menu-dot h-1 w-1 rounded-full bg-current" />
       </span>
+      <span
+        v-if="autoplayLabel && autoplayEnabled"
+        class="player-progress-menu-autoplay-indicator absolute top-0.5 right-0.5 h-2.5 w-2.5 rounded-full border-2 border-porcelain bg-belt"
+        aria-hidden="true"
+      />
     </button>
 
     <div
       v-if="open"
       role="menu"
       :aria-label="label"
-      class="absolute right-0 z-20 mt-2 min-w-44 rounded-[7px] border p-1"
+      class="absolute right-0 z-20 mt-2 min-w-56 rounded-[7px] border p-1"
       :class="panelClasses"
     >
+      <AppButton
+        v-if="autoplayLabel"
+        variant="unstyled"
+        role="menuitemcheckbox"
+        :aria-checked="autoplayEnabled"
+        class="flex w-full items-center justify-between gap-3 rounded-[5px] px-3 py-2 text-left text-sm focus-visible:outline-none"
+        :class="itemClasses"
+        @click="emit('autoplayChange', !autoplayEnabled)"
+      >
+        <span>{{ autoplayLabel }}</span>
+        <span
+          class="rounded-full px-2 py-0.5 text-[.65rem] font-extrabold tracking-[.08em] uppercase"
+          :class="autoplayEnabled ? 'bg-belt/18 text-belt-ink' : 'bg-mist text-muted'"
+          >{{ autoplayEnabled ? "On" : "Off" }}</span
+        >
+      </AppButton>
       <AppButton
         v-if="regenerateLabel"
         variant="unstyled"

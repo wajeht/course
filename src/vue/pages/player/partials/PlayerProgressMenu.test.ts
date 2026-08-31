@@ -45,4 +45,27 @@ describe("PlayerProgressMenu", () => {
 
     expect(wrapper.emitted("regenerate")).toHaveLength(1);
   });
+
+  it("shows and toggles an enabled autoplay action", async () => {
+    const wrapper = mount(PlayerProgressMenu, {
+      props: {
+        autoplayEnabled: true,
+        autoplayLabel: "Autoplay next video",
+        label: "Playlist actions",
+        resetLabel: "Reset playlist progress",
+        resetting: false,
+        tone: "light",
+      },
+    });
+
+    expect(wrapper.find(".player-progress-menu-autoplay-indicator").exists()).toBe(true);
+    await wrapper.get('[aria-label="Playlist actions"]').trigger("click");
+    const autoplay = wrapper.get('[role="menuitemcheckbox"]');
+    expect(autoplay.attributes("aria-checked")).toBe("true");
+    expect(autoplay.text()).toContain("On");
+
+    await autoplay.trigger("click");
+
+    expect(wrapper.emitted("autoplayChange")).toEqual([[false]]);
+  });
 });
