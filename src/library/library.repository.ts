@@ -24,6 +24,7 @@ export interface VideoRow {
   path: string;
   playlist_id: string | null;
   playlist_title: string | null;
+  playlist_description: string | null;
   playlist_tags_json: string | null;
   playlist_authors_json: string;
   playlist_section_id: string | null;
@@ -97,6 +98,7 @@ const videoSelect = [
   "videos.path",
   "videos.playlist_id",
   "playlists.title as playlist_title",
+  "playlists.description as playlist_description",
   "playlists.tags_json as playlist_tags_json",
   "videos.playlist_section_id",
   "playlist_sections.title as playlist_section_title",
@@ -315,6 +317,7 @@ export function createLibraryApiRepository(database: Knex): LibraryRepository {
                 ...stringList(video.playlist_authors_json),
               ],
               playlistTitle: video.playlist_title,
+              playlistDescription: video.playlist_description,
               tags: [...stringList(video.tags_json), ...stringList(video.playlist_tags_json)],
             },
             query,
