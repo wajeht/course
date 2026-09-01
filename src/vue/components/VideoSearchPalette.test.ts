@@ -22,7 +22,7 @@ function library(videos: LibraryDto["videos"] = [video()]): LibraryDto {
   return {
     authors: [],
     continueWatching: [],
-    pagination: { page: 1, pageSize: 20, totalPages: 1, totalVideos: 1 },
+    pagination: { page: 1, pageSize: 20, totalPages: 1, totalVideos: videos.length },
     playlists: [],
     tags: [],
     videos,
@@ -81,6 +81,28 @@ afterEach(() => {
 });
 
 describe("VideoSearchPalette", () => {
+  it("shows every result returned by the search page", async () => {
+    const videos = Array.from({ length: 20 }, (_, index) => ({
+      ...video(),
+      id: (index + 1).toString(16).padStart(24, "0"),
+      title: `Result ${index + 1}`,
+    }));
+    await mountPalette(library(videos));
+
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true, cancelable: true }),
+    );
+    await flushPromises();
+    await dialogElement<HTMLInputElement>(
+      'input[aria-label="Search videos, authors, playlists, and tags"]',
+    ).setValue("result");
+
+    await vi.waitFor(() =>
+      expect(document.body.querySelectorAll('[role="option"]')).toHaveLength(20),
+    );
+    expect(document.body.textContent).toContain("Result 20");
+  });
+
   it("opens with Command K and shows matching video titles", async () => {
     await mountPalette();
 
@@ -96,6 +118,7 @@ describe("VideoSearchPalette", () => {
     ).setValue("memory");
 
     await vi.waitFor(() => expect(document.body.textContent).toContain("Memory optimization"));
+    expect(dialogElement<HTMLElement>("mark").text()).toBe("Memory");
     expect(document.body.textContent).toContain("Example Author");
     expect(document.body.textContent).toContain("Example Playlist");
     expect(document.body.textContent).toContain("2m");
@@ -114,6 +137,19 @@ describe("VideoSearchPalette", () => {
     await vi.waitFor(() =>
       expect(api.getVideo).toHaveBeenCalledWith(videoId, expect.any(AbortSignal)),
     );
+  });
+
+  it("highlights the intended title word for a fuzzy typo match", async () => {
+    await mountPalette();
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true, cancelable: true }),
+    );
+    await flushPromises();
+    await dialogElement<HTMLInputElement>(
+      'input[aria-label="Search videos, authors, playlists, and tags"]',
+    ).setValue("memroy");
+
+    await vi.waitFor(() => expect(dialogElement<HTMLElement>("mark").text()).toBe("Memory"));
   });
 
   it("sends a query without matches to the Videos page", async () => {

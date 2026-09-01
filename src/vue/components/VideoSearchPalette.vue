@@ -67,6 +67,7 @@ const { handleBackdrop, handleCancel } = useModalDialog(() => open.value, closeP
             :active-index="activeIndex"
             :error
             :loading
+            :query
             :started="searchStarted"
             :videos="suggestions"
             @activate="activateResult"

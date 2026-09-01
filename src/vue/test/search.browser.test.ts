@@ -78,6 +78,7 @@ test("searches videos globally with Command K", async ({ page }) => {
   await input.fill("memory");
   const result = palette.getByRole("option", { name: /Memory optimization/ });
   await expect(result).toBeVisible();
+  await expect(result.locator("mark")).toHaveText("Memory");
   const thumbnail = result.locator('img[src="/covers/search.jpg"]');
   await expect(thumbnail).toBeVisible();
   await expect(thumbnail).toHaveCSS("width", "96px");

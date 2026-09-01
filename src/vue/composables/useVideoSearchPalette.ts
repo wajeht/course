@@ -11,18 +11,10 @@ import {
 } from "vue";
 import { useRouter } from "vue-router";
 
-import { api, apiErrorMessage, type VideoDto } from "@/api.js";
+import { api, apiErrorMessage } from "@/api.js";
 import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import { videoSearchQueryOptions } from "@/queries.js";
 import { playerLocation } from "@/router.js";
-
-function videoRank(video: VideoDto, query: string): number {
-  const title = video.title.toLocaleLowerCase();
-  if (title === query) return 0;
-  if (title.startsWith(query)) return 1;
-  if (title.includes(query)) return 2;
-  return 3;
-}
 
 export function useVideoSearchPalette() {
   const router = useRouter();
@@ -41,13 +33,7 @@ export function useVideoSearchPalette() {
   );
   const suggestions = computed(() => {
     if (!searchReady.value) return [];
-    const term = debouncedQuery.value.toLocaleLowerCase();
-    return [...(request.data.value?.videos ?? [])]
-      .sort(
-        (left, right) =>
-          videoRank(left, term) - videoRank(right, term) || left.title.localeCompare(right.title),
-      )
-      .slice(0, 8);
+    return request.data.value?.videos ?? [];
   });
   const activeResultId = computed(() => {
     const selected = suggestions.value[activeIndex.value];
