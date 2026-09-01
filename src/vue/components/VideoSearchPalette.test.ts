@@ -125,7 +125,7 @@ describe("VideoSearchPalette", () => {
     expect(document.body.textContent).toContain("Video progress: 25%");
     expect(document.body.querySelector('img[src="/covers/memory.jpg"]')).toBeTruthy();
     const selected = dialogElement<HTMLElement>('[role="option"]');
-    expect(selected.attributes("aria-selected")).toBe("true");
+    expect(selected.attributes("aria-selected")).toBe("false");
     expect(selected.attributes("aria-label")).toBe(
       "Memory optimization, Example Author · Example Playlist, 2m, 25% watched",
     );
@@ -134,6 +134,12 @@ describe("VideoSearchPalette", () => {
       expect.any(AbortSignal),
     );
 
+    expect(api.getVideo).not.toHaveBeenCalled();
+
+    await dialogElement<HTMLInputElement>(
+      'input[aria-label="Search videos, authors, playlists, and tags"]',
+    ).trigger("keydown", { key: "ArrowDown" });
+    expect(selected.attributes("aria-selected")).toBe("true");
     await vi.waitFor(() =>
       expect(api.getVideo).toHaveBeenCalledWith(videoId, expect.any(AbortSignal)),
     );
@@ -186,6 +192,7 @@ describe("VideoSearchPalette", () => {
     await input.setValue("memory");
     await vi.waitFor(() => expect(document.body.textContent).toContain("Memory optimization"));
 
+    await input.trigger("keydown", { key: "ArrowDown" });
     const selected = dialogElement<HTMLElement>('[role="option"][aria-selected="true"]');
     expect(selected.text()).toContain("01");
     await vi.waitFor(() =>
