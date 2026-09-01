@@ -127,6 +127,11 @@ describe("library service", () => {
     await expect(createService().getLibrary({ query: "Saved Collection" })).resolves.toMatchObject({
       videos: [{ title: "Guard Study" }],
     });
+    await expect(
+      createService().getLibrary({ query: "Instructional archive" }),
+    ).resolves.toMatchObject({
+      videos: [{ title: "Guard Study" }],
+    });
     await expect(createService().getLibrary({ tag: ["Instructional"] })).resolves.toMatchObject({
       videos: [{ title: "Guard Study" }],
     });

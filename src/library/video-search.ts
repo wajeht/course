@@ -5,6 +5,7 @@ export interface VideoSearchDocument {
   description: string;
   authors: string[];
   playlistTitle: string | null;
+  playlistDescription?: string | null;
   tags: string[];
 }
 
@@ -140,6 +141,15 @@ function values(document: VideoSearchDocument): SearchValue[] {
       : []),
     ...document.tags.map((value) => ({ field: "tag" as const, value, weight: fieldWeights.tag })),
     { field: "description", value: document.description, weight: fieldWeights.description },
+    ...(document.playlistDescription
+      ? [
+          {
+            field: "description" as const,
+            value: document.playlistDescription,
+            weight: fieldWeights.description,
+          },
+        ]
+      : []),
   ];
   return searchValues.filter((entry) => entry.value.trim());
 }
