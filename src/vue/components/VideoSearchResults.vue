@@ -1,16 +1,21 @@
 <script setup lang="ts">
+import { computed } from "vue";
+
 import type { VideoDto } from "@/api.js";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
 import VideoCoverPlaceholder from "@/components/VideoCoverPlaceholder.vue";
+import HighlightedText from "@/components/ui/HighlightedText.vue";
 import ProgressBar from "@/components/ui/ProgressBar.vue";
 import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import { playerLocation } from "@/router.js";
 import { durationText } from "@/utils.js";
+import { matchVideoSearch, type TextRange } from "../../library/video-search.js";
 
-defineProps<{
+const props = defineProps<{
   activeIndex: number;
   error: string;
   loading: boolean;
+  query: string;
   started: boolean;
   videos: VideoDto[];
 }>();
@@ -22,6 +27,40 @@ function videoContext(video: VideoDto): string {
     ...new Set([...video.authors, ...(video.playlistTitle ? [video.playlistTitle] : [])]),
   ].join(" · ");
 }
+
+interface ContextPart {
+  text: string;
+  ranges: TextRange[];
+}
+
+const results = computed(() =>
+  props.videos.map((video) => {
+    const match = matchVideoSearch(video, props.query);
+    const titleRanges = match?.matches.find((entry) => entry.field === "title")?.ranges ?? [];
+    const visibleContext = [
+      ...new Set([...video.authors, ...(video.playlistTitle ? [video.playlistTitle] : [])]),
+    ];
+    const primaryMatch = match?.matches[0];
+    let contextParts: ContextPart[] = visibleContext.map((text) => ({
+      text,
+      ranges: match?.matches.find((entry) => entry.value === text)?.ranges ?? [],
+    }));
+    if (primaryMatch?.field === "tag") {
+      contextParts = [
+        {
+          text: `Tag: ${primaryMatch.value}`,
+          ranges: primaryMatch.ranges.map((range) => ({
+            start: range.start + 5,
+            end: range.end + 5,
+          })),
+        },
+      ];
+    } else if (primaryMatch?.field === "description") {
+      contextParts = [{ text: primaryMatch.value, ranges: primaryMatch.ranges }];
+    }
+    return { video, titleRanges, contextParts };
+  }),
+);
 
 function videoOptionLabel(video: VideoDto): string {
   let progress = "";
@@ -47,7 +86,7 @@ function videoOptionLabel(video: VideoDto): string {
     <p v-else-if="error" class="px-3 py-3 text-sm text-clay">{{ error }}</p>
     <p v-else-if="!videos.length" class="px-3 py-3 text-sm text-muted">No matching videos</p>
     <ul v-else aria-label="Video search results" role="listbox">
-      <li v-for="(video, index) in videos" :key="video.id">
+      <li v-for="({ video, titleRanges, contextParts }, index) in results" :key="video.id">
         <IntentRouterLink
           :id="`video-search-result-${video.id}`"
           :to="playerLocation(video.id, video.playlistId)"
@@ -98,14 +137,20 @@ function videoOptionLabel(video: VideoDto): string {
               class="block truncate text-sm font-bold"
               :class="index === activeIndex ? 'text-white' : 'text-ink'"
             >
-              {{ video.title }}
+              <HighlightedText :text="video.title" :ranges="titleRanges" />
             </span>
             <span
-              v-if="videoContext(video)"
+              v-if="contextParts.length"
               class="mt-0.5 block truncate text-xs"
               :class="index === activeIndex ? 'text-white/65' : 'text-muted'"
             >
-              {{ videoContext(video) }}
+              <template
+                v-for="(part, partIndex) in contextParts"
+                :key="`${part.text}-${partIndex}`"
+              >
+                <span v-if="partIndex"> · </span>
+                <HighlightedText :text="part.text" :ranges="part.ranges" />
+              </template>
             </span>
           </span>
         </IntentRouterLink>

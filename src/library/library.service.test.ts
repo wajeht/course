@@ -135,6 +135,47 @@ describe("library service", () => {
     });
   });
 
+  it("fuzzy matches typos before applying search pagination", async () => {
+    await database.connection("videos").insert(
+      Array.from({ length: 21 }, (_, index) => ({
+        id: (index + 10).toString(16).padStart(24, "0"),
+        path: `Closed ${index}.mp4`,
+        title: `Closed lesson ${index}`,
+        description: "",
+        tags_json: "[]",
+        sort_order: index + 1,
+        duration_seconds: 60,
+        size_bytes: 100,
+        container: "mp4",
+        video_codec: "h264",
+        browser_compatible: true,
+        modified_at: "2026-08-21T00:00:00.000Z",
+      })),
+    );
+    await database.connection("videos").insert({
+      id: "9".repeat(24),
+      path: "Close.mp4",
+      title: "Close",
+      description: "",
+      tags_json: "[]",
+      sort_order: 99,
+      duration_seconds: 60,
+      size_bytes: 100,
+      container: "mp4",
+      video_codec: "h264",
+      browser_compatible: true,
+      modified_at: "2026-08-21T00:00:00.000Z",
+    });
+
+    const exact = await createService().getLibrary({ query: "close", pageSize: 20 });
+    const typo = await createService().getLibrary({ query: "gaurd", pageSize: 20 });
+
+    expect(exact.videos[0]?.title).toBe("Close");
+    expect(exact.videos).toHaveLength(20);
+    expect(exact.pagination.totalVideos).toBe(22);
+    expect(typo.videos.map((result) => result.title)).toEqual(["Guard Study"]);
+  });
+
   it("includes every video by default", async () => {
     const library = await createService().getLibrary();
 

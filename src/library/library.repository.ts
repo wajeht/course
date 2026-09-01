@@ -1,4 +1,7 @@
 import type { Knex } from "knex";
+import { z } from "zod";
+
+import { matchVideoSearch } from "./video-search.js";
 
 export interface PlaylistRow {
   id: string;
@@ -67,8 +70,17 @@ export interface VideoPagination {
   offset: number;
 }
 
+export interface VideoSearchPage {
+  videos: VideoRow[];
+  total: number;
+}
+
 export interface LibraryRepository {
   listVideos(filters?: VideoFilters, pagination?: VideoPagination): Promise<VideoRow[]>;
+  searchVideos(
+    filters: VideoFilters & { query: string },
+    pagination: VideoPagination,
+  ): Promise<VideoSearchPage>;
   countVideos(filters?: VideoFilters): Promise<number>;
   listPlaylists(filters?: VideoFilters): Promise<PlaylistRow[]>;
   listAuthors(): Promise<FilterCountRow[]>;
@@ -104,6 +116,12 @@ const videoSelect = [
   "videos.sort_order",
   "playlist_sections.sort_order as playlist_section_sort_order",
 ];
+
+const stringListSchema = z.array(z.string());
+
+function stringList(value: string | null): string[] {
+  return stringListSchema.parse(JSON.parse(value ?? "[]"));
+}
 
 export function createLibraryApiRepository(database: Knex): LibraryRepository {
   const videoAuthorsJson = database.raw(`
@@ -277,6 +295,43 @@ export function createLibraryApiRepository(database: Knex): LibraryRepository {
       applyVideoFilters(queryBuilder, filters);
       if (pagination) queryBuilder.limit(pagination.limit).offset(pagination.offset);
       return queryBuilder;
+    },
+
+    async searchVideos({ query, ...filters }, pagination) {
+      const queryBuilder = createVideosQuery()
+        .orderByRaw("videos.playlist_id IS NOT NULL")
+        .orderBy("playlists.sort_order")
+        .orderBy("videos.sort_order");
+      applyVideoFilters(queryBuilder, filters);
+      const ranked = (await queryBuilder)
+        .map((video) => ({
+          video,
+          match: matchVideoSearch(
+            {
+              title: video.title,
+              description: video.description,
+              authors: [
+                ...stringList(video.authors_json),
+                ...stringList(video.playlist_authors_json),
+              ],
+              playlistTitle: video.playlist_title,
+              tags: [...stringList(video.tags_json), ...stringList(video.playlist_tags_json)],
+            },
+            query,
+          ),
+        }))
+        .filter((entry) => entry.match !== null)
+        .sort(
+          (left, right) =>
+            left.match!.score - right.match!.score ||
+            left.video.title.localeCompare(right.video.title),
+        );
+      return {
+        videos: ranked
+          .slice(pagination.offset, pagination.offset + pagination.limit)
+          .map((entry) => entry.video),
+        total: ranked.length,
+      };
     },
 
     async countVideos(filters = {}) {

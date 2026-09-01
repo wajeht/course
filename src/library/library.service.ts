@@ -270,12 +270,38 @@ export function createLibraryService(
       } = filters ?? {};
       const configuredPageSize = requestedPageSize ?? (await settings.getLibraryPageSize());
       const pageSize = Math.min(100, Math.max(1, configuredPageSize));
-      const totalVideos = await repository.countVideos(videoFilters);
+      const search = videoFilters.query
+        ? {
+            query: videoFilters.query,
+            page: await repository.searchVideos(
+              { ...videoFilters, query: videoFilters.query },
+              { limit: pageSize, offset: (Math.max(1, requestedPage) - 1) * pageSize },
+            ),
+          }
+        : null;
+      const totalVideos = search?.page.total ?? (await repository.countVideos(videoFilters));
       const totalPages = Math.ceil(totalVideos / pageSize);
       const page = totalPages === 0 ? 1 : Math.min(Math.max(1, requestedPage), totalPages);
 
+      let videoRows: Promise<VideoRow[]>;
+      if (!search) {
+        videoRows = repository.listVideos(videoFilters, {
+          limit: pageSize,
+          offset: (page - 1) * pageSize,
+        });
+      } else if (page === Math.max(1, requestedPage)) {
+        videoRows = Promise.resolve(search.page.videos);
+      } else {
+        videoRows = repository
+          .searchVideos(
+            { ...videoFilters, query: search.query },
+            { limit: pageSize, offset: (page - 1) * pageSize },
+          )
+          .then((result) => result.videos);
+      }
+
       const [videos, playlists, authors, tags, continuing, thumbnailLookup] = await Promise.all([
-        repository.listVideos(videoFilters, { limit: pageSize, offset: (page - 1) * pageSize }),
+        videoRows,
         repository.listPlaylists(videoFilters),
         repository.listAuthors(),
         repository.listTags(),
