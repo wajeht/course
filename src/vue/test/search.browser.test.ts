@@ -95,6 +95,10 @@ test("searches videos globally with Command K", async ({ page }) => {
   expect(searchRequest?.searchParams.get("page")).toBe("1");
   expect(searchRequest?.searchParams.get("pageSize")).toBe("20");
 
+  await expect(result).toHaveAttribute("aria-selected", "false");
+  await expect(result).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+
+  await input.press("ArrowDown");
   await expect(result).toHaveAttribute("aria-selected", "true");
   await expect(result).toHaveCSS("background-color", "rgb(41, 49, 60)");
   await expect(result).toHaveCSS("border-left-color", "rgb(213, 139, 59)");
@@ -105,6 +109,9 @@ test("searches videos globally with Command K", async ({ page }) => {
     .getByRole("combobox", { name: "Search videos, authors, playlists, and tags" })
     .fill("memory");
   await expect(result).toBeVisible();
+  await palette
+    .getByRole("combobox", { name: "Search videos, authors, playlists, and tags" })
+    .press("ArrowDown");
 
   await palette
     .getByRole("combobox", { name: "Search videos, authors, playlists, and tags" })
