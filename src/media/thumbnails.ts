@@ -10,6 +10,7 @@ import { z } from "zod";
 import type { Configuration } from "../config.js";
 import { hasErrorCode } from "../errors.js";
 import { logCause, type Logger } from "../logger.js";
+import { ffmpegExecutable } from "./executables.js";
 import { mapLimit } from "./map-limit.js";
 import { resolveContainedPath } from "./path.js";
 import type { VideoRecord } from "./types.js";
@@ -40,7 +41,6 @@ export type ThumbnailGenerator = (
   sourceVideo: string,
   destination: string,
   seekSeconds: number,
-  ffmpegPath: string,
 ) => Promise<void>;
 
 export interface ThumbnailChapter {
@@ -137,11 +137,10 @@ export async function generateThumbnail(
   sourceVideo: string,
   destination: string,
   seekSeconds: number,
-  ffmpegPath: string,
 ): Promise<void> {
   await fs.mkdir(path.dirname(destination), { recursive: true });
   await execFileAsync(
-    ffmpegPath,
+    ffmpegExecutable,
     [
       "-v",
       "error",
@@ -379,18 +378,12 @@ export function createThumbnailCache({
         chapterSeeks.get(video.id) ?? thumbnailSeekSeconds(video.durationSeconds),
         Math.max(0, video.durationSeconds - 1),
       );
-      await generate(
-        source,
-        path.join(stagingDirectory, "poster.jpg"),
-        seekSeconds,
-        configuration.media.ffmpegPath,
-      );
+      await generate(source, path.join(stagingDirectory, "poster.jpg"), seekSeconds);
       for (const [index, startSeconds] of chapterStarts.entries()) {
         await generate(
           source,
           path.join(stagingDirectory, `chapter-${startSeconds}.jpg`),
           chapterThumbnailSeekSeconds(chapterStarts, index, video.durationSeconds),
-          configuration.media.ffmpegPath,
         );
       }
       await fs.rename(stagingDirectory, publishedDirectory);

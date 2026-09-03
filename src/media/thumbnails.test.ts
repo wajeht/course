@@ -154,7 +154,7 @@ describe("thumbnails", () => {
   });
 
   it("reuses a current thumbnail and regenerates when the source changes", async () => {
-    const generate = vi.fn<ThumbnailGenerator>(async (_source, destination, _duration, _ffmpeg) => {
+    const generate = vi.fn<ThumbnailGenerator>(async (_source, destination) => {
       await fs.mkdir(path.dirname(destination), { recursive: true });
       await fs.writeFile(destination, `thumb-${generate.mock.calls.length}`);
     });

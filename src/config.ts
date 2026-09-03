@@ -10,8 +10,6 @@ const environmentSchema = z.object({
   VIDEOS_DIR: z.string().default("/Volumes/plex/videos"),
   DATA_DIR: z.string().default("data"),
   SCAN_INTERVAL_MS: z.coerce.number().int().min(10_000).default(300_000),
-  FFMPEG_PATH: z.string().default("ffmpeg"),
-  FFPROBE_PATH: z.string().default("ffprobe"),
   QSV_DEVICE: z.string().default("/dev/dri/renderD128"),
   SESSION_SECRET: z.string().min(32).optional(),
   AUTH_SETUP_TOKEN: z.string().min(16).optional(),
@@ -46,8 +44,6 @@ export interface Configuration {
     videosDirectory: string;
     dataDirectory: string;
     scanIntervalMs: number;
-    ffmpegPath: string;
-    ffprobePath: string;
     qsvDevice: string;
   };
   database: {
@@ -91,8 +87,6 @@ export function createConfiguration(environment: NodeJS.ProcessEnv = process.env
       videosDirectory,
       dataDirectory,
       scanIntervalMs: parsed.SCAN_INTERVAL_MS,
-      ffmpegPath: parsed.FFMPEG_PATH,
-      ffprobePath: parsed.FFPROBE_PATH,
       qsvDevice: parsed.QSV_DEVICE,
     },
     database: {
