@@ -60,4 +60,25 @@ describe("settings/AccessPage", () => {
     expect(alert.text()).toBe("Password must be at least 15 characters");
     expect(wrapper.get("form").element.firstElementChild).toBe(alert.element);
   });
+
+  it("shows an incorrect current password beneath its field", async () => {
+    const changePassword = vi
+      .fn()
+      .mockRejectedValue(new ApiError("Current password is incorrect", 400));
+    const wrapper = mountAccessPage(changePassword);
+    const inputs = wrapper.findAll('input[type="password"]');
+
+    await inputs[0]?.setValue("wrong-current-password");
+    await inputs[1]?.setValue("a-new-password-long-enough");
+    await inputs[2]?.setValue("a-new-password-long-enough");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    const currentPassword = inputs[0];
+    const error = wrapper.get('[role="alert"]');
+    expect(currentPassword?.attributes("aria-invalid")).toBe("true");
+    expect(currentPassword?.classes()).toContain("border-clay");
+    expect(currentPassword?.attributes("aria-describedby")).toContain(error.attributes("id"));
+    expect(error.text()).toBe("Current password is incorrect");
+  });
 });

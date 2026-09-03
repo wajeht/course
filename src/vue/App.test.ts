@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { createMemoryHistory, createRouter } from "vue-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { ApiError } from "./api.js";
 import App from "./App.vue";
 import AuthPage from "./pages/auth/AuthPage.vue";
 import { authKey, type AuthController } from "./composables/useAuth.js";
@@ -83,6 +84,39 @@ describe("App", () => {
     expect(wrapper.findComponent(AuthPage).exists()).toBe(true);
     expect(wrapper.text()).toContain("Please sign in to continue.");
     expect(wrapper.findComponent(NotFoundPage).exists()).toBe(false);
+  });
+
+  it("attaches an invalid login password error to the password field", async () => {
+    const auth = createUnauthenticatedAuth();
+    auth.login = vi.fn().mockRejectedValue(new ApiError("Invalid password", 401));
+    const wrapper = await mountAt("/settings/library", auth);
+    const password = wrapper.get('input[autocomplete="current-password"]');
+
+    await password.setValue("wrong-password");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    const error = wrapper.get('[role="alert"]');
+    expect(password.attributes("aria-invalid")).toBe("true");
+    expect(password.attributes("aria-describedby")).toContain(error.attributes("id"));
+    expect(error.text()).toBe("Invalid password");
+  });
+
+  it("keeps non-credential login errors above the form fields", async () => {
+    const auth = createUnauthenticatedAuth();
+    auth.login = vi.fn().mockRejectedValue(new Error("Failed to fetch"));
+    const wrapper = await mountAt("/settings/library", auth);
+    const password = wrapper.get('input[autocomplete="current-password"]');
+
+    await password.setValue("a-password");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    const introduction = wrapper.get("form > p");
+    const alert = wrapper.get('[role="alert"]');
+    expect(introduction.element.nextElementSibling).toBe(alert.element);
+    expect(alert.text()).toBe("Could not sign in");
+    expect(password.attributes("aria-invalid")).toBeUndefined();
   });
 
   it("shows frontend errors outside authentication and global overlays", async () => {

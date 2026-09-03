@@ -10,6 +10,7 @@ const props = defineProps<{
   busy: boolean;
   isSetup: boolean;
   message?: string;
+  passwordError?: string;
   setupTokenRequired: boolean;
 }>();
 const emit = defineEmits<{
@@ -51,7 +52,7 @@ function submit(): void {
           : "Please sign in to continue."
       }}
     </p>
-    <AlertMessage v-if="message && isSetup" class="mt-4">
+    <AlertMessage v-if="message" class="mt-4">
       {{ message }}
     </AlertMessage>
     <input
@@ -87,7 +88,7 @@ function submit(): void {
       class="mt-6"
       label="Password"
       :help-text="isSetup ? 'Use at least 15 characters.' : undefined"
-      :error="isSetup ? undefined : message"
+      :error="passwordError"
       required
     >
       <AppInput
