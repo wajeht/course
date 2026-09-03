@@ -20,6 +20,10 @@ const videoIdPattern = /^[a-f0-9]{24}$/;
 
 export const thumbnailCacheVersion = 3;
 
+export function thumbnailsDirectory(dataDirectory: string): string {
+  return path.join(dataDirectory, "thumbnails");
+}
+
 const thumbnailMetaSchema = z.object({
   modifiedAt: z.iso.datetime(),
   sizeBytes: z.number().int().nonnegative(),
@@ -168,7 +172,7 @@ export function createThumbnailCache({
   logger: Logger;
   generate?: ThumbnailGenerator;
 }): ThumbnailCache {
-  const directory = configuration.media.thumbnailsDirectory;
+  const directory = thumbnailsDirectory(configuration.media.dataDirectory);
   const metas = new Map<string, ThumbnailMeta>();
   const locks = new Map<string, Promise<unknown>>();
   const jobs = new Map<string, ThumbnailRegenerationStatus>();

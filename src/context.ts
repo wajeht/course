@@ -46,12 +46,7 @@ export async function createContext(
   configuration: Configuration = defaultConfiguration,
 ): Promise<AppContext> {
   const logger = createLogger();
-  await Promise.all([
-    fs.mkdir(configuration.media.dataDirectory, { recursive: true }),
-    fs.mkdir(configuration.media.hlsDirectory, { recursive: true }),
-    fs.mkdir(configuration.media.playlistCoversDirectory, { recursive: true }),
-    fs.mkdir(configuration.media.thumbnailsDirectory, { recursive: true }),
-  ]);
+  await fs.mkdir(configuration.media.dataDirectory, { recursive: true });
   const database = await createDatabase(configuration, logger);
   const auth = createAuthService(createAuthRepository(database.connection), configuration);
   const scannerLibraryRepository = createLibraryRepository(database.connection);

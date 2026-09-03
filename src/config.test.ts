@@ -9,12 +9,6 @@ describe("createConfiguration", () => {
     const configuration = createConfiguration({ APP_ENV: "development" });
 
     expect(configuration.media.dataDirectory).toBe(path.resolve("data"));
-    expect(configuration.media.thumbnailsDirectory).toBe(
-      path.join(path.resolve("data"), "thumbnails"),
-    );
-    expect(configuration.media.playlistCoversDirectory).toBe(
-      path.join(path.resolve("data"), "playlist-covers"),
-    );
     expect(configuration.media.videosDirectory).toBe("/Volumes/plex/videos");
     expect(configuration.app.port).toBe(80);
     expect(configuration.app.vuePort).toBe(3000);

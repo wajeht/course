@@ -20,6 +20,10 @@ const playlistIdPattern = /^[a-f0-9]{24}$/;
 
 export const playlistCoverCacheVersion = 1;
 
+export function playlistCoversDirectory(dataDirectory: string): string {
+  return path.join(dataDirectory, "playlist-covers");
+}
+
 const playlistCoverMetaSchema = z.object({
   sourcePath: z.string().min(1),
   modifiedAt: z.iso.datetime(),
@@ -93,7 +97,7 @@ export function createPlaylistCoverCache({
   logger: Logger;
   generate?: PlaylistCoverGenerator;
 }): PlaylistCoverCache {
-  const directory = configuration.media.playlistCoversDirectory;
+  const directory = playlistCoversDirectory(configuration.media.dataDirectory);
   const metas = new Map<string, PlaylistCoverMeta>();
   const locks = new Map<string, Promise<unknown>>();
   let loaded = false;

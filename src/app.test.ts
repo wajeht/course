@@ -5,10 +5,15 @@ import { describe, expect, it, vi } from "vitest";
 
 import { createApp } from "./app.js";
 import { createConfiguration } from "./config.js";
-import { conversionPlaylistFilename } from "./media/conversion.js";
-import { playlistCoverPath } from "./media/playlist-covers.js";
+import { conversionPlaylistFilename, hlsDirectory } from "./media/conversion.js";
+import { playlistCoverPath, playlistCoversDirectory } from "./media/playlist-covers.js";
 import { createTemporaryDirectory, createTestContext } from "./test/resources.js";
-import { chapterThumbnailPath, thumbnailCacheVersion, thumbnailPath } from "./media/thumbnails.js";
+import {
+  chapterThumbnailPath,
+  thumbnailCacheVersion,
+  thumbnailPath,
+  thumbnailsDirectory,
+} from "./media/thumbnails.js";
 
 describe("application", () => {
   it("serves health, byte ranges, and production routes", async () => {
@@ -145,9 +150,12 @@ describe("application", () => {
     expect(await response.text()).toBe("2345");
     expect(logInfo).not.toHaveBeenCalled();
 
-    const hlsDirectory = path.join(configuration.media.hlsDirectory, "b".repeat(24));
-    await fs.mkdir(hlsDirectory, { recursive: true });
-    await fs.writeFile(path.join(hlsDirectory, conversionPlaylistFilename), "#EXTM3U");
+    const videoHlsDirectory = path.join(
+      hlsDirectory(configuration.media.dataDirectory),
+      "b".repeat(24),
+    );
+    await fs.mkdir(videoHlsDirectory, { recursive: true });
+    await fs.writeFile(path.join(videoHlsDirectory, conversionPlaylistFilename), "#EXTM3U");
     const hls = await app.request(`/hls/${"b".repeat(24)}/${conversionPlaylistFilename}`, {
       headers: { cookie: cookie! },
     });
@@ -163,7 +171,7 @@ describe("application", () => {
 
     const playlistRevision = 456;
     const optimizedPlaylistCover = playlistCoverPath(
-      configuration.media.playlistCoversDirectory,
+      playlistCoversDirectory(configuration.media.dataDirectory),
       "a".repeat(24),
       playlistRevision,
     );
@@ -185,21 +193,28 @@ describe("application", () => {
     const revision = 123;
     const videoId = "b".repeat(24);
     await fs.mkdir(
-      path.dirname(thumbnailPath(configuration.media.thumbnailsDirectory, videoId, revision)),
+      path.dirname(
+        thumbnailPath(thumbnailsDirectory(configuration.media.dataDirectory), videoId, revision),
+      ),
       {
         recursive: true,
       },
     );
     await fs.writeFile(
-      thumbnailPath(configuration.media.thumbnailsDirectory, videoId, revision),
+      thumbnailPath(thumbnailsDirectory(configuration.media.dataDirectory), videoId, revision),
       "thumb",
     );
     await fs.writeFile(
-      chapterThumbnailPath(configuration.media.thumbnailsDirectory, videoId, revision, 0),
+      chapterThumbnailPath(
+        thumbnailsDirectory(configuration.media.dataDirectory),
+        videoId,
+        revision,
+        0,
+      ),
       "chapter-thumb",
     );
     await fs.writeFile(
-      path.join(configuration.media.thumbnailsDirectory, videoId, "current.json"),
+      path.join(thumbnailsDirectory(configuration.media.dataDirectory), videoId, "current.json"),
       JSON.stringify({
         modifiedAt: now,
         sizeBytes: 10,

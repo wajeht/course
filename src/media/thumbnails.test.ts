@@ -13,6 +13,7 @@ import {
   createThumbnailCache,
   thumbnailPath,
   thumbnailSeekSeconds,
+  thumbnailsDirectory,
   type ThumbnailGenerator,
 } from "./thumbnails.js";
 import type { VideoRecord } from "./types.js";
@@ -102,7 +103,7 @@ describe("thumbnails", () => {
     await expect(
       fs.readFile(
         thumbnailPath(
-          configuration.media.thumbnailsDirectory,
+          thumbnailsDirectory(configuration.media.dataDirectory),
           videoA,
           thumbnails.revisions.get(videoA)!,
         ),
@@ -112,7 +113,7 @@ describe("thumbnails", () => {
     await expect(
       fs.readFile(
         thumbnailPath(
-          configuration.media.thumbnailsDirectory,
+          thumbnailsDirectory(configuration.media.dataDirectory),
           videoB,
           thumbnails.revisions.get(videoB)!,
         ),
@@ -142,7 +143,7 @@ describe("thumbnails", () => {
     await expect(
       fs.readFile(
         chapterThumbnailPath(
-          configuration.media.thumbnailsDirectory,
+          thumbnailsDirectory(configuration.media.dataDirectory),
           videoA,
           index.revisions.get(videoA)!,
           130,
@@ -180,7 +181,7 @@ describe("thumbnails", () => {
     await cache.synchronize([video], chapters);
     const firstIndex = await cache.listThumbnailIndex();
     const chapterPath = chapterThumbnailPath(
-      configuration.media.thumbnailsDirectory,
+      thumbnailsDirectory(configuration.media.dataDirectory),
       videoA,
       firstIndex.revisions.get(videoA)!,
       30,
@@ -193,7 +194,7 @@ describe("thumbnails", () => {
     await expect(
       fs.access(
         chapterThumbnailPath(
-          configuration.media.thumbnailsDirectory,
+          thumbnailsDirectory(configuration.media.dataDirectory),
           videoA,
           secondIndex.revisions.get(videoA)!,
           30,
@@ -240,7 +241,7 @@ describe("thumbnails", () => {
     await expect(
       fs.readFile(
         thumbnailPath(
-          configuration.media.thumbnailsDirectory,
+          thumbnailsDirectory(configuration.media.dataDirectory),
           videoA,
           before.revisions.get(videoA)!,
         ),
@@ -255,9 +256,11 @@ describe("thumbnails", () => {
       await fs.writeFile(destination, "thumb");
     });
     const { configuration } = await createCache();
-    await fs.mkdir(path.join(configuration.media.thumbnailsDirectory, videoA), { recursive: true });
+    await fs.mkdir(path.join(thumbnailsDirectory(configuration.media.dataDirectory), videoA), {
+      recursive: true,
+    });
     await fs.writeFile(
-      path.join(configuration.media.thumbnailsDirectory, videoA, "current.json"),
+      path.join(thumbnailsDirectory(configuration.media.dataDirectory), videoA, "current.json"),
       JSON.stringify({ version: 3, chapterStarts: "invalid" }),
     );
     const cache = createThumbnailCache({ configuration, logger: createLogger(), generate });
@@ -319,7 +322,7 @@ describe("thumbnails", () => {
     await expect(
       fs.access(
         thumbnailPath(
-          configuration.media.thumbnailsDirectory,
+          thumbnailsDirectory(configuration.media.dataDirectory),
           videoB,
           before.revisions.get(videoB)!,
         ),
