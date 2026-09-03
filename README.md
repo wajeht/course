@@ -29,9 +29,9 @@ The filesystem is the source of truth:
 - One nested folder inside a playlist is a playlist section.
 - Deeper folders are ignored and reported during scans.
 - Number prefixes set natural order and are removed from display titles.
-- Playlist cards use `cover.jpg` or `playlist.jpg` in the playlist folder, or a `cover` path in `playlist.json`. Otherwise they use the first video’s generated thumbnail.
+- Playlist cards use `cover.jpg` or `playlist.jpg` in the playlist folder, or a `cover` path in `playlist.json`. The app serves an optimized 640×360 JPEG copy from the data directory; otherwise it uses the first video’s generated thumbnail.
 - Individual videos use generated posters and chapter thumbnails.
-- Generated posters are stored in the data directory. The video folder is never changed.
+- Generated images are stored in the data directory. Source files in the video folder are never changed.
 
 Supported video files include MP4, M4V, MKV, WebM, MOV, AVI, MPEG, and MPG. The app watches the folder and also supports manual and scheduled scans.
 

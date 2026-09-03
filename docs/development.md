@@ -4,7 +4,7 @@
 
 - Node.js 24+
 - npm 11+
-- FFmpeg and FFprobe
+- FFmpeg and FFprobe available through `PATH`
 - Intel Quick Sync device access when re-encoding incompatible video streams on Linux
   (CPU video fallback is disabled)
 
@@ -22,7 +22,7 @@ npm run dev
 
 Open <http://localhost>. Hono listens on port 80 and proxies the development Vue client running internally on port 3000.
 
-Without `.env`, local commands use `/Volumes/plex/videos` and store the SQLite database, conversion cache, and generated thumbnails in `./data`. Change those paths in `.env` on another machine. `DATA_DIR` must be outside `VIDEOS_DIR` so app writes cannot trigger library scans. The video directory itself is never changed.
+Without `.env`, local commands use `/Volumes/plex/videos` and store the SQLite database, HLS conversion files, generated video thumbnails, and optimized playlist covers in `./data`. Change `VIDEOS_DIR` and `DATA_DIR` in `.env` on another machine. `DATA_DIR` must be outside `VIDEOS_DIR` so app writes cannot trigger library scans. The video directory itself is never changed.
 
 The development database uses one bootstrap migration. After changing the schema, recreate the SQLite database instead of adding upgrade migrations.
 
@@ -53,7 +53,7 @@ Build and start the development stack:
 make up
 ```
 
-Open <http://localhost>. Source files are bind-mounted into the container, and the API and Vue development servers reload as files change. The SQLite database and conversion cache remain under `./data`.
+Open <http://localhost>. Source files are bind-mounted into the container, and the API and Vue development servers reload as files change. The SQLite database and generated media caches remain under `./data`.
 
 Common commands run inside the development container:
 
