@@ -46,6 +46,38 @@ describe("settings/LibraryPage", () => {
 
   afterEach(() => vi.restoreAllMocks());
 
+  it("shows placeholders until the library status loads", async () => {
+    let resolveScanStatus!: (value: Awaited<ReturnType<typeof api.getScanStatus>>) => void;
+    vi.mocked(api.getScanStatus).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveScanStatus = resolve;
+      }),
+    );
+    const wrapper = mountLibraryPage();
+
+    const statusGrid = wrapper.get('[aria-busy="true"]');
+    expect(statusGrid.text()).toContain("Loading library status");
+    expect(statusGrid.get("[data-library-status-skeleton]").attributes("aria-hidden")).toBe("true");
+    expect(statusGrid.get("[data-last-refresh-skeleton]").attributes("aria-hidden")).toBe("true");
+    expect(statusGrid.get("[data-last-refresh]").text()).toContain("Last refreshed");
+
+    resolveScanStatus({
+      completedAt: "2026-08-12T00:00:00.000Z",
+      playlistCount: 12,
+      error: null,
+      videoCount: 215,
+      startedAt: "2026-08-12T00:00:00.000Z",
+      status: "complete",
+      warnings: [],
+    });
+    await flushPromises();
+
+    expect(wrapper.find("[data-library-status-skeleton]").exists()).toBe(false);
+    expect(wrapper.find("[data-last-refresh-skeleton]").exists()).toBe(false);
+    expect(wrapper.get("[data-library-status]").text()).toContain("12 playlists · 215 videos");
+    expect(wrapper.get("[data-last-refresh]").get("time").text()).not.toBe("");
+  });
+
   it("renders library status without display settings", async () => {
     const wrapper = mountLibraryPage();
     await flushPromises();

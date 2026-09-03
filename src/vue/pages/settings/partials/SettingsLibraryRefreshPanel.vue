@@ -16,6 +16,7 @@ const queryClient = useQueryClient();
 const scanRequest = useQuery(scanStatusQueryOptions());
 const toast = useToast();
 const scanStatus = computed(() => scanRequest.data.value);
+const loadingScanStatus = computed(() => scanRequest.isPending.value);
 const lastRefreshText = computed(() => {
   const completedAt = scanStatus.value?.completedAt;
   if (!completedAt) return "";
@@ -77,10 +78,22 @@ async function rescanLibrary(): Promise<void> {
       data-scan-controls
     >
       <div class="min-w-0">
-        <div class="grid gap-6" aria-live="polite">
+        <div
+          class="grid gap-6"
+          :aria-busy="loadingScanStatus ? 'true' : undefined"
+          aria-live="polite"
+        >
+          <span v-if="loadingScanStatus" class="sr-only">Loading library status</span>
           <div data-library-status>
             <p class="text-xs font-bold tracking-[.08em] text-pine uppercase">Library status</p>
             <p
+              v-if="loadingScanStatus"
+              class="mt-2 h-5 w-44 max-w-full animate-pulse rounded bg-mist motion-reduce:animate-none"
+              aria-hidden="true"
+              data-library-status-skeleton
+            />
+            <p
+              v-else
               class="mt-2 text-sm"
               :class="{
                 'font-semibold text-clay': scanStatus?.status === 'failed',
@@ -104,12 +117,22 @@ async function rescanLibrary(): Promise<void> {
             </p>
           </div>
 
-          <div v-if="scanStatus?.completedAt" data-last-refresh>
+          <div v-if="loadingScanStatus || scanStatus?.completedAt" data-last-refresh>
             <p class="text-xs font-bold tracking-[.08em] text-pine uppercase">
-              <template v-if="scanStatus.status === 'failed'">Last refresh attempt</template>
+              <template v-if="scanStatus?.status === 'failed'">Last refresh attempt</template>
               <template v-else>Last refreshed</template>
             </p>
-            <time class="mt-2 block text-sm text-muted" :datetime="scanStatus.completedAt">
+            <div
+              v-if="loadingScanStatus"
+              class="mt-2 h-5 w-36 max-w-full animate-pulse rounded bg-mist motion-reduce:animate-none"
+              aria-hidden="true"
+              data-last-refresh-skeleton
+            />
+            <time
+              v-else-if="scanStatus?.completedAt"
+              class="mt-2 block text-sm text-muted"
+              :datetime="scanStatus.completedAt"
+            >
               {{ lastRefreshText }}
             </time>
           </div>
