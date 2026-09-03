@@ -5,6 +5,7 @@ import type { AppType } from "../app";
 import type {
   ChapterDto,
   LibraryFilters,
+  LibraryView,
   LibraryService,
   PlaylistDetailDto,
   VideoDto,
@@ -34,6 +35,7 @@ export type {
   ChapterDto,
   LibraryFilters,
   LibraryPageSize,
+  LibraryView,
   PlaybackResult,
   PlaylistDetailDto,
   ScanStatus,

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, shallowRef } from "vue";
 
-import type { LibraryDto, LibraryPageSize } from "@/api.js";
+import type { LibraryDto, LibraryPageSize, LibraryView } from "@/api.js";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppDrawer from "@/components/ui/AppDrawer.vue";
 import AppInput from "@/components/ui/AppInput.vue";
@@ -23,12 +23,12 @@ const emit = defineEmits<{
   clear: [];
   prefetch: [name: "author" | "tag", selection: string[]];
   prefetchPageSize: [pageSize: LibraryPageSize];
-  prefetchView: [view: "videos" | "playlists"];
+  prefetchView: [view: LibraryView];
 }>();
 const author = defineModel<string[]>("author", { required: true });
 const query = defineModel<string>("query", { required: true });
 const tag = defineModel<string[]>("tag", { required: true });
-const view = defineModel<string>("view", { required: true });
+const view = defineModel<LibraryView>("view", { required: true });
 const pageSize = defineModel<LibraryPageSize>("pageSize", { required: true });
 
 const activeMobilePanel = shallowRef<FilterType | null>(null);

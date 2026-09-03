@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import type { LibraryView } from "@/api.js";
+
 withDefaults(defineProps<{ hideLabel?: boolean; name?: string }>(), {
   hideLabel: false,
   name: "library-playlist",
 });
-const emit = defineEmits<{ prefetch: [view: "videos" | "playlists"] }>();
-const selected = defineModel<string>({ required: true });
+const emit = defineEmits<{ prefetch: [view: LibraryView] }>();
+const selected = defineModel<LibraryView>({ required: true });
 </script>
 
 <template>

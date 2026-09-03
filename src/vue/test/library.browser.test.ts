@@ -19,10 +19,11 @@ async function authenticate(page: Page): Promise<void> {
 test("uses responsive library filters and a mobile drawer", async ({ page }) => {
   await authenticate(page);
   await page.route("**/api/library**", async (route) => {
+    const playlistView = new URL(route.request().url()).searchParams.get("view") === "playlists";
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        authors: [{ count: 1, name: "Example Author" }],
+        authors: [{ count: playlistView ? 2 : 32, name: "Example Author" }],
         continueWatching: [],
         pagination: { page: 1, pageSize: 24, totalPages: 1, totalVideos: 1 },
         playlists: [
@@ -41,7 +42,7 @@ test("uses responsive library filters and a mobile drawer", async ({ page }) => 
             videoCount: 1,
           },
         ],
-        tags: [{ count: 1, name: "Example Tag" }],
+        tags: [{ count: playlistView ? 3 : 100, name: "Example Tag" }],
         videos: [
           {
             authors: ["Example Author"],
@@ -115,7 +116,7 @@ test("uses responsive library filters and a mobile drawer", async ({ page }) => 
   await expect(authorButton).toBeFocused();
 
   await authorButton.click();
-  await drawer.getByRole("checkbox", { name: "Example Author (1)" }).check();
+  await drawer.getByRole("checkbox", { name: "Example Author (32)" }).check();
   await expect(page).toHaveURL(/author=Example(?:\+|%20)Author/);
   await expect(authorButton).toHaveCSS("background-color", "rgb(41, 49, 60)");
   await expect(authorButton).toHaveCSS("color", "rgb(255, 255, 255)");
@@ -135,9 +136,16 @@ test("uses responsive library filters and a mobile drawer", async ({ page }) => 
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect(search).toBeHidden();
   await expect(actions).toBeHidden();
-  await expect(page.getByRole("group", { name: "Authors" })).toBeVisible();
+  const desktopAuthors = page.getByRole("group", { name: "Authors" });
+  const desktopTags = page.getByRole("group", { name: "Tags" });
+  await expect(desktopAuthors).toBeVisible();
   await expect(page.getByRole("group", { name: "Videos per page" })).toBeVisible();
   await expect(page.locator('input[name="library-desktop-page-size"][value="24"]')).toBeChecked();
+
+  await page.locator('input[name="library-desktop-view"][value="playlists"]').check();
+  await expect(page).toHaveURL(/view=playlists/);
+  await expect(desktopAuthors.getByRole("checkbox", { name: "Example Author (2)" })).toBeVisible();
+  await expect(desktopTags.getByRole("checkbox", { name: "Example Tag (3)" })).toBeVisible();
 });
 
 test("loads more videos on mobile and keeps the page in the URL", async ({ page }) => {
