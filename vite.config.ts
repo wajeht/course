@@ -46,7 +46,6 @@ export default defineConfig({
     outDir: "../../dist/client",
     copyPublicDir: true,
     emptyOutDir: true,
-    sourcemap: true,
   },
   test: {
     root: projectRoot,

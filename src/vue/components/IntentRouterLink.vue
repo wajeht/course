@@ -1,8 +1,6 @@
 <script setup lang="ts" generic="TPrefetchResult">
 import { RouterLink, type RouteLocationRaw } from "vue-router";
 
-import { useIntentPrefetch } from "@/composables/useIntentPrefetch.js";
-
 defineOptions({ inheritAttrs: false });
 
 const props = defineProps<{
@@ -10,18 +8,18 @@ const props = defineProps<{
   to: RouteLocationRaw;
 }>();
 
-const intent = useIntentPrefetch(() => {
+function prefetchRoute(): void {
   void props.prefetch().catch(() => undefined);
-});
+}
 </script>
 
 <template>
   <RouterLink
     v-bind="$attrs"
     :to="to"
-    @pointerenter="intent.run"
-    @focus="intent.run"
-    @pointerdown="intent.run"
+    @pointerenter="prefetchRoute"
+    @focus="prefetchRoute"
+    @pointerdown="prefetchRoute"
   >
     <slot />
   </RouterLink>

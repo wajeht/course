@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useIntentPrefetch } from "@/composables/useIntentPrefetch.js";
 import AppButton from "./AppButton.vue";
 
 const props = defineProps<{
@@ -9,12 +8,12 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{ change: [page: number]; prefetch: [page: number] }>();
-const previousIntent = useIntentPrefetch(() => {
+function prefetchPrevious(): void {
   if (!props.disabled && props.page > 1) emit("prefetch", props.page - 1);
-});
-const nextIntent = useIntentPrefetch(() => {
+}
+function prefetchNext(): void {
   if (!props.disabled && props.page < props.totalPages) emit("prefetch", props.page + 1);
-});
+}
 </script>
 
 <template>
@@ -22,9 +21,9 @@ const nextIntent = useIntentPrefetch(() => {
     <AppButton
       variant="secondary"
       :disabled="page <= 1 || disabled"
-      @pointerenter="previousIntent.run"
-      @focus="previousIntent.run"
-      @pointerdown="previousIntent.run"
+      @pointerenter="prefetchPrevious"
+      @focus="prefetchPrevious"
+      @pointerdown="prefetchPrevious"
       @click="$emit('change', page - 1)"
     >
       Previous
@@ -33,9 +32,9 @@ const nextIntent = useIntentPrefetch(() => {
     <AppButton
       variant="secondary"
       :disabled="page >= totalPages || disabled"
-      @pointerenter="nextIntent.run"
-      @focus="nextIntent.run"
-      @pointerdown="nextIntent.run"
+      @pointerenter="prefetchNext"
+      @focus="prefetchNext"
+      @pointerdown="prefetchNext"
       @click="$emit('change', page + 1)"
     >
       Next
