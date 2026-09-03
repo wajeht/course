@@ -25,6 +25,19 @@ describe("AuthPage", () => {
     expect(wrapper.text()).not.toContain("Use at least 15 characters.");
   });
 
+  it("shows sign-in errors beneath the invalid password field", () => {
+    const wrapper = mount(AuthPage, {
+      props: { ...baseProps, passwordConfigured: true, message: "Invalid password" },
+    });
+    const password = wrapper.get('input[autocomplete="current-password"]');
+    const error = wrapper.get('[role="alert"]');
+
+    expect(password.attributes("aria-invalid")).toBe("true");
+    expect(password.classes()).toContain("border-clay");
+    expect(password.attributes("aria-describedby")).toContain(error.attributes("id"));
+    expect(error.text()).toBe("Invalid password");
+  });
+
   it("shows the project link and current app version", () => {
     const wrapper = mount(AuthPage, {
       props: { ...baseProps, passwordConfigured: true },
@@ -44,6 +57,24 @@ describe("AuthPage", () => {
     expect(wrapper.get('input[autocomplete="new-password"]').attributes("minlength")).toBe("15");
     expect(wrapper.text()).toContain("Use at least 15 characters.");
     expect(wrapper.text()).toContain("Set up your library");
+  });
+
+  it("shows general setup errors directly beneath the introduction", () => {
+    const wrapper = mount(AuthPage, {
+      props: {
+        ...baseProps,
+        passwordConfigured: false,
+        message: "Password must be at least 15 characters",
+      },
+    });
+    const introduction = wrapper.get("form > p");
+    const alert = wrapper.get('[role="alert"]');
+
+    expect(introduction.text()).toBe(
+      "Create the password that protects your private video library.",
+    );
+    expect(introduction.element.nextElementSibling).toBe(alert.element);
+    expect(alert.text()).toBe("Password must be at least 15 characters");
   });
 
   it("explains the setup token", () => {

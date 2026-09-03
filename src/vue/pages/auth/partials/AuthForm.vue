@@ -51,6 +51,9 @@ function submit(): void {
           : "Please sign in to continue."
       }}
     </p>
+    <AlertMessage v-if="message && isSetup" class="mt-4">
+      {{ message }}
+    </AlertMessage>
     <input
       class="sr-only"
       name="username"
@@ -84,6 +87,7 @@ function submit(): void {
       class="mt-6"
       label="Password"
       :help-text="isSetup ? 'Use at least 15 characters.' : undefined"
+      :error="isSetup ? undefined : message"
       required
     >
       <AppInput
@@ -120,10 +124,6 @@ function submit(): void {
         required
       />
     </FormField>
-
-    <AlertMessage v-if="message" class="mt-4">
-      {{ message }}
-    </AlertMessage>
 
     <AppButton
       class="mt-6"
