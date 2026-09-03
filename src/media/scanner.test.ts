@@ -7,6 +7,7 @@ import { createConfiguration } from "../config.js";
 import { createLogger } from "../logger.js";
 import { createTemporaryDirectory, createTestDatabase } from "../test/resources.js";
 import { createLibraryRepository } from "./library.repository.js";
+import { createPlaylistCoverCache, playlistCoverPath } from "./playlist-covers.js";
 import type { VideoProbe } from "./probe.js";
 import { createScanner } from "./scanner.js";
 import { createThumbnailCache, thumbnailPath } from "./thumbnails.js";
@@ -253,6 +254,48 @@ describe("media scanner", () => {
         "utf8",
       ),
     ).resolves.toBe("generated");
+  });
+
+  it("generates optimized playlist covers during a scan", async () => {
+    const { root, dataDirectory } = await createScannerDirectories();
+    const playlistDirectory = path.join(root, "Playlist");
+    await fs.mkdir(playlistDirectory);
+    await fs.writeFile(path.join(playlistDirectory, "cover.jpg"), "source-cover");
+    await fs.writeFile(path.join(playlistDirectory, "Video.mp4"), "video");
+    const configuration = createConfiguration({
+      APP_ENV: "testing",
+      VIDEOS_DIR: root,
+      DATA_DIR: dataDirectory,
+    });
+    const database = await createTestDatabase(configuration);
+    const generate = vi.fn(async (_source: string, destination: string) => {
+      await fs.mkdir(path.dirname(destination), { recursive: true });
+      await fs.writeFile(destination, "optimized-cover");
+    });
+    const playlistCovers = createPlaylistCoverCache({
+      configuration,
+      logger: createLogger(),
+      generate,
+    });
+    const scanner = createScanner({
+      configuration,
+      repository: createLibraryRepository(database.connection),
+      logger: createLogger(),
+      probe: async (filename) => probeResult((await fs.stat(filename)).size),
+      playlistCovers,
+    });
+
+    await scanner.scanLibrary();
+    const playlist = await database.connection("playlists").select("id").first();
+    const revision = (await playlistCovers.listPlaylistCoverIndex()).revisions.get(playlist.id)!;
+
+    expect(generate).toHaveBeenCalledOnce();
+    await expect(
+      fs.readFile(
+        playlistCoverPath(configuration.media.playlistCoversDirectory, playlist.id, revision),
+        "utf8",
+      ),
+    ).resolves.toBe("optimized-cover");
   });
 
   it("preserves skipped videos and invalidates conversions only when media changes", async () => {

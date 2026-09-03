@@ -47,6 +47,7 @@ export interface Configuration {
     videosDirectory: string;
     dataDirectory: string;
     hlsDirectory: string;
+    playlistCoversDirectory: string;
     thumbnailsDirectory: string;
     scanIntervalMs: number;
     ffmpegPath: string;
@@ -95,6 +96,7 @@ export function createConfiguration(environment: NodeJS.ProcessEnv = process.env
       videosDirectory,
       dataDirectory,
       hlsDirectory: path.join(dataDirectory, "hls"),
+      playlistCoversDirectory: path.join(dataDirectory, "playlist-covers"),
       thumbnailsDirectory: path.join(dataDirectory, "thumbnails"),
       scanIntervalMs: parsed.SCAN_INTERVAL_MS,
       ffmpegPath: parsed.FFMPEG_PATH,

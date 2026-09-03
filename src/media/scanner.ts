@@ -10,6 +10,7 @@ import type { LibraryRepository, RootEntryOrder } from "./library.repository.js"
 import { normalizeMetadataName } from "./metadata.js";
 import { displayName, naturalOrder } from "./names.js";
 import { posixPath } from "./path.js";
+import type { PlaylistCoverCache } from "./playlist-covers.js";
 import { readPlaylistMetadata, type PlaylistMetadata } from "./playlist-metadata.js";
 import { probeVideo, videoExtensions, type VideoProbe } from "./probe.js";
 import type { ThumbnailCache } from "./thumbnails.js";
@@ -53,6 +54,7 @@ export interface ScannerDependencies {
   logger: Logger;
   probe?: (filename: string, ffprobePath: string) => Promise<VideoProbe>;
   watchDirectory?: WatchDirectory;
+  playlistCovers?: PlaylistCoverCache;
   thumbnails?: ThumbnailCache;
 }
 
@@ -90,6 +92,7 @@ export function createScanner({
   logger,
   probe = probeVideo,
   watchDirectory = watch,
+  playlistCovers,
   thumbnails,
 }: ScannerDependencies): Scanner {
   let activeSynchronization: Promise<void> | null = null;
@@ -185,6 +188,15 @@ export function createScanner({
     }
   }
 
+  async function synchronizePlaylistCovers(): Promise<void> {
+    if (!playlistCovers) return;
+    try {
+      await playlistCovers.synchronize(await repository.getPlaylists());
+    } catch (error) {
+      logger.warn("Playlist cover synchronization failed", { error: logCause(error) });
+    }
+  }
+
   async function scanOnce(entryPaths?: string[]): Promise<ScanStatus> {
     const startedAt = new Date().toISOString();
     const scanWarnings: ScanWarning[] = [];
@@ -205,7 +217,7 @@ export function createScanner({
         repository.getVideos(),
       ]);
       await synchronizeSnapshot(entryPaths, scanWarnings, existingVideos, entries);
-      await synchronizeThumbnails();
+      await Promise.all([synchronizePlaylistCovers(), synchronizeThumbnails()]);
 
       const counts = await repository.getLibraryCounts();
       const complete: ScanStatus = {

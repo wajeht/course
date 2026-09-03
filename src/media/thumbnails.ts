@@ -10,6 +10,7 @@ import { z } from "zod";
 import type { Configuration } from "../config.js";
 import { hasErrorCode } from "../errors.js";
 import { logCause, type Logger } from "../logger.js";
+import { mapLimit } from "./map-limit.js";
 import { resolveContainedPath } from "./path.js";
 import type { VideoRecord } from "./types.js";
 
@@ -486,18 +487,4 @@ export function createThumbnailCache({
 function sameNumberList(left: number[], right: number[]): boolean {
   if (left.length !== right.length) return false;
   return left.every((value, index) => value === right[index]);
-}
-
-async function mapLimit<T>(
-  items: T[],
-  limit: number,
-  worker: (item: T) => Promise<void>,
-): Promise<void> {
-  const executing = new Set<Promise<void>>();
-  for (const item of items) {
-    const pending = worker(item).finally(() => executing.delete(pending));
-    executing.add(pending);
-    if (executing.size >= limit) await Promise.race(executing);
-  }
-  await Promise.all(executing);
 }
