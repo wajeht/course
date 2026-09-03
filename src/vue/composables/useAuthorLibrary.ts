@@ -3,7 +3,7 @@ import { computed, readonly, shallowRef, toRef, watch, type MaybeRefOrGetter } f
 import { useRoute, useRouter } from "vue-router";
 
 import { api, apiErrorMessage, type LibraryDto } from "@/api.js";
-import { libraryImageUrls, prepareImagePrefetch } from "@/imagePrefetch.js";
+import { useDestinationPrefetch } from "@/composables/useDestinationPrefetch.js";
 import { libraryQueryOptions } from "@/queries.js";
 import { notFoundLocation } from "@/router.js";
 import { setPageTitle } from "@/utils.js";
@@ -12,6 +12,7 @@ export function useAuthorLibrary(accumulatePages: MaybeRefOrGetter<boolean>) {
   const route = useRoute();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { prefetchLibrary } = useDestinationPrefetch();
   const accumulatePagesRef = toRef(accumulatePages);
   const authorName = computed(() => String(route.params.authorName));
   const page = computed(() => {
@@ -62,11 +63,10 @@ export function useAuthorLibrary(accumulatePages: MaybeRefOrGetter<boolean>) {
   }
 
   function prefetchPage(nextPage: number): void {
-    const prefetchTargetImages = prepareImagePrefetch();
-    void queryClient
-      .fetchQuery(libraryQueryOptions({ author: [authorName.value], page: Math.max(1, nextPage) }))
-      .then((result) => prefetchTargetImages(libraryImageUrls(result, "author")))
-      .catch(() => undefined);
+    void prefetchLibrary(
+      { author: [authorName.value], page: Math.max(1, nextPage) },
+      "author",
+    ).catch(() => undefined);
   }
 
   async function loadMore(): Promise<void> {

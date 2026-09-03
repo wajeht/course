@@ -17,8 +17,8 @@ import {
   type LibraryFilters,
   type LibraryPageSize,
 } from "@/api.js";
+import { useDestinationPrefetch } from "@/composables/useDestinationPrefetch.js";
 import { libraryQueryOptions } from "@/queries.js";
-import { libraryImageUrls, prepareImagePrefetch } from "@/imagePrefetch.js";
 
 function strings(value: LocationQueryValue | LocationQueryValue[] | undefined): string[] {
   if (value === undefined) return [];
@@ -48,6 +48,7 @@ export function useLibraryBrowser(options: UseLibraryBrowserOptions = {}) {
   const route = useRoute();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { prefetchLibrary } = useDestinationPrefetch();
   const accumulatePagesRef = toRef(accumulatePages);
   const pageSizeRef = toRef(pageSize);
   const routeSearch = computed(() => {
@@ -194,11 +195,11 @@ export function useLibraryBrowser(options: UseLibraryBrowserOptions = {}) {
   }
 
   function prefetchPage(nextPage: number): void {
-    prefetchLibrary({ ...filters.value, page: Math.max(1, nextPage) }, selectedView.value);
+    prefetchDestination({ ...filters.value, page: Math.max(1, nextPage) }, selectedView.value);
   }
 
   function prefetchFilter(name: "author" | "tag", selection: string[]): void {
-    prefetchLibrary(
+    prefetchDestination(
       {
         ...filters.value,
         [name]: selection.length ? selection : undefined,
@@ -208,19 +209,15 @@ export function useLibraryBrowser(options: UseLibraryBrowserOptions = {}) {
   }
 
   function prefetchPageSize(nextPageSize: LibraryPageSize): void {
-    prefetchLibrary({ ...filters.value, pageSize: nextPageSize }, selectedView.value);
+    prefetchDestination({ ...filters.value, pageSize: nextPageSize }, selectedView.value);
   }
 
   function prefetchView(view: "videos" | "playlists"): void {
-    prefetchLibrary(filters.value, view);
+    prefetchDestination(filters.value, view);
   }
 
-  function prefetchLibrary(nextFilters: LibraryFilters, view: "videos" | "playlists"): void {
-    const prefetchTargetImages = prepareImagePrefetch();
-    void queryClient
-      .fetchQuery(libraryQueryOptions(nextFilters, api))
-      .then((result) => prefetchTargetImages(libraryImageUrls(result, view)))
-      .catch(() => undefined);
+  function prefetchDestination(nextFilters: LibraryFilters, view: "videos" | "playlists"): void {
+    void prefetchLibrary(nextFilters, view).catch(() => undefined);
   }
 
   async function loadMore(): Promise<void> {
