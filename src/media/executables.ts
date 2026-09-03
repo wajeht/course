@@ -1,2 +1,2 @@
-export const ffmpegExecutable = "/usr/bin/ffmpeg";
-export const ffprobeExecutable = "/usr/bin/ffprobe";
+export const ffmpegExecutable = "ffmpeg";
+export const ffprobeExecutable = "ffprobe";
