@@ -12,7 +12,6 @@ describe("createConfiguration", () => {
     expect(configuration.media.videosDirectory).toBe("/Volumes/plex/videos");
     expect(configuration.app.port).toBe(80);
     expect(configuration.app.vuePort).toBe(3000);
-    expect(configuration.app.clientDirectory).toBe(path.resolve("dist/client"));
   });
 
   it("uses the same defaults for a direct production start", () => {

@@ -39,7 +39,6 @@ describe("application", () => {
     await fs.writeFile(path.join(clientDirectory, "favicon.ico"), "ico");
     await fs.writeFile(path.join(clientDirectory, "favicon.svg"), "<svg></svg>");
     await fs.writeFile(path.join(clientDirectory, "manifest.webmanifest"), "{}");
-    context.configuration.app.clientDirectory = clientDirectory;
     const now = new Date().toISOString();
     await context.database.connection("playlists").insert({
       id: "a".repeat(24),
@@ -70,7 +69,7 @@ describe("application", () => {
       start_seconds: 0,
       sort_order: 0,
     });
-    const app = createApp(context);
+    const app = createApp(context, clientDirectory);
 
     expect(await (await app.request("/healthz")).json()).toEqual({ status: "ok" });
     expect((await app.request("/api/library")).status).toBe(401);
