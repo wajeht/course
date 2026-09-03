@@ -24,10 +24,14 @@ function mountVideo() {
 describe("usePauseVideoOnHidden", () => {
   beforeEach(() => {
     vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    vi.spyOn(navigator, "userAgent", "get").mockReturnValue("Mozilla/5.0 (Macintosh)");
+    vi.spyOn(navigator, "platform", "get").mockReturnValue("MacIntel");
+    vi.spyOn(navigator, "maxTouchPoints", "get").mockReturnValue(0);
   });
 
   afterEach(() => {
     Reflect.deleteProperty(document, "pictureInPictureElement");
+    vi.restoreAllMocks();
   });
 
   it("pauses a playing video when the document becomes hidden", () => {
@@ -45,6 +49,38 @@ describe("usePauseVideoOnHidden", () => {
       configurable: true,
       value: video,
     });
+
+    document.dispatchEvent(new Event("visibilitychange"));
+
+    expect(pause).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it.each([
+    {
+      name: "iPhone",
+      platform: "iPhone",
+      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X)",
+    },
+    {
+      name: "Android",
+      platform: "Linux armv8l",
+      userAgent: "Mozilla/5.0 (Linux; Android 16; Pixel 10)",
+    },
+  ])("keeps video playing when $name becomes hidden", ({ platform, userAgent }) => {
+    vi.spyOn(navigator, "userAgent", "get").mockReturnValue(userAgent);
+    vi.spyOn(navigator, "platform", "get").mockReturnValue(platform);
+    const { pause, wrapper } = mountVideo();
+
+    document.dispatchEvent(new Event("visibilitychange"));
+
+    expect(pause).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it("keeps video playing on iPadOS when Safari uses its desktop identity", () => {
+    vi.spyOn(navigator, "maxTouchPoints", "get").mockReturnValue(5);
+    const { pause, wrapper } = mountVideo();
 
     document.dispatchEvent(new Event("visibilitychange"));
 
