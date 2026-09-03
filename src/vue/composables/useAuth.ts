@@ -24,6 +24,12 @@ interface AuthClient {
   setupPassword(password: string, confirmPassword: string, setupToken?: string): Promise<void>;
 }
 
+interface CreateAuthOptions {
+  checkTimeoutMilliseconds?: number;
+  client?: AuthClient;
+  onSessionChange?: () => void;
+}
+
 export interface AuthController {
   changePassword: AuthClient["changePassword"];
   dispose(): void;
@@ -36,10 +42,12 @@ export interface AuthController {
 
 export const authKey: InjectionKey<AuthController> = Symbol("videos-auth");
 
-export function createAuth(
-  client: AuthClient = api,
-  checkTimeoutMilliseconds = 10_000,
-): AuthController {
+export function createAuth(options: CreateAuthOptions = {}): AuthController {
+  const {
+    checkTimeoutMilliseconds = 10_000,
+    client = api,
+    onSessionChange = () => undefined,
+  } = options;
   const state = reactive<AuthControllerState>({
     status: "loading",
     passwordConfigured: false,
@@ -49,6 +57,7 @@ export function createAuth(
   });
 
   function handleUnauthorized(): void {
+    onSessionChange();
     state.status = "unauthenticated";
     state.passwordConfigured = true;
     state.error = "Your session expired. Sign in again.";
@@ -81,7 +90,17 @@ export function createAuth(
 
   async function login(password: string): Promise<void> {
     await client.login(password);
+    onSessionChange();
     await initialize();
+  }
+
+  async function changePassword(
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string,
+  ): Promise<void> {
+    await client.changePassword(currentPassword, newPassword, confirmPassword);
+    onSessionChange();
   }
 
   async function setupPassword(
@@ -96,12 +115,13 @@ export function createAuth(
 
   async function logout(): Promise<void> {
     await client.logout();
+    onSessionChange();
     state.status = "unauthenticated";
     state.error = "";
   }
 
   return {
-    changePassword: client.changePassword,
+    changePassword,
     dispose: () => {
       if ("window" in globalThis) {
         globalThis.window.removeEventListener("videos:unauthorized", handleUnauthorized);
