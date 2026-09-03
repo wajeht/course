@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { VideoDto } from "@/api.js";
 import IntentRouterLink from "@/components/IntentRouterLink.vue";
+import VideoCoverPlaceholder from "@/components/VideoCoverPlaceholder.vue";
 import { useRoutePrefetch } from "@/composables/useRoutePrefetch.js";
 import { playerLocation } from "@/router.js";
 import { durationText } from "@/utils.js";
@@ -22,18 +23,36 @@ const prefetch = useRoutePrefetch();
     class="grid items-center border-b border-[#e1e4e6] py-2 transition-colors last:border-b-0 hover:bg-[#e9ebed]"
     :class="[
       sidebar
-        ? 'min-h-14 grid-cols-[28px_minmax(0,1fr)_30px] gap-2 px-3'
+        ? 'min-h-14 grid-cols-[72px_minmax(0,1fr)_30px] gap-2 px-3'
         : 'min-h-[62px] grid-cols-[42px_minmax(0,1fr)_auto_42px] gap-3 px-4 max-[600px]:grid-cols-[31px_minmax(0,1fr)_32px] max-[600px]:gap-[7px] max-[600px]:px-[10px]',
       active && 'bg-[#e9ebed] shadow-[inset_4px_0_#d58b3b]',
     ]"
   >
-    <span class="font-mono text-[.72rem] text-[#858c94]">
+    <span
+      v-if="sidebar"
+      class="relative aspect-video w-[72px] overflow-hidden rounded-[4px] bg-mist"
+    >
+      <img
+        v-if="video.coverUrl"
+        class="h-full w-full object-cover"
+        :src="video.coverUrl"
+        alt=""
+        loading="lazy"
+      />
+      <VideoCoverPlaceholder v-else class="h-full w-full" :title="video.title" compact />
+      <span
+        class="absolute right-1 bottom-1 rounded bg-black/80 px-1 py-0.5 font-mono text-[.58rem] text-white"
+      >
+        {{ durationText(video.durationSeconds) }}
+      </span>
+    </span>
+    <span v-else class="font-mono text-[.72rem] text-[#858c94]">
       {{ String(index + 1).padStart(2, "0") }}
     </span>
     <span class="min-w-0 overflow-hidden text-[.8rem] font-semibold text-ellipsis">
       {{ video.title }}
     </span>
-    <span class="text-[.7rem] text-muted" :class="sidebar ? 'hidden' : 'max-[600px]:hidden'">
+    <span v-if="!sidebar" class="text-[.7rem] text-muted max-[600px]:hidden">
       {{ durationText(video.durationSeconds) }}
     </span>
     <span

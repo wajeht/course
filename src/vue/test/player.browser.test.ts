@@ -99,6 +99,7 @@ test("uses responsive video details and places the playlist below them on mobile
   expect((await title.boundingBox())?.width).toBeGreaterThan(1000);
   const playlistVideos = playlistPanel.locator(":scope > div");
   await expect(playlistPanel).toBeVisible();
+  await expect(playlistPanel.getByText("2m", { exact: true })).toBeVisible();
   await playlistActions.click();
   await expect(autoplay).toBeVisible();
   await expect(autoplay).toHaveAttribute("aria-checked", "false");

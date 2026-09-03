@@ -28,7 +28,7 @@ const playlist: PlaylistDetailDto = {
         {
           authors: [],
           completed: false,
-          coverUrl: null,
+          coverUrl: "/covers/videos/example.jpg",
           description: "",
           durationSeconds: 120,
           id: videoId,
@@ -75,6 +75,11 @@ describe("PlayerPlaylistSidebar", () => {
     expect(wrapper.get(`a[href="/videos/${videoId}?list=${playlistId}"]`).text()).toContain(
       "Example video",
     );
+    expect(wrapper.get("img").attributes()).toMatchObject({
+      alt: "",
+      src: "/covers/videos/example.jpg",
+    });
+    expect(wrapper.get("img + span").text()).toBe("2m");
   });
 
   it("keeps the playlist reset action in an overflow menu", async () => {
