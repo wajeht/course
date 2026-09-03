@@ -5,6 +5,7 @@ import {
   createImagePrefetcher,
   libraryImageUrls,
   prepareImagePrefetch,
+  resetImagePrefetch,
   videoImageUrls,
 } from "@/imagePrefetch.js";
 
@@ -84,7 +85,7 @@ describe("image prefetch", () => {
     const loadImage = vi.fn((url: string, complete: (loaded: boolean) => void) => {
       requests.push({ complete, url });
     });
-    const prefetch = createImagePrefetcher(loadImage, 2);
+    const { prefetch } = createImagePrefetcher(loadImage, 2);
 
     prefetch(["/one.jpg", "/one.jpg", "/two.jpg", "/three.jpg"]);
 
@@ -105,13 +106,30 @@ describe("image prefetch", () => {
     const loadImage = vi.fn((url: string, complete: (loaded: boolean) => void) => {
       requests.push({ complete, url });
     });
-    const prefetch = createImagePrefetcher(loadImage, 1);
+    const { prefetch } = createImagePrefetcher(loadImage, 1);
 
     prefetch(["/active.jpg", "/old-queued.jpg"]);
     prefetch(["/new.jpg"]);
     requests[0]!.complete(true);
 
     expect(loadImage.mock.calls.map(([url]) => url)).toEqual(["/active.jpg", "/new.jpg"]);
+  });
+
+  it("clears completed and in-flight URLs when reset", () => {
+    const requests: Array<{ complete: (loaded: boolean) => void; url: string }> = [];
+    const loadImage = vi.fn((url: string, complete: (loaded: boolean) => void) => {
+      requests.push({ complete, url });
+    });
+    const { prefetch, reset } = createImagePrefetcher(loadImage, 1);
+
+    prefetch(["/same.jpg"]);
+    reset();
+    prefetch(["/same.jpg"]);
+    requests[0]!.complete(true);
+    requests[1]!.complete(true);
+    prefetch(["/same.jpg"]);
+
+    expect(loadImage.mock.calls.map(([url]) => url)).toEqual(["/same.jpg", "/same.jpg"]);
   });
 
   it("ignores images returned by an older destination request", () => {
@@ -123,5 +141,15 @@ describe("image prefetch", () => {
     completeLatestPrefetch(["/latest.jpg"]);
 
     expect(queueImages.mock.calls).toEqual([[[]], [[]], [["/latest.jpg"]]]);
+  });
+
+  it("ignores destination responses created before reset", () => {
+    const queueImages = vi.fn<(urls: ReadonlyArray<string | null>) => void>();
+    const completePrefetch = prepareImagePrefetch(queueImages);
+
+    resetImagePrefetch();
+    completePrefetch(["/old-session.jpg"]);
+
+    expect(queueImages.mock.calls).toEqual([[[]]]);
   });
 });

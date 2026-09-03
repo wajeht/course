@@ -26,7 +26,7 @@ describe("createAuth", () => {
       setupTokenRequired: false,
     });
 
-    const auth = createAuth(client);
+    const auth = createAuth({ client });
     await auth.initialize();
 
     expect(auth.state.status).toBe("authenticated");
@@ -45,12 +45,30 @@ describe("createAuth", () => {
         }),
     );
 
-    const auth = createAuth(client);
+    const auth = createAuth({ client });
     const initialization = auth.initialize();
     await vi.advanceTimersByTimeAsync(10_000);
     await initialization;
 
     expect(auth.state.status).toBe("error");
     expect(auth.state.error).toBe("Session check timed out. Try again.");
+  });
+
+  it("reports every session-cookie change", async () => {
+    const client = createClient();
+    client.getAuthState.mockResolvedValue({
+      authenticated: true,
+      passwordConfigured: true,
+      setupEnabled: false,
+      setupTokenRequired: false,
+    });
+    const onSessionChange = vi.fn();
+    const auth = createAuth({ client, onSessionChange });
+
+    await auth.login("password");
+    await auth.changePassword("password", "new-password", "new-password");
+    await auth.logout();
+
+    expect(onSessionChange).toHaveBeenCalledTimes(3);
   });
 });

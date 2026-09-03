@@ -13,9 +13,9 @@ function loadBrowserImage(url: string, complete: CompleteImageLoad): void {
   activeBrowserImages.set(url, image);
 
   function finish(loaded: boolean): void {
-    if (activeBrowserImages.get(url) !== image) return;
     image.onload = null;
     image.onerror = null;
+    if (activeBrowserImages.get(url) !== image) return;
     activeBrowserImages.delete(url);
     complete(loaded);
   }
@@ -25,10 +25,19 @@ function loadBrowserImage(url: string, complete: CompleteImageLoad): void {
   image.src = url;
 }
 
+function resetBrowserImages(): void {
+  for (const image of activeBrowserImages.values()) {
+    image.onload = null;
+    image.onerror = null;
+  }
+  activeBrowserImages.clear();
+}
+
 export function createImagePrefetcher(loadImage: LoadImage, concurrency = 4) {
   const loaded = new Set<string>();
   const pending = new Set<string>();
   let queued: string[] = [];
+  let generation = 0;
 
   function pump(): void {
     while (pending.size < concurrency) {
@@ -37,7 +46,9 @@ export function createImagePrefetcher(loadImage: LoadImage, concurrency = 4) {
       if (loaded.has(url) || pending.has(url)) continue;
 
       pending.add(url);
+      const requestGeneration = generation;
       loadImage(url, (succeeded) => {
+        if (requestGeneration !== generation) return;
         pending.delete(url);
         if (succeeded) loaded.add(url);
         pump();
@@ -45,15 +56,30 @@ export function createImagePrefetcher(loadImage: LoadImage, concurrency = 4) {
     }
   }
 
-  return (urls: ReadonlyArray<string | null>): void => {
-    queued = [...new Set(urls.filter((url): url is string => Boolean(url)))];
-    pump();
+  return {
+    prefetch(urls: ReadonlyArray<string | null>): void {
+      queued = [...new Set(urls.filter((url): url is string => Boolean(url)))];
+      pump();
+    },
+    reset(): void {
+      generation += 1;
+      loaded.clear();
+      pending.clear();
+      queued = [];
+    },
   };
 }
 
-export const prefetchImages = createImagePrefetcher(loadBrowserImage);
+const browserImagePrefetcher = createImagePrefetcher(loadBrowserImage);
+export const prefetchImages = browserImagePrefetcher.prefetch;
 
 let latestImagePrefetchIntent = 0;
+
+export function resetImagePrefetch(): void {
+  latestImagePrefetchIntent += 1;
+  resetBrowserImages();
+  browserImagePrefetcher.reset();
+}
 
 export function prepareImagePrefetch(
   queueImages: PrefetchImageUrls = prefetchImages,
