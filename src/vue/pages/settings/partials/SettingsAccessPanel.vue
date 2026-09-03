@@ -49,6 +49,9 @@ async function changePassword(): Promise<void> {
       description="Change the password for this private library or sign out of this device."
     />
     <form class="grid gap-4 p-[clamp(22px,4vw,34px)]" @submit.prevent="changePassword">
+      <AlertMessage v-if="passwordError && !validationError">
+        {{ passwordError }}
+      </AlertMessage>
       <input
         class="sr-only"
         name="username"
@@ -99,9 +102,6 @@ async function changePassword(): Promise<void> {
           required
         />
       </FormField>
-      <AlertMessage v-if="passwordError && !validationError">
-        {{ passwordError }}
-      </AlertMessage>
       <AppButton
         class="mt-4 justify-self-end max-[600px]:w-full"
         data-change-password

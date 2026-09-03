@@ -32,4 +32,14 @@ describe("AppInput", () => {
     await wrapper.get("input").setValue("secret");
     expect(wrapper.get("button").attributes("aria-label")).toBe("Show password");
   });
+
+  it("uses the error border instead of the default border when invalid", () => {
+    const wrapper = mount(AppInput, { props: { invalid: true } });
+    const input = wrapper.get("input");
+
+    expect(input.classes()).toContain("border-clay");
+    expect(input.classes()).toContain("focus:border-clay");
+    expect(input.classes()).not.toContain("border-line");
+    expect(input.classes()).not.toContain("focus:border-pine");
+  });
 });
