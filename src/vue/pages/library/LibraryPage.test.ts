@@ -325,6 +325,36 @@ describe("LibraryPage", () => {
     await flushPromises();
   });
 
+  it("starts loading the hovered view's covers before selection", async () => {
+    const prefetchedImages: HTMLImageElement[] = [];
+    const imageSource = vi
+      .spyOn(HTMLImageElement.prototype, "src", "set")
+      .mockImplementation(function (this: HTMLImageElement, source) {
+        prefetchedImages.push(this);
+        expect(source).toBe("/covers/prefetched-playlist.jpg");
+      });
+    const { wrapper } = await mountLibraryPage("/videos", async () => ({
+      ...library(),
+      playlists: [
+        {
+          ...library().playlists[0]!,
+          coverUrl: "/covers/prefetched-playlist.jpg",
+        },
+      ],
+    }));
+
+    await wrapper
+      .get('input[name="library-desktop-view"][value="playlists"]')
+      .element.closest("label")!
+      .dispatchEvent(new PointerEvent("pointerenter"));
+
+    await vi.waitFor(() => expect(imageSource).toHaveBeenCalledOnce());
+    expect(wrapper.text()).not.toContain("Saved Collection");
+    const prefetchedImage = prefetchedImages[0];
+    if (!prefetchedImage) throw new Error("Playlist cover was not prefetched");
+    prefetchedImage.dispatchEvent(new Event("load"));
+  });
+
   it("saves videos per page from the library filters and preserves the current page", async () => {
     const { router, wrapper } = await mountLibraryPage("/videos?page=2", async (filters) => ({
       ...library(),
