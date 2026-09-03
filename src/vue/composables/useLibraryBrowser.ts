@@ -16,6 +16,7 @@ import {
   type LibraryDto,
   type LibraryFilters,
   type LibraryPageSize,
+  type LibraryView,
 } from "@/api.js";
 import { useDestinationPrefetch } from "@/composables/useDestinationPrefetch.js";
 import { libraryQueryOptions } from "@/queries.js";
@@ -79,9 +80,9 @@ export function useLibraryBrowser(options: UseLibraryBrowserOptions = {}) {
 
   const selectedAuthor = selectedFilter("author");
   const selectedTag = selectedFilter("tag");
-  const selectedView = computed({
+  const selectedView = computed<LibraryView>({
     get: () => (route.query.view === "playlists" ? "playlists" : "videos"),
-    set: (view: string) => {
+    set: (view) => {
       void router.push({
         query: nextQuery({ view: view === "playlists" ? "playlists" : undefined }),
       });
@@ -213,14 +214,14 @@ export function useLibraryBrowser(options: UseLibraryBrowserOptions = {}) {
     prefetchDestination({ ...filters.value, pageSize: nextPageSize }, selectedView.value);
   }
 
-  function prefetchView(view: "videos" | "playlists"): void {
+  function prefetchView(view: LibraryView): void {
     prefetchDestination(
       { ...filters.value, view: view === "playlists" ? "playlists" : undefined },
       view,
     );
   }
 
-  function prefetchDestination(nextFilters: LibraryFilters, view: "videos" | "playlists"): void {
+  function prefetchDestination(nextFilters: LibraryFilters, view: LibraryView): void {
     void prefetchLibrary(nextFilters, view).catch(() => undefined);
   }
 

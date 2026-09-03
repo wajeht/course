@@ -66,10 +66,12 @@ export interface LibraryFilterDto {
   count: number;
 }
 
+export type LibraryView = LibraryFacetScope;
+
 export interface LibraryFilters extends VideoFilters {
   page?: number;
   pageSize?: number;
-  view?: LibraryFacetScope;
+  view?: LibraryView;
 }
 
 export interface LibraryPaginationDto {
