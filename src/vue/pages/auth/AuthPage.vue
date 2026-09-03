@@ -41,11 +41,8 @@ function forwardSetup(password: string, confirmPassword: string, setupToken?: st
         aria-hidden="true"
       />
       <div class="w-full max-w-[720px]">
-        <div class="mb-14 flex items-center justify-between gap-8">
+        <div class="mb-14">
           <AppLogo class="text-white" />
-          <span class="font-mono text-[.65rem] tracking-[.16em] text-white/50 uppercase"
-            >Personal archive · local server</span
-          >
         </div>
         <div aria-hidden="true">
           <p
@@ -56,7 +53,7 @@ function forwardSetup(password: string, confirmPassword: string, setupToken?: st
             <span class="block text-white">home.</span>
           </p>
           <p class="mt-9 max-w-xl text-lg leading-7 font-medium text-white/62">
-            Your videos, playlists, and watch progress—served from your own machine.
+            A private, opinionated, self-hosted video library.
           </p>
         </div>
       </div>
