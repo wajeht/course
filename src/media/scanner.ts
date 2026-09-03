@@ -52,7 +52,7 @@ export interface ScannerDependencies {
   configuration: Configuration;
   repository: LibraryRepository;
   logger: Logger;
-  probe?: (filename: string, ffprobePath: string) => Promise<VideoProbe>;
+  probe?: (filename: string) => Promise<VideoProbe>;
   watchDirectory?: WatchDirectory;
   playlistCovers?: PlaylistCoverCache;
   thumbnails?: ThumbnailCache;
@@ -392,7 +392,7 @@ async function readLibraryEntries(configuration: Configuration): Promise<Library
 async function buildLibrarySnapshot(
   configuration: Configuration,
   warnings: ScanWarning[],
-  probe: (filename: string, ffprobePath: string) => Promise<VideoProbe>,
+  probe: (filename: string) => Promise<VideoProbe>,
   existingVideos: VideoRecord[],
   entries: LibraryEntry[],
   requestedPaths?: Set<string>,
@@ -426,7 +426,6 @@ async function buildLibrarySnapshot(
         warnings,
         probe,
         existingVideosByPath,
-        ffprobePath: configuration.media.ffprobePath,
       });
     } else {
       await appendPlaylist({
@@ -437,7 +436,6 @@ async function buildLibrarySnapshot(
         warnings,
         probe,
         existingVideosByPath,
-        ffprobePath: configuration.media.ffprobePath,
       });
     }
   }
@@ -451,9 +449,8 @@ interface AppendPlaylistOptions {
   snapshot: LibrarySnapshot;
   authorsByName: Map<string, AuthorRecord>;
   warnings: ScanWarning[];
-  probe: (filename: string, ffprobePath: string) => Promise<VideoProbe>;
+  probe: (filename: string) => Promise<VideoProbe>;
   existingVideosByPath: Map<string, VideoRecord>;
-  ffprobePath: string;
 }
 
 async function appendPlaylist(options: AppendPlaylistOptions): Promise<void> {
@@ -488,7 +485,6 @@ async function appendPlaylist(options: AppendPlaylistOptions): Promise<void> {
       warnings,
       probe: options.probe,
       existingVideosByPath: options.existingVideosByPath,
-      ffprobePath: options.ffprobePath,
     });
   }
 
@@ -528,7 +524,6 @@ async function appendPlaylist(options: AppendPlaylistOptions): Promise<void> {
         warnings,
         probe: options.probe,
         existingVideosByPath: options.existingVideosByPath,
-        ffprobePath: options.ffprobePath,
       });
     }
   }
@@ -566,9 +561,8 @@ interface AppendVideoOptions {
   snapshot: LibrarySnapshot;
   authorsByName: Map<string, AuthorRecord>;
   warnings: ScanWarning[];
-  probe: (filename: string, ffprobePath: string) => Promise<VideoProbe>;
+  probe: (filename: string) => Promise<VideoProbe>;
   existingVideosByPath: Map<string, VideoRecord>;
-  ffprobePath: string;
 }
 
 async function appendVideo(options: AppendVideoOptions): Promise<void> {
@@ -585,7 +579,7 @@ async function appendVideo(options: AppendVideoOptions): Promise<void> {
     const probeResult =
       existing && existing.modifiedAt === modifiedAt && existing.sizeBytes === fileStats.size
         ? existing
-        : await options.probe(options.absolutePath, options.ffprobePath);
+        : await options.probe(options.absolutePath);
     appendVideoRecord(options, relativePath, videoId, metadata, probeResult, modifiedAt);
     appendVideoChapters(options, relativePath, videoId, sidecarPath, metadata, probeResult);
   } catch (error) {

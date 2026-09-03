@@ -10,6 +10,7 @@ import { z } from "zod";
 import type { Configuration } from "../config.js";
 import { hasErrorCode } from "../errors.js";
 import { logCause, type Logger } from "../logger.js";
+import { ffmpegExecutable } from "./executables.js";
 import { mapLimit } from "./map-limit.js";
 import { resolveContainedPath } from "./path.js";
 import type { PlaylistRecord } from "./types.js";
@@ -34,11 +35,7 @@ const playlistCoverMetaSchema = z.object({
 
 export type PlaylistCoverMeta = z.infer<typeof playlistCoverMetaSchema>;
 
-export type PlaylistCoverGenerator = (
-  source: string,
-  destination: string,
-  ffmpegPath: string,
-) => Promise<void>;
+export type PlaylistCoverGenerator = (source: string, destination: string) => Promise<void>;
 
 export interface PlaylistCoverCache {
   listPlaylistCoverIndex(): Promise<{ revisions: Map<string, number> }>;
@@ -61,14 +58,10 @@ export function playlistCoverPath(directory: string, playlistId: string, revisio
   return path.join(directory, playlistCoverRelativePath(playlistId, revision));
 }
 
-export async function generatePlaylistCover(
-  source: string,
-  destination: string,
-  ffmpegPath: string,
-): Promise<void> {
+export async function generatePlaylistCover(source: string, destination: string): Promise<void> {
   await fs.mkdir(path.dirname(destination), { recursive: true });
   await execFileAsync(
-    ffmpegPath,
+    ffmpegExecutable,
     [
       "-v",
       "error",
@@ -239,11 +232,7 @@ export function createPlaylistCoverCache({
     let published = false;
     await fs.mkdir(stagingDirectory, { recursive: true });
     try {
-      await generate(
-        source,
-        path.join(stagingDirectory, "cover.jpg"),
-        configuration.media.ffmpegPath,
-      );
+      await generate(source, path.join(stagingDirectory, "cover.jpg"));
       await fs.rename(stagingDirectory, publishedDirectory);
       published = true;
       const meta: PlaylistCoverMeta = {

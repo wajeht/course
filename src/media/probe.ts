@@ -4,6 +4,8 @@ import { promisify } from "node:util";
 
 import { z } from "zod";
 
+import { ffprobeExecutable } from "./executables.js";
+
 const execFileAsync = promisify(execFile);
 
 export const videoExtensions = new Set([
@@ -58,9 +60,9 @@ function isBrowserCompatible(
   return (mp4Container && mp4Codecs) || (webmContainer && webmCodecs);
 }
 
-export async function probeVideo(filename: string, ffprobePath: string): Promise<VideoProbe> {
+export async function probeVideo(filename: string): Promise<VideoProbe> {
   const { stdout } = await execFileAsync(
-    ffprobePath,
+    ffprobeExecutable,
     ["-v", "error", "-show_format", "-show_streams", "-of", "json", filename],
     { encoding: "utf8", maxBuffer: 5 * 1024 * 1024, timeout: 30_000 },
   );

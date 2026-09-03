@@ -69,7 +69,7 @@ describe("playlist covers", () => {
     const index = await cache.listPlaylistCoverIndex();
     const revision = index.revisions.get(playlistId)!;
 
-    expect(generate).toHaveBeenCalledWith(await fs.realpath(source), expect.any(String), "ffmpeg");
+    expect(generate).toHaveBeenCalledWith(await fs.realpath(source), expect.any(String));
     await expect(
       fs.readFile(
         playlistCoverPath(

@@ -7,6 +7,7 @@ import type { Configuration } from "../config.js";
 import type { LibraryRepository, VideoRow } from "../library/library.repository.js";
 import { logCause, type Logger } from "../logger.js";
 import type { ConversionRepository, StoredConversion } from "./conversion.repository.js";
+import { ffmpegExecutable } from "./executables.js";
 import { resolveContainedPath } from "./path.js";
 
 export type ConversionExecutor = (
@@ -121,7 +122,7 @@ export function createFfmpegConversionExecutor(configuration: Configuration): Co
     ];
 
     await new Promise<void>((resolve, reject) => {
-      const process = spawn(configuration.media.ffmpegPath, arguments_, {
+      const process = spawn(ffmpegExecutable, arguments_, {
         stdio: ["ignore", "pipe", "pipe"],
       });
       let stderr = "";

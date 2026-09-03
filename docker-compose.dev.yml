@@ -15,8 +15,6 @@ services:
       VIDEOS_DIR: /videos
       DATA_DIR: /data
       SCAN_INTERVAL_MS: "${SCAN_INTERVAL_MS:-300000}"
-      FFMPEG_PATH: ffmpeg
-      FFPROBE_PATH: ffprobe
       QSV_DEVICE: /dev/dri/renderD128
       CHOKIDAR_USEPOLLING: "true"
     volumes:
