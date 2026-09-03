@@ -15,6 +15,7 @@ import {
 } from "./media/library.repository.js";
 import { createConversionManager, type ConversionManager } from "./media/conversion.js";
 import { createConversionRepository } from "./media/conversion.repository.js";
+import { createPlaylistCoverCache, type PlaylistCoverCache } from "./media/playlist-covers.js";
 import { createScanner, type Scanner } from "./media/scanner.js";
 import { createThumbnailCache, type ThumbnailCache } from "./media/thumbnails.js";
 import { createPlaybackService, type PlaybackService } from "./playback/playback.service.js";
@@ -37,6 +38,7 @@ export interface AppContext {
   playback: PlaybackService;
   scanner: Scanner;
   conversions: ConversionManager;
+  playlistCovers: PlaylistCoverCache;
   thumbnails: ThumbnailCache;
 }
 
@@ -47,6 +49,7 @@ export async function createContext(
   await Promise.all([
     fs.mkdir(configuration.media.dataDirectory, { recursive: true }),
     fs.mkdir(configuration.media.hlsDirectory, { recursive: true }),
+    fs.mkdir(configuration.media.playlistCoversDirectory, { recursive: true }),
     fs.mkdir(configuration.media.thumbnailsDirectory, { recursive: true }),
   ]);
   const database = await createDatabase(configuration, logger);
@@ -54,8 +57,9 @@ export async function createContext(
   const scannerLibraryRepository = createLibraryRepository(database.connection);
   const libraryRepository = createLibraryApiRepository(database.connection);
   const settings = createSettingsService(createSettingsRepository(database.connection));
+  const playlistCovers = createPlaylistCoverCache({ configuration, logger });
   const thumbnails = createThumbnailCache({ configuration, logger });
-  const library = createLibraryService(libraryRepository, settings, thumbnails);
+  const library = createLibraryService(libraryRepository, settings, thumbnails, playlistCovers);
   const progress = createProgressService(
     createProgressRepository(database.connection),
     libraryRepository,
@@ -64,6 +68,7 @@ export async function createContext(
     configuration,
     repository: scannerLibraryRepository,
     logger,
+    playlistCovers,
     thumbnails,
   });
   const conversions = createConversionManager({
@@ -87,6 +92,7 @@ export async function createContext(
     playback,
     scanner,
     conversions,
+    playlistCovers,
     thumbnails,
   };
 }

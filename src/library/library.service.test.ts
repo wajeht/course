@@ -318,6 +318,11 @@ describe("library service", () => {
           chapterStartsByVideo: new Map(),
         }),
       },
+      {
+        listPlaylistCoverIndex: async () => ({
+          revisions: new Map([[playlistA, 7]]),
+        }),
+      },
     );
 
     const library = await service.getLibrary();
@@ -327,7 +332,7 @@ describe("library service", () => {
       `/covers/videos/${standaloneVideo}?t=1`,
     );
     expect(library.playlists.find((playlist) => playlist.id === playlistA)?.coverUrl).toBe(
-      `/covers/playlists/${playlistA}?t=cover`,
+      `/covers/playlists/${playlistA}?t=7`,
     );
     expect(library.playlists.find((playlist) => playlist.id === playlistB)?.coverUrl).toBeNull();
   });

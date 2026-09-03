@@ -13,6 +13,7 @@ import { createRequireAuth } from "../auth/auth.routes.js";
 import { playlistParametersSchema, videoParametersSchema } from "../library/library.schema.js";
 import { conversionPlaylistFilename } from "./conversion.js";
 import { resolveContainedPath } from "./path.js";
+import { playlistCoverRelativePath } from "./playlist-covers.js";
 import { parseByteRange } from "./range.js";
 import { chapterThumbnailRelativePath, thumbnailRelativePath } from "./thumbnails.js";
 
@@ -121,14 +122,17 @@ export function createMediaRouter(context: AppContext) {
         c.req.valid("param").playlistId,
       );
       if (!playlist) return c.body(null, 404);
-      const videosDirectory = context.configuration.media.videosDirectory;
+      const revision = thumbnailRevision(c.req.query("t"));
+      if (revision === null) return c.body(null, 404);
       if (playlist.cover_path) {
-        const cover = await trySendCover(c, videosDirectory, playlist.cover_path);
+        const cover = await trySendCover(
+          c,
+          context.configuration.media.playlistCoversDirectory,
+          playlistCoverRelativePath(playlist.id, revision),
+        );
         if (cover) return cover;
       }
       if (playlist.first_video_id) {
-        const revision = thumbnailRevision(c.req.query("t"));
-        if (revision === null) return c.body(null, 404);
         const cover = await trySendCover(
           c,
           context.configuration.media.thumbnailsDirectory,

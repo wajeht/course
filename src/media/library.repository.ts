@@ -1,7 +1,7 @@
 import type { Knex } from "knex";
 import { z } from "zod";
 
-import type { LibrarySnapshot, VideoRecord } from "./types.js";
+import type { LibrarySnapshot, PlaylistRecord, VideoRecord } from "./types.js";
 
 export interface RootEntryOrder {
   id: string;
@@ -40,6 +40,18 @@ interface StoredVideoRow {
   video_codec: string;
 }
 
+interface StoredPlaylistRow {
+  cover_path: string | null;
+  description: string;
+  id: string;
+  path: string;
+  sort_order: number;
+  source_provider: string | null;
+  source_url: string | null;
+  tags_json: string;
+  title: string;
+}
+
 const storedTagsSchema = z.array(z.string());
 
 export interface LibraryRepository {
@@ -50,6 +62,7 @@ export interface LibraryRepository {
     rootOrder: RootEntryOrder[],
   ): Promise<void>;
   getRootEntries(): Promise<StoredRootEntry[]>;
+  getPlaylists(): Promise<PlaylistRecord[]>;
   getVideos(): Promise<VideoRecord[]>;
   getVideo(videoId: string): Promise<VideoRecord | undefined>;
   getChapters(): Promise<Array<{ videoId: string; startSeconds: number; sortOrder: number }>>;
@@ -150,6 +163,11 @@ export function createLibraryRepository(database: Knex): LibraryRepository {
       return rows.map(videoRecord);
     },
 
+    async getPlaylists() {
+      const rows = await database<StoredPlaylistRow>("playlists").select();
+      return rows.map(playlistRecord);
+    },
+
     async getVideo(videoId) {
       const row = await database<StoredVideoRow>("videos").where({ id: videoId }).first();
       return row ? videoRecord(row) : undefined;
@@ -174,6 +192,20 @@ export function createLibraryRepository(database: Knex): LibraryRepository {
         videoCount: Number(videos?.count ?? 0),
       };
     },
+  };
+}
+
+function playlistRecord(row: StoredPlaylistRow): PlaylistRecord {
+  return {
+    id: String(row.id),
+    path: String(row.path),
+    title: String(row.title),
+    description: String(row.description),
+    tags: storedTagsSchema.parse(JSON.parse(row.tags_json)),
+    coverPath: row.cover_path === null ? null : String(row.cover_path),
+    sourceProvider: row.source_provider === null ? null : String(row.source_provider),
+    sourceUrl: row.source_url === null ? null : String(row.source_url),
+    sortOrder: Number(row.sort_order),
   };
 }
 

@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createApp } from "./app.js";
 import { createConfiguration } from "./config.js";
 import { conversionPlaylistFilename } from "./media/conversion.js";
+import { playlistCoverPath } from "./media/playlist-covers.js";
 import { createTemporaryDirectory, createTestContext } from "./test/resources.js";
 import { chapterThumbnailPath, thumbnailCacheVersion, thumbnailPath } from "./media/thumbnails.js";
 
@@ -160,13 +161,21 @@ describe("application", () => {
       expect.objectContaining({ path: "/healthz", status: 200 }),
     );
 
-    const cover = await app.request(`/covers/playlists/${"a".repeat(24)}`, {
+    const playlistRevision = 456;
+    const optimizedPlaylistCover = playlistCoverPath(
+      configuration.media.playlistCoversDirectory,
+      "a".repeat(24),
+      playlistRevision,
+    );
+    await fs.mkdir(path.dirname(optimizedPlaylistCover), { recursive: true });
+    await fs.writeFile(optimizedPlaylistCover, "optimized-cover");
+    const cover = await app.request(`/covers/playlists/${"a".repeat(24)}?t=${playlistRevision}`, {
       headers: { cookie: cookie! },
     });
     expect(cover.status).toBe(200);
     expect(cover.headers.get("cache-control")).toBe("private, max-age=31536000, immutable");
     expect(cover.headers.get("vary")).toBe("Cookie");
-    expect(await cover.text()).toBe("cover");
+    expect(await cover.text()).toBe("optimized-cover");
 
     const missingVideoCover = await app.request(`/covers/videos/${"b".repeat(24)}`, {
       headers: { cookie: cookie! },
