@@ -15,7 +15,7 @@ const videoId = "2".repeat(24);
 
 function library(): LibraryDto {
   return {
-    authors: [{ name: "Example", videoCount: 1 }],
+    authors: [{ count: 1, name: "Example" }],
     continueWatching: [],
     pagination: { page: 1, pageSize: 24, totalPages: 1, totalVideos: 1 },
     playlists: [
@@ -34,7 +34,7 @@ function library(): LibraryDto {
         videoCount: 1,
       },
     ],
-    tags: [{ name: "Archive", videoCount: 1 }],
+    tags: [{ count: 1, name: "Archive" }],
     videos: [
       {
         authors: [],
@@ -110,6 +110,28 @@ describe("LibraryPage", () => {
     expect(
       wrapper.get(`a[href="/videos/${videoId}?list=${playlistId}"]`).attributes("aria-label"),
     ).toBe("Open Saved Collection");
+  });
+
+  it("switches author and tag totals from videos to playlists", async () => {
+    const getLibrary = vi.fn(async (filters) => ({
+      ...library(),
+      authors: [{ count: filters?.view === "playlists" ? 2 : 32, name: "Example" }],
+      tags: [{ count: filters?.view === "playlists" ? 3 : 100, name: "Archive" }],
+    }));
+    const { wrapper } = await mountLibraryPage("/videos", getLibrary);
+
+    expect(wrapper.get("aside").text()).toContain("Example (32)");
+    expect(wrapper.get("aside").text()).toContain("Archive (100)");
+
+    await wrapper.get('input[name="library-desktop-view"][value="playlists"]').setValue();
+    await flushPromises();
+
+    expect(wrapper.get("aside").text()).toContain("Example (2)");
+    expect(wrapper.get("aside").text()).toContain("Archive (3)");
+    expect(getLibrary).toHaveBeenLastCalledWith(
+      { page: 1, view: "playlists" },
+      expect.any(AbortSignal),
+    );
   });
 
   it("opens playlist videos with list context", async () => {
@@ -273,6 +295,7 @@ describe("LibraryPage", () => {
           page: 2,
           query: "term",
           tag: ["Current Tag"],
+          view: "playlists",
         },
         expect.any(AbortSignal),
       ),
@@ -304,6 +327,7 @@ describe("LibraryPage", () => {
           pageSize: 48,
           query: "term",
           tag: ["Current Tag"],
+          view: "playlists",
         },
         expect.any(AbortSignal),
       ),

@@ -111,15 +111,44 @@ describe("library service", () => {
     });
     expect(library.playlists.map((playlist) => playlist.title)).toEqual(["Saved Collection"]);
     expect(library.authors).toEqual([
-      { name: "Guest", videoCount: 1 },
-      { name: "Jane Smith", videoCount: 2 },
-      { name: "John Doe", videoCount: 1 },
+      { count: 1, name: "Guest" },
+      { count: 2, name: "Jane Smith" },
+      { count: 1, name: "John Doe" },
     ]);
     expect(library.tags).toEqual([
-      { name: "Archive", videoCount: 1 },
-      { name: "Guard", videoCount: 1 },
-      { name: "Instructional", videoCount: 1 },
-      { name: "Music", videoCount: 1 },
+      { count: 1, name: "Archive" },
+      { count: 1, name: "Guard" },
+      { count: 1, name: "Instructional" },
+      { count: 1, name: "Music" },
+    ]);
+  });
+
+  it("counts playlist authors and tags by playlist in the playlists view", async () => {
+    await database.connection("videos").insert({
+      id: "3".repeat(24),
+      path: "Saved Collection/Second Video.mp4",
+      playlist_id: playlistA,
+      title: "Second Guard Study",
+      description: "",
+      tags_json: "[]",
+      sort_order: 1,
+      duration_seconds: 100,
+      size_bytes: 100,
+      container: "mp4",
+      video_codec: "h264",
+      browser_compatible: true,
+      modified_at: "2026-08-21T00:00:00.000Z",
+    });
+
+    const library = await createService().getLibrary({ view: "playlists" });
+
+    expect(library.authors).toEqual([
+      { count: 1, name: "Jane Smith" },
+      { count: 1, name: "John Doe" },
+    ]);
+    expect(library.tags).toEqual([
+      { count: 1, name: "Archive" },
+      { count: 1, name: "Instructional" },
     ]);
   });
 

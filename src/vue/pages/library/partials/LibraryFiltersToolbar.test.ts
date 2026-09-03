@@ -17,12 +17,12 @@ function mountToolbar() {
     attachTo: document.body,
     props: {
       author: [],
-      authors: [{ name: "Example Author", videoCount: 3 }],
+      authors: [{ count: 3, name: "Example Author" }],
       hasActiveFilters: false,
       pageSize: 24,
       query: "",
       tag: [],
-      tags: [{ name: "Example Tag", videoCount: 2 }],
+      tags: [{ count: 2, name: "Example Tag" }],
       view: "videos",
     },
   });

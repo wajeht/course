@@ -3,6 +3,7 @@ import { z } from "zod";
 import type {
   ChapterRow,
   FilterCountRow,
+  LibraryFacetScope,
   LibraryRepository,
   PlaylistRow,
   VideoFilters,
@@ -62,12 +63,13 @@ export interface PlaylistDetailDto extends PlaylistDto {
 
 export interface LibraryFilterDto {
   name: string;
-  videoCount: number;
+  count: number;
 }
 
 export interface LibraryFilters extends VideoFilters {
   page?: number;
   pageSize?: number;
+  view?: LibraryFacetScope;
 }
 
 export interface LibraryPaginationDto {
@@ -216,7 +218,7 @@ function playlistDto(
 }
 
 function filterDto(row: FilterCountRow): LibraryFilterDto {
-  return { name: row.name, videoCount: Number(row.video_count) };
+  return { name: row.name, count: Number(row.count) };
 }
 
 function chapterDto(
@@ -288,6 +290,7 @@ export function createLibraryService(
       const {
         page: requestedPage = 1,
         pageSize: requestedPageSize,
+        view = "videos",
         ...videoFilters
       } = filters ?? {};
       const configuredPageSize = requestedPageSize ?? (await settings.getLibraryPageSize());
@@ -326,8 +329,8 @@ export function createLibraryService(
         await Promise.all([
           videoRows,
           repository.listPlaylists(videoFilters),
-          repository.listAuthors(),
-          repository.listTags(),
+          repository.listAuthors(view),
+          repository.listTags(view),
           repository.listContinueWatching(),
           thumbnailIndex(),
           playlistCoverIndex(),

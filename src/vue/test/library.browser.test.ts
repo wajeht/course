@@ -22,7 +22,7 @@ test("uses responsive library filters and a mobile drawer", async ({ page }) => 
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        authors: [{ name: "Example Author", videoCount: 1 }],
+        authors: [{ count: 1, name: "Example Author" }],
         continueWatching: [],
         pagination: { page: 1, pageSize: 24, totalPages: 1, totalVideos: 1 },
         playlists: [
@@ -41,7 +41,7 @@ test("uses responsive library filters and a mobile drawer", async ({ page }) => 
             videoCount: 1,
           },
         ],
-        tags: [{ name: "Example Tag", videoCount: 1 }],
+        tags: [{ count: 1, name: "Example Tag" }],
         videos: [
           {
             authors: ["Example Author"],
@@ -208,7 +208,7 @@ test("loads more author videos on mobile and restores them from the URL", async 
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        authors: [{ name: "Gordon Ryan", videoCount: 2 }],
+        authors: [{ count: 2, name: "Gordon Ryan" }],
         continueWatching: [],
         pagination: { page: requestedPage, pageSize: 1, totalPages: 2, totalVideos: 2 },
         playlists: [
