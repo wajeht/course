@@ -18,6 +18,7 @@ import {
   type LibraryPageSize,
 } from "@/api.js";
 import { libraryQueryOptions } from "@/queries.js";
+import { libraryImageUrls, prepareImagePrefetch } from "@/imagePrefetch.js";
 
 function strings(value: LocationQueryValue | LocationQueryValue[] | undefined): string[] {
   if (value === undefined) return [];
@@ -193,31 +194,33 @@ export function useLibraryBrowser(options: UseLibraryBrowserOptions = {}) {
   }
 
   function prefetchPage(nextPage: number): void {
-    void queryClient.prefetchQuery(
-      libraryQueryOptions({ ...filters.value, page: Math.max(1, nextPage) }, api),
-    );
+    prefetchLibrary({ ...filters.value, page: Math.max(1, nextPage) }, selectedView.value);
   }
 
   function prefetchFilter(name: "author" | "tag", selection: string[]): void {
-    void queryClient.prefetchQuery(
-      libraryQueryOptions(
-        {
-          ...filters.value,
-          [name]: selection.length ? selection : undefined,
-        },
-        api,
-      ),
+    prefetchLibrary(
+      {
+        ...filters.value,
+        [name]: selection.length ? selection : undefined,
+      },
+      selectedView.value,
     );
   }
 
   function prefetchPageSize(nextPageSize: LibraryPageSize): void {
-    void queryClient.prefetchQuery(
-      libraryQueryOptions({ ...filters.value, pageSize: nextPageSize }, api),
-    );
+    prefetchLibrary({ ...filters.value, pageSize: nextPageSize }, selectedView.value);
   }
 
-  function prefetchView(): void {
-    void queryClient.prefetchQuery(libraryQueryOptions(filters.value, api));
+  function prefetchView(view: "videos" | "playlists"): void {
+    prefetchLibrary(filters.value, view);
+  }
+
+  function prefetchLibrary(nextFilters: LibraryFilters, view: "videos" | "playlists"): void {
+    const prefetchTargetImages = prepareImagePrefetch();
+    void queryClient
+      .fetchQuery(libraryQueryOptions(nextFilters, api))
+      .then((result) => prefetchTargetImages(libraryImageUrls(result, view)))
+      .catch(() => undefined);
   }
 
   async function loadMore(): Promise<void> {
