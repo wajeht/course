@@ -41,7 +41,6 @@ export interface Configuration {
     host: string;
     port: number;
     vuePort: number;
-    clientDirectory: string;
   };
   media: {
     videosDirectory: string;
@@ -87,7 +86,6 @@ export function createConfiguration(environment: NodeJS.ProcessEnv = process.env
       host: parsed.APP_HOST,
       port: parsed.APP_PORT,
       vuePort: parsed.APP_VUE_PORT,
-      clientDirectory: path.resolve("dist/client"),
     },
     media: {
       videosDirectory,

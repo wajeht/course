@@ -22,7 +22,7 @@ function isServicePath(requestPath: string): boolean {
   );
 }
 
-export function createApp(context: AppContext) {
+export function createApp(context: AppContext, clientDirectory = path.resolve("dist/client")) {
   const app = new Hono();
   const middleware = createMiddleware(context.logger, context.configuration.app.env);
 
@@ -56,7 +56,6 @@ export function createApp(context: AppContext) {
     .route("/", createMediaRouter(context));
 
   if (context.configuration.app.env === "production") {
-    const clientDirectory = context.configuration.app.clientDirectory;
     routedApp.use("/manifest.webmanifest", async (c, next) => {
       c.header("Cache-Control", "no-cache");
       await next();
