@@ -5,8 +5,8 @@
 - Node.js 24+
 - npm 11+
 - FFmpeg and FFprobe
-- Intel Quick Sync device access when re-encoding incompatible videos on Linux
-  (CPU fallback is disabled)
+- Intel Quick Sync device access when re-encoding incompatible video streams on Linux
+  (CPU video fallback is disabled)
 
 ## Local Development
 

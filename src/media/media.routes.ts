@@ -11,12 +11,16 @@ import type { AppContext } from "../context.js";
 import { hasErrorCode } from "../errors.js";
 import { createRequireAuth } from "../auth/auth.routes.js";
 import { playlistParametersSchema, videoParametersSchema } from "../library/library.schema.js";
+import { conversionPlaylistFilename } from "./conversion.js";
 import { resolveContainedPath } from "./path.js";
 import { parseByteRange } from "./range.js";
 import { chapterThumbnailRelativePath, thumbnailRelativePath } from "./thumbnails.js";
 
 const hlsParametersSchema = videoParametersSchema.extend({
-  filename: z.string().regex(/^(?:index\.m3u8|segment-\d{5}\.ts)$/),
+  filename: z.union([
+    z.literal(conversionPlaylistFilename),
+    z.string().regex(/^segment-\d{5}\.ts$/),
+  ]),
 });
 
 const chapterCoverParametersSchema = videoParametersSchema.extend({

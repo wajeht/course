@@ -8,7 +8,12 @@ import type { Database } from "../db/db.js";
 import { createLibraryApiRepository } from "../library/library.repository.js";
 import { createLogger } from "../logger.js";
 import { createTemporaryDirectory, createTestDatabase } from "../test/resources.js";
-import { createConversionManager, type ConversionExecutor } from "./conversion.js";
+import {
+  conversionPlaylistFilename,
+  createConversionManager,
+  planConversion,
+  type ConversionExecutor,
+} from "./conversion.js";
 import { createConversionRepository } from "./conversion.repository.js";
 
 async function createFixture(executor: ConversionExecutor) {
@@ -57,7 +62,7 @@ async function createFixture(executor: ConversionExecutor) {
     logger: createLogger(),
     executor,
   });
-  return { database, library, manager };
+  return { configuration, database, library, manager };
 }
 
 async function waitForStatus(database: Database, videoId: string, status: string): Promise<void> {
@@ -68,6 +73,43 @@ async function waitForStatus(database: Database, videoId: string, status: string
   }
   throw new Error(`Conversion did not reach ${status}`);
 }
+
+describe("conversion plan", () => {
+  it.each([
+    {
+      name: "copies H.264 video and AAC audio",
+      videoCodec: "h264",
+      audioCodec: "aac",
+      expected: { videoCodec: "copy", audioCodec: "copy" },
+    },
+    {
+      name: "copies video when no audio stream exists",
+      videoCodec: "h264",
+      audioCodec: null,
+      expected: { videoCodec: "copy", audioCodec: "copy" },
+    },
+    {
+      name: "copies H.264 video while converting incompatible audio",
+      videoCodec: "h264",
+      audioCodec: "opus",
+      expected: { videoCodec: "copy", audioCodec: "aac" },
+    },
+    {
+      name: "converts incompatible video while copying AAC audio",
+      videoCodec: "hevc",
+      audioCodec: "aac",
+      expected: { videoCodec: "h264_qsv", audioCodec: "copy" },
+    },
+    {
+      name: "converts both incompatible streams",
+      videoCodec: "hevc",
+      audioCodec: "opus",
+      expected: { videoCodec: "h264_qsv", audioCodec: "aac" },
+    },
+  ])("$name", ({ videoCodec, audioCodec, expected }) => {
+    expect(planConversion({ video_codec: videoCodec, audio_codec: audioCodec })).toEqual(expected);
+  });
+});
 
 describe("conversion manager", () => {
   it("deduplicates jobs and runs only one conversion at a time", async () => {
@@ -109,18 +151,22 @@ describe("conversion manager", () => {
     });
   });
 
-  it("rebuilds a ready conversion when its playlist is missing", async () => {
+  it("rebuilds a ready conversion when only a legacy cache playlist exists", async () => {
     let calls = 0;
-    const { database, library, manager } = await createFixture(async () => {
+    const { configuration, database, library, manager } = await createFixture(async () => {
       calls++;
     });
     const video = (await library.findVideo("b".repeat(24)))!;
 
     await manager.requestConversion(video);
     await waitForStatus(database, video.id, "ready");
+    const outputDirectory = path.join(configuration.media.hlsDirectory, video.id);
+    await fs.mkdir(outputDirectory, { recursive: true });
+    await fs.writeFile(path.join(outputDirectory, "index.m3u8"), "legacy cache");
     await manager.requestConversion(video);
     await waitForStatus(database, video.id, "ready");
 
     expect(calls).toBe(2);
+    expect(conversionPlaylistFilename).toBe("index-v2.m3u8");
   });
 });

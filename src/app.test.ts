@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { createApp } from "./app.js";
 import { createConfiguration } from "./config.js";
+import { conversionPlaylistFilename } from "./media/conversion.js";
 import { createTemporaryDirectory, createTestContext } from "./test/resources.js";
 import { chapterThumbnailPath, thumbnailCacheVersion, thumbnailPath } from "./media/thumbnails.js";
 
@@ -68,7 +69,9 @@ describe("application", () => {
     expect((await app.request("/api/library")).status).toBe(401);
     expect((await app.request(`/media/${"b".repeat(24)}`)).status).toBe(401);
     expect((await app.request(`/covers/playlists/${"a".repeat(24)}`)).status).toBe(401);
-    expect((await app.request(`/hls/${"b".repeat(24)}/index.m3u8`)).status).toBe(401);
+    expect((await app.request(`/hls/${"b".repeat(24)}/${conversionPlaylistFilename}`)).status).toBe(
+      401,
+    );
     expect(
       (
         await app.request(`/api/videos/${"b".repeat(24)}/thumbnail`, {
