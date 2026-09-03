@@ -15,6 +15,7 @@ const props = defineProps<{
   setupTokenRequired: boolean;
   busy: boolean;
   message?: string;
+  passwordError?: string;
 }>();
 
 const emit = defineEmits<{
@@ -105,6 +106,7 @@ function forwardSetup(password: string, confirmPassword: string, setupToken?: st
           :busy
           :is-setup="isSetup"
           :message
+          :password-error
           :setup-token-required
           @login="emit('login', $event)"
           @setup="forwardSetup"

@@ -8,6 +8,7 @@ import AuthPage from "./AuthPage.vue";
 const baseProps = {
   busy: false,
   message: undefined,
+  passwordError: undefined,
   setupEnabled: true,
   setupTokenRequired: false,
   status: "unauthenticated" as const,
@@ -27,7 +28,7 @@ describe("AuthPage", () => {
 
   it("shows sign-in errors beneath the invalid password field", () => {
     const wrapper = mount(AuthPage, {
-      props: { ...baseProps, passwordConfigured: true, message: "Invalid password" },
+      props: { ...baseProps, passwordConfigured: true, passwordError: "Invalid password" },
     });
     const password = wrapper.get('input[autocomplete="current-password"]');
     const error = wrapper.get('[role="alert"]');
@@ -36,6 +37,24 @@ describe("AuthPage", () => {
     expect(password.classes()).toContain("border-clay");
     expect(password.attributes("aria-describedby")).toContain(error.attributes("id"));
     expect(error.text()).toBe("Invalid password");
+  });
+
+  it("shows general sign-in errors beneath the introduction", () => {
+    const wrapper = mount(AuthPage, {
+      props: {
+        ...baseProps,
+        passwordConfigured: true,
+        message: "Your session expired. Sign in again.",
+      },
+    });
+    const introduction = wrapper.get("form > p");
+    const password = wrapper.get('input[autocomplete="current-password"]');
+    const alert = wrapper.get('[role="alert"]');
+
+    expect(introduction.element.nextElementSibling).toBe(alert.element);
+    expect(alert.text()).toBe("Your session expired. Sign in again.");
+    expect(password.attributes("aria-invalid")).toBeUndefined();
+    expect(password.attributes("aria-describedby")).toBeUndefined();
   });
 
   it("shows the project link and current app version", () => {

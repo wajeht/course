@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, shallowRef } from "vue";
 
+import { ApiError } from "@/api.js";
 import AlertMessage from "@/components/ui/AlertMessage.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppInput from "@/components/ui/AppInput.vue";
@@ -29,7 +30,17 @@ const passwordAction = useAsyncAction(
     },
   },
 );
-const passwordError = computed(() => validationError.value || passwordAction.errorMessage.value);
+const currentPasswordError = computed(() => {
+  const cause = passwordAction.error.value;
+  if (cause instanceof ApiError && cause.message === "Current password is incorrect") {
+    return cause.message;
+  }
+  return "";
+});
+const generalPasswordError = computed(() => {
+  if (currentPasswordError.value) return "";
+  return passwordAction.errorMessage.value;
+});
 
 async function changePassword(): Promise<void> {
   validationError.value = "";
@@ -49,8 +60,8 @@ async function changePassword(): Promise<void> {
       description="Change the password for this private library or sign out of this device."
     />
     <form class="grid gap-4 p-[clamp(22px,4vw,34px)]" @submit.prevent="changePassword">
-      <AlertMessage v-if="passwordError && !validationError">
-        {{ passwordError }}
+      <AlertMessage v-if="generalPasswordError">
+        {{ generalPasswordError }}
       </AlertMessage>
       <input
         class="sr-only"
@@ -60,7 +71,7 @@ async function changePassword(): Promise<void> {
         readonly
         tabindex="-1"
       />
-      <FormField v-slot="field" label="Current password" required>
+      <FormField v-slot="field" label="Current password" :error="currentPasswordError" required>
         <AppInput
           :id="field.inputId"
           v-model="currentPassword"

@@ -6,6 +6,7 @@ import OfflineStatusBanner from "@/components/OfflineStatusBanner.vue";
 import AppLogo from "@/components/ui/AppLogo.vue";
 import ConfirmDialog from "@/components/ui/ConfirmDialog.vue";
 import ToastViewport from "@/components/ui/ToastViewport.vue";
+import { ApiError } from "@/api.js";
 import { useAsyncAction } from "@/composables/useAsyncAction.js";
 import { useAuth } from "@/composables/useAuth.js";
 import { useNetworkStatus } from "@/composables/useNetworkStatus.js";
@@ -28,9 +29,18 @@ const setupAction = useAsyncAction(
   { errorMessage: "Could not create the library password" },
 );
 const authBusy = computed(() => loginAction.pending.value || setupAction.pending.value);
-const actionError = computed(
-  () => loginAction.errorMessage.value || setupAction.errorMessage.value,
-);
+const loginPasswordError = computed(() => {
+  const cause = loginAction.error.value;
+  if (cause instanceof ApiError && cause.status === 401) return cause.message;
+  return "";
+});
+const generalAuthError = computed(() => {
+  if (loginAction.error.value) {
+    if (loginPasswordError.value) return "";
+    return loginAction.errorMessage.value;
+  }
+  return setupAction.errorMessage.value || auth.state.error;
+});
 const showBootstrap = shallowRef(false);
 let bootstrapTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -109,7 +119,8 @@ async function setup(
     :setup-enabled="auth.state.setupEnabled"
     :setup-token-required="auth.state.setupTokenRequired"
     :busy="authBusy"
-    :message="actionError || auth.state.error"
+    :message="generalAuthError"
+    :password-error="loginPasswordError"
     @login="login"
     @setup="setup"
     @retry="auth.initialize"
