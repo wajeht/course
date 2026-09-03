@@ -1,7 +1,11 @@
 import fs from "node:fs/promises";
 
 import type { LibraryService } from "../library/library.service.js";
-import type { ConversionManager, ConversionRecord } from "../media/conversion.js";
+import {
+  conversionPlaylistFilename,
+  type ConversionManager,
+  type ConversionRecord,
+} from "../media/conversion.js";
 
 export interface PlaybackService {
   preparePlayback(videoId: string): Promise<PlaybackResult | null>;
@@ -22,7 +26,7 @@ async function resolveConversionPlayback(record: ConversionRecord): Promise<Play
     await fs.access(record.playlistPath);
     return {
       kind: "hls",
-      url: `/hls/${record.videoId}/index.m3u8`,
+      url: `/hls/${record.videoId}/${conversionPlaylistFilename}`,
       status: record.status === "ready" ? "ready" : "converting",
       progress: record.progress,
     };

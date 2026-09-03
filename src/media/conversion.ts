@@ -25,6 +25,23 @@ export interface ConversionManager {
   recoverConversions(): Promise<void>;
 }
 
+export interface ConversionPlan {
+  videoCodec: "copy" | "h264_qsv";
+  audioCodec: "copy" | "aac";
+}
+
+export const conversionCacheVersion = 2;
+export const conversionPlaylistFilename = `index-v${conversionCacheVersion}.m3u8`;
+
+export function planConversion(
+  video: Pick<VideoRow, "video_codec" | "audio_codec">,
+): ConversionPlan {
+  return {
+    videoCodec: video.video_codec === "h264" ? "copy" : "h264_qsv",
+    audioCodec: video.audio_codec === null || video.audio_codec === "aac" ? "copy" : "aac",
+  };
+}
+
 async function writeProgressAfter(
   previousWrite: Promise<void>,
   onProgress: (progress: number) => Promise<void>,
@@ -38,27 +55,27 @@ export function createFfmpegConversionExecutor(configuration: Configuration): Co
   return async (video, onProgress) => {
     const source = await resolveContainedPath(configuration.media.videosDirectory, video.path);
     const outputDirectory = path.join(configuration.media.hlsDirectory, video.id);
-    const playlist = path.join(outputDirectory, "index.m3u8");
+    const playlist = path.join(outputDirectory, conversionPlaylistFilename);
     await fs.rm(outputDirectory, { recursive: true, force: true });
     await fs.mkdir(outputDirectory, { recursive: true });
 
-    const canRemux =
-      video.video_codec === "h264" && (video.audio_codec === null || video.audio_codec === "aac");
-    const hardwareInputArguments = canRemux
-      ? []
-      : [
+    const plan = planConversion(video);
+    const requiresQuickSync = plan.videoCodec === "h264_qsv";
+    const hardwareInputArguments = requiresQuickSync
+      ? [
           "-qsv_device",
           configuration.media.qsvDevice,
           "-hwaccel",
           "qsv",
           "-hwaccel_output_format",
           "qsv",
-        ];
-    const codecArguments = canRemux
-      ? ["-c:v", "copy", "-c:a", "copy"]
-      : ["-c:v", "h264_qsv", "-global_quality", "23", "-c:a", "aac"];
+        ]
+      : [];
+    const videoCodecArguments =
+      plan.videoCodec === "copy" ? ["-c:v", "copy"] : ["-c:v", "h264_qsv", "-global_quality", "23"];
+    const audioCodecArguments = ["-c:a", plan.audioCodec];
 
-    if (!canRemux) {
+    if (requiresQuickSync) {
       try {
         await fs.access(configuration.media.qsvDevice, constants.R_OK | constants.W_OK);
       } catch {
@@ -79,7 +96,8 @@ export function createFfmpegConversionExecutor(configuration: Configuration): Co
       "0:v:0",
       "-map",
       "0:a?",
-      ...codecArguments,
+      ...videoCodecArguments,
+      ...audioCodecArguments,
       "-f",
       "hls",
       "-hls_time",
@@ -157,7 +175,7 @@ export function createConversionManager(options: {
       playlistPath: path.join(
         options.configuration.media.hlsDirectory,
         stored.videoId,
-        "index.m3u8",
+        conversionPlaylistFilename,
       ),
     };
   }
