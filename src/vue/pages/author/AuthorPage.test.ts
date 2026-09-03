@@ -34,7 +34,7 @@ function useMobileViewport(): void {
 
 function authorLibrary(): LibraryDto {
   return {
-    authors: [{ name: "Jane Smith", videoCount: 1 }],
+    authors: [{ count: 1, name: "Jane Smith" }],
     continueWatching: [],
     pagination: { page: 1, pageSize: 24, totalPages: 1, totalVideos: 1 },
     playlists: [
@@ -119,8 +119,8 @@ describe("AuthorPage", () => {
     const guestLibrary: LibraryDto = {
       ...authorLibrary(),
       authors: [
-        { name: "Guest", videoCount: 1 },
-        { name: "Jane Smith", videoCount: 1 },
+        { count: 1, name: "Guest" },
+        { count: 1, name: "Jane Smith" },
       ],
       playlists: [],
       videos: [{ ...authorLibrary().videos[0]!, authors: ["Guest"], title: "Guest video" }],
@@ -208,7 +208,7 @@ describe("AuthorPage", () => {
     });
     const guestLibrary: LibraryDto = {
       ...authorLibrary(),
-      authors: [{ name: "Guest", videoCount: 1 }],
+      authors: [{ count: 1, name: "Guest" }],
       playlists: [],
       videos: [{ ...authorLibrary().videos[0]!, authors: ["Guest"], title: "Guest video" }],
     };

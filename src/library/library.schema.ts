@@ -15,6 +15,7 @@ export const libraryQuerySchema = z.object({
   tag: libraryFilterSchema.optional(),
   page: z.coerce.number().int().min(1).optional(),
   pageSize: z.coerce.number().int().min(1).max(100).optional(),
+  view: z.enum(["videos", "playlists"]).optional(),
 });
 
 export const playlistParametersSchema = z.object({ playlistId: identifierSchema });
@@ -84,7 +85,7 @@ export const playlistDetailResponseSchema = playlistResponseSchema.extend({
 
 const filterResponseSchema = z.object({
   name: z.string(),
-  videoCount: z.number().int().nonnegative(),
+  count: z.number().int().nonnegative(),
 });
 
 export const libraryResponseSchema = z.object({

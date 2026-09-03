@@ -20,7 +20,7 @@ const expanded = shallowRef(false);
 const allOptions = computed(() => {
   const missing = selected.value
     .filter((name) => !props.options.some((option) => option.name === name))
-    .map((name) => ({ name, videoCount: 0 }));
+    .map((name) => ({ name, count: 0 }));
   return [...missing, ...props.options];
 });
 const visible = computed(() =>
@@ -62,7 +62,7 @@ function prefetchOption(name: string): void {
             @focus="prefetchOption(option.name)"
             @pointerdown="prefetchOption(option.name)"
           />
-          <span>{{ option.name }} ({{ option.videoCount }})</span>
+          <span>{{ option.name }} ({{ option.count }})</span>
         </label>
       </li>
     </ul>

@@ -93,6 +93,7 @@ export function useLibraryBrowser(options: UseLibraryBrowserOptions = {}) {
     tag: selectedTag.value.length ? selectedTag.value : undefined,
     page: page.value,
     pageSize: pageSizeRef.value,
+    view: selectedView.value === "playlists" ? "playlists" : undefined,
   }));
   const request = useQuery(computed(() => libraryQueryOptions(filters.value, api)));
   const library = computed(() => request.data.value ?? emptyLibrary());
@@ -213,7 +214,10 @@ export function useLibraryBrowser(options: UseLibraryBrowserOptions = {}) {
   }
 
   function prefetchView(view: "videos" | "playlists"): void {
-    prefetchDestination(filters.value, view);
+    prefetchDestination(
+      { ...filters.value, view: view === "playlists" ? "playlists" : undefined },
+      view,
+    );
   }
 
   function prefetchDestination(nextFilters: LibraryFilters, view: "videos" | "playlists"): void {

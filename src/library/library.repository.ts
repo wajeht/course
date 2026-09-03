@@ -57,8 +57,10 @@ export interface ChapterRow {
 
 export interface FilterCountRow {
   name: string;
-  video_count: number;
+  count: number;
 }
+
+export type LibraryFacetScope = "videos" | "playlists";
 
 export interface VideoFilters {
   query?: string;
@@ -84,8 +86,8 @@ export interface LibraryRepository {
   ): Promise<VideoSearchPage>;
   countVideos(filters?: VideoFilters): Promise<number>;
   listPlaylists(filters?: VideoFilters): Promise<PlaylistRow[]>;
-  listAuthors(): Promise<FilterCountRow[]>;
-  listTags(): Promise<FilterCountRow[]>;
+  listAuthors(scope?: LibraryFacetScope): Promise<FilterCountRow[]>;
+  listTags(scope?: LibraryFacetScope): Promise<FilterCountRow[]>;
   listContinueWatching(): Promise<VideoRow[]>;
   findPlaylist(playlistId: string): Promise<PlaylistRow | undefined>;
   listPlaylistVideos(playlistId: string): Promise<VideoRow[]>;
@@ -384,7 +386,16 @@ export function createLibraryApiRepository(database: Knex): LibraryRepository {
       return queryBuilder;
     },
 
-    async listAuthors() {
+    async listAuthors(scope = "videos") {
+      if (scope === "playlists") {
+        return database("playlist_authors")
+          .join("authors", "authors.id", "playlist_authors.author_id")
+          .join("videos", "videos.playlist_id", "playlist_authors.playlist_id")
+          .select<FilterCountRow[]>(database.raw("MIN(authors.name) as name"))
+          .countDistinct("playlist_authors.playlist_id as count")
+          .groupByRaw("authors.name COLLATE NOCASE")
+          .orderByRaw("authors.name COLLATE NOCASE");
+      }
       return database
         .from(
           database
@@ -401,12 +412,21 @@ export function createLibraryApiRepository(database: Knex): LibraryRepository {
             .as("effective_authors"),
         )
         .select<FilterCountRow[]>(database.raw("MIN(name) as name"))
-        .countDistinct("video_id as video_count")
+        .countDistinct("video_id as count")
         .groupByRaw("name COLLATE NOCASE")
         .orderByRaw("name COLLATE NOCASE");
     },
 
-    async listTags() {
+    async listTags(scope = "videos") {
+      if (scope === "playlists") {
+        return database("playlists")
+          .join("videos", "videos.playlist_id", "playlists.id")
+          .joinRaw("JOIN json_each(playlists.tags_json) AS playlist_tag")
+          .select<FilterCountRow[]>(database.raw("MIN(playlist_tag.value) as name"))
+          .countDistinct("playlists.id as count")
+          .groupByRaw("playlist_tag.value COLLATE NOCASE")
+          .orderByRaw("playlist_tag.value COLLATE NOCASE");
+      }
       return database
         .from(
           database
@@ -423,7 +443,7 @@ export function createLibraryApiRepository(database: Knex): LibraryRepository {
             .as("effective_tags"),
         )
         .select<FilterCountRow[]>(database.raw("MIN(name) as name"))
-        .countDistinct("video_id as video_count")
+        .countDistinct("video_id as count")
         .groupByRaw("name COLLATE NOCASE")
         .orderByRaw("name COLLATE NOCASE");
     },
