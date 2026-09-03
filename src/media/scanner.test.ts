@@ -7,10 +7,14 @@ import { createConfiguration } from "../config.js";
 import { createLogger } from "../logger.js";
 import { createTemporaryDirectory, createTestDatabase } from "../test/resources.js";
 import { createLibraryRepository } from "./library.repository.js";
-import { createPlaylistCoverCache, playlistCoverPath } from "./playlist-covers.js";
+import {
+  createPlaylistCoverCache,
+  playlistCoverPath,
+  playlistCoversDirectory,
+} from "./playlist-covers.js";
 import type { VideoProbe } from "./probe.js";
 import { createScanner } from "./scanner.js";
-import { createThumbnailCache, thumbnailPath } from "./thumbnails.js";
+import { createThumbnailCache, thumbnailPath, thumbnailsDirectory } from "./thumbnails.js";
 
 const monitorStops: Array<() => void> = [];
 
@@ -237,7 +241,7 @@ describe("media scanner", () => {
     await expect(
       fs.readFile(
         thumbnailPath(
-          configuration.media.thumbnailsDirectory,
+          thumbnailsDirectory(configuration.media.dataDirectory),
           bare.id,
           index.revisions.get(bare.id)!,
         ),
@@ -247,7 +251,7 @@ describe("media scanner", () => {
     await expect(
       fs.readFile(
         thumbnailPath(
-          configuration.media.thumbnailsDirectory,
+          thumbnailsDirectory(configuration.media.dataDirectory),
           talk.id,
           index.revisions.get(talk.id)!,
         ),
@@ -292,7 +296,11 @@ describe("media scanner", () => {
     expect(generate).toHaveBeenCalledOnce();
     await expect(
       fs.readFile(
-        playlistCoverPath(configuration.media.playlistCoversDirectory, playlist.id, revision),
+        playlistCoverPath(
+          playlistCoversDirectory(configuration.media.dataDirectory),
+          playlist.id,
+          revision,
+        ),
         "utf8",
       ),
     ).resolves.toBe("optimized-cover");

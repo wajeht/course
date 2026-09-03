@@ -33,6 +33,10 @@ export interface ConversionPlan {
 export const conversionCacheVersion = 2;
 export const conversionPlaylistFilename = `index-v${conversionCacheVersion}.m3u8`;
 
+export function hlsDirectory(dataDirectory: string): string {
+  return path.join(dataDirectory, "hls");
+}
+
 export function planConversion(
   video: Pick<VideoRow, "video_codec" | "audio_codec">,
 ): ConversionPlan {
@@ -54,7 +58,7 @@ async function writeProgressAfter(
 export function createFfmpegConversionExecutor(configuration: Configuration): ConversionExecutor {
   return async (video, onProgress) => {
     const source = await resolveContainedPath(configuration.media.videosDirectory, video.path);
-    const outputDirectory = path.join(configuration.media.hlsDirectory, video.id);
+    const outputDirectory = path.join(hlsDirectory(configuration.media.dataDirectory), video.id);
     const playlist = path.join(outputDirectory, conversionPlaylistFilename);
     await fs.rm(outputDirectory, { recursive: true, force: true });
     await fs.mkdir(outputDirectory, { recursive: true });
@@ -173,7 +177,7 @@ export function createConversionManager(options: {
     return {
       ...stored,
       playlistPath: path.join(
-        options.configuration.media.hlsDirectory,
+        hlsDirectory(options.configuration.media.dataDirectory),
         stored.videoId,
         conversionPlaylistFilename,
       ),

@@ -9,6 +9,7 @@ import { createTemporaryDirectory } from "../test/resources.js";
 import {
   createPlaylistCoverCache,
   playlistCoverPath,
+  playlistCoversDirectory,
   type PlaylistCoverGenerator,
 } from "./playlist-covers.js";
 import type { PlaylistRecord } from "./types.js";
@@ -71,7 +72,11 @@ describe("playlist covers", () => {
     expect(generate).toHaveBeenCalledWith(await fs.realpath(source), expect.any(String), "ffmpeg");
     await expect(
       fs.readFile(
-        playlistCoverPath(configuration.media.playlistCoversDirectory, playlistId, revision),
+        playlistCoverPath(
+          playlistCoversDirectory(configuration.media.dataDirectory),
+          playlistId,
+          revision,
+        ),
         "utf8",
       ),
     ).resolves.toBe("optimized-cover");
@@ -100,7 +105,11 @@ describe("playlist covers", () => {
     expect(secondRevision).not.toBe(firstRevision);
     await expect(
       fs.access(
-        playlistCoverPath(configuration.media.playlistCoversDirectory, playlistId, firstRevision),
+        playlistCoverPath(
+          playlistCoversDirectory(configuration.media.dataDirectory),
+          playlistId,
+          firstRevision,
+        ),
       ),
     ).resolves.toBeUndefined();
 
@@ -111,17 +120,29 @@ describe("playlist covers", () => {
     expect(generate).toHaveBeenCalledTimes(3);
     await expect(
       fs.access(
-        playlistCoverPath(configuration.media.playlistCoversDirectory, playlistId, firstRevision),
+        playlistCoverPath(
+          playlistCoversDirectory(configuration.media.dataDirectory),
+          playlistId,
+          firstRevision,
+        ),
       ),
     ).rejects.toMatchObject({ code: "ENOENT" });
     await expect(
       fs.access(
-        playlistCoverPath(configuration.media.playlistCoversDirectory, playlistId, secondRevision),
+        playlistCoverPath(
+          playlistCoversDirectory(configuration.media.dataDirectory),
+          playlistId,
+          secondRevision,
+        ),
       ),
     ).resolves.toBeUndefined();
     await expect(
       fs.access(
-        playlistCoverPath(configuration.media.playlistCoversDirectory, playlistId, thirdRevision),
+        playlistCoverPath(
+          playlistCoversDirectory(configuration.media.dataDirectory),
+          playlistId,
+          thirdRevision,
+        ),
       ),
     ).resolves.toBeUndefined();
   });
@@ -144,7 +165,11 @@ describe("playlist covers", () => {
     expect((await cache.listPlaylistCoverIndex()).revisions.get(playlistId)).toBe(revision);
     await expect(
       fs.readFile(
-        playlistCoverPath(configuration.media.playlistCoversDirectory, playlistId, revision),
+        playlistCoverPath(
+          playlistCoversDirectory(configuration.media.dataDirectory),
+          playlistId,
+          revision,
+        ),
         "utf8",
       ),
     ).resolves.toBe("current-cover");
@@ -164,7 +189,11 @@ describe("playlist covers", () => {
     await cache.synchronize([playlistRecord()]);
     const revision = (await cache.listPlaylistCoverIndex()).revisions.get(playlistId)!;
     await fs.rm(
-      playlistCoverPath(configuration.media.playlistCoversDirectory, playlistId, revision),
+      playlistCoverPath(
+        playlistCoversDirectory(configuration.media.dataDirectory),
+        playlistId,
+        revision,
+      ),
     );
     await cache.synchronize([playlistRecord()]);
     expect(generate).toHaveBeenCalledTimes(2);
@@ -172,7 +201,7 @@ describe("playlist covers", () => {
     await cache.synchronize([playlistRecord(null)]);
     expect((await cache.listPlaylistCoverIndex()).revisions.has(playlistId)).toBe(false);
     await expect(
-      fs.access(path.join(configuration.media.playlistCoversDirectory, playlistId)),
+      fs.access(path.join(playlistCoversDirectory(configuration.media.dataDirectory), playlistId)),
     ).rejects.toMatchObject({ code: "ENOENT" });
   });
 });

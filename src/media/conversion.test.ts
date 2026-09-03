@@ -11,6 +11,7 @@ import { createTemporaryDirectory, createTestDatabase } from "../test/resources.
 import {
   conversionPlaylistFilename,
   createConversionManager,
+  hlsDirectory,
   planConversion,
   type ConversionExecutor,
 } from "./conversion.js";
@@ -160,7 +161,7 @@ describe("conversion manager", () => {
 
     await manager.requestConversion(video);
     await waitForStatus(database, video.id, "ready");
-    const outputDirectory = path.join(configuration.media.hlsDirectory, video.id);
+    const outputDirectory = path.join(hlsDirectory(configuration.media.dataDirectory), video.id);
     await fs.mkdir(outputDirectory, { recursive: true });
     await fs.writeFile(path.join(outputDirectory, "index.m3u8"), "legacy cache");
     await manager.requestConversion(video);

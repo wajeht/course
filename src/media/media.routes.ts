@@ -11,11 +11,15 @@ import type { AppContext } from "../context.js";
 import { hasErrorCode } from "../errors.js";
 import { createRequireAuth } from "../auth/auth.routes.js";
 import { playlistParametersSchema, videoParametersSchema } from "../library/library.schema.js";
-import { conversionPlaylistFilename } from "./conversion.js";
+import { conversionPlaylistFilename, hlsDirectory } from "./conversion.js";
 import { resolveContainedPath } from "./path.js";
-import { playlistCoverRelativePath } from "./playlist-covers.js";
+import { playlistCoverRelativePath, playlistCoversDirectory } from "./playlist-covers.js";
 import { parseByteRange } from "./range.js";
-import { chapterThumbnailRelativePath, thumbnailRelativePath } from "./thumbnails.js";
+import {
+  chapterThumbnailRelativePath,
+  thumbnailRelativePath,
+  thumbnailsDirectory,
+} from "./thumbnails.js";
 
 const hlsParametersSchema = videoParametersSchema.extend({
   filename: z.union([
@@ -127,7 +131,7 @@ export function createMediaRouter(context: AppContext) {
       if (playlist.cover_path) {
         const cover = await trySendCover(
           c,
-          context.configuration.media.playlistCoversDirectory,
+          playlistCoversDirectory(context.configuration.media.dataDirectory),
           playlistCoverRelativePath(playlist.id, revision),
         );
         if (cover) return cover;
@@ -135,7 +139,7 @@ export function createMediaRouter(context: AppContext) {
       if (playlist.first_video_id) {
         const cover = await trySendCover(
           c,
-          context.configuration.media.thumbnailsDirectory,
+          thumbnailsDirectory(context.configuration.media.dataDirectory),
           thumbnailRelativePath(playlist.first_video_id, revision),
         );
         if (cover) return cover;
@@ -156,7 +160,7 @@ export function createMediaRouter(context: AppContext) {
       if (revision === null) return c.body(null, 404);
       const thumbnail = await trySendCover(
         c,
-        context.configuration.media.thumbnailsDirectory,
+        thumbnailsDirectory(context.configuration.media.dataDirectory),
         chapterThumbnailRelativePath(videoId, revision, startSeconds),
       );
       if (thumbnail) return thumbnail;
@@ -175,7 +179,7 @@ export function createMediaRouter(context: AppContext) {
       if (revision === null) return c.body(null, 404);
       const thumbnail = await trySendCover(
         c,
-        context.configuration.media.thumbnailsDirectory,
+        thumbnailsDirectory(context.configuration.media.dataDirectory),
         thumbnailRelativePath(video.id, revision),
       );
       if (thumbnail) return thumbnail;
@@ -191,7 +195,7 @@ export function createMediaRouter(context: AppContext) {
       const { videoId, filename } = c.req.valid("param");
       try {
         const file = await resolveContainedPath(
-          path.join(context.configuration.media.hlsDirectory, videoId),
+          path.join(hlsDirectory(context.configuration.media.dataDirectory), videoId),
           filename,
         );
         const statistics = await fs.stat(file);
