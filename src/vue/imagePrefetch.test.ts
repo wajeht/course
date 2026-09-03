@@ -81,8 +81,8 @@ describe("image prefetch", () => {
   });
 
   it("starts immediately, deduplicates URLs, and limits concurrency", () => {
-    const requests: Array<{ complete: (loaded: boolean) => void; url: string }> = [];
-    const loadImage = vi.fn((url: string, complete: (loaded: boolean) => void) => {
+    const requests: Array<{ complete: () => void; url: string }> = [];
+    const loadImage = vi.fn((url: string, complete: () => void) => {
       requests.push({ complete, url });
     });
     const { prefetch } = createImagePrefetcher(loadImage, 2);
@@ -90,34 +90,41 @@ describe("image prefetch", () => {
     prefetch(["/one.jpg", "/one.jpg", "/two.jpg", "/three.jpg"]);
 
     expect(loadImage.mock.calls.map(([url]) => url)).toEqual(["/one.jpg", "/two.jpg"]);
-    requests[0]!.complete(true);
+    requests[0]!.complete();
     expect(loadImage.mock.calls.map(([url]) => url)).toEqual([
       "/one.jpg",
       "/two.jpg",
       "/three.jpg",
     ]);
 
+    requests[1]!.complete();
+    requests[2]!.complete();
     prefetch(["/one.jpg"]);
-    expect(loadImage).toHaveBeenCalledTimes(3);
+    expect(loadImage.mock.calls.map(([url]) => url)).toEqual([
+      "/one.jpg",
+      "/two.jpg",
+      "/three.jpg",
+      "/one.jpg",
+    ]);
   });
 
   it("drops older queued images when newer intent arrives", () => {
-    const requests: Array<{ complete: (loaded: boolean) => void; url: string }> = [];
-    const loadImage = vi.fn((url: string, complete: (loaded: boolean) => void) => {
+    const requests: Array<{ complete: () => void; url: string }> = [];
+    const loadImage = vi.fn((url: string, complete: () => void) => {
       requests.push({ complete, url });
     });
     const { prefetch } = createImagePrefetcher(loadImage, 1);
 
     prefetch(["/active.jpg", "/old-queued.jpg"]);
     prefetch(["/new.jpg"]);
-    requests[0]!.complete(true);
+    requests[0]!.complete();
 
     expect(loadImage.mock.calls.map(([url]) => url)).toEqual(["/active.jpg", "/new.jpg"]);
   });
 
-  it("clears completed and in-flight URLs when reset", () => {
-    const requests: Array<{ complete: (loaded: boolean) => void; url: string }> = [];
-    const loadImage = vi.fn((url: string, complete: (loaded: boolean) => void) => {
+  it("allows an in-flight URL to be retried after reset", () => {
+    const requests: Array<{ complete: () => void; url: string }> = [];
+    const loadImage = vi.fn((url: string, complete: () => void) => {
       requests.push({ complete, url });
     });
     const { prefetch, reset } = createImagePrefetcher(loadImage, 1);
@@ -125,11 +132,15 @@ describe("image prefetch", () => {
     prefetch(["/same.jpg"]);
     reset();
     prefetch(["/same.jpg"]);
-    requests[0]!.complete(true);
-    requests[1]!.complete(true);
+    requests[0]!.complete();
+    requests[1]!.complete();
     prefetch(["/same.jpg"]);
 
-    expect(loadImage.mock.calls.map(([url]) => url)).toEqual(["/same.jpg", "/same.jpg"]);
+    expect(loadImage.mock.calls.map(([url]) => url)).toEqual([
+      "/same.jpg",
+      "/same.jpg",
+      "/same.jpg",
+    ]);
   });
 
   it("ignores images returned by an older destination request", () => {

@@ -2,7 +2,7 @@ import type { LibraryDto, VideoPlayerDetailDto } from "@/api.js";
 
 export type LibraryImageTarget = "author" | "home" | "playlists" | "videos";
 
-type CompleteImageLoad = (loaded: boolean) => void;
+type CompleteImageLoad = () => void;
 type LoadImage = (url: string, complete: CompleteImageLoad) => void;
 type PrefetchImageUrls = (urls: ReadonlyArray<string | null>) => void;
 
@@ -12,16 +12,16 @@ function loadBrowserImage(url: string, complete: CompleteImageLoad): void {
   const image = new Image();
   activeBrowserImages.set(url, image);
 
-  function finish(loaded: boolean): void {
+  function finish(): void {
     image.onload = null;
     image.onerror = null;
     if (activeBrowserImages.get(url) !== image) return;
     activeBrowserImages.delete(url);
-    complete(loaded);
+    complete();
   }
 
-  image.onload = () => finish(true);
-  image.onerror = () => finish(false);
+  image.onload = finish;
+  image.onerror = finish;
   image.src = url;
 }
 
@@ -34,7 +34,6 @@ function resetBrowserImages(): void {
 }
 
 export function createImagePrefetcher(loadImage: LoadImage, concurrency = 4) {
-  const loaded = new Set<string>();
   const pending = new Set<string>();
   let queued: string[] = [];
   let generation = 0;
@@ -43,14 +42,13 @@ export function createImagePrefetcher(loadImage: LoadImage, concurrency = 4) {
     while (pending.size < concurrency) {
       const url = queued.shift();
       if (!url) return;
-      if (loaded.has(url) || pending.has(url)) continue;
+      if (pending.has(url)) continue;
 
       pending.add(url);
       const requestGeneration = generation;
-      loadImage(url, (succeeded) => {
+      loadImage(url, () => {
         if (requestGeneration !== generation) return;
         pending.delete(url);
-        if (succeeded) loaded.add(url);
         pump();
       });
     }
@@ -63,7 +61,6 @@ export function createImagePrefetcher(loadImage: LoadImage, concurrency = 4) {
     },
     reset(): void {
       generation += 1;
-      loaded.clear();
       pending.clear();
       queued = [];
     },
