@@ -18,6 +18,9 @@ export function createMiddleware(logger: Logger, environment: AppEnvironment): A
     requestLogger: async (c, next) => {
       const start = performance.now();
       await next();
+      const successfulMediaRequest =
+        c.res.status < 400 && (c.req.path.startsWith("/media/") || c.req.path.startsWith("/hls/"));
+      if (successfulMediaRequest) return;
       logger.info("request", {
         requestId: c.get("requestId"),
         method: c.req.method,

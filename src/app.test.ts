@@ -25,6 +25,7 @@ describe("application", () => {
     });
     configuration.app.env = "production";
     const context = await createTestContext(configuration);
+    const logInfo = vi.spyOn(context.logger, "info").mockImplementation(() => {});
     const clientDirectory = path.join(directory, "client");
     await fs.mkdir(clientDirectory);
     await fs.writeFile(path.join(clientDirectory, "index.html"), "SPA");
@@ -134,12 +135,30 @@ describe("application", () => {
     expect(regenerationStatus.status).toBe(200);
     await expect(regenerationStatus.json()).resolves.toEqual({ status: "complete", revision: 1 });
 
+    logInfo.mockClear();
     const response = await app.request(`/media/${"b".repeat(24)}`, {
       headers: { range: "bytes=2-5", cookie: cookie! },
     });
     expect(response.status).toBe(206);
     expect(response.headers.get("content-range")).toBe("bytes 2-5/10");
     expect(await response.text()).toBe("2345");
+    expect(logInfo).not.toHaveBeenCalled();
+
+    const hlsDirectory = path.join(configuration.media.hlsDirectory, "b".repeat(24));
+    await fs.mkdir(hlsDirectory, { recursive: true });
+    await fs.writeFile(path.join(hlsDirectory, conversionPlaylistFilename), "#EXTM3U");
+    const hls = await app.request(`/hls/${"b".repeat(24)}/${conversionPlaylistFilename}`, {
+      headers: { cookie: cookie! },
+    });
+    expect(hls.status).toBe(200);
+    expect(await hls.text()).toBe("#EXTM3U");
+    expect(logInfo).not.toHaveBeenCalled();
+
+    await app.request("/healthz");
+    expect(logInfo).toHaveBeenCalledWith(
+      "request",
+      expect.objectContaining({ path: "/healthz", status: 200 }),
+    );
 
     const cover = await app.request(`/covers/playlists/${"a".repeat(24)}`, {
       headers: { cookie: cookie! },
