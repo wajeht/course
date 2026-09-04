@@ -34,7 +34,7 @@ defineExpose({ video });
   >
     <video
       ref="video"
-      class="h-full w-full object-contain"
+      class="absolute inset-0 h-full w-full object-contain"
       controls
       playsinline
       :poster="poster"

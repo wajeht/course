@@ -96,6 +96,13 @@ test("uses responsive video details and places the playlist below them on mobile
 
   await page.goto(`/videos/${videoId}?list=${playlistId}`);
   await expect(title).toBeVisible();
+  const clippedVideoPixels = await page.locator("video").evaluate((element) => {
+    const videoBounds = element.getBoundingClientRect();
+    const frameBounds = element.parentElement?.getBoundingClientRect();
+
+    return frameBounds ? Math.max(0, Math.ceil(videoBounds.bottom - frameBounds.bottom)) : 0;
+  });
+  expect(clippedVideoPixels).toBe(0);
   expect((await title.boundingBox())?.width).toBeGreaterThan(1000);
   const playlistVideos = playlistPanel.locator(":scope > div");
   await expect(playlistPanel).toBeVisible();
