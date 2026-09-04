@@ -20,7 +20,6 @@ withDefaults(defineProps<{ standalone?: boolean }>(), {
       :heading-level="1"
       :framed="false"
     >
-      <template #icon><span class="text-ink">404</span></template>
       <template #actions>
         <AppButton :as="IntentRouterLink" to="/" :prefetch="loadHomePage" size="lg">
           Go home

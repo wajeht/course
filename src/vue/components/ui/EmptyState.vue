@@ -18,9 +18,6 @@ withDefaults(
     v-bind="framed ? { variant: 'subtle' } : {}"
     class="grid min-h-80 place-items-center content-center p-10 text-center"
   >
-    <div v-if="$slots.icon" class="mb-1.5 text-5xl text-belt" aria-hidden="true">
-      <slot name="icon" />
-    </div>
     <component :is="`h${headingLevel}`" class="mb-2 font-display font-bold">
       {{ title }}
     </component>

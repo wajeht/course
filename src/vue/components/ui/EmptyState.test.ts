@@ -10,7 +10,7 @@ describe("EmptyState", () => {
   it("renders its content and optional slots", () => {
     const wrapper = mount(EmptyState, {
       props: { title: "Nothing here", description: "Add a video.", headingLevel: 1 },
-      slots: { actions: "Action", details: "Server folder: /videos", icon: "⌁" },
+      slots: { actions: "Action", details: "Server folder: /videos" },
     });
 
     expect(wrapper.get("h1").text()).toBe("Nothing here");

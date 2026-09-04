@@ -57,9 +57,7 @@ const displayedVideos = computed(() =>
           v-else-if="author"
           title="No videos found"
           :description="`No videos are currently credited to ${author.name}.`"
-        >
-          <template #icon>▶</template>
-        </EmptyState>
+        />
         <PaginationControls
           v-if="library && !loading"
           class="mt-8 max-[600px]:hidden"

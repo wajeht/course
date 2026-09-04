@@ -21,7 +21,6 @@ onMounted(() => setPageTitle("Unexpected error"));
       :heading-level="1"
       :framed="false"
     >
-      <template #icon>!</template>
       <template #actions>
         <AppButton size="lg" @click="retryFrontend">Reload page</AppButton>
         <AppButton

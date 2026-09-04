@@ -21,7 +21,6 @@ const prefetch = useRoutePrefetch();
       description="Start a video and it will appear here."
       :heading-level="2"
     >
-      <template #icon>▶</template>
       <template #actions>
         <AppButton :as="IntentRouterLink" to="/videos" :prefetch="prefetch.videos" size="lg"
           >Browse videos</AppButton

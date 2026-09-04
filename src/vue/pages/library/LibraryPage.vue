@@ -109,7 +109,6 @@ const displayedVideos = computed(() =>
                   : 'Add a video to your videos folder, then refresh the library.'
             "
           >
-            <template #icon>▶</template>
             <template v-if="!hasActiveFilters" #details
               >Server folder: <code>/videos</code></template
             >
